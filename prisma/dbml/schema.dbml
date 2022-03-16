@@ -1,0 +1,319 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId String [unique, not null]
+  rcno Int [not null]
+  fullName String [not null]
+  email String [not null]
+  notifications Notification [not null]
+  roles UserRole [not null]
+  machineCreated Machine [not null]
+  machineAssignments MachineAssignment [not null]
+  machineAttachments MachineAttachment [not null]
+  machineChecklistCompletions MachineChecklistItem [not null]
+  machinePeriodicMaintenanceCompletions MachinePeriodicMaintenance [not null]
+  transportationCreated Transportation [not null]
+  transportationAssignments TransportationAssignment [not null]
+  transportAttachments TransportAttachment [not null]
+  transportationChecklistCompletions TransportationChecklistItem [not null]
+  transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance [not null]
+}
+
+Table Notification {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  userId Int [not null]
+  user User [not null]
+  body String
+  link String
+  readAt DateTime
+}
+
+Table Role {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  userRoles UserRole [not null]
+  permissionRoles PermissionRole [not null]
+}
+
+Table UserRole {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  roleId Int [not null]
+  user User [not null]
+  role Role [not null]
+
+  indexes {
+    (userId, roleId) [unique]
+  }
+}
+
+Table PermissionRole {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  roleId Int [not null]
+  permission Permission [not null]
+  role Role [not null]
+
+  indexes {
+    (roleId, permission) [unique]
+  }
+}
+
+Table Machine {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  createdById Int [not null]
+  createdBy User [not null]
+  machineNumber String [not null]
+  registeredDate DateTime
+  model String [not null]
+  type String [not null]
+  zone String [not null]
+  location String [not null]
+  currentRunningHrs Int
+  lastServiceHrs Int
+  interServiceHrs Int
+  status MachineStatus [not null, default: 'Working']
+  statusChangedAt DateTime
+  machineAssignments MachineAssignment [not null]
+  machineChecklistItems MachineChecklistItem [not null]
+  machinePeriodicMaintenancePlans MachinePeriodicMaintenance [not null]
+  machineHistories MachineHistory [not null]
+  machineAttachments MachineAttachment [not null]
+}
+
+Table MachineAssignment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+
+  indexes {
+    (userId, machineId) [unique]
+  }
+}
+
+Table MachineAttachment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  description String [not null]
+  mimeType String
+  originalName String
+  sharepointFileName String
+}
+
+Table MachineChecklistItem {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  type String [not null, default: 'Daily']
+}
+
+Table MachinePeriodicMaintenance {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  description String [not null]
+  period DateTime
+  notificationReminder DateTime
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  type String [not null]
+}
+
+Table MachineHistory {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  type String [not null]
+  description String [not null]
+}
+
+Table Transportation {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  createdById Int [not null]
+  createdBy User [not null]
+  machineNumber String [not null]
+  registeredDate DateTime
+  model String
+  type String
+  location String [not null]
+  status TransportationStatus [not null, default: 'Working']
+  statusChangedAt DateTime
+  department String
+  engine String
+  currentMileage Int
+  lastServiceMileage Int
+  interServiceMileage Int
+  transportAssignments TransportationAssignment [not null]
+  transportationChecklistItems TransportationChecklistItem [not null]
+  transportPeriodicMaintenancePlans TransportationPeriodicMaintenance [not null]
+  TransportAttachments TransportAttachment [not null]
+  TransportationHistories TransportationHistory [not null]
+}
+
+Table TransportationAssignment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+
+  indexes {
+    (userId, transportationId) [unique]
+  }
+}
+
+Table TransportationChecklistItem {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  type String [not null, default: 'Daily']
+}
+
+Table TransportationPeriodicMaintenance {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  transportId Int [not null]
+  transport Transportation [not null]
+  description String [not null]
+  period DateTime
+  notificationReminder DateTime
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  type String [not null]
+}
+
+Table TransportAttachment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+  description String [not null]
+  mimeType String
+  originalName String
+  sharepointFileName String
+}
+
+Table TransportationHistory {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+  type String [not null]
+  description String [not null]
+}
+
+Enum Permission {
+  AddMachine
+  EditMachine
+  DeleteMachine
+  AddTransportation
+  EditTransportation
+  DeleteTransportation
+}
+
+Enum MachineStatus {
+  Working
+  Breakdown
+}
+
+Enum TransportationStatus {
+  Working
+  Breakdown
+}
+
+Ref: Notification.userId > User.id
+
+Ref: UserRole.userId > User.id
+
+Ref: UserRole.roleId > Role.id
+
+Ref: PermissionRole.roleId > Role.id
+
+Ref: Machine.createdById > User.id
+
+Ref: MachineAssignment.userId > User.id
+
+Ref: MachineAssignment.machineId > Machine.id
+
+Ref: MachineAttachment.userId > User.id
+
+Ref: MachineAttachment.machineId > Machine.id
+
+Ref: MachineChecklistItem.machineId > Machine.id
+
+Ref: MachineChecklistItem.completedById > User.id
+
+Ref: MachinePeriodicMaintenance.machineId > Machine.id
+
+Ref: MachinePeriodicMaintenance.completedById > User.id
+
+Ref: MachineHistory.machineId > Machine.id
+
+Ref: Transportation.createdById > User.id
+
+Ref: TransportationAssignment.userId > User.id
+
+Ref: TransportationAssignment.transportationId > Transportation.id
+
+Ref: TransportationChecklistItem.transportationId > Transportation.id
+
+Ref: TransportationChecklistItem.completedById > User.id
+
+Ref: TransportationPeriodicMaintenance.transportId > Transportation.id
+
+Ref: TransportationPeriodicMaintenance.completedById > User.id
+
+Ref: TransportAttachment.userId > User.id
+
+Ref: TransportAttachment.transportationId > Transportation.id
+
+Ref: TransportationHistory.transportationId > Transportation.id

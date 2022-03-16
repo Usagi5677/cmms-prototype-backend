@@ -1,0 +1,37 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""Date custom scalar type"""
+scalar Date
+
+type Mutation {
+  flushRedis: String!
+}
+
+type Query {
+  appUsers: [User!]!
+  redisGet(key: String!): String
+  redisKeys: [String!]!
+  sayHello: String!
+}
+
+"""All user roles."""
+enum Role {
+  Admin
+  Agent
+}
+
+type User {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  email: String!
+  fullName: String!
+  id: Int!
+  rcno: Int!
+  roles: [Role!]
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  userId: String!
+}

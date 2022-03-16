@@ -1,0 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+model User {
+  id                                           Int                                 @id @default(autoincrement())
+  createdAt                                    DateTime                            @default(now())
+  updatedAt                                    DateTime                            @updatedAt
+  userId                                       String                              @unique
+  rcno                                         Int
+  fullName                                     String
+  email                                        String
+  notifications                                Notification[]
+  roles                                        UserRole[]
+  machineCreated                               Machine[]
+  machineAssignments                           MachineAssignment[]
+  machineAttachments                           MachineAttachment[]
+  machineChecklistCompletions                  MachineChecklistItem[]
+  machinePeriodicMaintenanceCompletions        MachinePeriodicMaintenance[]
+  transportationCreated                        Transportation[]
+  transportationAssignments                    TransportationAssignment[]
+  transportAttachments                         TransportAttachment[]
+  transportationChecklistCompletions           TransportationChecklistItem[]
+  transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance[]
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  body      String?
+  link      String?
+  readAt    DateTime?
+}
+
+enum Permission {
+  AddMachine
+  EditMachine
+  DeleteMachine
+  AddTransportation
+  EditTransportation
+  DeleteTransportation
+}
+
+model Role {
+  id              Int              @id @default(autoincrement())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  name            String
+  userRoles       UserRole[]
+  permissionRoles PermissionRole[]
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  roleId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+}
+
+model PermissionRole {
+  id         Int        @id @default(autoincrement())
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  roleId     Int
+  permission Permission
+  role       Role       @relation(fields: [roleId], references: [id])
+
+  @@unique([roleId, permission])
+}
+
+model Machine {
+  id                              Int                          @id @default(autoincrement())
+  createdAt                       DateTime                     @default(now())
+  updatedAt                       DateTime                     @updatedAt
+  createdById                     Int
+  createdBy                       User                         @relation(fields: [createdById], references: [id])
+  machineNumber                   String
+  registeredDate                  DateTime?
+  model                           String
+  type                            String
+  zone                            String
+  location                        String
+  currentRunningHrs               Int?
+  lastServiceHrs                  Int?
+  interServiceHrs                 Int?
+  status                          MachineStatus                @default(Working)
+  statusChangedAt                 DateTime?
+  machineAssignments              MachineAssignment[]
+  machineChecklistItems           MachineChecklistItem[]
+  machinePeriodicMaintenancePlans MachinePeriodicMaintenance[]
+  machineHistories                MachineHistory[]
+  machineAttachments              MachineAttachment[]
+}
+
+enum MachineStatus {
+  Working
+  Breakdown
+}
+
+model MachineAssignment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  machineId Int
+  machine   Machine  @relation(fields: [machineId], references: [id])
+
+  @@unique([userId, machineId])
+}
+
+model MachineAttachment {
+  id                 Int      @id @default(autoincrement())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  userId             Int
+  user               User     @relation(fields: [userId], references: [id])
+  machineId          Int
+  machine            Machine  @relation(fields: [machineId], references: [id])
+  description        String
+  mimeType           String?
+  originalName       String?
+  sharepointFileName String?
+}
+
+model MachineChecklistItem {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  machineId     Int
+  machine       Machine   @relation(fields: [machineId], references: [id])
+  description   String
+  completedById Int?
+  completedBy   User?     @relation(fields: [completedById], references: [id])
+  completedAt   DateTime?
+  type          String    @default("Daily")
+}
+
+model MachinePeriodicMaintenance {
+  id                   Int       @id @default(autoincrement())
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  machineId            Int
+  machine              Machine   @relation(fields: [machineId], references: [id])
+  description          String
+  period               DateTime?
+  notificationReminder DateTime?
+  completedById        Int?
+  completedBy          User?     @relation(fields: [completedById], references: [id])
+  completedAt          DateTime?
+  type                 String
+}
+
+model MachineHistory {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  machineId   Int
+  machine     Machine  @relation(fields: [machineId], references: [id])
+  type        String
+  description String
+}
+
+model Transportation {
+  id                                Int                                 @id @default(autoincrement())
+  createdAt                         DateTime                            @default(now())
+  updatedAt                         DateTime                            @updatedAt
+  createdById                       Int
+  createdBy                         User                                @relation(fields: [createdById], references: [id])
+  machineNumber                     String
+  registeredDate                    DateTime?
+  model                             String?
+  type                              String?
+  location                          String
+  status                            TransportationStatus                @default(Working)
+  statusChangedAt                   DateTime?
+  department                        String?
+  engine                            String?
+  currentMileage                    Int?
+  lastServiceMileage                Int?
+  interServiceMileage               Int?
+  transportAssignments              TransportationAssignment[]
+  transportationChecklistItems      TransportationChecklistItem[]
+  transportPeriodicMaintenancePlans TransportationPeriodicMaintenance[]
+  TransportAttachments              TransportAttachment[]
+  TransportationHistories           TransportationHistory[]
+}
+
+enum TransportationStatus {
+  Working
+  Breakdown
+}
+
+model TransportationAssignment {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  userId           Int
+  user             User           @relation(fields: [userId], references: [id])
+  transportationId Int
+  transportation   Transportation @relation(fields: [transportationId], references: [id])
+
+  @@unique([userId, transportationId])
+}
+
+model TransportationChecklistItem {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  transportationId Int
+  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  description      String
+  completedById    Int?
+  completedBy      User?          @relation(fields: [completedById], references: [id])
+  completedAt      DateTime?
+  type             String         @default("Daily")
+}
+
+model TransportationPeriodicMaintenance {
+  id                   Int            @id @default(autoincrement())
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  transportId          Int
+  transport            Transportation @relation(fields: [transportId], references: [id])
+  description          String
+  period               DateTime?
+  notificationReminder DateTime?
+  completedById        Int?
+  completedBy          User?          @relation(fields: [completedById], references: [id])
+  completedAt          DateTime?
+  type                 String
+}
+
+model TransportAttachment {
+  id                 Int            @id @default(autoincrement())
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  userId             Int
+  user               User           @relation(fields: [userId], references: [id])
+  transportationId   Int
+  transportation     Transportation @relation(fields: [transportationId], references: [id])
+  description        String
+  mimeType           String?
+  originalName       String?
+  sharepointFileName String?
+}
+
+model TransportationHistory {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  transportationId Int
+  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  type             String
+  description      String
+}
