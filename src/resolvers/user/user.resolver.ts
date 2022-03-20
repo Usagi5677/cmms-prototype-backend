@@ -25,8 +25,11 @@ import { UserWithRoles } from 'src/models/user-with-roles.model';
 import { Role } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 import { RoleEnum } from 'src/common/enums/roles';
+import { Permissions } from 'src/decorators/permissions.decorator';
+import { PermissionsGuard } from 'src/guards/permissions.guard';
 
 @Resolver(() => User)
+@UseGuards(PermissionsGuard)
 export class UserResolver {
   constructor(
     private prisma: PrismaService,
@@ -35,6 +38,7 @@ export class UserResolver {
     private redisCacheService: RedisCacheService
   ) {}
 
+  @Permissions('AddMachine')
   @Query(() => String)
   sayHello(): string {
     return 'Hello World!';

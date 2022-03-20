@@ -5,7 +5,7 @@ import { GqlAuthGuard } from './guards/gql-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 
-@UseGuards(GqlAuthGuard, RolesGuard)
+//@UseGuards(GqlAuthGuard, RolesGuard)
 @Resolver()
 export class RedisCacheResolver {
   constructor(private readonly redisCacheService: RedisCacheService) {}
@@ -25,7 +25,7 @@ export class RedisCacheResolver {
     return JSON.stringify(value);
   }
 
-  @Roles('Admin')
+  //@Roles('Admin')
   @Mutation(() => String, { name: 'flushRedis' })
   async flushRedis(): Promise<String> {
     await this.redisCacheService.deleteAll();
