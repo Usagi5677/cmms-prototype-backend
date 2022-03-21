@@ -2,15 +2,107 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type ChecklistItem {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 """Date custom scalar type"""
 scalar Date
 
+type Machine {
+  assignees: [User!]!
+  checklistItems: [ChecklistItem!]!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  currentRunningHrs: Int!
+  histories: [MachineHistory!]!
+  id: Int!
+  interServiceHrs: Int!
+  lastServiceHrs: Int!
+  location: String!
+  machineNumber: String!
+  model: String!
+  periodicMaintenancePlans: [PeriodicMaintenance!]!
+  registeredDate: Date
+  status: MachineStatus!
+  statusChangedAt: Date
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  zone: String!
+}
+
+type MachineHistory {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+"""Machine statuses."""
+enum MachineStatus {
+  Breakdown
+  Working
+}
+
 type Mutation {
+  createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
+  editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
   flushRedis: String!
+  readAllNotifications: Boolean!
+  readNotification(notificationId: Int!): String!
+  removeMachine(machineId: Int!): String!
+}
+
+type Notification {
+  body: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  link: String
+  readAt: Date
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User!
+  userId: Int!
+}
+
+type PeriodicMaintenance {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  notificationReminder: Date
+  period: Date
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
 }
 
 type Query {
   appUsers: [User!]!
+  notifications: [Notification!]!
   redisGet(key: String!): String
   redisKeys: [String!]!
   sayHello: String!
@@ -20,6 +112,10 @@ type Query {
 enum Role {
   Admin
   Agent
+}
+
+type Subscription {
+  notificationCreated: Notification!
 }
 
 type User {

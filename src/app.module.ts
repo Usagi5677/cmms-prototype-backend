@@ -14,6 +14,7 @@ import { BullModule } from '@nestjs/bull';
 import jwtDecode from 'jwt-decode';
 import { PubsubModule } from './resolvers/pubsub/pubsub.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MachineModule } from './resolvers/machine/machine.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PubsubModule,
     AuthModule,
     UserModule,
+    MachineModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
