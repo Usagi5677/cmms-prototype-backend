@@ -89,4 +89,12 @@ export class MachineResolver {
     );
     return `Machine updated.`;
   }
+
+  @Query(() => PaginatedMachine)
+  async getAllMachine(
+    @UserEntity() user: User,
+    @Args() args: MachineConnectionArgs
+  ): Promise<PaginatedMachine> {
+    return await this.machineService.getMachineWithPagination(user, args);
+  }
 }

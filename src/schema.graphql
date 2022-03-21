@@ -44,6 +44,11 @@ type Machine {
   zone: String!
 }
 
+type MachineEdge {
+  cursor: String
+  node: Machine
+}
+
 type MachineHistory {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -53,6 +58,14 @@ type MachineHistory {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type MachinePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 """Machine statuses."""
@@ -85,6 +98,11 @@ type Notification {
   userId: Int!
 }
 
+type PaginatedMachine {
+  edges: [MachineEdge!]
+  pageInfo: MachinePageInfo
+}
+
 type PeriodicMaintenance {
   completedAt: Date
   completedBy: User
@@ -102,6 +120,21 @@ type PeriodicMaintenance {
 
 type Query {
   appUsers: [User!]!
+  getAllMachine(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedMachine!
   notifications: [Notification!]!
   redisGet(key: String!): String
   redisKeys: [String!]!
