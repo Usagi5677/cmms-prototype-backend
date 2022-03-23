@@ -17,11 +17,17 @@ Table User {
   machineAttachments MachineAttachment [not null]
   machineChecklistCompletions MachineChecklistItem [not null]
   machinePeriodicMaintenanceCompletions MachinePeriodicMaintenance [not null]
+  MachineRepairs MachineRepair [not null]
+  MachineBreakdowns MachineBreakdown [not null]
+  MachineSparePRs MachineSparePR [not null]
   transportationCreated Transportation [not null]
   transportationAssignments TransportationAssignment [not null]
   transportAttachments TransportAttachment [not null]
   transportationChecklistCompletions TransportationChecklistItem [not null]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance [not null]
+  TransportationRepairs TransportationRepair [not null]
+  TransportationBreakdowns TransportationBreakdown [not null]
+  TransportationSparePRs TransportationSparePR [not null]
 }
 
 Table Notification {
@@ -92,6 +98,9 @@ Table Machine {
   machinePeriodicMaintenancePlans MachinePeriodicMaintenance [not null]
   machineHistories MachineHistory [not null]
   machineAttachments MachineAttachment [not null]
+  MachineRepairs MachineRepair [not null]
+  MachineBreakdowns MachineBreakdown [not null]
+  MachineSparePRs MachineSparePR [not null]
 }
 
 Table MachineAssignment {
@@ -160,6 +169,49 @@ Table MachineHistory {
   description String [not null]
 }
 
+Table MachineRepair {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status RepairStatus [not null, default: 'Pending']
+}
+
+Table MachineBreakdown {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status BreakdownStatus [not null, default: 'Pending']
+}
+
+Table MachineSparePR {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int [not null]
+  machine Machine [not null]
+  requestedDate DateTime [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status SparePRStatus [not null, default: 'Pending']
+}
+
 Table Transportation {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
@@ -183,6 +235,9 @@ Table Transportation {
   transportPeriodicMaintenancePlans TransportationPeriodicMaintenance [not null]
   TransportAttachments TransportAttachment [not null]
   TransportationHistories TransportationHistory [not null]
+  TransportationRepairs TransportationRepair [not null]
+  TransportationBreakdowns TransportationBreakdown [not null]
+  TransportationSparePRs TransportationSparePR [not null]
 }
 
 Table TransportationAssignment {
@@ -251,6 +306,49 @@ Table TransportationHistory {
   description String [not null]
 }
 
+Table TransportationRepair {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status RepairStatus [not null, default: 'Pending']
+}
+
+Table TransportationBreakdown {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status BreakdownStatus [not null, default: 'Pending']
+}
+
+Table TransportationSparePR {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
+  requestedDate DateTime [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status SparePRStatus [not null, default: 'Pending']
+}
+
 Enum Permission {
   AddMachine
   EditMachine
@@ -263,6 +361,21 @@ Enum Permission {
 Enum MachineStatus {
   Working
   Breakdown
+}
+
+Enum SparePRStatus {
+  Done
+  Pending
+}
+
+Enum RepairStatus {
+  Done
+  Pending
+}
+
+Enum BreakdownStatus {
+  Done
+  Pending
 }
 
 Enum TransportationStatus {
@@ -298,6 +411,18 @@ Ref: MachinePeriodicMaintenance.completedById > User.id
 
 Ref: MachineHistory.machineId > Machine.id
 
+Ref: MachineRepair.machineId > Machine.id
+
+Ref: MachineRepair.completedById > User.id
+
+Ref: MachineBreakdown.machineId > Machine.id
+
+Ref: MachineBreakdown.completedById > User.id
+
+Ref: MachineSparePR.machineId > Machine.id
+
+Ref: MachineSparePR.completedById > User.id
+
 Ref: Transportation.createdById > User.id
 
 Ref: TransportationAssignment.userId > User.id
@@ -317,3 +442,15 @@ Ref: TransportAttachment.userId > User.id
 Ref: TransportAttachment.transportationId > Transportation.id
 
 Ref: TransportationHistory.transportationId > Transportation.id
+
+Ref: TransportationRepair.transportationId > Transportation.id
+
+Ref: TransportationRepair.completedById > User.id
+
+Ref: TransportationBreakdown.transportationId > Transportation.id
+
+Ref: TransportationBreakdown.completedById > User.id
+
+Ref: TransportationSparePR.transportationId > Transportation.id
+
+Ref: TransportationSparePR.completedById > User.id

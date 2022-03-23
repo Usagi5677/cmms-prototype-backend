@@ -29,11 +29,17 @@ model User {
   machineAttachments                           MachineAttachment[]
   machineChecklistCompletions                  MachineChecklistItem[]
   machinePeriodicMaintenanceCompletions        MachinePeriodicMaintenance[]
+  MachineRepairs                               MachineRepair[]
+  MachineBreakdowns                            MachineBreakdown[]
+  MachineSparePRs                              MachineSparePR[]
   transportationCreated                        Transportation[]
   transportationAssignments                    TransportationAssignment[]
   transportAttachments                         TransportAttachment[]
   transportationChecklistCompletions           TransportationChecklistItem[]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance[]
+  TransportationRepairs                         TransportationRepair[]
+  TransportationBreakdowns                     TransportationBreakdown[]
+  TransportationSparePRs                        TransportationSparePR[]
 }
 
 model Notification {
@@ -109,11 +115,29 @@ model Machine {
   machinePeriodicMaintenancePlans MachinePeriodicMaintenance[]
   machineHistories                MachineHistory[]
   machineAttachments              MachineAttachment[]
+  MachineRepairs                  MachineRepair[]
+  MachineBreakdowns               MachineBreakdown[]
+  MachineSparePRs                 MachineSparePR[]
 }
 
 enum MachineStatus {
   Working
   Breakdown
+}
+
+enum SparePRStatus {
+  Done
+  Pending
+}
+
+enum RepairStatus {
+  Done
+  Pending
+}
+
+enum BreakdownStatus {
+  Done
+  Pending
 }
 
 model MachineAssignment {
@@ -180,6 +204,49 @@ model MachineHistory {
   description String
 }
 
+model MachineRepair {
+  id            Int          @id @default(autoincrement())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  machineId     Int
+  machine       Machine      @relation(fields: [machineId], references: [id])
+  title         String
+  description   String
+  completedById Int?
+  completedBy   User?        @relation(fields: [completedById], references: [id])
+  completedAt   DateTime?
+  status        RepairStatus @default(Pending)
+}
+
+model MachineBreakdown {
+  id            Int             @id @default(autoincrement())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  machineId     Int
+  machine       Machine         @relation(fields: [machineId], references: [id])
+  title         String
+  description   String
+  completedById Int?
+  completedBy   User?           @relation(fields: [completedById], references: [id])
+  completedAt   DateTime?
+  status        BreakdownStatus @default(Pending)
+}
+
+model MachineSparePR {
+  id            Int           @id @default(autoincrement())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  machineId     Int
+  machine       Machine       @relation(fields: [machineId], references: [id])
+  requestedDate DateTime
+  title         String
+  description   String
+  completedById Int?
+  completedBy   User?         @relation(fields: [completedById], references: [id])
+  completedAt   DateTime?
+  status        SparePRStatus @default(Pending)
+}
+
 model Transportation {
   id                                Int                                 @id @default(autoincrement())
   createdAt                         DateTime                            @default(now())
@@ -203,6 +270,9 @@ model Transportation {
   transportPeriodicMaintenancePlans TransportationPeriodicMaintenance[]
   TransportAttachments              TransportAttachment[]
   TransportationHistories           TransportationHistory[]
+  TransportationRepairs             TransportationRepair[]
+  TransportationBreakdowns          TransportationBreakdown[]
+  TransportationSparePRs             TransportationSparePR[]
 }
 
 enum TransportationStatus {
@@ -272,4 +342,47 @@ model TransportationHistory {
   transportation   Transportation @relation(fields: [transportationId], references: [id])
   type             String
   description      String
+}
+
+model TransportationRepair {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  transportationId Int
+  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  title            String
+  description      String
+  completedById    Int?
+  completedBy      User?          @relation(fields: [completedById], references: [id])
+  completedAt      DateTime?
+  status           RepairStatus   @default(Pending)
+}
+
+model TransportationBreakdown {
+  id               Int             @id @default(autoincrement())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  transportationId Int
+  transportation   Transportation  @relation(fields: [transportationId], references: [id])
+  title            String
+  description      String
+  completedById    Int?
+  completedBy      User?           @relation(fields: [completedById], references: [id])
+  completedAt      DateTime?
+  status           BreakdownStatus @default(Pending)
+}
+
+model TransportationSparePR {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  transportationId Int
+  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  requestedDate    DateTime
+  title            String
+  description      String
+  completedById    Int?
+  completedBy      User?          @relation(fields: [completedById], references: [id])
+  completedAt      DateTime?
+  status           SparePRStatus  @default(Pending)
 }
