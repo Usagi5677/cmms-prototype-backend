@@ -37,9 +37,9 @@ model User {
   transportAttachments                         TransportAttachment[]
   transportationChecklistCompletions           TransportationChecklistItem[]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance[]
-  TransportationRepairs                         TransportationRepair[]
+  TransportationRepairs                        TransportationRepair[]
   TransportationBreakdowns                     TransportationBreakdown[]
-  TransportationSparePRs                        TransportationSparePR[]
+  TransportationSparePRs                       TransportationSparePR[]
 }
 
 model Notification {
@@ -265,6 +265,7 @@ model Transportation {
   currentMileage                    Int?
   lastServiceMileage                Int?
   interServiceMileage               Int?
+  measurement                       String?                             @default("km")
   transportAssignments              TransportationAssignment[]
   transportationChecklistItems      TransportationChecklistItem[]
   transportPeriodicMaintenancePlans TransportationPeriodicMaintenance[]
@@ -272,7 +273,7 @@ model Transportation {
   TransportationHistories           TransportationHistory[]
   TransportationRepairs             TransportationRepair[]
   TransportationBreakdowns          TransportationBreakdown[]
-  TransportationSparePRs             TransportationSparePR[]
+  TransportationSparePRs            TransportationSparePR[]
 }
 
 enum TransportationStatus {

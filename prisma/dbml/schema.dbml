@@ -230,6 +230,7 @@ Table Transportation {
   currentMileage Int
   lastServiceMileage Int
   interServiceMileage Int
+  measurement String [default: 'km']
   transportAssignments TransportationAssignment [not null]
   transportationChecklistItems TransportationChecklistItem [not null]
   transportPeriodicMaintenancePlans TransportationPeriodicMaintenance [not null]

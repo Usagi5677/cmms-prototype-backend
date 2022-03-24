@@ -18,11 +18,11 @@ import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import emailTemplate from 'src/common/helpers/emailTemplate';
 import { ConfigService } from '@nestjs/config';
-import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
-import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
+import { PaginatedTransportation } from 'src/models/pagination/transportation-connection.model';
+import { TransportationConnectionArgs } from 'src/models/args/transportation-connection.args';
 
 @Injectable()
-export class MachineService {
+export class TransportationService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
@@ -32,28 +32,32 @@ export class MachineService {
     private configService: ConfigService
   ) {}
 
-  //** Create machine. */
-  async createMachine(
+  //** Create transportation. */
+  async createTransportation(
     user: User,
     machineNumber: string,
     model: string,
     type: string,
-    zone: string,
     location: string,
-    currentRunningHrs: number,
-    lastServiceHrs: number
+    department: string,
+    engine: string,
+    measurement: string,
+    currentMileage: number,
+    lastServiceMileage: number
   ) {
     try {
-      await this.prisma.machine.create({
+      await this.prisma.transportation.create({
         data: {
           createdById: 1,
           machineNumber,
           model,
           type,
-          zone,
           location,
-          currentRunningHrs,
-          lastServiceHrs,
+          department,
+          engine,
+          measurement,
+          currentMileage,
+          lastServiceMileage,
         },
       });
     } catch (e) {
@@ -62,10 +66,10 @@ export class MachineService {
     }
   }
 
-  //** Delete machine. */
-  async deleteMachine(id: number) {
+  //** Delete transportation. */
+  async deleteTransportation(id: number) {
     try {
-      await this.prisma.machine.delete({
+      await this.prisma.transportation.delete({
         where: { id },
       });
     } catch (e) {
@@ -74,27 +78,31 @@ export class MachineService {
     }
   }
 
-  //** Edit machine */
-  async editMachine(
+  //** Edit Transportation */
+  async editTransportation(
     id: number,
     machineNumber: string,
     model: string,
     type: string,
-    zone: string,
     location: string,
-    currentRunningHrs: number,
-    lastServiceHrs: number
+    department: string,
+    engine: string,
+    measurement: string,
+    currentMileage: number,
+    lastServiceMileage: number
   ) {
     try {
-      await this.prisma.machine.update({
+      await this.prisma.transportation.update({
         data: {
           machineNumber,
           model,
           type,
-          zone,
           location,
-          currentRunningHrs,
-          lastServiceHrs,
+          department,
+          engine,
+          measurement,
+          currentMileage,
+          lastServiceMileage
         },
         where: { id },
       });
@@ -104,11 +112,11 @@ export class MachineService {
     }
   }
 
-  //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
-  async getMachineWithPagination(
+  //** Get transportation. Results are paginated. User cursor argument to go forward/backward. */
+  async getTransportationWithPagination(
     user: User,
-    args: MachineConnectionArgs
-  ): Promise<PaginatedMachine> {
+    args: TransportationConnectionArgs
+  ): Promise<PaginatedTransportation> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const { createdById, search } = args;
@@ -132,7 +140,7 @@ export class MachineService {
         OR: or,
       });
     }
-    const machine = await this.prisma.machine.findMany({
+    const transportation = await this.prisma.transportation.findMany({
       skip: offset,
       take: limitPlusOne,
       where,
@@ -141,9 +149,9 @@ export class MachineService {
       },
     });
 
-    const count = await this.prisma.machine.count({ where });
+    const count = await this.prisma.transportation.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
-      machine.slice(0, limit),
+      transportation.slice(0, limit),
       args,
       {
         arrayLength: count,

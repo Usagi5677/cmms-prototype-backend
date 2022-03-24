@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""Breakdown statuses."""
+enum BreakdownStatus {
+  Done
+  Pending
+}
+
 type ChecklistItem {
   completedAt: Date
   completedBy: User
@@ -20,6 +26,7 @@ scalar Date
 
 type Machine {
   assignees: [User!]!
+  breakdowns: [MachineBreakdown!]!
   checklistItems: [ChecklistItem!]!
 
   """Identifies the date and time when the object was created."""
@@ -35,6 +42,8 @@ type Machine {
   model: String!
   periodicMaintenancePlans: [PeriodicMaintenance!]!
   registeredDate: Date
+  repairs: [MachineRepair!]!
+  sparePRs: [MachineSparePR!]!
   status: MachineStatus!
   statusChangedAt: Date
   type: String!
@@ -42,6 +51,21 @@ type Machine {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   zone: String!
+}
+
+type MachineBreakdown {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  status: BreakdownStatus!
+  title: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
 }
 
 type MachineEdge {
@@ -68,6 +92,37 @@ type MachinePageInfo {
   startCursor: String
 }
 
+type MachineRepair {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  status: RepairStatus!
+  title: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type MachineSparePR {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  requestedDate: Date!
+  status: SparePRStatus!
+  title: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 """Machine statuses."""
 enum MachineStatus {
   Breakdown
@@ -76,11 +131,14 @@ enum MachineStatus {
 
 type Mutation {
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
+  createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
   editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
+  editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
   removeMachine(machineId: Int!): String!
+  removeTransportation(transportationId: Int!): String!
 }
 
 type Notification {
@@ -101,6 +159,11 @@ type Notification {
 type PaginatedMachine {
   edges: [MachineEdge!]
   pageInfo: MachinePageInfo
+}
+
+type PaginatedTransportation {
+  edges: [TransportationEdge!]
+  pageInfo: TransportationPageInfo
 }
 
 type PeriodicMaintenance {
@@ -135,10 +198,31 @@ type Query {
     last: Int
     search: String
   ): PaginatedMachine!
+  getAllTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedTransportation!
   notifications: [Notification!]!
   redisGet(key: String!): String
   redisKeys: [String!]!
   sayHello: String!
+}
+
+"""Repair statuses."""
+enum RepairStatus {
+  Done
+  Pending
 }
 
 """All user roles."""
@@ -147,8 +231,58 @@ enum Role {
   Agent
 }
 
+"""Spare pr statuses."""
+enum SparePRStatus {
+  Done
+  Pending
+}
+
 type Subscription {
   notificationCreated: Notification!
+}
+
+type Transportation {
+  assignees: [User!]!
+  breakdowns: [MachineBreakdown!]!
+  checklistItems: [ChecklistItem!]!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  currentMileage: Int!
+  department: String!
+  engine: String!
+  histories: [MachineHistory!]!
+  id: Int!
+  interServiceMileage: Int!
+  lastServicMileage: Int!
+  location: String!
+  machineNumber: String!
+  measurement: String
+  model: String!
+  periodicMaintenancePlans: [PeriodicMaintenance!]!
+  registeredDate: Date
+  repairs: [MachineRepair!]!
+  sparePRs: [MachineSparePR!]!
+  status: MachineStatus!
+  statusChangedAt: Date
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationEdge {
+  cursor: String
+  node: Transportation
+}
+
+type TransportationPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type User {
