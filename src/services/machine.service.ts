@@ -160,4 +160,67 @@ export class MachineService {
       },
     };
   }
+
+  //** Create machine checklist item. */
+  async createMachineChecklistItem(
+    user: User,
+    machineId: number,
+    description: string,
+    type: string
+  ) {
+    try {
+      await this.prisma.machineChecklistItem.create({
+        data: { machineId, description, type },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine checklist item. */
+  async editMachineChecklistItem(
+    user: User,
+    id: number,
+    description: string,
+    type: string
+  ) {
+    try {
+      await this.prisma.machineChecklistItem.update({
+        where: { id },
+        data: { description, type },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete machine checklist item. */
+  async deleteMachineChecklistItem(user: User, id: number) {
+    try {
+      await this.prisma.machineChecklistItem.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set checklist item as complete or incomplete. */
+  async toggleMachineChecklistItem(user: User, id: number, complete: boolean) {
+    //no user context yet
+    try {
+      await this.prisma.machineChecklistItem.update({
+        where: { id },
+        data: complete
+          ? { completedById: 1, completedAt: new Date() }
+          : { completedById: null, completedAt: null },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

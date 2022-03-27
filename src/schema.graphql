@@ -130,15 +130,19 @@ enum MachineStatus {
 }
 
 type Mutation {
+  addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
+  deleteMachineChecklistItem(id: Int!): String!
   editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
+  editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
   removeMachine(machineId: Int!): String!
   removeTransportation(transportationId: Int!): String!
+  toggleMachineChecklistItem(complete: Boolean!, id: Int!): String!
 }
 
 type Notification {

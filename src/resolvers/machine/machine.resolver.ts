@@ -97,4 +97,55 @@ export class MachineResolver {
   ): Promise<PaginatedMachine> {
     return await this.machineService.getMachineWithPagination(user, args);
   }
+
+  @Mutation(() => String)
+  async addMachineChecklistItem(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('description') description: string,
+    @Args('type') type: string
+  ): Promise<String> {
+    await this.machineService.createMachineChecklistItem(
+      user,
+      machineId,
+      description,
+      type
+    );
+    return `Added checklist item to machine.`;
+  }
+
+  @Mutation(() => String)
+  async editMachineChecklistItem(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('description') description: string,
+    @Args('type') type: string
+  ): Promise<String> {
+    await this.machineService.editMachineChecklistItem(
+      user,
+      id,
+      description,
+      type
+    );
+    return `Checklist item updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteMachineChecklistItem(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.machineService.deleteMachineChecklistItem(user, id);
+    return `Checklist item deleted.`;
+  }
+
+  @Mutation(() => String)
+  async toggleMachineChecklistItem(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<String> {
+    await this.machineService.toggleMachineChecklistItem(user, id, complete);
+    return `Checklist item updated.`;
+  }
 }
