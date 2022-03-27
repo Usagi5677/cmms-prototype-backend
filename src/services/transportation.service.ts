@@ -102,7 +102,7 @@ export class TransportationService {
           engine,
           measurement,
           currentMileage,
-          lastServiceMileage
+          lastServiceMileage,
         },
         where: { id },
       });
@@ -167,5 +167,72 @@ export class TransportationService {
         hasPreviousPage: offset >= limit,
       },
     };
+  }
+
+  //** Create transportation checklist item. */
+  async createTransportationChecklistItem(
+    user: User,
+    transportationId: number,
+    description: string,
+    type: string
+  ) {
+    try {
+      await this.prisma.transportationChecklistItem.create({
+        data: { transportationId, description, type },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit transportation checklist item. */
+  async editTransportationChecklistItem(
+    user: User,
+    id: number,
+    description: string,
+    type: string
+  ) {
+    try {
+      await this.prisma.transportationChecklistItem.update({
+        where: { id },
+        data: { description, type },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete transportation checklist item. */
+  async deleteTransportationChecklistItem(user: User, id: number) {
+    try {
+      await this.prisma.transportationChecklistItem.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set checklist item as complete or incomplete. */
+  async toggleTransportationChecklistItem(
+    user: User,
+    id: number,
+    complete: boolean
+  ) {
+    //no user context yet
+    try {
+      await this.prisma.transportationChecklistItem.update({
+        where: { id },
+        data: complete
+          ? { completedById: 1, completedAt: new Date() }
+          : { completedById: null, completedAt: null },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

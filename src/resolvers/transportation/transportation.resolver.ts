@@ -110,4 +110,62 @@ export class TransportationResolver {
       args
     );
   }
+
+  @Mutation(() => String)
+  async addTransportationChecklistItem(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('description') description: string,
+    @Args('type') type: string
+  ): Promise<String> {
+    await this.transportationService.createTransportationChecklistItem(
+      user,
+      transportationId,
+      description,
+      type
+    );
+    return `Added checklist item to transportation.`;
+  }
+
+  @Mutation(() => String)
+  async editTransportationChecklistItem(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('description') description: string,
+    @Args('type') type: string
+  ): Promise<String> {
+    await this.transportationService.editTransportationChecklistItem(
+      user,
+      id,
+      description,
+      type
+    );
+    return `Checklist item updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteTransportationChecklistItem(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.transportationService.deleteTransportationChecklistItem(
+      user,
+      id
+    );
+    return `Checklist item deleted.`;
+  }
+
+  @Mutation(() => String)
+  async toggleTransportationChecklistItem(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<String> {
+    await this.transportationService.toggleTransportationChecklistItem(
+      user,
+      id,
+      complete
+    );
+    return `Checklist item updated.`;
+  }
 }
