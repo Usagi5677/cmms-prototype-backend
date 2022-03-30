@@ -20,6 +20,7 @@ import emailTemplate from 'src/common/helpers/emailTemplate';
 import { ConfigService } from '@nestjs/config';
 import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
+import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 
 @Injectable()
 export class MachineService {
@@ -217,6 +218,66 @@ export class MachineService {
         data: complete
           ? { completedById: 1, completedAt: new Date() }
           : { completedById: null, completedAt: null },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create machine periodic maintenance. */
+  async createMachinePeriodicMaintenance(
+    user: User,
+    machineId: number,
+    title: string,
+    description: string,
+    period: Date,
+    notificationReminder: Date
+  ) {
+    try {
+      await this.prisma.machinePeriodicMaintenance.create({
+        data: {
+          machineId,
+          title,
+          description,
+          period,
+          notificationReminder,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine periodic maintenance. */
+  async editMachinePeriodicMaintenance(
+    user: User,
+    id: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machinePeriodicMaintenance.update({
+        where: { id },
+        data: { title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set machine periodic maintenance status. */
+  async setMachinePeriodicMaintenanceStatus(
+    user: User,
+    id: number,
+    status: PeriodicMaintenanceStatus
+  ) {
+    try {
+      await this.prisma.machinePeriodicMaintenance.update({
+        where: { id },
+        data: { status },
       });
     } catch (e) {
       console.log(e);

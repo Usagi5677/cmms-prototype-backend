@@ -140,6 +140,12 @@ enum BreakdownStatus {
   Pending
 }
 
+enum PeriodicMaintenanceStatus {
+  Done
+  Pending
+  Missed
+}
+
 model MachineAssignment {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
@@ -180,18 +186,19 @@ model MachineChecklistItem {
 }
 
 model MachinePeriodicMaintenance {
-  id                   Int       @id @default(autoincrement())
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                   Int                       @id @default(autoincrement())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
   machineId            Int
-  machine              Machine   @relation(fields: [machineId], references: [id])
+  machine              Machine                   @relation(fields: [machineId], references: [id])
+  title                String
   description          String
   period               DateTime?
   notificationReminder DateTime?
   completedById        Int?
-  completedBy          User?     @relation(fields: [completedById], references: [id])
+  completedBy          User?                     @relation(fields: [completedById], references: [id])
   completedAt          DateTime?
-  type                 String
+  status               PeriodicMaintenanceStatus @default(Pending)
 }
 
 model MachineHistory {
@@ -307,18 +314,19 @@ model TransportationChecklistItem {
 }
 
 model TransportationPeriodicMaintenance {
-  id                   Int            @id @default(autoincrement())
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                   Int                       @id @default(autoincrement())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
   transportId          Int
-  transport            Transportation @relation(fields: [transportId], references: [id])
+  transport            Transportation            @relation(fields: [transportId], references: [id])
+  title                String
   description          String
   period               DateTime?
   notificationReminder DateTime?
   completedById        Int?
-  completedBy          User?          @relation(fields: [completedById], references: [id])
+  completedBy          User?                     @relation(fields: [completedById], references: [id])
   completedAt          DateTime?
-  type                 String
+  status               PeriodicMaintenanceStatus @default(Pending)
 }
 
 model TransportAttachment {

@@ -150,13 +150,14 @@ Table MachinePeriodicMaintenance {
   updatedAt DateTime [not null]
   machineId Int [not null]
   machine Machine [not null]
+  title String [not null]
   description String [not null]
   period DateTime
   notificationReminder DateTime
   completedById Int
   completedBy User
   completedAt DateTime
-  type String [not null]
+  status PeriodicMaintenanceStatus [not null, default: 'Pending']
 }
 
 Table MachineHistory {
@@ -274,13 +275,14 @@ Table TransportationPeriodicMaintenance {
   updatedAt DateTime [not null]
   transportId Int [not null]
   transport Transportation [not null]
+  title String [not null]
   description String [not null]
   period DateTime
   notificationReminder DateTime
   completedById Int
   completedBy User
   completedAt DateTime
-  type String [not null]
+  status PeriodicMaintenanceStatus [not null, default: 'Pending']
 }
 
 Table TransportAttachment {
@@ -377,6 +379,12 @@ Enum RepairStatus {
 Enum BreakdownStatus {
   Done
   Pending
+}
+
+Enum PeriodicMaintenanceStatus {
+  Done
+  Pending
+  Missed
 }
 
 Enum TransportationStatus {

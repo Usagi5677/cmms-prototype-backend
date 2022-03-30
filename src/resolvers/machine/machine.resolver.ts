@@ -22,6 +22,7 @@ import { Machine } from 'src/models/machine.model';
 import { MachineService } from 'src/services/machine.service';
 import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
+import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -147,5 +148,56 @@ export class MachineResolver {
   ): Promise<String> {
     await this.machineService.toggleMachineChecklistItem(user, id, complete);
     return `Checklist item updated.`;
+  }
+
+  @Mutation(() => String)
+  async addMachinePeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('title') title: string,
+    @Args('description') description: string,
+    @Args('period') period: Date,
+    @Args('notificationReminder') notificationReminder: Date
+  ): Promise<String> {
+    await this.machineService.createMachinePeriodicMaintenance(
+      user,
+      machineId,
+      title,
+      description,
+      period,
+      notificationReminder
+    );
+    return `Added periodic maintenance to machine.`;
+  }
+
+  @Mutation(() => String)
+  async setMachinePeriodicMaintenanceStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => PeriodicMaintenanceStatus })
+    status: PeriodicMaintenanceStatus
+  ): Promise<String> {
+    await this.machineService.setMachinePeriodicMaintenanceStatus(
+      user,
+      id,
+      status
+    );
+    return `Periodic maintenance status updated.`;
+  }
+
+  @Mutation(() => String)
+  async editMachinePeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.editMachinePeriodicMaintenance(
+      user,
+      id,
+      title,
+      description
+    );
+    return `Periodic maintenance updated.`;
   }
 }
