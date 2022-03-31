@@ -171,6 +171,31 @@ export class MachineResolver {
   }
 
   @Mutation(() => String)
+  async editMachinePeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.editMachinePeriodicMaintenance(
+      user,
+      id,
+      title,
+      description
+    );
+    return `Periodic maintenance updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteMachinePeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.machineService.deleteMachinePeriodicMaintenance(user, id);
+    return `Periodic maintenance deleted.`;
+  }
+
+  @Mutation(() => String)
   async setMachinePeriodicMaintenanceStatus(
     @UserEntity() user: User,
     @Args('id') id: number,
@@ -186,18 +211,30 @@ export class MachineResolver {
   }
 
   @Mutation(() => String)
-  async editMachinePeriodicMaintenance(
+  async setMachinePeriodicMaintenancePeriod(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('title') title: string,
-    @Args('description') description: string
+    @Args('period') period: Date
   ): Promise<String> {
-    await this.machineService.editMachinePeriodicMaintenance(
+    await this.machineService.setMachinePeriodicMaintenancePeriod(
       user,
       id,
-      title,
-      description
+      period
     );
-    return `Periodic maintenance updated.`;
+    return `Periodic maintenance period updated.`;
+  }
+
+  @Mutation(() => String)
+  async setMachinePeriodicMaintenanceNotificationReminder(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('notificationReminder') notificationReminder: Date
+  ): Promise<String> {
+    await this.machineService.setMachinePeriodicMaintenanceNotificationReminder(
+      user,
+      id,
+      notificationReminder
+    );
+    return `Periodic maintenance notification reminder updated.`;
   }
 }

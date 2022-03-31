@@ -20,6 +20,7 @@ import emailTemplate from 'src/common/helpers/emailTemplate';
 import { ConfigService } from '@nestjs/config';
 import { PaginatedTransportation } from 'src/models/pagination/transportation-connection.model';
 import { TransportationConnectionArgs } from 'src/models/args/transportation-connection.args';
+import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 
 @Injectable()
 export class TransportationService {
@@ -229,6 +230,113 @@ export class TransportationService {
         data: complete
           ? { completedById: 1, completedAt: new Date() }
           : { completedById: null, completedAt: null },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create transport periodic maintenance. */
+  async createTransportationPeriodicMaintenance(
+    user: User,
+    transportId: number,
+    title: string,
+    description: string,
+    period: Date,
+    notificationReminder: Date
+  ) {
+    try {
+      await this.prisma.transportationPeriodicMaintenance.create({
+        data: {
+          transportId,
+          title,
+          description,
+          period,
+          notificationReminder,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit transport periodic maintenance. */
+  async editTransportationPeriodicMaintenance(
+    user: User,
+    id: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationPeriodicMaintenance.update({
+        where: { id },
+        data: { title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete transport periodic maintenance. */
+  async deleteTransportationPeriodicMaintenance(user: User, id: number) {
+    try {
+      await this.prisma.transportationPeriodicMaintenance.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transport periodic maintenance status. */
+  async setTransportationPeriodicMaintenanceStatus(
+    user: User,
+    id: number,
+    status: PeriodicMaintenanceStatus
+  ) {
+    try {
+      //put condition for status done later
+      await this.prisma.transportationPeriodicMaintenance.update({
+        where: { id },
+        data: { status },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transport periodic maintenance period. */
+  async setTransportationPeriodicMaintenancePeriod(
+    user: User,
+    id: number,
+    period: Date
+  ) {
+    try {
+      await this.prisma.transportationPeriodicMaintenance.update({
+        where: { id },
+        data: { period },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transport periodic maintenance period. */
+  async setTransportationPeriodicMaintenanceNotificationReminder(
+    user: User,
+    id: number,
+    notificationReminder: Date
+  ) {
+    try {
+      await this.prisma.transportationPeriodicMaintenance.update({
+        where: { id },
+        data: { notificationReminder },
       });
     } catch (e) {
       console.log(e);

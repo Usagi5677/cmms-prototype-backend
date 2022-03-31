@@ -268,6 +268,18 @@ export class MachineService {
     }
   }
 
+  //** Delete machine periodic maintenance. */
+  async deleteMachinePeriodicMaintenance(user: User, id: number) {
+    try {
+      await this.prisma.machinePeriodicMaintenance.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
   //** Set machine periodic maintenance status. */
   async setMachinePeriodicMaintenanceStatus(
     user: User,
@@ -275,9 +287,44 @@ export class MachineService {
     status: PeriodicMaintenanceStatus
   ) {
     try {
+      //put condition for status done later
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: { status },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set machine periodic maintenance period. */
+  async setMachinePeriodicMaintenancePeriod(
+    user: User,
+    id: number,
+    period: Date,
+  ) {
+    try {
+      await this.prisma.machinePeriodicMaintenance.update({
+        where: { id },
+        data: { period },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set machine periodic maintenance period. */
+  async setMachinePeriodicMaintenanceNotificationReminder(
+    user: User,
+    id: number,
+    notificationReminder: Date,
+  ) {
+    try {
+      await this.prisma.machinePeriodicMaintenance.update({
+        where: { id },
+        data: { notificationReminder },
       });
     } catch (e) {
       console.log(e);
