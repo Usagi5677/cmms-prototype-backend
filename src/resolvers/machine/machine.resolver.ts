@@ -23,6 +23,7 @@ import { MachineService } from 'src/services/machine.service';
 import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
+import { RepairStatus } from 'src/common/enums/repairStatus';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -236,5 +237,57 @@ export class MachineResolver {
       notificationReminder
     );
     return `Periodic maintenance notification reminder updated.`;
+  }
+
+  @Mutation(() => String)
+  async addMachineRepair(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.createMachineRepair(
+      user,
+      machineId,
+      title,
+      description
+    );
+    return `Added repair to machine.`;
+  }
+
+  @Mutation(() => String)
+  async editMachineRepair(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.editMachinePeriodicMaintenance(
+      user,
+      id,
+      title,
+      description
+    );
+    return `Repair updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteMachineRepair(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.machineService.deleteMachineRepair(user, id);
+    return `Repair deleted.`;
+  }
+
+  @Mutation(() => String)
+  async setMachineRepairStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => RepairStatus })
+    status: RepairStatus
+  ): Promise<String> {
+    await this.machineService.setMachineRepairStatus(user, id, status);
+    return `Repair status updated.`;
   }
 }

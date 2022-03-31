@@ -23,6 +23,7 @@ import { TransportationService } from 'src/services/transportation.service';
 import { TransportationConnectionArgs } from 'src/models/args/transportation-connection.args';
 import { PaginatedTransportation } from 'src/models/pagination/transportation-connection.model';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
+import { RepairStatus } from 'src/common/enums/repairStatus';
 
 @Resolver(() => Transportation)
 export class TransportationResolver {
@@ -173,7 +174,7 @@ export class TransportationResolver {
   @Mutation(() => String)
   async addTransportationPeriodicMaintenance(
     @UserEntity() user: User,
-    @Args('transportId') transportId: number,
+    @Args('transportationId') transportationId: number,
     @Args('title') title: string,
     @Args('description') description: string,
     @Args('period') period: Date,
@@ -181,7 +182,7 @@ export class TransportationResolver {
   ): Promise<String> {
     await this.transportationService.createTransportationPeriodicMaintenance(
       user,
-      transportId,
+      transportationId,
       title,
       description,
       period,
@@ -259,5 +260,61 @@ export class TransportationResolver {
       notificationReminder
     );
     return `Periodic maintenance notification reminder updated.`;
+  }
+
+  @Mutation(() => String)
+  async addTransportationRepair(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.createTransportationRepair(
+      user,
+      transportationId,
+      title,
+      description
+    );
+    return `Added repair to transportation.`;
+  }
+
+  @Mutation(() => String)
+  async editTransportationRepair(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.editTransportationRepair(
+      user,
+      id,
+      title,
+      description
+    );
+    return `Repair updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteTransportationRepair(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.transportationService.deleteTransportationRepair(user, id);
+    return `Repair deleted.`;
+  }
+
+  @Mutation(() => String)
+  async setTransportationRepairStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => RepairStatus })
+    status: RepairStatus
+  ): Promise<String> {
+    await this.transportationService.setTransportationRepairStatus(
+      user,
+      id,
+      status
+    );
+    return `Repair status updated.`;
   }
 }

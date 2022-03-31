@@ -273,8 +273,8 @@ Table TransportationPeriodicMaintenance {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  transportId Int [not null]
-  transport Transportation [not null]
+  transportationId Int [not null]
+  transportation Transportation [not null]
   title String [not null]
   description String [not null]
   period DateTime
@@ -442,7 +442,7 @@ Ref: TransportationChecklistItem.transportationId > Transportation.id
 
 Ref: TransportationChecklistItem.completedById > User.id
 
-Ref: TransportationPeriodicMaintenance.transportId > Transportation.id
+Ref: TransportationPeriodicMaintenance.transportationId > Transportation.id
 
 Ref: TransportationPeriodicMaintenance.completedById > User.id
 

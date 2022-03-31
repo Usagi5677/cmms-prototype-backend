@@ -317,8 +317,8 @@ model TransportationPeriodicMaintenance {
   id                   Int                       @id @default(autoincrement())
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
-  transportId          Int
-  transport            Transportation            @relation(fields: [transportId], references: [id])
+  transportationId     Int
+  transportation       Transportation            @relation(fields: [transportationId], references: [id])
   title                String
   description          String
   period               DateTime?

@@ -132,20 +132,26 @@ enum MachineStatus {
 type Mutation {
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
   addMachinePeriodicMaintenance(description: String!, machineId: Int!, notificationReminder: Date!, period: Date!, title: String!): String!
+  addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addTransportationChecklistItem(description: String!, transportationId: Int!, type: String!): String!
-  addTransportationPeriodicMaintenance(description: String!, notificationReminder: Date!, period: Date!, title: String!, transportId: Int!): String!
+  addTransportationPeriodicMaintenance(description: String!, notificationReminder: Date!, period: Date!, title: String!, transportationId: Int!): String!
+  addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
   deleteMachineChecklistItem(id: Int!): String!
   deleteMachinePeriodicMaintenance(id: Int!): String!
+  deleteMachineRepair(id: Int!): String!
   deleteTransportationChecklistItem(id: Int!): String!
   deleteTransportationPeriodicMaintenance(id: Int!): String!
+  deleteTransportationRepair(id: Int!): String!
   editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
   editMachinePeriodicMaintenance(description: String!, id: Int!, title: String!): String!
+  editMachineRepair(description: String!, id: Int!, title: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
   editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
   editTransportationPeriodicMaintenance(description: String!, id: Int!, title: String!): String!
+  editTransportationRepair(description: String!, id: Int!, title: String!): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
@@ -154,9 +160,11 @@ type Mutation {
   setMachinePeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Date!): String!
   setMachinePeriodicMaintenancePeriod(id: Int!, period: Date!): String!
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
+  setMachineRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationPeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Date!): String!
   setTransportationPeriodicMaintenancePeriod(id: Int!, period: Date!): String!
   setTransportationPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
+  setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   toggleMachineChecklistItem(complete: Boolean!, id: Int!): String!
   toggleTransportationChecklistItem(complete: Boolean!, id: Int!): String!
 }

@@ -21,6 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
+import { RepairStatus } from 'src/common/enums/repairStatus';
 
 @Injectable()
 export class MachineService {
@@ -302,7 +303,7 @@ export class MachineService {
   async setMachinePeriodicMaintenancePeriod(
     user: User,
     id: number,
-    period: Date,
+    period: Date
   ) {
     try {
       await this.prisma.machinePeriodicMaintenance.update({
@@ -319,12 +320,77 @@ export class MachineService {
   async setMachinePeriodicMaintenanceNotificationReminder(
     user: User,
     id: number,
-    notificationReminder: Date,
+    notificationReminder: Date
   ) {
     try {
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: { notificationReminder },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create machine repair. */
+  async createMachineRepair(
+    user: User,
+    machineId: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machineRepair.create({
+        data: {
+          machineId,
+          title,
+          description,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine repair. */
+  async editMachineRepair(
+    user: User,
+    id: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machineRepair.update({
+        where: { id },
+        data: { title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete machine repair. */
+  async deleteMachineRepair(user: User, id: number) {
+    try {
+      await this.prisma.machineRepair.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set machine repair status. */
+  async setMachineRepairStatus(user: User, id: number, status: RepairStatus) {
+    try {
+      //put condition for status done later
+      await this.prisma.machineRepair.update({
+        where: { id },
+        data: { status },
       });
     } catch (e) {
       console.log(e);

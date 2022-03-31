@@ -21,6 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import { PaginatedTransportation } from 'src/models/pagination/transportation-connection.model';
 import { TransportationConnectionArgs } from 'src/models/args/transportation-connection.args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
+import { RepairStatus } from 'src/common/enums/repairStatus';
 
 @Injectable()
 export class TransportationService {
@@ -240,7 +241,7 @@ export class TransportationService {
   //** Create transport periodic maintenance. */
   async createTransportationPeriodicMaintenance(
     user: User,
-    transportId: number,
+    transportationId: number,
     title: string,
     description: string,
     period: Date,
@@ -249,7 +250,7 @@ export class TransportationService {
     try {
       await this.prisma.transportationPeriodicMaintenance.create({
         data: {
-          transportId,
+          transportationId,
           title,
           description,
           period,
@@ -337,6 +338,75 @@ export class TransportationService {
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
         data: { notificationReminder },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create transportation repair. */
+  async createTransportationRepair(
+    user: User,
+    transportationId: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationRepair.create({
+        data: {
+          transportationId,
+          title,
+          description,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit transportation repair. */
+  async editTransportationRepair(
+    user: User,
+    id: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationRepair.update({
+        where: { id },
+        data: { title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete transportation repair. */
+  async deleteTransportationRepair(user: User, id: number) {
+    try {
+      await this.prisma.transportationRepair.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transportation repair status. */
+  async setTransportationRepairStatus(
+    user: User,
+    id: number,
+    status: RepairStatus
+  ) {
+    try {
+      //put condition for status done later
+      await this.prisma.transportationRepair.update({
+        where: { id },
+        data: { status },
       });
     } catch (e) {
       console.log(e);
