@@ -24,6 +24,7 @@ import { TransportationConnectionArgs } from 'src/models/args/transportation-con
 import { PaginatedTransportation } from 'src/models/pagination/transportation-connection.model';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
+import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 
 @Resolver(() => Transportation)
 export class TransportationResolver {
@@ -316,5 +317,65 @@ export class TransportationResolver {
       status
     );
     return `Repair status updated.`;
+  }
+
+  @Mutation(() => String)
+  async addTransportationSparePR(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('requestedDate') requestedDate: Date,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.createTransportationSparePR(
+      user,
+      transportationId,
+      requestedDate,
+      title,
+      description
+    );
+    return `Added Spare PR to transportation.`;
+  }
+
+  @Mutation(() => String)
+  async editTransportationSparePR(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('requestedDate') requestedDate: Date,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.editTransportationSparePR(
+      user,
+      id,
+      requestedDate,
+      title,
+      description
+    );
+    return `Spare PR updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteTransportationSparePR(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.transportationService.deleteTransportationSparePR(user, id);
+    return `Spare PR deleted.`;
+  }
+
+  @Mutation(() => String)
+  async setTransportationSparePRStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => SparePRStatus })
+    status: SparePRStatus
+  ): Promise<String> {
+    await this.transportationService.setTransportationSparePRStatus(
+      user,
+      id,
+      status
+    );
+    return `Spare PR status updated.`;
   }
 }

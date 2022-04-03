@@ -6,7 +6,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, SparePRStatus, User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 import ConnectionArgs, {
   connectionFromArraySlice,
@@ -389,6 +389,74 @@ export class MachineService {
     try {
       //put condition for status done later
       await this.prisma.machineRepair.update({
+        where: { id },
+        data: { status },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create machine spare pr. */
+  async createMachineSparePR(
+    user: User,
+    machineId: number,
+    requestedDate: Date,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machineSparePR.create({
+        data: {
+          machineId,
+          requestedDate,
+          title,
+          description,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine spare pr. */
+  async editMachineSparePR(
+    user: User,
+    id: number,
+    requestedDate: Date,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machineSparePR.update({
+        where: { id },
+        data: { requestedDate, title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete machine spare pr. */
+  async deleteMachineSparePR(user: User, id: number) {
+    try {
+      await this.prisma.machineSparePR.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set machine spare pr status. */
+  async setMachineSparePRStatus(user: User, id: number, status: SparePRStatus) {
+    try {
+      //put condition for status done later
+      await this.prisma.machineSparePR.update({
         where: { id },
         data: { status },
       });

@@ -22,6 +22,7 @@ import { PaginatedTransportation } from 'src/models/pagination/transportation-co
 import { TransportationConnectionArgs } from 'src/models/args/transportation-connection.args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
+import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 
 @Injectable()
 export class TransportationService {
@@ -405,6 +406,78 @@ export class TransportationService {
     try {
       //put condition for status done later
       await this.prisma.transportationRepair.update({
+        where: { id },
+        data: { status },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create transportation spare PR. */
+  async createTransportationSparePR(
+    user: User,
+    transportationId: number,
+    requestedDate: Date,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationSparePR.create({
+        data: {
+          transportationId,
+          requestedDate,
+          title,
+          description,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit transportation spare pr. */
+  async editTransportationSparePR(
+    user: User,
+    id: number,
+    requestedDate: Date,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationSparePR.update({
+        where: { id },
+        data: { requestedDate, title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete transportation spare pr. */
+  async deleteTransportationSparePR(user: User, id: number) {
+    try {
+      await this.prisma.transportationSparePR.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transportation spare pr status. */
+  async setTransportationSparePRStatus(
+    user: User,
+    id: number,
+    status: SparePRStatus
+  ) {
+    try {
+      //put condition for status done later
+      await this.prisma.transportationSparePR.update({
         where: { id },
         data: { status },
       });

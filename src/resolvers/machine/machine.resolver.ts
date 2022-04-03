@@ -24,6 +24,7 @@ import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
+import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -262,12 +263,7 @@ export class MachineResolver {
     @Args('title') title: string,
     @Args('description') description: string
   ): Promise<String> {
-    await this.machineService.editMachinePeriodicMaintenance(
-      user,
-      id,
-      title,
-      description
-    );
+    await this.machineService.editMachineRepair(user, id, title, description);
     return `Repair updated.`;
   }
 
@@ -289,5 +285,61 @@ export class MachineResolver {
   ): Promise<String> {
     await this.machineService.setMachineRepairStatus(user, id, status);
     return `Repair status updated.`;
+  }
+
+  @Mutation(() => String)
+  async addMachineSparePR(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('requestedDate') requestedDate: Date,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.createMachineSparePR(
+      user,
+      machineId,
+      requestedDate,
+      title,
+      description
+    );
+    return `Added Spare PR to machine.`;
+  }
+
+  @Mutation(() => String)
+  async editMachineSparePR(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('requestedDate') requestedDate: Date,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.editMachineSparePR(
+      user,
+      id,
+      requestedDate,
+      title,
+      description
+    );
+    return `Spare PR updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteMachineSparePR(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.machineService.deleteMachineSparePR(user, id);
+    return `Spare PR deleted.`;
+  }
+
+  @Mutation(() => String)
+  async setMachineSparePRStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => SparePRStatus })
+    status: SparePRStatus
+  ): Promise<String> {
+    await this.machineService.setMachineSparePRStatus(user, id, status);
+    return `Spare PR status updated.`;
   }
 }
