@@ -22,6 +22,7 @@ import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
+import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 
 @Injectable()
 export class MachineService {
@@ -457,6 +458,75 @@ export class MachineService {
     try {
       //put condition for status done later
       await this.prisma.machineSparePR.update({
+        where: { id },
+        data: { status },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create machine breakdown. */
+  async createMachineBreakdown(
+    user: User,
+    machineId: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machineBreakdown.create({
+        data: {
+          machineId,
+          title,
+          description,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine breakdown */
+  async editMachineBreakdown(
+    user: User,
+    id: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.machineBreakdown.update({
+        where: { id },
+        data: { title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete machine breakdown */
+  async deleteMachineBreakdown(user: User, id: number) {
+    try {
+      await this.prisma.machineBreakdown.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set machine breakdown status. */
+  async setMachineBreakdownStatus(
+    user: User,
+    id: number,
+    status: BreakdownStatus
+  ) {
+    try {
+      //put condition for status done later
+      await this.prisma.machineBreakdown.update({
         where: { id },
         data: { status },
       });

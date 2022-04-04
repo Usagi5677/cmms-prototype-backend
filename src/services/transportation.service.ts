@@ -23,6 +23,7 @@ import { TransportationConnectionArgs } from 'src/models/args/transportation-con
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
+import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 
 @Injectable()
 export class TransportationService {
@@ -478,6 +479,75 @@ export class TransportationService {
     try {
       //put condition for status done later
       await this.prisma.transportationSparePR.update({
+        where: { id },
+        data: { status },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create transportation breakdown. */
+  async createTransportationBreakdown(
+    user: User,
+    transportationId: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationBreakdown.create({
+        data: {
+          transportationId,
+          title,
+          description,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit transportation breakdown. */
+  async editTransportationBreakdown(
+    user: User,
+    id: number,
+    title: string,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationBreakdown.update({
+        where: { id },
+        data: { title, description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete transportation breakdown. */
+  async deleteTransportationBreakdown(user: User, id: number) {
+    try {
+      await this.prisma.transportationBreakdown.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transportation breakdown status. */
+  async setTransportationBreakdownStatus(
+    user: User,
+    id: number,
+    status: BreakdownStatus
+  ) {
+    try {
+      //put condition for status done later
+      await this.prisma.transportationBreakdown.update({
         where: { id },
         data: { status },
       });

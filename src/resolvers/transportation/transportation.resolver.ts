@@ -25,6 +25,7 @@ import { PaginatedTransportation } from 'src/models/pagination/transportation-co
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
+import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 
 @Resolver(() => Transportation)
 export class TransportationResolver {
@@ -377,5 +378,61 @@ export class TransportationResolver {
       status
     );
     return `Spare PR status updated.`;
+  }
+
+  @Mutation(() => String)
+  async addTransportationBreakdown(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.createTransportationBreakdown(
+      user,
+      transportationId,
+      title,
+      description
+    );
+    return `Added Breakdown to transportation.`;
+  }
+
+  @Mutation(() => String)
+  async editTransportationBreakdown(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.editTransportationBreakdown(
+      user,
+      id,
+      title,
+      description
+    );
+    return `Spare PR updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteTransportationBreakdown(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.transportationService.deleteTransportationBreakdown(user, id);
+    return `Breakdown deleted.`;
+  }
+
+  @Mutation(() => String)
+  async setTransportationBreakdownStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => BreakdownStatus })
+    status: BreakdownStatus
+  ): Promise<String> {
+    await this.transportationService.setTransportationBreakdownStatus(
+      user,
+      id,
+      status
+    );
+    return `Breakdown status updated.`;
   }
 }

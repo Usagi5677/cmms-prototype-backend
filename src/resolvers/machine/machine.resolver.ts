@@ -25,6 +25,7 @@ import { PaginatedMachine } from 'src/models/pagination/machine-connection.model
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
+import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -341,5 +342,57 @@ export class MachineResolver {
   ): Promise<String> {
     await this.machineService.setMachineSparePRStatus(user, id, status);
     return `Spare PR status updated.`;
+  }
+
+  @Mutation(() => String)
+  async addMachineBreakdown(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.createMachineBreakdown(
+      user,
+      machineId,
+      title,
+      description
+    );
+    return `Added Breakdown to machine.`;
+  }
+
+  @Mutation(() => String)
+  async editMachineBreakdown(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('title') title: string,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.editMachineBreakdown(
+      user,
+      id,
+      title,
+      description
+    );
+    return `Breakdown updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteMachineBreakdown(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<String> {
+    await this.machineService.deleteMachineBreakdown(user, id);
+    return `Breakdown deleted.`;
+  }
+
+  @Mutation(() => String)
+  async setMachineBreakdownStatus(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('status', { type: () => BreakdownStatus })
+    status: BreakdownStatus
+  ): Promise<String> {
+    await this.machineService.setMachineBreakdownStatus(user, id, status);
+    return `Breakdown status updated.`;
   }
 }
