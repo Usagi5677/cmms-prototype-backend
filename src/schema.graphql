@@ -100,11 +100,25 @@ type MachineRepair {
   createdAt: Date!
   description: String!
   id: Int!
+  machine: Machine
   status: RepairStatus!
   title: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type MachineRepairEdge {
+  cursor: String
+  node: MachineRepair
+}
+
+type MachineRepairPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type MachineSparePR {
@@ -205,6 +219,11 @@ type PaginatedMachine {
   pageInfo: MachinePageInfo
 }
 
+type PaginatedMachineRepair {
+  edges: [MachineRepairEdge!]
+  pageInfo: MachineRepairPageInfo
+}
+
 type PaginatedTransportation {
   edges: [TransportationEdge!]
   pageInfo: TransportationPageInfo
@@ -249,6 +268,21 @@ type Query {
     last: Int
     search: String
   ): PaginatedMachine!
+  getAllMachineRepairOfMachine(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachineRepair!
   getAllTransportation(
     """Paginate after opaque cursor"""
     after: String
@@ -264,6 +298,21 @@ type Query {
     last: Int
     search: String
   ): PaginatedTransportation!
+  getAllTransportationRepairOfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachineRepair!
   notifications: [Notification!]!
   redisGet(key: String!): String
   redisKeys: [String!]!

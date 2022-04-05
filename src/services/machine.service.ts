@@ -23,6 +23,8 @@ import { PaginatedMachine } from 'src/models/pagination/machine-connection.model
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
+import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
+import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
 
 @Injectable()
 export class MachineService {
@@ -534,5 +536,63 @@ export class MachineService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  //** Get machine repair. Results are paginated. User cursor argument to go forward/backward. */
+  async getMachineRepairWithPagination(
+    user: User,
+    args: MachineRepairConnectionArgs
+  ): Promise<PaginatedMachineRepair> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, machineId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (machineId) {
+      where.AND.push({ machineId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machineRepair = await this.prisma.machineRepair.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        machine: true,
+      },
+    });
+
+    const count = await this.prisma.machineRepair.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machineRepair.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
   }
 }

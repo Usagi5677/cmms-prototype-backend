@@ -26,6 +26,8 @@ import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceS
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
+import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
+import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
 
 @Resolver(() => Transportation)
 export class TransportationResolver {
@@ -434,5 +436,16 @@ export class TransportationResolver {
       status
     );
     return `Breakdown status updated.`;
+  }
+
+  @Query(() => PaginatedMachineRepair)
+  async getAllTransportationRepairOfTransportation(
+    @UserEntity() user: User,
+    @Args() args: MachineRepairConnectionArgs
+  ): Promise<PaginatedMachineRepair> {
+    return await this.transportationService.getTransportationRepairWithPagination(
+      user,
+      args
+    );
   }
 }
