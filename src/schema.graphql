@@ -251,6 +251,21 @@ enum PeriodicMaintenanceStatus {
   Pending
 }
 
+type Profile {
+  department: String!
+  division: String!
+  email: String
+  fullName: String!
+  post: String!
+  rcno: Int!
+  section: String
+  telExtension: Int
+  telMobile: Int
+  telOffice: Int
+  unit: String
+  userId: String!
+}
+
 type Query {
   appUsers: [User!]!
   getAllMachine(
@@ -313,7 +328,9 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineRepair!
+  me: UserWithRoles!
   notifications: [Notification!]!
+  profile: Profile!
   redisGet(key: String!): String
   redisKeys: [String!]!
   sayHello: String!
@@ -396,5 +413,14 @@ type User {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  userId: String!
+}
+
+type UserWithRoles {
+  email: String!
+  fullName: String!
+  id: Int!
+  rcno: Int!
+  roles: [String!]!
   userId: String!
 }

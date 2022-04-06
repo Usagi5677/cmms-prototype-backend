@@ -29,7 +29,7 @@ import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 
 @Resolver(() => User)
-@UseGuards(PermissionsGuard)
+@UseGuards(GqlAuthGuard, PermissionsGuard)
 export class UserResolver {
   constructor(
     private prisma: PrismaService,
@@ -42,6 +42,16 @@ export class UserResolver {
   @Query(() => String)
   sayHello(): string {
     return 'Hello World!';
+  }
+
+  @Query(() => UserWithRoles)
+  async me(@UserEntity() user: User): Promise<User> {
+    return user;
+  }
+
+  @Query(() => Profile)
+  async profile(@UserEntity() user: User): Promise<Profile> {
+    return this.apsService.getProfile(user.userId);
   }
 
   @Roles('Admin')
