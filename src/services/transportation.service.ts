@@ -26,6 +26,10 @@ import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
 import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
+import { TransportationBreakdownConnectionArgs } from 'src/models/args/transportation-breakdown-connection.args';
+import { PaginatedTransportationBreakdown } from 'src/models/pagination/transportation-breakdown-connection.model';
+import { TransportationRepairConnectionArgs } from 'src/models/args/transportation-repair-connection.args';
+import { PaginatedTransportationRepair } from 'src/models/pagination/transportation-repair-connection.model';
 
 @Injectable()
 export class TransportationService {
@@ -562,16 +566,16 @@ export class TransportationService {
   //** Get transportationRepair. Results are paginated. User cursor argument to go forward/backward. */
   async getTransportationRepairWithPagination(
     user: User,
-    args: MachineRepairConnectionArgs
-  ): Promise<PaginatedMachineRepair> {
+    args: TransportationRepairConnectionArgs
+  ): Promise<PaginatedTransportationRepair> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { machineId, search } = args;
+    const { transportationId, search } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
-    if (machineId) {
-      where.AND.push({ machineId });
+    if (transportationId) {
+      where.AND.push({ transportationId });
     }
     //for now these only
     if (search) {
@@ -600,6 +604,64 @@ export class TransportationService {
     const count = await this.prisma.transportationRepair.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       transportationRepair.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get transportationBreakdown. Results are paginated. User cursor argument to go forward/backward. */
+  async getTransportationBreakdownWithPagination(
+    user: User,
+    args: TransportationBreakdownConnectionArgs
+  ): Promise<PaginatedTransportationBreakdown> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { transportationId, search } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (transportationId) {
+      where.AND.push({ transportationId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationBreakdown =
+      await this.prisma.transportationBreakdown.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          transportation: true,
+        },
+      });
+
+    const count = await this.prisma.transportationBreakdown.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationBreakdown.slice(0, limit),
       args,
       {
         arrayLength: count,

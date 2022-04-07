@@ -25,6 +25,8 @@ import { RepairStatus } from 'src/common/enums/repairStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
 import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
+import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdown-connection.args';
+import { PaginatedMachineBreakdown } from 'src/models/pagination/machine-breakdown-connection.model';
 
 @Injectable()
 export class MachineService {
@@ -579,6 +581,64 @@ export class MachineService {
     const count = await this.prisma.machineRepair.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       machineRepair.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get machine breakdown. Results are paginated. User cursor argument to go forward/backward. */
+  async getMachineBreakdownWithPagination(
+    user: User,
+    args: MachineBreakdownConnectionArgs
+  ): Promise<PaginatedMachineBreakdown> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, machineId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (machineId) {
+      where.AND.push({ machineId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machineBreakdown = await this.prisma.machineBreakdown.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        machine: true,
+      },
+    });
+
+    const count = await this.prisma.machineBreakdown.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machineBreakdown.slice(0, limit),
       args,
       {
         arrayLength: count,

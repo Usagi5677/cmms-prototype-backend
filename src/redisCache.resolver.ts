@@ -5,7 +5,7 @@ import { GqlAuthGuard } from './guards/gql-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 
-//@UseGuards(GqlAuthGuard, RolesGuard)
+@UseGuards(GqlAuthGuard)
 @Resolver()
 export class RedisCacheResolver {
   constructor(private readonly redisCacheService: RedisCacheService) {}

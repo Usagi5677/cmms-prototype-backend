@@ -28,6 +28,10 @@ import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
 import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
+import { PaginatedTransportationBreakdown } from 'src/models/pagination/transportation-breakdown-connection.model';
+import { TransportationBreakdownConnectionArgs } from 'src/models/args/transportation-breakdown-connection.args';
+import { PaginatedTransportationRepair } from 'src/models/pagination/transportation-repair-connection.model';
+import { TransportationRepairConnectionArgs } from 'src/models/args/transportation-repair-connection.args';
 
 @Resolver(() => Transportation)
 export class TransportationResolver {
@@ -438,12 +442,23 @@ export class TransportationResolver {
     return `Breakdown status updated.`;
   }
 
-  @Query(() => PaginatedMachineRepair)
+  @Query(() => PaginatedTransportationRepair)
   async getAllTransportationRepairOfTransportation(
     @UserEntity() user: User,
-    @Args() args: MachineRepairConnectionArgs
-  ): Promise<PaginatedMachineRepair> {
+    @Args() args: TransportationRepairConnectionArgs
+  ): Promise<PaginatedTransportationRepair> {
     return await this.transportationService.getTransportationRepairWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => PaginatedTransportationBreakdown)
+  async getAllTransportationBreakdownOfTransportation(
+    @UserEntity() user: User,
+    @Args() args: TransportationBreakdownConnectionArgs
+  ): Promise<PaginatedTransportationBreakdown> {
+    return await this.transportationService.getTransportationBreakdownWithPagination(
       user,
       args
     );

@@ -28,6 +28,8 @@ import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
 import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
+import { PaginatedMachineBreakdown } from 'src/models/pagination/machine-breakdown-connection.model';
+import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdown-connection.args';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -404,5 +406,16 @@ export class MachineResolver {
     @Args() args: MachineRepairConnectionArgs
   ): Promise<PaginatedMachineRepair> {
     return await this.machineService.getMachineRepairWithPagination(user, args);
+  }
+
+  @Query(() => PaginatedMachineBreakdown)
+  async getAllMachineBreakdownOfMachine(
+    @UserEntity() user: User,
+    @Args() args: MachineBreakdownConnectionArgs
+  ): Promise<PaginatedMachineBreakdown> {
+    return await this.machineService.getMachineBreakdownWithPagination(
+      user,
+      args
+    );
   }
 }

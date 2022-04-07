@@ -68,6 +68,19 @@ type MachineBreakdown {
   updatedAt: Date!
 }
 
+type MachineBreakdownEdge {
+  cursor: String
+  node: MachineBreakdown
+}
+
+type MachineBreakdownPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type MachineEdge {
   cursor: String
   node: Machine
@@ -219,6 +232,11 @@ type PaginatedMachine {
   pageInfo: MachinePageInfo
 }
 
+type PaginatedMachineBreakdown {
+  edges: [MachineBreakdownEdge!]
+  pageInfo: MachineBreakdownPageInfo
+}
+
 type PaginatedMachineRepair {
   edges: [MachineRepairEdge!]
   pageInfo: MachineRepairPageInfo
@@ -227,6 +245,16 @@ type PaginatedMachineRepair {
 type PaginatedTransportation {
   edges: [TransportationEdge!]
   pageInfo: TransportationPageInfo
+}
+
+type PaginatedTransportationBreakdown {
+  edges: [MachineBreakdownEdge!]
+  pageInfo: MachineBreakdownPageInfo
+}
+
+type PaginatedTransportationRepair {
+  edges: [MachineRepairEdge!]
+  pageInfo: MachineRepairPageInfo
 }
 
 type PeriodicMaintenance {
@@ -283,6 +311,21 @@ type Query {
     last: Int
     search: String
   ): PaginatedMachine!
+  getAllMachineBreakdownOfMachine(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachineBreakdown!
   getAllMachineRepairOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -313,6 +356,21 @@ type Query {
     last: Int
     search: String
   ): PaginatedTransportation!
+  getAllTransportationBreakdownOfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationBreakdown!
   getAllTransportationRepairOfTransportation(
     """Paginate after opaque cursor"""
     after: String
@@ -325,9 +383,9 @@ type Query {
 
     """Paginate last"""
     last: Int
-    machineId: Int!
     search: String
-  ): PaginatedMachineRepair!
+    transportationId: Int!
+  ): PaginatedTransportationRepair!
   me: UserWithRoles!
   notifications: [Notification!]!
   profile: Profile!
