@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import {
   InternalServerErrorException,
   UnauthorizedException,
@@ -30,6 +31,8 @@ import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-conn
 import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
 import { PaginatedMachineBreakdown } from 'src/models/pagination/machine-breakdown-connection.model';
 import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdown-connection.args';
+import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
+import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-connection.args';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -414,6 +417,17 @@ export class MachineResolver {
     @Args() args: MachineBreakdownConnectionArgs
   ): Promise<PaginatedMachineBreakdown> {
     return await this.machineService.getMachineBreakdownWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => PaginatedMachineSparePR)
+  async getAllMachineSparePROfMachine(
+    @UserEntity() user: User,
+    @Args() args: MachineSparePRConnectionArgs
+  ): Promise<PaginatedMachineSparePR> {
+    return await this.machineService.getMachineSparePRWithPagination(
       user,
       args
     );

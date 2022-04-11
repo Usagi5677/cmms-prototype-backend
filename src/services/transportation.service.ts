@@ -30,6 +30,8 @@ import { TransportationBreakdownConnectionArgs } from 'src/models/args/transport
 import { PaginatedTransportationBreakdown } from 'src/models/pagination/transportation-breakdown-connection.model';
 import { TransportationRepairConnectionArgs } from 'src/models/args/transportation-repair-connection.args';
 import { PaginatedTransportationRepair } from 'src/models/pagination/transportation-repair-connection.model';
+import { TransportationSparePRConnectionArgs } from 'src/models/args/transportation-sparePR-connection.args';
+import { PaginatedTransportationSparePR } from 'src/models/pagination/transportation-sparePR-connection.model';
 
 @Injectable()
 export class TransportationService {
@@ -662,6 +664,64 @@ export class TransportationService {
     const count = await this.prisma.transportationBreakdown.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       transportationBreakdown.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get transportation spare PR. Results are paginated. User cursor argument to go forward/backward. */
+  async getTransportationSparePRWithPagination(
+    user: User,
+    args: TransportationSparePRConnectionArgs
+  ): Promise<PaginatedTransportationSparePR> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { transportationId, search } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (transportationId) {
+      where.AND.push({ transportationId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationSparePR =
+      await this.prisma.transportationSparePR.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          transportation: true,
+        },
+      });
+
+    const count = await this.prisma.transportationSparePR.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationSparePR.slice(0, limit),
       args,
       {
         arrayLength: count,

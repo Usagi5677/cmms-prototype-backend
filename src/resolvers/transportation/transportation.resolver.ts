@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import {
   InternalServerErrorException,
   UnauthorizedException,
@@ -26,12 +27,12 @@ import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceS
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
-import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
-import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
 import { PaginatedTransportationBreakdown } from 'src/models/pagination/transportation-breakdown-connection.model';
 import { TransportationBreakdownConnectionArgs } from 'src/models/args/transportation-breakdown-connection.args';
 import { PaginatedTransportationRepair } from 'src/models/pagination/transportation-repair-connection.model';
 import { TransportationRepairConnectionArgs } from 'src/models/args/transportation-repair-connection.args';
+import { PaginatedTransportationSparePR } from 'src/models/pagination/transportation-sparePR-connection.model';
+import { TransportationSparePRConnectionArgs } from 'src/models/args/transportation-sparePR-connection.args';
 
 @Resolver(() => Transportation)
 export class TransportationResolver {
@@ -459,6 +460,17 @@ export class TransportationResolver {
     @Args() args: TransportationBreakdownConnectionArgs
   ): Promise<PaginatedTransportationBreakdown> {
     return await this.transportationService.getTransportationBreakdownWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => PaginatedTransportationSparePR)
+  async getAllTransportationSparePROfTransportation(
+    @UserEntity() user: User,
+    @Args() args: TransportationSparePRConnectionArgs
+  ): Promise<PaginatedTransportationSparePR> {
+    return await this.transportationService.getTransportationSparePRWithPagination(
       user,
       args
     );

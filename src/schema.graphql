@@ -150,6 +150,19 @@ type MachineSparePR {
   updatedAt: Date!
 }
 
+type MachineSparePREdge {
+  cursor: String
+  node: MachineSparePR
+}
+
+type MachineSparePRPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 """Machine statuses."""
 enum MachineStatus {
   Breakdown
@@ -242,6 +255,11 @@ type PaginatedMachineRepair {
   pageInfo: MachineRepairPageInfo
 }
 
+type PaginatedMachineSparePR {
+  edges: [MachineSparePREdge!]
+  pageInfo: MachineSparePRPageInfo
+}
+
 type PaginatedTransportation {
   edges: [TransportationEdge!]
   pageInfo: TransportationPageInfo
@@ -255,6 +273,11 @@ type PaginatedTransportationBreakdown {
 type PaginatedTransportationRepair {
   edges: [MachineRepairEdge!]
   pageInfo: MachineRepairPageInfo
+}
+
+type PaginatedTransportationSparePR {
+  edges: [MachineSparePREdge!]
+  pageInfo: MachineSparePRPageInfo
 }
 
 type PeriodicMaintenance {
@@ -341,6 +364,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineRepair!
+  getAllMachineSparePROfMachine(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachineSparePR!
   getAllTransportation(
     """Paginate after opaque cursor"""
     after: String
@@ -386,6 +424,21 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationRepair!
+  getAllTransportationSparePROfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationSparePR!
   me: UserWithRoles!
   notifications: [Notification!]!
   profile: Profile!
