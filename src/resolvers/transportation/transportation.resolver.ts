@@ -34,6 +34,7 @@ import { TransportationRepairConnectionArgs } from 'src/models/args/transportati
 import { PaginatedTransportationSparePR } from 'src/models/pagination/transportation-sparePR-connection.model';
 import { TransportationSparePRConnectionArgs } from 'src/models/args/transportation-sparePR-connection.args';
 
+@UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
 export class TransportationResolver {
   constructor(
@@ -490,5 +491,27 @@ export class TransportationResolver {
     return `Successfully assigned user${
       userIds.length > 1 ? 's' : ''
     } to transportation.`;
+  }
+
+  @Query(() => PaginatedTransportation)
+  async assignedTransportations(
+    @UserEntity() user: User,
+    @Args() args: TransportationConnectionArgs
+  ): Promise<PaginatedTransportation> {
+    args.assignedToId = user.id;
+    if (args.createdByUserId) {
+      const createdBy = await this.prisma.user.findFirst({
+        where: { userId: args.createdByUserId },
+      });
+      if (!createdBy) {
+        args.createdById = -1;
+      } else {
+        args.createdById = createdBy.id;
+      }
+    }
+    return await this.transportationService.getTransportationWithPagination(
+      user,
+      args
+    );
   }
 }
