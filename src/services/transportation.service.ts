@@ -738,4 +738,34 @@ export class TransportationService {
       },
     };
   }
+
+  //** Assign 'user' to transportation. */
+  async assignUserToTransportation(
+    user: User,
+    transportationId: number,
+    userIds: number[]
+  ) {
+    // Check for roles later
+
+    try {
+      await this.prisma.transportationAssignment.createMany({
+        data: userIds.map((userId, index) => ({
+          transportationId,
+          userId: userId,
+        })),
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new BadRequestException(
+          `User is already assigned to this transportation.`
+        );
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
 }

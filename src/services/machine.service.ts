@@ -715,4 +715,30 @@ export class MachineService {
       },
     };
   }
+
+  //** Assign 'user' to machine. */
+  async assignUserToMachine(user: User, machineId: number, userIds: number[]) {
+    // Check for roles later
+
+    try {
+      await this.prisma.machineAssignment.createMany({
+        data: userIds.map((userId, index) => ({
+          machineId,
+          userId: userId,
+        })),
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new BadRequestException(
+          `User is already assigned to this machine.`
+        );
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
 }

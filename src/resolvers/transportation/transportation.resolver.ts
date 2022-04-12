@@ -475,4 +475,20 @@ export class TransportationResolver {
       args
     );
   }
+
+  @Mutation(() => String)
+  async assignUsersToTransportation(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('userIds', { type: () => [Int] }) userIds: number[]
+  ): Promise<String> {
+    await this.transportationService.assignUserToTransportation(
+      user,
+      transportationId,
+      userIds
+    );
+    return `Successfully assigned user${
+      userIds.length > 1 ? 's' : ''
+    } to transportation.`;
+  }
 }

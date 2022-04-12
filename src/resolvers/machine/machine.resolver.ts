@@ -432,4 +432,16 @@ export class MachineResolver {
       args
     );
   }
+
+  @Mutation(() => String)
+  async assignUsersToMachine(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('userIds', { type: () => [Int] }) userIds: number[]
+  ): Promise<String> {
+    await this.machineService.assignUserToMachine(user, machineId, userIds);
+    return `Successfully assigned user${
+      userIds.length > 1 ? 's' : ''
+    } to machine.`;
+  }
 }
