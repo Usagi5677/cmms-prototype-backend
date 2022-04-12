@@ -5,4 +5,7 @@ import ConnectionArgs from '../../common/pagination/connection-args';
 export class TransportationConnectionArgs extends ConnectionArgs {
   search?: string;
   createdById?: number;
+  self?: boolean;
+  assignedToId?: number;
+  createdByUserId?: string;
 }

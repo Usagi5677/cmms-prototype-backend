@@ -131,12 +131,17 @@ export class TransportationService {
   ): Promise<PaginatedTransportation> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search } = args;
+    const { createdById, search, assignedToId } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     if (createdById) {
       where.AND.push({ createdById });
+    }
+    if (assignedToId) {
+      where.AND.push({
+        transportationAssignments: { some: { userId: assignedToId } },
+      });
     }
     //for now these only
     if (search) {

@@ -321,13 +321,15 @@ type Profile {
 
 type Query {
   appUsers: [User!]!
-  getAllMachine(
+  assignedMachines(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
     createdById: Int
+    createdByUserId: String
 
     """Paginate first"""
     first: Int
@@ -335,6 +337,43 @@ type Query {
     """Paginate last"""
     last: Int
     search: String
+    self: Boolean
+  ): PaginatedMachine!
+  assignedTransportations(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    self: Boolean
+  ): PaginatedTransportation!
+  getAllMachine(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    self: Boolean
   ): PaginatedMachine!
   getAllMachineBreakdownOfMachine(
     """Paginate after opaque cursor"""
@@ -384,10 +423,12 @@ type Query {
   getAllTransportation(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
     createdById: Int
+    createdByUserId: String
 
     """Paginate first"""
     first: Int
@@ -395,6 +436,7 @@ type Query {
     """Paginate last"""
     last: Int
     search: String
+    self: Boolean
   ): PaginatedTransportation!
   getAllTransportationBreakdownOfTransportation(
     """Paginate after opaque cursor"""

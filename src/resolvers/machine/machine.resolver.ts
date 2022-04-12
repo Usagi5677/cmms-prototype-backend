@@ -34,6 +34,7 @@ import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdow
 import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
 import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-connection.args';
 
+@UseGuards(GqlAuthGuard)
 @Resolver(() => Machine)
 export class MachineResolver {
   constructor(
@@ -443,5 +444,24 @@ export class MachineResolver {
     return `Successfully assigned user${
       userIds.length > 1 ? 's' : ''
     } to machine.`;
+  }
+
+  @Query(() => PaginatedMachine)
+  async assignedMachines(
+    @UserEntity() user: User,
+    @Args() args: MachineConnectionArgs
+  ): Promise<PaginatedMachine> {
+    args.assignedToId = user.id;
+    if (args.createdByUserId) {
+      const createdBy = await this.prisma.user.findFirst({
+        where: { userId: args.createdByUserId },
+      });
+      if (!createdBy) {
+        args.createdById = -1;
+      } else {
+        args.createdById = createdBy.id;
+      }
+    }
+    return await this.machineService.getMachineWithPagination(user, args);
   }
 }
