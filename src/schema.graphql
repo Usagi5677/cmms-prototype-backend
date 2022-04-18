@@ -25,26 +25,26 @@ type ChecklistItem {
 scalar Date
 
 type Machine {
-  assignees: [User!]!
-  breakdowns: [MachineBreakdown!]!
-  checklistItems: [ChecklistItem!]!
+  assignees: [User!]
+  breakdowns: [MachineBreakdown!]
+  checklistItems: [ChecklistItem!]
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   createdBy: User!
-  currentRunningHrs: Int!
-  histories: [MachineHistory!]!
+  currentRunningHrs: Int
+  histories: [MachineHistory!]
   id: Int!
-  interServiceHrs: Int!
-  lastServiceHrs: Int!
+  interServiceHrs: Int
+  lastServiceHrs: Int
   location: String!
   machineNumber: String!
   model: String!
-  periodicMaintenancePlans: [PeriodicMaintenance!]!
+  periodicMaintenancePlans: [PeriodicMaintenance!]
   registeredDate: Date
-  repairs: [MachineRepair!]!
-  sparePRs: [MachineSparePR!]!
-  status: MachineStatus!
+  repairs: [MachineRepair!]
+  sparePRs: [MachineSparePR!]
+  status: MachineStatus
   statusChangedAt: Date
   type: String!
 

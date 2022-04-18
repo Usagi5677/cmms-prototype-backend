@@ -18,16 +18,16 @@ export class Machine extends BaseModel {
   type: string;
   zone: string;
   location: string;
-  currentRunningHrs: number;
-  lastServiceHrs: number;
-  interServiceHrs: number;
-  status: MachineStatus;
+  currentRunningHrs?: number;
+  lastServiceHrs?: number;
+  interServiceHrs?: number;
+  status?: MachineStatus;
   statusChangedAt?: Date;
-  assignees: User[];
-  checklistItems: ChecklistItem[];
-  periodicMaintenancePlans: PeriodicMaintenance[];
-  repairs: MachineRepair[];
-  breakdowns: MachineBreakdown[];
-  sparePRs: MachineSparePR[];
-  histories: MachineHistory[];
+  assignees?: User[];
+  checklistItems?: ChecklistItem[];
+  periodicMaintenancePlans?: PeriodicMaintenance[];
+  repairs?: MachineRepair[];
+  breakdowns?: MachineBreakdown[];
+  sparePRs?: MachineSparePR[];
+  histories?: MachineHistory[];
 }

@@ -53,6 +53,7 @@ export class MachineService {
     lastServiceHrs: number
   ) {
     try {
+      const interServiceHrs = currentRunningHrs - lastServiceHrs;
       await this.prisma.machine.create({
         data: {
           createdById: 1,
@@ -63,6 +64,7 @@ export class MachineService {
           location,
           currentRunningHrs,
           lastServiceHrs,
+          interServiceHrs,
         },
       });
     } catch (e) {
