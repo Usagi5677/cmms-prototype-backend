@@ -11,5 +11,4 @@ export class MachineRepair extends BaseModel {
   completedBy?: User;
   completedAt?: Date;
   status: RepairStatus;
-  machine?: Machine;
 }

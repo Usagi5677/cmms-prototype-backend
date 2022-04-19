@@ -29,6 +29,8 @@ import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdow
 import { PaginatedMachineBreakdown } from 'src/models/pagination/machine-breakdown-connection.model';
 import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-connection.args';
 import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
+import { DateScalar } from 'src/common/scalars/date.scalar';
+import { MachineStatus } from 'src/common/enums/machineStatus';
 
 @Injectable()
 export class MachineService {
@@ -50,7 +52,8 @@ export class MachineService {
     zone: string,
     location: string,
     currentRunningHrs: number,
-    lastServiceHrs: number
+    lastServiceHrs: number,
+    registeredDate?: Date
   ) {
     try {
       const interServiceHrs = currentRunningHrs - lastServiceHrs;
@@ -65,6 +68,7 @@ export class MachineService {
           currentRunningHrs,
           lastServiceHrs,
           interServiceHrs,
+          registeredDate,
         },
       });
     } catch (e) {
@@ -115,6 +119,19 @@ export class MachineService {
     }
   }
 
+  //** Set machine status. */
+  async setMachineStatus(user: User, id: number, status: MachineStatus) {
+    try {
+      //put condition for status done later
+      await this.prisma.machine.update({
+        where: { id },
+        data: { status, statusChangedAt: new Date() },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
   //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
   async getMachineWithPagination(
     user: User,

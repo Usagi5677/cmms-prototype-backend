@@ -113,7 +113,6 @@ type MachineRepair {
   createdAt: Date!
   description: String!
   id: Int!
-  machine: Machine
   status: RepairStatus!
   title: String!
 
@@ -182,7 +181,7 @@ type Mutation {
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   assignUsersToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUsersToTransportation(transportationId: Int!, userIds: [Int!]!): String!
-  createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
+  createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
   deleteMachineBreakdown(id: Int!): String!
   deleteMachineChecklistItem(id: Int!): String!
@@ -217,6 +216,7 @@ type Mutation {
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setMachineRepairStatus(id: Int!, status: RepairStatus!): String!
   setMachineSparePRStatus(id: Int!, status: SparePRStatus!): String!
+  setMachineStatus(machineId: Int!, status: MachineStatus!): String!
   setTransportationBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setTransportationPeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Date!): String!
   setTransportationPeriodicMaintenancePeriod(id: Int!, period: Date!): String!

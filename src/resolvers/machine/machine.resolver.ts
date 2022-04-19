@@ -33,6 +33,7 @@ import { PaginatedMachineBreakdown } from 'src/models/pagination/machine-breakdo
 import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdown-connection.args';
 import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
 import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-connection.args';
+import { MachineStatus } from 'src/common/enums/machineStatus';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Machine)
@@ -52,7 +53,8 @@ export class MachineResolver {
     @Args('zone') zone: string,
     @Args('location') location: string,
     @Args('currentRunningHrs') currentRunningHrs: number,
-    @Args('lastServiceHrs') lastServiceHrs: number
+    @Args('lastServiceHrs') lastServiceHrs: number,
+    @Args('registeredDate') registeredDate: Date
   ): Promise<String> {
     await this.machineService.createMachine(
       user,
@@ -62,7 +64,8 @@ export class MachineResolver {
       zone,
       location,
       currentRunningHrs,
-      lastServiceHrs
+      lastServiceHrs,
+      registeredDate
     );
     return `Successfully created machine.`;
   }
@@ -100,6 +103,16 @@ export class MachineResolver {
       lastServiceHrs
     );
     return `Machine updated.`;
+  }
+
+  @Mutation(() => String)
+  async setMachineStatus(
+    @UserEntity() user: User,
+    @Args('machineId') id: number,
+    @Args('status', { type: () => MachineStatus }) status: MachineStatus
+  ): Promise<String> {
+    await this.machineService.setMachineStatus(user, id, status);
+    return `Machine status set to ${status}.`;
   }
 
   @Query(() => PaginatedMachine)
