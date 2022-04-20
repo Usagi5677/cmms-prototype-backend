@@ -140,7 +140,7 @@ export class TransportationService {
     }
     if (assignedToId) {
       where.AND.push({
-        transportationAssignments: { some: { userId: assignedToId } },
+        assignees: { some: { userId: assignedToId } },
       });
     }
     //for now these only

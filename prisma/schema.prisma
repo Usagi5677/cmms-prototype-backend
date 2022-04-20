@@ -94,30 +94,30 @@ model PermissionRole {
 }
 
 model Machine {
-  id                              Int                          @id @default(autoincrement())
-  createdAt                       DateTime                     @default(now())
-  updatedAt                       DateTime                     @updatedAt
-  createdById                     Int
-  createdBy                       User                         @relation(fields: [createdById], references: [id])
-  machineNumber                   String
-  registeredDate                  DateTime?
-  model                           String
-  type                            String
-  zone                            String
-  location                        String
-  currentRunningHrs               Int?
-  lastServiceHrs                  Int?
-  interServiceHrs                 Int?
-  status                          MachineStatus                @default(Working)
-  statusChangedAt                 DateTime?
-  machineAssignments              MachineAssignment[]
-  machineChecklistItems           MachineChecklistItem[]
-  machinePeriodicMaintenancePlans MachinePeriodicMaintenance[]
-  machineHistories                MachineHistory[]
-  machineAttachments              MachineAttachment[]
-  MachineRepairs                  MachineRepair[]
-  MachineBreakdowns               MachineBreakdown[]
-  MachineSparePRs                 MachineSparePR[]
+  id                       Int                          @id @default(autoincrement())
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime                     @updatedAt
+  createdById              Int
+  createdBy                User                         @relation(fields: [createdById], references: [id])
+  machineNumber            String
+  registeredDate           DateTime?
+  model                    String
+  type                     String
+  zone                     String
+  location                 String
+  currentRunningHrs        Int?
+  lastServiceHrs           Int?
+  interServiceHrs          Int?
+  status                   MachineStatus                @default(Working)
+  statusChangedAt          DateTime?
+  assignees                MachineAssignment[]
+  checklistItems           MachineChecklistItem[]
+  periodicMaintenancePlans MachinePeriodicMaintenance[]
+  histories                MachineHistory[]
+  attachments              MachineAttachment[]
+  repairs                  MachineRepair[]
+  breakdowns               MachineBreakdown[]
+  sparePRs                 MachineSparePR[]
 }
 
 enum MachineStatus {
@@ -255,32 +255,32 @@ model MachineSparePR {
 }
 
 model Transportation {
-  id                                     Int                                 @id @default(autoincrement())
-  createdAt                              DateTime                            @default(now())
-  updatedAt                              DateTime                            @updatedAt
-  createdById                            Int
-  createdBy                              User                                @relation(fields: [createdById], references: [id])
-  machineNumber                          String
-  registeredDate                         DateTime?
-  model                                  String?
-  type                                   String?
-  location                               String
-  status                                 TransportationStatus                @default(Working)
-  statusChangedAt                        DateTime?
-  department                             String?
-  engine                                 String?
-  currentMileage                         Int?
-  lastServiceMileage                     Int?
-  interServiceMileage                    Int?
-  measurement                            String?                             @default("km")
-  transportationAssignments              TransportationAssignment[]
-  transportationChecklistItems           TransportationChecklistItem[]
-  transportationPeriodicMaintenancePlans TransportationPeriodicMaintenance[]
-  TransportationAttachments              TransportAttachment[]
-  TransportationHistories                TransportationHistory[]
-  TransportationRepairs                  TransportationRepair[]
-  TransportationBreakdowns               TransportationBreakdown[]
-  TransportationSparePRs                 TransportationSparePR[]
+  id                       Int                                 @id @default(autoincrement())
+  createdAt                DateTime                            @default(now())
+  updatedAt                DateTime                            @updatedAt
+  createdById              Int
+  createdBy                User                                @relation(fields: [createdById], references: [id])
+  machineNumber            String
+  registeredDate           DateTime?
+  model                    String?
+  type                     String?
+  location                 String
+  status                   TransportationStatus                @default(Working)
+  statusChangedAt          DateTime?
+  department               String?
+  engine                   String?
+  currentMileage           Int?
+  lastServiceMileage       Int?
+  interServiceMileage      Int?
+  measurement              String?                             @default("km")
+  assignees                TransportationAssignment[]
+  checklistItems           TransportationChecklistItem[]
+  periodicMaintenancePlans TransportationPeriodicMaintenance[]
+  attachments              TransportAttachment[]
+  histories                TransportationHistory[]
+  repairs                  TransportationRepair[]
+  breakdowns               TransportationBreakdown[]
+  sparePRs                 TransportationSparePR[]
 }
 
 enum TransportationStatus {

@@ -149,7 +149,7 @@ export class MachineService {
 
     if (assignedToId) {
       where.AND.push({
-        machineAssignments: { some: { userId: assignedToId } },
+        assignees: { some: { userId: assignedToId } },
       });
     }
     //for now these only
@@ -172,7 +172,8 @@ export class MachineService {
       where,
       include: {
         createdBy: true,
-        machineAssignments: { include: { user: true } },
+        sparePRs: { orderBy: { id: 'desc' } },
+        breakdowns: { orderBy: { id: 'desc' } },
       },
     });
 

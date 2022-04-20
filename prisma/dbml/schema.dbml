@@ -93,14 +93,14 @@ Table Machine {
   interServiceHrs Int
   status MachineStatus [not null, default: 'Working']
   statusChangedAt DateTime
-  machineAssignments MachineAssignment [not null]
-  machineChecklistItems MachineChecklistItem [not null]
-  machinePeriodicMaintenancePlans MachinePeriodicMaintenance [not null]
-  machineHistories MachineHistory [not null]
-  machineAttachments MachineAttachment [not null]
-  MachineRepairs MachineRepair [not null]
-  MachineBreakdowns MachineBreakdown [not null]
-  MachineSparePRs MachineSparePR [not null]
+  assignees MachineAssignment [not null]
+  checklistItems MachineChecklistItem [not null]
+  periodicMaintenancePlans MachinePeriodicMaintenance [not null]
+  histories MachineHistory [not null]
+  attachments MachineAttachment [not null]
+  repairs MachineRepair [not null]
+  breakdowns MachineBreakdown [not null]
+  sparePRs MachineSparePR [not null]
 }
 
 Table MachineAssignment {
@@ -232,14 +232,14 @@ Table Transportation {
   lastServiceMileage Int
   interServiceMileage Int
   measurement String [default: 'km']
-  transportationAssignments TransportationAssignment [not null]
-  transportationChecklistItems TransportationChecklistItem [not null]
-  transportationPeriodicMaintenancePlans TransportationPeriodicMaintenance [not null]
-  TransportationAttachments TransportAttachment [not null]
-  TransportationHistories TransportationHistory [not null]
-  TransportationRepairs TransportationRepair [not null]
-  TransportationBreakdowns TransportationBreakdown [not null]
-  TransportationSparePRs TransportationSparePR [not null]
+  assignees TransportationAssignment [not null]
+  checklistItems TransportationChecklistItem [not null]
+  periodicMaintenancePlans TransportationPeriodicMaintenance [not null]
+  attachments TransportAttachment [not null]
+  histories TransportationHistory [not null]
+  repairs TransportationRepair [not null]
+  breakdowns TransportationBreakdown [not null]
+  sparePRs TransportationSparePR [not null]
 }
 
 Table TransportationAssignment {
