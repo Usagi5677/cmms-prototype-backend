@@ -193,7 +193,7 @@ type Mutation {
   deleteTransportationPeriodicMaintenance(id: Int!): String!
   deleteTransportationRepair(id: Int!): String!
   deleteTransportationSparePR(id: Int!): String!
-  editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, type: String!, zone: String!): String!
+  editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   editMachineBreakdown(description: String!, id: Int!, title: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
   editMachinePeriodicMaintenance(description: String!, id: Int!, title: String!): String!
@@ -483,6 +483,7 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationSparePR!
+  getSingleMachine(machineId: Int!): Machine!
   me: UserWithRoles!
   notifications: [Notification!]!
   profile: Profile!

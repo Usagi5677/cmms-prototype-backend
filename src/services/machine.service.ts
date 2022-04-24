@@ -31,6 +31,7 @@ import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-co
 import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
 import { DateScalar } from 'src/common/scalars/date.scalar';
 import { MachineStatus } from 'src/common/enums/machineStatus';
+import { Machine } from 'src/models/machine.model';
 
 @Injectable()
 export class MachineService {
@@ -98,7 +99,8 @@ export class MachineService {
     zone: string,
     location: string,
     currentRunningHrs: number,
-    lastServiceHrs: number
+    lastServiceHrs: number,
+    registeredDate: Date
   ) {
     try {
       await this.prisma.machine.update({
@@ -110,6 +112,7 @@ export class MachineService {
           location,
           currentRunningHrs,
           lastServiceHrs,
+          registeredDate,
         },
         where: { id },
       });
@@ -132,6 +135,28 @@ export class MachineService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  // Get machine details
+  async getSingleMachine(user: User, machineId: number) {
+    const machine = await this.prisma.machine.findFirst({
+      where: { id: machineId },
+      include: {
+        createdBy: true,
+        checklistItems: true,
+        periodicMaintenancePlans: true,
+        sparePRs: { orderBy: { id: 'desc' } },
+        repairs: { orderBy: { id: 'desc' } },
+        breakdowns: { orderBy: { id: 'desc' } },
+        histories: true,
+        attachments: true,
+      },
+    });
+    if (!machine) throw new BadRequestException('Machine not found.');
+
+    // Assigning data from db to the gql shape as it does not match 1:1
+    return machine;
+  }
+
   //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
   async getMachineWithPagination(
     user: User,

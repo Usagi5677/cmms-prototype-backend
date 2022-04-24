@@ -90,7 +90,8 @@ export class MachineResolver {
     @Args('zone') zone: string,
     @Args('location') location: string,
     @Args('currentRunningHrs') currentRunningHrs: number,
-    @Args('lastServiceHrs') lastServiceHrs: number
+    @Args('lastServiceHrs') lastServiceHrs: number,
+    @Args('registeredDate') registeredDate: Date
   ): Promise<String> {
     await this.machineService.editMachine(
       id,
@@ -100,7 +101,8 @@ export class MachineResolver {
       zone,
       location,
       currentRunningHrs,
-      lastServiceHrs
+      lastServiceHrs,
+      registeredDate
     );
     return `Machine updated.`;
   }
@@ -113,6 +115,14 @@ export class MachineResolver {
   ): Promise<String> {
     await this.machineService.setMachineStatus(user, id, status);
     return `Machine status set to ${status}.`;
+  }
+
+  @Query(() => Machine)
+  async getSingleMachine(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number
+  ) {
+    return await this.machineService.getSingleMachine(user, machineId);
   }
 
   @Query(() => PaginatedMachine)
