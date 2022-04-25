@@ -78,10 +78,10 @@ export class MachineService {
     }
   }
 
+  //test commit
   //** Delete machine. */
   async deleteMachine(id: number) {
     try {
-      console.log(id);
       await this.prisma.machine.delete({
         where: { id },
       });
