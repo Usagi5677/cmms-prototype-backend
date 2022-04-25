@@ -16,6 +16,7 @@ type ChecklistItem {
   createdAt: Date!
   description: String!
   id: Int!
+  type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
