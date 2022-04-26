@@ -144,7 +144,7 @@ export class MachineService {
       include: {
         createdBy: true,
         checklistItems: true,
-        periodicMaintenancePlans: true,
+        periodicMaintenancePlans: { include: { completedBy: true } },
         sparePRs: { orderBy: { id: 'desc' } },
         repairs: { orderBy: { id: 'desc' } },
         breakdowns: { orderBy: { id: 'desc' } },
@@ -316,12 +316,14 @@ export class MachineService {
     user: User,
     id: number,
     title: string,
-    description: string
+    description: string,
+    period: number,
+    notificationReminder: number
   ) {
     try {
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
-        data: { title, description },
+        data: { title, description, period, notificationReminder },
       });
     } catch (e) {
       console.log(e);
@@ -349,50 +351,22 @@ export class MachineService {
   ) {
     try {
       //put condition for status done later
+      let completedFlag = false;
+      if (status == 'Done') {
+        completedFlag = true;
+      }
+
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
-
-  //** Set machine periodic maintenance period. */
-  async setMachinePeriodicMaintenancePeriod(
-    user: User,
-    id: number,
-    period: number
-  ) {
-    try {
-      await this.prisma.machinePeriodicMaintenance.update({
-        where: { id },
-        data: { period },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Set machine periodic maintenance period. */
-  async setMachinePeriodicMaintenanceNotificationReminder(
-    user: User,
-    id: number,
-    notificationReminder: number
-  ) {
-    try {
-      await this.prisma.machinePeriodicMaintenance.update({
-        where: { id },
-        data: { notificationReminder },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
   //** Create machine repair. */
   async createMachineRepair(
     user: User,

@@ -209,13 +209,17 @@ export class MachineResolver {
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('title') title: string,
-    @Args('description') description: string
+    @Args('description') description: string,
+    @Args('period') period: number,
+    @Args('notificationReminder') notificationReminder: number
   ): Promise<String> {
     await this.machineService.editMachinePeriodicMaintenance(
       user,
       id,
       title,
-      description
+      description,
+      period,
+      notificationReminder
     );
     return `Periodic maintenance updated.`;
   }
@@ -242,34 +246,6 @@ export class MachineResolver {
       status
     );
     return `Periodic maintenance status updated.`;
-  }
-
-  @Mutation(() => String)
-  async setMachinePeriodicMaintenancePeriod(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('period') period: number
-  ): Promise<String> {
-    await this.machineService.setMachinePeriodicMaintenancePeriod(
-      user,
-      id,
-      period
-    );
-    return `Periodic maintenance period updated.`;
-  }
-
-  @Mutation(() => String)
-  async setMachinePeriodicMaintenanceNotificationReminder(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('notificationReminder') notificationReminder: number
-  ): Promise<String> {
-    await this.machineService.setMachinePeriodicMaintenanceNotificationReminder(
-      user,
-      id,
-      notificationReminder
-    );
-    return `Periodic maintenance notification reminder updated.`;
   }
 
   @Mutation(() => String)
