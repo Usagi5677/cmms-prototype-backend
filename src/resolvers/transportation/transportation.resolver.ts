@@ -187,8 +187,8 @@ export class TransportationResolver {
     @Args('transportationId') transportationId: number,
     @Args('title') title: string,
     @Args('description') description: string,
-    @Args('period') period: Date,
-    @Args('notificationReminder') notificationReminder: Date
+    @Args('period') period: number,
+    @Args('notificationReminder') notificationReminder: number
   ): Promise<String> {
     await this.transportationService.createTransportationPeriodicMaintenance(
       user,
@@ -248,7 +248,7 @@ export class TransportationResolver {
   async setTransportationPeriodicMaintenancePeriod(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('period') period: Date
+    @Args('period') period: number
   ): Promise<String> {
     await this.transportationService.setTransportationPeriodicMaintenancePeriod(
       user,
@@ -262,7 +262,7 @@ export class TransportationResolver {
   async setTransportationPeriodicMaintenanceNotificationReminder(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('notificationReminder') notificationReminder: Date
+    @Args('notificationReminder') notificationReminder: number
   ): Promise<String> {
     await this.transportationService.setTransportationPeriodicMaintenanceNotificationReminder(
       user,

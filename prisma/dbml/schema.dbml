@@ -152,8 +152,8 @@ Table MachinePeriodicMaintenance {
   machine Machine [not null]
   title String [not null]
   description String [not null]
-  period DateTime
-  notificationReminder DateTime
+  period Int
+  notificationReminder Int
   completedById Int
   completedBy User
   completedAt DateTime
@@ -277,8 +277,8 @@ Table TransportationPeriodicMaintenance {
   transportation Transportation [not null]
   title String [not null]
   description String [not null]
-  period DateTime
-  notificationReminder DateTime
+  period Int
+  notificationReminder Int
   completedById Int
   completedBy User
   completedAt DateTime

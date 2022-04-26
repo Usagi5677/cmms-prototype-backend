@@ -259,8 +259,8 @@ export class TransportationService {
     transportationId: number,
     title: string,
     description: string,
-    period: Date,
-    notificationReminder: Date
+    period: number,
+    notificationReminder: number
   ) {
     try {
       await this.prisma.transportationPeriodicMaintenance.create({
@@ -330,7 +330,7 @@ export class TransportationService {
   async setTransportationPeriodicMaintenancePeriod(
     user: User,
     id: number,
-    period: Date
+    period: number
   ) {
     try {
       await this.prisma.transportationPeriodicMaintenance.update({
@@ -347,7 +347,7 @@ export class TransportationService {
   async setTransportationPeriodicMaintenanceNotificationReminder(
     user: User,
     id: number,
-    notificationReminder: Date
+    notificationReminder: number
   ) {
     try {
       await this.prisma.transportationPeriodicMaintenance.update({

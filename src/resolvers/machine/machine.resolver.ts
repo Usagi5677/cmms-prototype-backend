@@ -190,8 +190,8 @@ export class MachineResolver {
     @Args('machineId') machineId: number,
     @Args('title') title: string,
     @Args('description') description: string,
-    @Args('period') period: Date,
-    @Args('notificationReminder') notificationReminder: Date
+    @Args('period') period: number,
+    @Args('notificationReminder') notificationReminder: number
   ): Promise<String> {
     await this.machineService.createMachinePeriodicMaintenance(
       user,
@@ -248,7 +248,7 @@ export class MachineResolver {
   async setMachinePeriodicMaintenancePeriod(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('period') period: Date
+    @Args('period') period: number
   ): Promise<String> {
     await this.machineService.setMachinePeriodicMaintenancePeriod(
       user,
@@ -262,7 +262,7 @@ export class MachineResolver {
   async setMachinePeriodicMaintenanceNotificationReminder(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('notificationReminder') notificationReminder: Date
+    @Args('notificationReminder') notificationReminder: number
   ): Promise<String> {
     await this.machineService.setMachinePeriodicMaintenanceNotificationReminder(
       user,

@@ -292,8 +292,8 @@ export class MachineService {
     machineId: number,
     title: string,
     description: string,
-    period: Date,
-    notificationReminder: Date
+    period: number,
+    notificationReminder: number
   ) {
     try {
       await this.prisma.machinePeriodicMaintenance.create({
@@ -363,7 +363,7 @@ export class MachineService {
   async setMachinePeriodicMaintenancePeriod(
     user: User,
     id: number,
-    period: Date
+    period: number
   ) {
     try {
       await this.prisma.machinePeriodicMaintenance.update({
@@ -380,7 +380,7 @@ export class MachineService {
   async setMachinePeriodicMaintenanceNotificationReminder(
     user: User,
     id: number,
-    notificationReminder: Date
+    notificationReminder: number
   ) {
     try {
       await this.prisma.machinePeriodicMaintenance.update({

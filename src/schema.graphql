@@ -172,12 +172,12 @@ enum MachineStatus {
 type Mutation {
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
-  addMachinePeriodicMaintenance(description: String!, machineId: Int!, notificationReminder: Date!, period: Date!, title: String!): String!
+  addMachinePeriodicMaintenance(description: String!, machineId: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
   addTransportationBreakdown(description: String!, title: String!, transportationId: Int!): String!
   addTransportationChecklistItem(description: String!, transportationId: Int!, type: String!): String!
-  addTransportationPeriodicMaintenance(description: String!, notificationReminder: Date!, period: Date!, title: String!, transportationId: Int!): String!
+  addTransportationPeriodicMaintenance(description: String!, notificationReminder: Int!, period: Int!, title: String!, transportationId: Int!): String!
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   assignUsersToMachine(machineId: Int!, userIds: [Int!]!): String!
@@ -212,15 +212,15 @@ type Mutation {
   removeMachine(machineId: Int!): String!
   removeTransportation(transportationId: Int!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
-  setMachinePeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Date!): String!
-  setMachinePeriodicMaintenancePeriod(id: Int!, period: Date!): String!
+  setMachinePeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Int!): String!
+  setMachinePeriodicMaintenancePeriod(id: Int!, period: Int!): String!
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setMachineRepairStatus(id: Int!, status: RepairStatus!): String!
   setMachineSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setMachineStatus(machineId: Int!, status: MachineStatus!): String!
   setTransportationBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
-  setTransportationPeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Date!): String!
-  setTransportationPeriodicMaintenancePeriod(id: Int!, period: Date!): String!
+  setTransportationPeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Int!): String!
+  setTransportationPeriodicMaintenancePeriod(id: Int!, period: Int!): String!
   setTransportationPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
@@ -291,8 +291,11 @@ type PeriodicMaintenance {
   createdAt: Date!
   description: String!
   id: Int!
-  notificationReminder: Date
-  period: Date
+  machineId: Int!
+  notificationReminder: Int
+  period: Int
+  status: PeriodicMaintenanceStatus!
+  title: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!

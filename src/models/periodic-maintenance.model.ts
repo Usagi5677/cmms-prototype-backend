@@ -1,12 +1,16 @@
 import { ObjectType } from '@nestjs/graphql';
+import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { BaseModel } from './base.model';
 import { User } from './user.model';
 
 @ObjectType()
 export class PeriodicMaintenance extends BaseModel {
+  title: string;
   description: string;
-  period?: Date;
-  notificationReminder?: Date;
+  machineId: number;
+  period?: number;
+  notificationReminder?: number;
+  status: PeriodicMaintenanceStatus;
   completedBy?: User;
   completedAt?: Date;
 }

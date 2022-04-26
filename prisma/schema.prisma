@@ -193,8 +193,8 @@ model MachinePeriodicMaintenance {
   machine              Machine                   @relation(fields: [machineId], references: [id], onDelete: Cascade)
   title                String
   description          String
-  period               DateTime?
-  notificationReminder DateTime?
+  period               Int?
+  notificationReminder Int?
   completedById        Int?
   completedBy          User?                     @relation(fields: [completedById], references: [id])
   completedAt          DateTime?
@@ -321,8 +321,8 @@ model TransportationPeriodicMaintenance {
   transportation       Transportation            @relation(fields: [transportationId], references: [id])
   title                String
   description          String
-  period               DateTime?
-  notificationReminder DateTime?
+  period               Int?
+  notificationReminder Int?
   completedById        Int?
   completedBy          User?                     @relation(fields: [completedById], references: [id])
   completedAt          DateTime?
