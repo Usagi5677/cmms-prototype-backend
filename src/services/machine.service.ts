@@ -32,6 +32,8 @@ import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-c
 import { DateScalar } from 'src/common/scalars/date.scalar';
 import { MachineStatus } from 'src/common/enums/machineStatus';
 import { Machine } from 'src/models/machine.model';
+import { PaginatedMachinePeriodicMaintenance } from 'src/models/pagination/machine-periodic-maintenance-connection.model';
+import { MachinePeriodicMaintenanceConnectionArgs } from 'src/models/args/machine-periodic-maintenance-connection.args';
 
 @Injectable()
 export class MachineService {
@@ -144,7 +146,6 @@ export class MachineService {
       include: {
         createdBy: true,
         checklistItems: true,
-        periodicMaintenancePlans: { include: { completedBy: true } },
         sparePRs: { orderBy: { id: 'desc' } },
         repairs: { orderBy: { id: 'desc' } },
         breakdowns: { orderBy: { id: 'desc' } },
@@ -767,5 +768,64 @@ export class MachineService {
         throw new InternalServerErrorException('Unexpected error occured.');
       }
     }
+  }
+
+  //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
+  async getMachinePeriodicMaintenanceWithPagination(
+    user: User,
+    args: MachinePeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedMachinePeriodicMaintenance> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { machineId, search } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (machineId) {
+      where.AND.push({ machineId });
+    }
+
+    //for now these only
+    if (search) {
+      const or: any = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { machineNumber: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machinePeriodicMaintenance =
+      await this.prisma.machinePeriodicMaintenance.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          completedBy: true,
+        },
+      });
+
+    const count = await this.prisma.machinePeriodicMaintenance.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machinePeriodicMaintenance.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
   }
 }

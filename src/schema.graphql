@@ -251,6 +251,11 @@ type PaginatedMachineBreakdown {
   pageInfo: MachineBreakdownPageInfo
 }
 
+type PaginatedMachinePeriodicMaintenance {
+  edges: [PeriodicMaintenanceEdge!]
+  pageInfo: PeriodicMaintenancePageInfo
+}
+
 type PaginatedMachineRepair {
   edges: [MachineRepairEdge!]
   pageInfo: MachineRepairPageInfo
@@ -297,6 +302,19 @@ type PeriodicMaintenance {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type PeriodicMaintenanceEdge {
+  cursor: String
+  node: PeriodicMaintenance
+}
+
+type PeriodicMaintenancePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 """Periodic Maintenance statuses."""
@@ -422,6 +440,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineSparePR!
+  getAllPeriodicMaintenanceOfMachine(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachinePeriodicMaintenance!
   getAllTransportation(
     """Paginate after opaque cursor"""
     after: String

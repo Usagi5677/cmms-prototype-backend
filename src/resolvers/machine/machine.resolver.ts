@@ -34,6 +34,8 @@ import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdow
 import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
 import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-connection.args';
 import { MachineStatus } from 'src/common/enums/machineStatus';
+import { PaginatedMachinePeriodicMaintenance } from 'src/models/pagination/machine-periodic-maintenance-connection.model';
+import { MachinePeriodicMaintenanceConnectionArgs } from 'src/models/args/machine-periodic-maintenance-connection.args';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Machine)
@@ -462,5 +464,16 @@ export class MachineResolver {
       }
     }
     return await this.machineService.getMachineWithPagination(user, args);
+  }
+
+  @Query(() => PaginatedMachinePeriodicMaintenance)
+  async getAllPeriodicMaintenanceOfMachine(
+    @UserEntity() user: User,
+    @Args() args: MachinePeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedMachinePeriodicMaintenance> {
+    return await this.machineService.getMachinePeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
   }
 }
