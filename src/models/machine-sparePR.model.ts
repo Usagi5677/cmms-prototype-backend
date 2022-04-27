@@ -5,6 +5,7 @@ import { User } from './user.model';
 
 @ObjectType()
 export class MachineSparePR extends BaseModel {
+  machineId: number;
   title: string;
   description: string;
   requestedDate: Date;

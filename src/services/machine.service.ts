@@ -491,9 +491,16 @@ export class MachineService {
   async setMachineSparePRStatus(user: User, id: number, status: SparePRStatus) {
     try {
       //put condition for status done later
+      let completedFlag = false;
+      if (status == 'Done') {
+        completedFlag = true;
+      }
+
       await this.prisma.machineSparePR.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -720,7 +727,7 @@ export class MachineService {
       take: limitPlusOne,
       where,
       include: {
-        machine: true,
+        completedBy: true,
       },
     });
 

@@ -425,7 +425,7 @@ export class MachineResolver {
   }
 
   @Query(() => PaginatedMachineSparePR)
-  async getAllMachineSparePROfMachine(
+  async getAllSparePROfMachine(
     @UserEntity() user: User,
     @Args() args: MachineSparePRConnectionArgs
   ): Promise<PaginatedMachineSparePR> {
