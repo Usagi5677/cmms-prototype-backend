@@ -406,7 +406,7 @@ export class MachineResolver {
   }
 
   @Query(() => PaginatedMachineRepair)
-  async getAllMachineRepairOfMachine(
+  async getAllRepairOfMachine(
     @UserEntity() user: User,
     @Args() args: MachineRepairConnectionArgs
   ): Promise<PaginatedMachineRepair> {
