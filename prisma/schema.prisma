@@ -138,6 +138,7 @@ enum RepairStatus {
 enum BreakdownStatus {
   Done
   Pending
+  Breakdown
 }
 
 enum PeriodicMaintenanceStatus {

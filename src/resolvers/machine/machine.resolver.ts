@@ -414,7 +414,7 @@ export class MachineResolver {
   }
 
   @Query(() => PaginatedMachineBreakdown)
-  async getAllMachineBreakdownOfMachine(
+  async getAllBreakdownOfMachine(
     @UserEntity() user: User,
     @Args() args: MachineBreakdownConnectionArgs
   ): Promise<PaginatedMachineBreakdown> {

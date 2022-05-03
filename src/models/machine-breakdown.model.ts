@@ -5,6 +5,7 @@ import { User } from './user.model';
 
 @ObjectType()
 export class MachineBreakdown extends BaseModel {
+  machineId: number;
   title: string;
   description: string;
   completedBy?: User;

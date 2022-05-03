@@ -4,6 +4,7 @@
 
 """Breakdown statuses."""
 enum BreakdownStatus {
+  Breakdown
   Done
   Pending
 }
@@ -62,6 +63,7 @@ type MachineBreakdown {
   createdAt: Date!
   description: String!
   id: Int!
+  machineId: Int!
   status: BreakdownStatus!
   title: String!
 
@@ -379,6 +381,21 @@ type Query {
     search: String
     self: Boolean
   ): PaginatedTransportation!
+  getAllBreakdownOfMachine(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachineBreakdown!
   getAllMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -397,21 +414,6 @@ type Query {
     search: String
     self: Boolean
   ): PaginatedMachine!
-  getAllMachineBreakdownOfMachine(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    machineId: Int!
-    search: String
-  ): PaginatedMachineBreakdown!
   getAllPeriodicMaintenanceOfMachine(
     """Paginate after opaque cursor"""
     after: String
