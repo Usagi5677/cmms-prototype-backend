@@ -122,6 +122,7 @@ model Machine {
 
 enum MachineStatus {
   Working
+  Pending
   Breakdown
 }
 
@@ -237,7 +238,7 @@ model MachineBreakdown {
   completedById Int?
   completedBy   User?           @relation(fields: [completedById], references: [id])
   completedAt   DateTime?
-  status        BreakdownStatus @default(Pending)
+  status        BreakdownStatus @default(Breakdown)
 }
 
 model MachineSparePR {
@@ -379,7 +380,7 @@ model TransportationBreakdown {
   completedById    Int?
   completedBy      User?           @relation(fields: [completedById], references: [id])
   completedAt      DateTime?
-  status           BreakdownStatus @default(Pending)
+  status           BreakdownStatus @default(Breakdown)
 }
 
 model TransportationSparePR {

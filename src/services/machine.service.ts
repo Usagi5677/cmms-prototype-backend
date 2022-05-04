@@ -126,11 +126,21 @@ export class MachineService {
   }
 
   //** Set machine status. */
-  async setMachineStatus(user: User, id: number, status: MachineStatus) {
+  async setMachineStatus(user: User, machineId: number, status: MachineStatus) {
     try {
       //put condition for status done later
+      if (status === 'Working') {
+        await this.prisma.machineBreakdown.updateMany({
+          where: { machineId },
+          data: { status: 'Done' },
+        });
+        await this.prisma.machineRepair.updateMany({
+          where: { machineId },
+          data: { status: 'Done' },
+        });
+      }
       await this.prisma.machine.update({
-        where: { id },
+        where: { id: machineId },
         data: { status, statusChangedAt: new Date() },
       });
     } catch (e) {
@@ -523,6 +533,10 @@ export class MachineService {
           description,
         },
       });
+      await this.prisma.machine.update({
+        where: { id: machineId },
+        data: { status: 'Breakdown' },
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -566,7 +580,28 @@ export class MachineService {
     status: BreakdownStatus
   ) {
     try {
-      //put condition for status done later
+      //get machine ID
+      const machine = await this.prisma.machineBreakdown.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+        },
+      });
+      let machineStatus;
+      if (status == 'Done') {
+        machineStatus = 'Working';
+      } else if (status == 'Pending') {
+        machineStatus = 'Pending';
+      } else if (status == 'Breakdown') {
+        machineStatus = 'Breakdown';
+      }
+      //set machine status
+      await this.prisma.machine.update({
+        where: { id: machine.machineId },
+        data: { status: machineStatus },
+      });
+
+      //set machine breakdown status
       await this.prisma.machineBreakdown.update({
         where: { id },
         data: { status },
@@ -613,6 +648,7 @@ export class MachineService {
       include: {
         machine: true,
       },
+      orderBy: { id: 'desc' },
     });
 
     const count = await this.prisma.machineRepair.count({ where });
@@ -671,6 +707,7 @@ export class MachineService {
       include: {
         machine: true,
       },
+      orderBy: { id: 'desc' },
     });
 
     const count = await this.prisma.machineBreakdown.count({ where });
@@ -729,6 +766,7 @@ export class MachineService {
       include: {
         completedBy: true,
       },
+      orderBy: { id: 'desc' },
     });
 
     const count = await this.prisma.machineSparePR.count({ where });
@@ -814,6 +852,7 @@ export class MachineService {
         include: {
           completedBy: true,
         },
+        orderBy: { id: 'desc' },
       });
 
     const count = await this.prisma.machinePeriodicMaintenance.count({ where });

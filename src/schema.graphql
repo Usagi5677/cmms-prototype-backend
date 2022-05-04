@@ -170,6 +170,7 @@ type MachineSparePRPageInfo {
 """Machine statuses."""
 enum MachineStatus {
   Breakdown
+  Pending
   Working
 }
 

@@ -195,7 +195,7 @@ Table MachineBreakdown {
   completedById Int
   completedBy User
   completedAt DateTime
-  status BreakdownStatus [not null, default: 'Pending']
+  status BreakdownStatus [not null, default: 'Breakdown']
 }
 
 Table MachineSparePR {
@@ -334,7 +334,7 @@ Table TransportationBreakdown {
   completedById Int
   completedBy User
   completedAt DateTime
-  status BreakdownStatus [not null, default: 'Pending']
+  status BreakdownStatus [not null, default: 'Breakdown']
 }
 
 Table TransportationSparePR {
@@ -363,6 +363,7 @@ Enum Permission {
 
 Enum MachineStatus {
   Working
+  Pending
   Breakdown
 }
 

@@ -112,10 +112,10 @@ export class MachineResolver {
   @Mutation(() => String)
   async setMachineStatus(
     @UserEntity() user: User,
-    @Args('machineId') id: number,
+    @Args('machineId') machineId: number,
     @Args('status', { type: () => MachineStatus }) status: MachineStatus
   ): Promise<String> {
-    await this.machineService.setMachineStatus(user, id, status);
+    await this.machineService.setMachineStatus(user, machineId, status);
     return `Machine status set to ${status}.`;
   }
 
