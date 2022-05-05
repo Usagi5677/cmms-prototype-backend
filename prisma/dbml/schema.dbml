@@ -20,6 +20,7 @@ Table User {
   MachineRepairs MachineRepair [not null]
   MachineBreakdowns MachineBreakdown [not null]
   MachineSparePRs MachineSparePR [not null]
+  MachineHistories MachineHistory [not null]
   transportationCreated Transportation [not null]
   transportationAssignments TransportationAssignment [not null]
   transportAttachments TransportAttachment [not null]
@@ -166,6 +167,8 @@ Table MachineHistory {
   updatedAt DateTime [not null]
   machineId Int [not null]
   machine Machine [not null]
+  completedById Int
+  completedBy User
   type String [not null]
   description String [not null]
 }
@@ -421,6 +424,8 @@ Ref: MachinePeriodicMaintenance.machineId > Machine.id
 Ref: MachinePeriodicMaintenance.completedById > User.id
 
 Ref: MachineHistory.machineId > Machine.id
+
+Ref: MachineHistory.completedById > User.id
 
 Ref: MachineRepair.machineId > Machine.id
 

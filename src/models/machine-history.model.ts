@@ -6,4 +6,7 @@ import { User } from './user.model';
 export class MachineHistory extends BaseModel {
   type: string;
   description: string;
+  machineId?: number;
+  completedBy?: User;
+  completedById?: number;
 }

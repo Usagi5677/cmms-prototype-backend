@@ -4,11 +4,10 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, SparePRStatus, User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
-import ConnectionArgs, {
+import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
@@ -16,7 +15,6 @@ import { UserService } from './user.service';
 import { NotificationService } from './notification.service';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
-import emailTemplate from 'src/common/helpers/emailTemplate';
 import { ConfigService } from '@nestjs/config';
 import { MachineConnectionArgs } from 'src/models/args/machine-connection.args';
 import { PaginatedMachine } from 'src/models/pagination/machine-connection.model';
@@ -29,11 +27,20 @@ import { MachineBreakdownConnectionArgs } from 'src/models/args/machine-breakdow
 import { PaginatedMachineBreakdown } from 'src/models/pagination/machine-breakdown-connection.model';
 import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-connection.args';
 import { PaginatedMachineSparePR } from 'src/models/pagination/machine-sparePR-connection.model';
-import { DateScalar } from 'src/common/scalars/date.scalar';
 import { MachineStatus } from 'src/common/enums/machineStatus';
-import { Machine } from 'src/models/machine.model';
 import { PaginatedMachinePeriodicMaintenance } from 'src/models/pagination/machine-periodic-maintenance-connection.model';
 import { MachinePeriodicMaintenanceConnectionArgs } from 'src/models/args/machine-periodic-maintenance-connection.args';
+import { MachineHistoryConnectionArgs } from 'src/models/args/machine-history-connection.args';
+import { PaginatedMachineHistory } from 'src/models/pagination/machine-history-connection.model';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+
+export interface MachineHistoryInterface {
+  machineId: number;
+  type: string;
+  description: string;
+  completedById?: number;
+}
 
 @Injectable()
 export class MachineService {
@@ -42,6 +49,7 @@ export class MachineService {
     private userService: UserService,
     private readonly redisCacheService: RedisCacheService,
     private readonly notificationService: NotificationService,
+    @InjectQueue('cmms-machine-history') private machineHistoryQueue: Queue,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
     private configService: ConfigService
   ) {}
@@ -62,7 +70,7 @@ export class MachineService {
       const interServiceHrs = currentRunningHrs - lastServiceHrs;
       await this.prisma.machine.create({
         data: {
-          createdById: 1,
+          createdById: user.id,
           machineNumber,
           model,
           type,
@@ -142,6 +150,12 @@ export class MachineService {
       await this.prisma.machine.update({
         where: { id: machineId },
         data: { status, statusChangedAt: new Date() },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Status Change',
+        description: `${user.fullName} (${user.rcno}) set status to ${status}`,
+        machineId: machineId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -245,6 +259,12 @@ export class MachineService {
       await this.prisma.machineChecklistItem.create({
         data: { machineId, description, type },
       });
+      await this.createMachineHistoryInBackground({
+        type: 'Checklist',
+        description: `${user.fullName} (${user.rcno}) added new checklist`,
+        machineId: machineId,
+        completedById: user.id,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -315,6 +335,12 @@ export class MachineService {
           period,
           notificationReminder,
         },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Perioidic Maintenance',
+        description: `${user.fullName} (${user.rcno}) added new periodic maintenance`,
+        machineId: machineId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -393,6 +419,12 @@ export class MachineService {
           description,
         },
       });
+      await this.createMachineHistoryInBackground({
+        type: 'Repair',
+        description: `${user.fullName} (${user.rcno}) added new repair`,
+        machineId: machineId,
+        completedById: user.id,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -459,6 +491,12 @@ export class MachineService {
           title,
           description,
         },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Spare PR',
+        description: `${user.fullName} (${user.rcno}) added new spare PR`,
+        machineId: machineId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -536,6 +574,12 @@ export class MachineService {
       await this.prisma.machine.update({
         where: { id: machineId },
         data: { status: 'Breakdown' },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Breakdown',
+        description: `${user.fullName} (${user.rcno}) added new breakdown`,
+        machineId: machineId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -873,5 +917,83 @@ export class MachineService {
         hasPreviousPage: offset >= limit,
       },
     };
+  }
+
+  //** Get machine history. Results are paginated. User cursor argument to go forward/backward. */
+  async getMachineHistoryWithPagination(
+    user: User,
+    args: MachineHistoryConnectionArgs
+  ): Promise<PaginatedMachineHistory> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, machineId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (machineId) {
+      where.AND.push({ machineId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machineHistory = await this.prisma.machineHistory.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        completedBy: true,
+      },
+      orderBy: { id: 'desc' },
+    });
+
+    const count = await this.prisma.machineHistory.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machineHistory.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  async createMachineHistory(machineHistory: MachineHistoryInterface) {
+    await this.prisma.machineHistory.create({
+      data: {
+        machineId: machineHistory.machineId,
+        type: machineHistory.type,
+        description: machineHistory.description,
+        completedById: machineHistory.completedById,
+      },
+    });
+  }
+
+  async createMachineHistoryInBackground(
+    machineHistory: MachineHistoryInterface
+  ) {
+    await this.machineHistoryQueue.add('createMachineHistory', {
+      machineHistory,
+    });
   }
 }

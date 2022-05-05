@@ -32,6 +32,7 @@ model User {
   MachineRepairs                               MachineRepair[]
   MachineBreakdowns                            MachineBreakdown[]
   MachineSparePRs                              MachineSparePR[]
+  MachineHistories                             MachineHistory[]
   transportationCreated                        Transportation[]
   transportationAssignments                    TransportationAssignment[]
   transportAttachments                         TransportAttachment[]
@@ -204,13 +205,15 @@ model MachinePeriodicMaintenance {
 }
 
 model MachineHistory {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  machineId   Int
-  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  type        String
-  description String
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  machineId     Int
+  machine       Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  completedById Int?
+  completedBy   User?    @relation(fields: [completedById], references: [id])
+  type          String
+  description   String
 }
 
 model MachineRepair {

@@ -36,6 +36,8 @@ import { MachineSparePRConnectionArgs } from 'src/models/args/machine-sparePR-co
 import { MachineStatus } from 'src/common/enums/machineStatus';
 import { PaginatedMachinePeriodicMaintenance } from 'src/models/pagination/machine-periodic-maintenance-connection.model';
 import { MachinePeriodicMaintenanceConnectionArgs } from 'src/models/args/machine-periodic-maintenance-connection.args';
+import { PaginatedMachineHistory } from 'src/models/pagination/machine-history-connection.model';
+import { MachineHistoryConnectionArgs } from 'src/models/args/machine-history-connection.args';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Machine)
@@ -472,6 +474,17 @@ export class MachineResolver {
     @Args() args: MachinePeriodicMaintenanceConnectionArgs
   ): Promise<PaginatedMachinePeriodicMaintenance> {
     return await this.machineService.getMachinePeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => PaginatedMachineHistory)
+  async getAllHistoryOfMachine(
+    @UserEntity() user: User,
+    @Args() args: MachineHistoryConnectionArgs
+  ): Promise<PaginatedMachineHistory> {
+    return await this.machineService.getMachineHistoryWithPagination(
       user,
       args
     );
