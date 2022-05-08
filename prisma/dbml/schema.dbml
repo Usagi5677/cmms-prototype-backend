@@ -130,6 +130,7 @@ Table MachineAttachment {
   mimeType String
   originalName String
   sharepointFileName String
+  mode String [not null, default: 'Public']
 }
 
 Table MachineChecklistItem {
@@ -300,6 +301,7 @@ Table TransportAttachment {
   mimeType String
   originalName String
   sharepointFileName String
+  mode String [not null, default: 'Public']
 }
 
 Table TransportationHistory {

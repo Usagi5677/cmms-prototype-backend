@@ -173,6 +173,7 @@ model MachineAttachment {
   mimeType           String?
   originalName       String?
   sharepointFileName String?
+  mode               String   @default("Public")
 }
 
 model MachineChecklistItem {
@@ -346,6 +347,7 @@ model TransportAttachment {
   mimeType           String?
   originalName       String?
   sharepointFileName String?
+  mode               String         @default("Public")
 }
 
 model TransportationHistory {

@@ -16,6 +16,7 @@ import { PubsubModule } from './resolvers/pubsub/pubsub.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MachineModule } from './resolvers/machine/machine.module';
 import { TransportationModule } from './resolvers/transportation/transportation.module';
+import { AttachmentModule } from './resolvers/attachment/attachment.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { TransportationModule } from './resolvers/transportation/transportation.
     UserModule,
     MachineModule,
     TransportationModule,
+    AttachmentModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

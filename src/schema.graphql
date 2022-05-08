@@ -55,6 +55,36 @@ type Machine {
   zone: String!
 }
 
+type MachineAttachment {
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  machineId: Int!
+  mimeType: String
+  mode: String!
+  originalName: String
+  sharepointFileName: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type MachineAttachmentEdge {
+  cursor: String
+  node: MachineAttachment
+}
+
+type MachineAttachmentPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type MachineBreakdown {
   completedAt: Date
   completedBy: User
@@ -217,6 +247,7 @@ type Mutation {
   deleteTransportationRepair(id: Int!): String!
   deleteTransportationSparePR(id: Int!): String!
   editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
+  editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, id: Int!, title: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
   editMachinePeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
@@ -232,6 +263,7 @@ type Mutation {
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
   removeMachine(machineId: Int!): String!
+  removeMachineAttachment(id: Int!): String!
   removeTransportation(transportationId: Int!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
@@ -266,6 +298,11 @@ type Notification {
 type PaginatedMachine {
   edges: [MachineEdge!]
   pageInfo: MachinePageInfo
+}
+
+type PaginatedMachineAttachment {
+  edges: [MachineAttachmentEdge!]
+  pageInfo: MachineAttachmentPageInfo
 }
 
 type PaginatedMachineBreakdown {
@@ -561,6 +598,22 @@ type Query {
     transportationId: Int!
   ): PaginatedTransportationSparePR!
   getSingleMachine(machineId: Int!): Machine!
+  machineAttachment(id: Int!): MachineAttachment!
+  machineAttachments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int!
+    search: String
+  ): PaginatedMachineAttachment!
   me: UserWithRoles!
   notifications: [Notification!]!
   profile: Profile!

@@ -489,4 +489,25 @@ export class MachineResolver {
       args
     );
   }
+
+  @Mutation(() => String)
+  async removeMachineAttachment(@Args('id') id: number): Promise<String> {
+    try {
+      await this.machineService.deleteMachineAttachment(id);
+      return `Attachment removed.`;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  @Mutation(() => String)
+  async editMachineAttachment(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.machineService.editMachineAttachment(user, id, description);
+    return `Attachment updated.`;
+  }
 }

@@ -88,7 +88,6 @@ export class MachineService {
     }
   }
 
-  //test commit
   //** Delete machine. */
   async deleteMachine(id: number) {
     try {
@@ -978,6 +977,7 @@ export class MachineService {
     };
   }
 
+  //** Create machine history */
   async createMachineHistory(machineHistory: MachineHistoryInterface) {
     await this.prisma.machineHistory.create({
       data: {
@@ -989,11 +989,37 @@ export class MachineService {
     });
   }
 
+  //** Create machine history in background */
   async createMachineHistoryInBackground(
     machineHistory: MachineHistoryInterface
   ) {
     await this.machineHistoryQueue.add('createMachineHistory', {
       machineHistory,
     });
+  }
+
+  //** Delete machine attachment. */
+  async deleteMachineAttachment(id: number) {
+    try {
+      await this.prisma.machineAttachment.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine breakdown */
+  async editMachineAttachment(user: User, id: number, description: string) {
+    try {
+      await this.prisma.machineAttachment.update({
+        where: { id },
+        data: { description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }
