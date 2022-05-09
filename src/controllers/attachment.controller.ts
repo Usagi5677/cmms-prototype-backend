@@ -20,13 +20,15 @@ import { AttachmentService } from 'src/services/attachment.service';
 import { UserService } from 'src/services/user.service';
 import * as moment from 'moment';
 import { extname } from 'path';
+import { MachineService } from 'src/services/machine.service';
 
 @Controller('attachment')
 export class AttachmentController {
   constructor(
     private prisma: PrismaService,
     private readonly userService: UserService,
-    private readonly attachmentService: AttachmentService
+    private readonly attachmentService: AttachmentService,
+    private readonly machineService: MachineService
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -60,6 +62,13 @@ export class AttachmentController {
           mimeType: attachment.mimetype,
           sharepointFileName,
         },
+      });
+      //add to history
+      await this.machineService.createMachineHistoryInBackground({
+        type: 'Add Attachment',
+        description: `Added attachment (${newAttachment.id})`,
+        machineId: parseInt(machineId),
+        completedById: user.id,
       });
       try {
         await this.attachmentService.uploadFile(attachment, {

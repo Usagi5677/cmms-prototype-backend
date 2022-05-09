@@ -87,6 +87,7 @@ export class MachineResolver {
 
   @Mutation(() => String)
   async editMachine(
+    @UserEntity() user: User,
     @Args('id') id: number,
     @Args('machineNumber') machineNumber: string,
     @Args('model') model: string,
@@ -106,7 +107,8 @@ export class MachineResolver {
       location,
       currentRunningHrs,
       lastServiceHrs,
-      registeredDate
+      registeredDate,
+      user
     );
     return `Machine updated.`;
   }
@@ -491,9 +493,12 @@ export class MachineResolver {
   }
 
   @Mutation(() => String)
-  async removeMachineAttachment(@Args('id') id: number): Promise<String> {
+  async removeMachineAttachment(
+    @Args('id') id: number,
+    @UserEntity() user: User
+  ): Promise<String> {
     try {
-      await this.machineService.deleteMachineAttachment(id);
+      await this.machineService.deleteMachineAttachment(id, user);
       return `Attachment removed.`;
     } catch (e) {
       console.log(e);

@@ -5,7 +5,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Prisma, SparePRStatus, User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 import {
   connectionFromArraySlice,
@@ -34,6 +34,8 @@ import { MachineHistoryConnectionArgs } from 'src/models/args/machine-history-co
 import { PaginatedMachineHistory } from 'src/models/pagination/machine-history-connection.model';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import * as moment from 'moment';
+import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -68,7 +70,7 @@ export class MachineService {
   ) {
     try {
       const interServiceHrs = currentRunningHrs - lastServiceHrs;
-      await this.prisma.machine.create({
+      const machine = await this.prisma.machine.create({
         data: {
           createdById: user.id,
           machineNumber,
@@ -81,6 +83,13 @@ export class MachineService {
           interServiceHrs,
           registeredDate,
         },
+      });
+
+      await this.createMachineHistoryInBackground({
+        type: 'Machine Add',
+        description: `Machine created`,
+        machineId: machine.id,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -110,9 +119,84 @@ export class MachineService {
     location: string,
     currentRunningHrs: number,
     lastServiceHrs: number,
-    registeredDate: Date
+    registeredDate: Date,
+    user: User
   ) {
     try {
+      const machine = await this.prisma.machine.findFirst({
+        where: { id },
+      });
+      if (machine.machineNumber != machineNumber) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Machine number changed from ${machine.machineNumber} to ${machineNumber}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (machine.model != model) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Model changed from ${machine.model} to ${model}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (machine.type != type) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Type changed from ${machine.type} to ${type}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (machine.zone != zone) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Zone changed from ${machine.zone} to ${zone}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (machine.location != location) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Location changed from ${machine.location} to ${location}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (machine.currentRunningHrs != currentRunningHrs) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Current Running Hrs changed from ${machine.currentRunningHrs} to ${currentRunningHrs}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (machine.lastServiceHrs != lastServiceHrs) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `last Service Hrs changed from ${machine.lastServiceHrs} to ${lastServiceHrs}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+      if (
+        moment(machine.registeredDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
+      ) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Registered date changed from ${moment(
+            machine.registeredDate
+          ).format('DD MMMM YYYY')} to ${moment(registeredDate).format(
+            'DD MMMM YYYY'
+          )}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machine.update({
         data: {
           machineNumber,
@@ -151,8 +235,8 @@ export class MachineService {
         data: { status, statusChangedAt: new Date() },
       });
       await this.createMachineHistoryInBackground({
-        type: 'Status Change',
-        description: `${user.fullName} (${user.rcno}) set status to ${status}`,
+        type: 'Machine Status Change',
+        description: `(${machineId}) Set status to ${status}`,
         machineId: machineId,
         completedById: user.id,
       });
@@ -259,8 +343,8 @@ export class MachineService {
         data: { machineId, description, type },
       });
       await this.createMachineHistoryInBackground({
-        type: 'Checklist',
-        description: `${user.fullName} (${user.rcno}) added new checklist`,
+        type: 'Add Checklist',
+        description: `Added new checklist`,
         machineId: machineId,
         completedById: user.id,
       });
@@ -271,6 +355,7 @@ export class MachineService {
   }
 
   //** Edit machine checklist item. */
+  //Not used
   async editMachineChecklistItem(
     user: User,
     id: number,
@@ -278,6 +363,27 @@ export class MachineService {
     type: string
   ) {
     try {
+      const machineChecklist = await this.prisma.machineChecklistItem.findFirst(
+        {
+          where: { id },
+        }
+      );
+      if (machineChecklist.description != description) {
+        await this.createMachineHistoryInBackground({
+          type: 'Checklist Edit',
+          description: `Description changed from ${machineChecklist.description} to ${description}.`,
+          machineId: machineChecklist.machineId,
+          completedById: user.id,
+        });
+      }
+      if (machineChecklist.type != type) {
+        await this.createMachineHistoryInBackground({
+          type: 'Checklist Edit',
+          description: `Type changed from ${machineChecklist.type} to ${type}.`,
+          machineId: machineChecklist.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineChecklistItem.update({
         where: { id },
         data: { description, type },
@@ -291,8 +397,23 @@ export class MachineService {
   //** Delete machine checklist item. */
   async deleteMachineChecklistItem(user: User, id: number) {
     try {
+      const machineChecklist = await this.prisma.machineChecklistItem.findFirst(
+        {
+          where: { id },
+          select: {
+            machineId: true,
+            description: true,
+          },
+        }
+      );
       await this.prisma.machineChecklistItem.delete({
         where: { id },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Checklist Delete',
+        description: `Checklist (${machineChecklist.description}) deleted.`,
+        machineId: machineChecklist.machineId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -304,6 +425,29 @@ export class MachineService {
   async toggleMachineChecklistItem(user: User, id: number, complete: boolean) {
     //no user context yet
     try {
+      const machineChecklist = await this.prisma.machineChecklistItem.findFirst(
+        {
+          where: { id },
+          select: {
+            machineId: true,
+            description: true,
+          },
+        }
+      );
+      complete
+        ? await this.createMachineHistoryInBackground({
+            type: 'Toggled',
+            description: `Checklist (${machineChecklist.description}) completed.`,
+            machineId: machineChecklist.machineId,
+            completedById: user.id,
+          })
+        : await this.createMachineHistoryInBackground({
+            type: 'Toggled',
+            description: `Checklist (${machineChecklist.description}) unchecked.`,
+            machineId: machineChecklist.machineId,
+            completedById: user.id,
+          });
+
       await this.prisma.machineChecklistItem.update({
         where: { id },
         data: complete
@@ -326,18 +470,19 @@ export class MachineService {
     notificationReminder: number
   ) {
     try {
-      await this.prisma.machinePeriodicMaintenance.create({
-        data: {
-          machineId,
-          title,
-          description,
-          period,
-          notificationReminder,
-        },
-      });
+      const periodicMaintenance =
+        await this.prisma.machinePeriodicMaintenance.create({
+          data: {
+            machineId,
+            title,
+            description,
+            period,
+            notificationReminder,
+          },
+        });
       await this.createMachineHistoryInBackground({
-        type: 'Perioidic Maintenance',
-        description: `${user.fullName} (${user.rcno}) added new periodic maintenance`,
+        type: 'Add Periodic Maintenance',
+        description: `Added periodic maintenance (${periodicMaintenance.id})`,
         machineId: machineId,
         completedById: user.id,
       });
@@ -357,6 +502,51 @@ export class MachineService {
     notificationReminder: number
   ) {
     try {
+      const machinePeriodicMaintenance =
+        await this.prisma.machinePeriodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            machineId: true,
+            title: true,
+            description: true,
+            period: true,
+            notificationReminder: true,
+          },
+        });
+      if (machinePeriodicMaintenance.title != title) {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Title changed from ${machinePeriodicMaintenance.title} to ${title}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
+      if (machinePeriodicMaintenance.description != description) {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Description changed from ${machinePeriodicMaintenance.description} to ${description}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
+      if (machinePeriodicMaintenance.period != period) {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Period changed from ${machinePeriodicMaintenance.period} to ${period}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
+      if (
+        machinePeriodicMaintenance.notificationReminder != notificationReminder
+      ) {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Notification reminder changed from ${machinePeriodicMaintenance.notificationReminder} to ${notificationReminder}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: { title, description, period, notificationReminder },
@@ -370,6 +560,21 @@ export class MachineService {
   //** Delete machine periodic maintenance. */
   async deleteMachinePeriodicMaintenance(user: User, id: number) {
     try {
+      const machinePeriodicMaintenance =
+        await this.prisma.machinePeriodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            machineId: true,
+            title: true,
+          },
+        });
+
+      await this.createMachineHistoryInBackground({
+        type: 'Periodic Maintenance Delete',
+        description: `(${id}) Periodic Maintenance (${machinePeriodicMaintenance.title}) deleted.`,
+        machineId: machinePeriodicMaintenance.machineId,
+        completedById: user.id,
+      });
       await this.prisma.machinePeriodicMaintenance.delete({
         where: { id },
       });
@@ -386,12 +591,39 @@ export class MachineService {
     status: PeriodicMaintenanceStatus
   ) {
     try {
-      //put condition for status done later
       let completedFlag = false;
+      const machinePeriodicMaintenance =
+        await this.prisma.machinePeriodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            machineId: true,
+          },
+        });
       if (status == 'Done') {
         completedFlag = true;
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
       }
-
+      if (status == 'Pending') {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Missed') {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machinePeriodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: completedFlag
@@ -411,7 +643,7 @@ export class MachineService {
     description: string
   ) {
     try {
-      await this.prisma.machineRepair.create({
+      const repair = await this.prisma.machineRepair.create({
         data: {
           machineId,
           title,
@@ -419,8 +651,8 @@ export class MachineService {
         },
       });
       await this.createMachineHistoryInBackground({
-        type: 'Repair',
-        description: `${user.fullName} (${user.rcno}) added new repair`,
+        type: 'Add Repair',
+        description: `Added repair (${repair.id})`,
         machineId: machineId,
         completedById: user.id,
       });
@@ -438,6 +670,31 @@ export class MachineService {
     description: string
   ) {
     try {
+      const machineRepair = await this.prisma.machineRepair.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          title: true,
+          description: true,
+        },
+      });
+      if (machineRepair.title != title) {
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Edit',
+          description: `(${id}) Title changed from ${machineRepair.title} to ${title}.`,
+          machineId: machineRepair.machineId,
+          completedById: user.id,
+        });
+      }
+      if (machineRepair.description != description) {
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Edit',
+          description: `(${id}) Description changed from ${machineRepair.description} to ${description}.`,
+          machineId: machineRepair.machineId,
+          completedById: user.id,
+        });
+      }
+
       await this.prisma.machineRepair.update({
         where: { id },
         data: { title, description },
@@ -451,6 +708,19 @@ export class MachineService {
   //** Delete machine repair. */
   async deleteMachineRepair(user: User, id: number) {
     try {
+      const machineRepair = await this.prisma.machineRepair.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          title: true,
+        },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Repair Delete',
+        description: `(${id}) Repair (${machineRepair.title}) deleted.`,
+        machineId: machineRepair.machineId,
+        completedById: user.id,
+      });
       await this.prisma.machineRepair.delete({
         where: { id },
       });
@@ -463,10 +733,35 @@ export class MachineService {
   //** Set machine repair status. */
   async setMachineRepairStatus(user: User, id: number, status: RepairStatus) {
     try {
-      //put condition for status done later
+      let completedFlag = false;
+      const machineRepair = await this.prisma.machineRepair.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+        },
+      });
+      if (status == 'Done') {
+        completedFlag = true;
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineRepair.machineId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Pending') {
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineRepair.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineRepair.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -483,7 +778,7 @@ export class MachineService {
     description: string
   ) {
     try {
-      await this.prisma.machineSparePR.create({
+      const machineSparePR = await this.prisma.machineSparePR.create({
         data: {
           machineId,
           requestedDate,
@@ -492,8 +787,8 @@ export class MachineService {
         },
       });
       await this.createMachineHistoryInBackground({
-        type: 'Spare PR',
-        description: `${user.fullName} (${user.rcno}) added new spare PR`,
+        type: 'Add Spare PR',
+        description: `Added spare PR (${machineSparePR.id})`,
         machineId: machineId,
         completedById: user.id,
       });
@@ -512,6 +807,46 @@ export class MachineService {
     description: string
   ) {
     try {
+      const machineSparePR = await this.prisma.machineSparePR.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          title: true,
+          description: true,
+          requestedDate: true,
+        },
+      });
+      if (machineSparePR.title != title) {
+        await this.createMachineHistoryInBackground({
+          type: 'Spare PR Edit',
+          description: `(${id}) Title changed from ${machineSparePR.title} to ${title}.`,
+          machineId: machineSparePR.machineId,
+          completedById: user.id,
+        });
+      }
+      if (machineSparePR.description != description) {
+        await this.createMachineHistoryInBackground({
+          type: 'Spare PR Edit',
+          description: `(${id}) Description changed from ${machineSparePR.description} to ${description}.`,
+          machineId: machineSparePR.machineId,
+          completedById: user.id,
+        });
+      }
+      if (
+        moment(machineSparePR.requestedDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(requestedDate).format('DD MMMM YYYY HH:mm:ss')
+      ) {
+        await this.createMachineHistoryInBackground({
+          type: 'Spare PR Edit',
+          description: `Requested date changed from ${moment(
+            machineSparePR.requestedDate
+          ).format('DD MMMM YYYY')} to ${moment(requestedDate).format(
+            'DD MMMM YYYY'
+          )}.`,
+          machineId: machineSparePR.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineSparePR.update({
         where: { id },
         data: { requestedDate, title, description },
@@ -525,6 +860,19 @@ export class MachineService {
   //** Delete machine spare pr. */
   async deleteMachineSparePR(user: User, id: number) {
     try {
+      const machineSparePR = await this.prisma.machineSparePR.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          title: true,
+        },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Spare PR Delete',
+        description: `(${id}) Spare PR (${machineSparePR.title}) deleted.`,
+        machineId: machineSparePR.machineId,
+        completedById: user.id,
+      });
       await this.prisma.machineSparePR.delete({
         where: { id },
       });
@@ -537,12 +885,30 @@ export class MachineService {
   //** Set machine spare pr status. */
   async setMachineSparePRStatus(user: User, id: number, status: SparePRStatus) {
     try {
-      //put condition for status done later
       let completedFlag = false;
+      const machineSparePR = await this.prisma.machineSparePR.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+        },
+      });
       if (status == 'Done') {
         completedFlag = true;
+        await this.createMachineHistoryInBackground({
+          type: 'Spare PR Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineSparePR.machineId,
+          completedById: user.id,
+        });
       }
-
+      if (status == 'Pending') {
+        await this.createMachineHistoryInBackground({
+          type: 'Spare PR Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineSparePR.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineSparePR.update({
         where: { id },
         data: completedFlag
@@ -563,7 +929,7 @@ export class MachineService {
     description: string
   ) {
     try {
-      await this.prisma.machineBreakdown.create({
+      const breakdown = await this.prisma.machineBreakdown.create({
         data: {
           machineId,
           title,
@@ -575,8 +941,8 @@ export class MachineService {
         data: { status: 'Breakdown' },
       });
       await this.createMachineHistoryInBackground({
-        type: 'Breakdown',
-        description: `${user.fullName} (${user.rcno}) added new breakdown`,
+        type: 'Add Breakdown',
+        description: `Added breakdown (${breakdown.id})`,
         machineId: machineId,
         completedById: user.id,
       });
@@ -594,6 +960,30 @@ export class MachineService {
     description: string
   ) {
     try {
+      const machineBreakdown = await this.prisma.machineBreakdown.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          title: true,
+          description: true,
+        },
+      });
+      if (machineBreakdown.title != title) {
+        await this.createMachineHistoryInBackground({
+          type: 'Breakdown Edit',
+          description: `(${id}) Title changed from ${machineBreakdown.title} to ${title}.`,
+          machineId: machineBreakdown.machineId,
+          completedById: user.id,
+        });
+      }
+      if (machineBreakdown.description != description) {
+        await this.createMachineHistoryInBackground({
+          type: 'Breakdown Edit',
+          description: `(${id}) Description changed from ${machineBreakdown.description} to ${description}.`,
+          machineId: machineBreakdown.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineBreakdown.update({
         where: { id },
         data: { title, description },
@@ -607,6 +997,19 @@ export class MachineService {
   //** Delete machine breakdown */
   async deleteMachineBreakdown(user: User, id: number) {
     try {
+      const machineBreakdown = await this.prisma.machineBreakdown.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          title: true,
+        },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Breakdown Delete',
+        description: `(${id}) Breakdown (${machineBreakdown.title}) deleted.`,
+        machineId: machineBreakdown.machineId,
+        completedById: user.id,
+      });
       await this.prisma.machineBreakdown.delete({
         where: { id },
       });
@@ -623,31 +1026,54 @@ export class MachineService {
     status: BreakdownStatus
   ) {
     try {
-      //get machine ID
-      const machine = await this.prisma.machineBreakdown.findFirst({
+      let completedFlag = false;
+      let machineStatus;
+      const machineBreakdown = await this.prisma.machineBreakdown.findFirst({
         where: { id },
         select: {
           machineId: true,
         },
       });
-      let machineStatus;
       if (status == 'Done') {
+        completedFlag = true;
         machineStatus = 'Working';
-      } else if (status == 'Pending') {
-        machineStatus = 'Pending';
-      } else if (status == 'Breakdown') {
-        machineStatus = 'Breakdown';
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineBreakdown.machineId,
+          completedById: user.id,
+        });
       }
-      //set machine status
-      await this.prisma.machine.update({
-        where: { id: machine.machineId },
-        data: { status: machineStatus },
-      });
+      if (status == 'Pending') {
+        machineStatus = 'Pending';
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineBreakdown.machineId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Breakdown') {
+        machineStatus = 'Breakdown';
+        await this.createMachineHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          machineId: machineBreakdown.machineId,
+          completedById: user.id,
+        });
 
-      //set machine breakdown status
+        //set machine status
+        await this.prisma.machine.update({
+          where: { id: machineBreakdown.machineId },
+          data: { status: machineStatus },
+        });
+      }
+
       await this.prisma.machineBreakdown.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -999,8 +1425,21 @@ export class MachineService {
   }
 
   //** Delete machine attachment. */
-  async deleteMachineAttachment(id: number) {
+  async deleteMachineAttachment(id: number, user: User) {
     try {
+      const machineAttachment = await this.prisma.machineAttachment.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          description: true,
+        },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Attachment Delete',
+        description: `(${id}) Attachment (${machineAttachment.description}) deleted.`,
+        machineId: machineAttachment.machineId,
+        completedById: user.id,
+      });
       await this.prisma.machineAttachment.delete({
         where: { id },
       });
@@ -1013,6 +1452,21 @@ export class MachineService {
   //** Edit machine breakdown */
   async editMachineAttachment(user: User, id: number, description: string) {
     try {
+      const machineAttachment = await this.prisma.machineAttachment.findFirst({
+        where: { id },
+        select: {
+          machineId: true,
+          description: true,
+        },
+      });
+      if (machineAttachment.description != description) {
+        await this.createMachineHistoryInBackground({
+          type: 'Attachment Edit',
+          description: `(${id}) Description changed from ${machineAttachment.description} to ${description}.`,
+          machineId: machineAttachment.machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineAttachment.update({
         where: { id },
         data: { description },
