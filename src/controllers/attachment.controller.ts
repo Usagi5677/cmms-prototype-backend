@@ -30,7 +30,7 @@ export class AttachmentController {
   ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Post('upload')
+  @Post('machine-upload')
   @UseInterceptors(FileInterceptor('attachment'))
   async uploadMachineAttachment(
     @Req() req,
