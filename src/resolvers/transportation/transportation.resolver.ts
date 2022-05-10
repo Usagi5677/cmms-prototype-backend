@@ -33,6 +33,8 @@ import { PaginatedTransportationRepair } from 'src/models/pagination/transportat
 import { TransportationRepairConnectionArgs } from 'src/models/args/transportation-repair-connection.args';
 import { PaginatedTransportationSparePR } from 'src/models/pagination/transportation-sparePR-connection.model';
 import { TransportationSparePRConnectionArgs } from 'src/models/args/transportation-sparePR-connection.args';
+import { PaginatedTransportationPeriodicMaintenance } from 'src/models/pagination/transportation-periodic-maintenance-connection.model';
+import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args/transportation-periodic-maintenance-connection.args';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
@@ -118,6 +120,17 @@ export class TransportationResolver {
       registeredDate
     );
     return `Transportation updated.`;
+  }
+
+  @Query(() => Transportation)
+  async getSingleTransportation(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number
+  ) {
+    return await this.transportationService.getSingleTransportation(
+      user,
+      transportationId
+    );
   }
 
   @Query(() => PaginatedTransportation)
@@ -214,13 +227,17 @@ export class TransportationResolver {
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('title') title: string,
-    @Args('description') description: string
+    @Args('description') description: string,
+    @Args('period') period: number,
+    @Args('notificationReminder') notificationReminder: number
   ): Promise<String> {
     await this.transportationService.editTransportationPeriodicMaintenance(
       user,
       id,
       title,
-      description
+      description,
+      period,
+      notificationReminder
     );
     return `Periodic maintenance updated.`;
   }
@@ -250,34 +267,6 @@ export class TransportationResolver {
       status
     );
     return `Periodic maintenance status updated.`;
-  }
-
-  @Mutation(() => String)
-  async setTransportationPeriodicMaintenancePeriod(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('period') period: number
-  ): Promise<String> {
-    await this.transportationService.setTransportationPeriodicMaintenancePeriod(
-      user,
-      id,
-      period
-    );
-    return `Periodic maintenance period updated.`;
-  }
-
-  @Mutation(() => String)
-  async setTransportationPeriodicMaintenanceNotificationReminder(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('notificationReminder') notificationReminder: number
-  ): Promise<String> {
-    await this.transportationService.setTransportationPeriodicMaintenanceNotificationReminder(
-      user,
-      id,
-      notificationReminder
-    );
-    return `Periodic maintenance notification reminder updated.`;
   }
 
   @Mutation(() => String)
@@ -452,6 +441,17 @@ export class TransportationResolver {
     return `Breakdown status updated.`;
   }
 
+  @Query(() => PaginatedTransportationPeriodicMaintenance)
+  async getAllPeriodicMaintenanceOfTransportation(
+    @UserEntity() user: User,
+    @Args() args: TransportationPeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedTransportationPeriodicMaintenance> {
+    return await this.transportationService.getTransportationPeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
+  }
+
   @Query(() => PaginatedTransportationRepair)
   async getAllTransportationRepairOfTransportation(
     @UserEntity() user: User,
@@ -475,7 +475,7 @@ export class TransportationResolver {
   }
 
   @Query(() => PaginatedTransportationSparePR)
-  async getAllTransportationSparePROfTransportation(
+  async getAllSparePROfTransportation(
     @UserEntity() user: User,
     @Args() args: TransportationSparePRConnectionArgs
   ): Promise<PaginatedTransportationSparePR> {

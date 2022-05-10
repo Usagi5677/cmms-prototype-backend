@@ -6,7 +6,7 @@ import { MachineBreakdown } from './machine-breakdown.model';
 import { MachineHistory } from './machine-history.model';
 import { MachineRepair } from './machine-repair.model';
 import { MachineSparePR } from './machine-sparePR.model';
-import { PeriodicMaintenance } from './periodic-maintenance.model';
+import { MachinePeriodicMaintenance } from './machine-periodic-maintenance.model';
 import { User } from './user.model';
 
 @ObjectType()
@@ -25,7 +25,7 @@ export class Machine extends BaseModel {
   statusChangedAt?: Date;
   assignees?: User[];
   checklistItems?: ChecklistItem[];
-  periodicMaintenancePlans?: PeriodicMaintenance[];
+  periodicMaintenancePlans?: MachinePeriodicMaintenance[];
   repairs?: MachineRepair[];
   breakdowns?: MachineBreakdown[];
   sparePRs?: MachineSparePR[];

@@ -42,7 +42,7 @@ type Machine {
   location: String!
   machineNumber: String!
   model: String!
-  periodicMaintenancePlans: [PeriodicMaintenance!]
+  periodicMaintenancePlans: [MachinePeriodicMaintenance!]
   registeredDate: Date
   repairs: [MachineRepair!]
   sparePRs: [MachineSparePR!]
@@ -155,6 +155,37 @@ type MachinePageInfo {
   startCursor: String
 }
 
+type MachinePeriodicMaintenance {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  machineId: Int!
+  notificationReminder: Int
+  period: Int
+  status: PeriodicMaintenanceStatus!
+  title: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type MachinePeriodicMaintenanceEdge {
+  cursor: String
+  node: MachinePeriodicMaintenance
+}
+
+type MachinePeriodicMaintenancePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type MachineRepair {
   completedAt: Date
   completedBy: User
@@ -256,7 +287,7 @@ type Mutation {
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationBreakdown(description: String!, id: Int!, title: String!): String!
   editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
-  editTransportationPeriodicMaintenance(description: String!, id: Int!, title: String!): String!
+  editTransportationPeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
   editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   flushRedis: String!
@@ -271,8 +302,6 @@ type Mutation {
   setMachineSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setMachineStatus(machineId: Int!, status: MachineStatus!): String!
   setTransportationBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
-  setTransportationPeriodicMaintenanceNotificationReminder(id: Int!, notificationReminder: Int!): String!
-  setTransportationPeriodicMaintenancePeriod(id: Int!, period: Int!): String!
   setTransportationPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
@@ -316,8 +345,8 @@ type PaginatedMachineHistory {
 }
 
 type PaginatedMachinePeriodicMaintenance {
-  edges: [PeriodicMaintenanceEdge!]
-  pageInfo: PeriodicMaintenancePageInfo
+  edges: [MachinePeriodicMaintenanceEdge!]
+  pageInfo: MachinePeriodicMaintenancePageInfo
 }
 
 type PaginatedMachineRepair {
@@ -340,45 +369,19 @@ type PaginatedTransportationBreakdown {
   pageInfo: MachineBreakdownPageInfo
 }
 
+type PaginatedTransportationPeriodicMaintenance {
+  edges: [TransportationPeriodicMaintenanceEdge!]
+  pageInfo: TransportationPeriodicMaintenancePageInfo
+}
+
 type PaginatedTransportationRepair {
   edges: [MachineRepairEdge!]
   pageInfo: MachineRepairPageInfo
 }
 
 type PaginatedTransportationSparePR {
-  edges: [MachineSparePREdge!]
-  pageInfo: MachineSparePRPageInfo
-}
-
-type PeriodicMaintenance {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  machineId: Int!
-  notificationReminder: Int
-  period: Int
-  status: PeriodicMaintenanceStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type PeriodicMaintenanceEdge {
-  cursor: String
-  node: PeriodicMaintenance
-}
-
-type PeriodicMaintenancePageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
+  edges: [TransportationSparePREdge!]
+  pageInfo: TransportationSparePRPageInfo
 }
 
 """Periodic Maintenance statuses."""
@@ -505,6 +508,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachinePeriodicMaintenance!
+  getAllPeriodicMaintenanceOfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationPeriodicMaintenance!
   getAllRepairOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -535,6 +553,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineSparePR!
+  getAllSparePROfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationSparePR!
   getAllTransportation(
     """Paginate after opaque cursor"""
     after: String
@@ -584,22 +617,8 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationRepair!
-  getAllTransportationSparePROfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationSparePR!
   getSingleMachine(machineId: Int!): Machine!
+  getSingleTransportation(transportationId: Int!): Transportation!
   machineAttachment(id: Int!): MachineAttachment!
   machineAttachments(
     """Paginate after opaque cursor"""
@@ -665,10 +684,10 @@ type Transportation {
   machineNumber: String!
   measurement: String
   model: String!
-  periodicMaintenancePlans: [PeriodicMaintenance!]
+  periodicMaintenancePlans: [TransportationPeriodicMaintenance!]
   registeredDate: Date
   repairs: [MachineRepair!]
-  sparePRs: [MachineSparePR!]
+  sparePRs: [TransportationSparePR!]
   status: MachineStatus
   statusChangedAt: Date
   transportType: String
@@ -684,6 +703,67 @@ type TransportationEdge {
 }
 
 type TransportationPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type TransportationPeriodicMaintenance {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  notificationReminder: Int
+  period: Int
+  status: PeriodicMaintenanceStatus!
+  title: String!
+  transportationId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationPeriodicMaintenanceEdge {
+  cursor: String
+  node: TransportationPeriodicMaintenance
+}
+
+type TransportationPeriodicMaintenancePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type TransportationSparePR {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  requestedDate: Date!
+  status: SparePRStatus!
+  title: String!
+  transportationId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationSparePREdge {
+  cursor: String
+  node: TransportationSparePR
+}
+
+type TransportationSparePRPageInfo {
   count: Int!
   endCursor: String
   hasNextPage: Boolean!

@@ -253,11 +253,6 @@ export class MachineService {
       include: {
         createdBy: true,
         checklistItems: true,
-        sparePRs: { orderBy: { id: 'desc' } },
-        repairs: { orderBy: { id: 'desc' } },
-        breakdowns: { orderBy: { id: 'desc' } },
-        histories: true,
-        attachments: true,
       },
     });
     if (!machine) throw new BadRequestException('Machine not found.');
@@ -1284,7 +1279,7 @@ export class MachineService {
     }
   }
 
-  //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
+  //** Get machine periodic maintenance. Results are paginated. User cursor argument to go forward/backward. */
   async getMachinePeriodicMaintenanceWithPagination(
     user: User,
     args: MachinePeriodicMaintenanceConnectionArgs

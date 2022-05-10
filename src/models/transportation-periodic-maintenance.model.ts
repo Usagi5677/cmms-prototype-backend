@@ -4,10 +4,10 @@ import { BaseModel } from './base.model';
 import { User } from './user.model';
 
 @ObjectType()
-export class PeriodicMaintenance extends BaseModel {
+export class TransportationPeriodicMaintenance extends BaseModel {
   title: string;
   description: string;
-  machineId: number;
+  transportationId: number;
   period?: number;
   notificationReminder?: number;
   status: PeriodicMaintenanceStatus;

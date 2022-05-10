@@ -32,6 +32,8 @@ import { TransportationRepairConnectionArgs } from 'src/models/args/transportati
 import { PaginatedTransportationRepair } from 'src/models/pagination/transportation-repair-connection.model';
 import { TransportationSparePRConnectionArgs } from 'src/models/args/transportation-sparePR-connection.args';
 import { PaginatedTransportationSparePR } from 'src/models/pagination/transportation-sparePR-connection.model';
+import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args/transportation-periodic-maintenance-connection.args';
+import { PaginatedTransportationPeriodicMaintenance } from 'src/models/pagination/transportation-periodic-maintenance-connection.model';
 
 @Injectable()
 export class TransportationService {
@@ -60,6 +62,7 @@ export class TransportationService {
     registeredDate: Date
   ) {
     try {
+      const interServiceMileage = currentMileage - lastServiceMileage;
       await this.prisma.transportation.create({
         data: {
           createdById: 1,
@@ -74,6 +77,7 @@ export class TransportationService {
           lastServiceMileage,
           transportType,
           registeredDate,
+          interServiceMileage,
         },
       });
     } catch (e) {
@@ -130,6 +134,22 @@ export class TransportationService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  // Get transportation details
+  async getSingleTransportation(user: User, transportationId: number) {
+    const transportation = await this.prisma.transportation.findFirst({
+      where: { id: transportationId },
+      include: {
+        createdBy: true,
+        checklistItems: true,
+      },
+    });
+    if (!transportation)
+      throw new BadRequestException('Transportation not found.');
+
+    // Assigning data from db to the gql shape as it does not match 1:1
+    return transportation;
   }
 
   //** Get transportation. Results are paginated. User cursor argument to go forward/backward. */
@@ -299,12 +319,14 @@ export class TransportationService {
     user: User,
     id: number,
     title: string,
-    description: string
+    description: string,
+    period: number,
+    notificationReminder: number
   ) {
     try {
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
-        data: { title, description },
+        data: { title, description, period, notificationReminder },
       });
     } catch (e) {
       console.log(e);
@@ -335,40 +357,6 @@ export class TransportationService {
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
         data: { status },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Set transport periodic maintenance period. */
-  async setTransportationPeriodicMaintenancePeriod(
-    user: User,
-    id: number,
-    period: number
-  ) {
-    try {
-      await this.prisma.transportationPeriodicMaintenance.update({
-        where: { id },
-        data: { period },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Set transport periodic maintenance period. */
-  async setTransportationPeriodicMaintenanceNotificationReminder(
-    user: User,
-    id: number,
-    notificationReminder: number
-  ) {
-    try {
-      await this.prisma.transportationPeriodicMaintenance.update({
-        where: { id },
-        data: { notificationReminder },
       });
     } catch (e) {
       console.log(e);
@@ -736,8 +724,9 @@ export class TransportationService {
         take: limitPlusOne,
         where,
         include: {
-          transportation: true,
+          completedBy: true,
         },
+        orderBy: { id: 'desc' },
       });
 
     const count = await this.prisma.transportationSparePR.count({ where });
@@ -788,5 +777,67 @@ export class TransportationService {
         throw new InternalServerErrorException('Unexpected error occured.');
       }
     }
+  }
+
+  //** Get transportation periodic maintenance. Results are paginated. User cursor argument to go forward/backward. */
+  async getTransportationPeriodicMaintenanceWithPagination(
+    user: User,
+    args: TransportationPeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedTransportationPeriodicMaintenance> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { transportationId, search } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (transportationId) {
+      where.AND.push({ transportationId });
+    }
+
+    //for now these only
+    if (search) {
+      const or: any = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { machineNumber: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationPeriodicMaintenance =
+      await this.prisma.transportationPeriodicMaintenance.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          completedBy: true,
+        },
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.transportationPeriodicMaintenance.count({
+      where,
+    });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationPeriodicMaintenance.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
   }
 }
