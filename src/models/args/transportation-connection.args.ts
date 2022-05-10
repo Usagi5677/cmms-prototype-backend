@@ -8,4 +8,5 @@ export class TransportationConnectionArgs extends ConnectionArgs {
   self?: boolean;
   assignedToId?: number;
   createdByUserId?: string;
+  transportType?: string;
 }

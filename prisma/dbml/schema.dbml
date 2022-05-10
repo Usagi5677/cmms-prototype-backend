@@ -236,6 +236,7 @@ Table Transportation {
   lastServiceMileage Int
   interServiceMileage Int
   measurement String [default: 'km']
+  transportType String [default: 'Vehicle']
   assignees TransportationAssignment [not null]
   checklistItems TransportationChecklistItem [not null]
   periodicMaintenancePlans TransportationPeriodicMaintenance [not null]

@@ -235,7 +235,7 @@ type Mutation {
   assignUsersToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUsersToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
-  createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
+  createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   deleteMachineBreakdown(id: Int!): String!
   deleteMachineChecklistItem(id: Int!): String!
   deleteMachinePeriodicMaintenance(id: Int!): String!
@@ -253,7 +253,7 @@ type Mutation {
   editMachinePeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
-  editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, type: String!): String!
+  editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationBreakdown(description: String!, id: Int!, title: String!): String!
   editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
   editTransportationPeriodicMaintenance(description: String!, id: Int!, title: String!): String!
@@ -440,6 +440,7 @@ type Query {
     last: Int
     search: String
     self: Boolean
+    transportType: String
   ): PaginatedTransportation!
   getAllBreakdownOfMachine(
     """Paginate after opaque cursor"""
@@ -551,6 +552,7 @@ type Query {
     last: Int
     search: String
     self: Boolean
+    transportType: String
   ): PaginatedTransportation!
   getAllTransportationBreakdownOfTransportation(
     """Paginate after opaque cursor"""
@@ -645,30 +647,31 @@ type Subscription {
 }
 
 type Transportation {
-  assignees: [User!]!
-  breakdowns: [MachineBreakdown!]!
-  checklistItems: [ChecklistItem!]!
+  assignees: [User!]
+  breakdowns: [MachineBreakdown!]
+  checklistItems: [ChecklistItem!]
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   createdBy: User!
-  currentMileage: Int!
+  currentMileage: Int
   department: String!
   engine: String!
-  histories: [MachineHistory!]!
+  histories: [MachineHistory!]
   id: Int!
-  interServiceMileage: Int!
-  lastServicMileage: Int!
+  interServiceMileage: Int
+  lastServiceMileage: Int
   location: String!
   machineNumber: String!
   measurement: String
   model: String!
-  periodicMaintenancePlans: [PeriodicMaintenance!]!
+  periodicMaintenancePlans: [PeriodicMaintenance!]
   registeredDate: Date
-  repairs: [MachineRepair!]!
-  sparePRs: [MachineSparePR!]!
-  status: MachineStatus!
+  repairs: [MachineRepair!]
+  sparePRs: [MachineSparePR!]
+  status: MachineStatus
   statusChangedAt: Date
+  transportType: String
   type: String!
 
   """Identifies the date and time when the object was last updated."""

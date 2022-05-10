@@ -54,7 +54,9 @@ export class TransportationResolver {
     @Args('engine') engine: string,
     @Args('measurement') measurement: string,
     @Args('currentMileage') currentMileage: number,
-    @Args('lastServiceMileage') lastServiceMileage: number
+    @Args('lastServiceMileage') lastServiceMileage: number,
+    @Args('transportType') transportType: string,
+    @Args('registeredDate') registeredDate: Date
   ): Promise<String> {
     await this.transportationService.createTransportation(
       user,
@@ -66,7 +68,9 @@ export class TransportationResolver {
       engine,
       measurement,
       currentMileage,
-      lastServiceMileage
+      lastServiceMileage,
+      transportType,
+      registeredDate
     );
     return `Successfully created transportation.`;
   }
@@ -95,7 +99,9 @@ export class TransportationResolver {
     @Args('engine') engine: string,
     @Args('measurement') measurement: string,
     @Args('currentMileage') currentMileage: number,
-    @Args('lastServiceMileage') lastServiceMileage: number
+    @Args('lastServiceMileage') lastServiceMileage: number,
+    @Args('transportType') transportType: string,
+    @Args('registeredDate') registeredDate: Date
   ): Promise<String> {
     await this.transportationService.editTransportation(
       id,
@@ -107,7 +113,9 @@ export class TransportationResolver {
       engine,
       measurement,
       currentMileage,
-      lastServiceMileage
+      lastServiceMileage,
+      transportType,
+      registeredDate
     );
     return `Transportation updated.`;
   }

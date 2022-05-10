@@ -279,6 +279,7 @@ model Transportation {
   lastServiceMileage       Int?
   interServiceMileage      Int?
   measurement              String?                             @default("km")
+  transportType            String?                             @default("Vehicle")
   assignees                TransportationAssignment[]
   checklistItems           TransportationChecklistItem[]
   periodicMaintenancePlans TransportationPeriodicMaintenance[]

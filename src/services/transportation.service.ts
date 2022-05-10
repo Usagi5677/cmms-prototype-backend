@@ -55,7 +55,9 @@ export class TransportationService {
     engine: string,
     measurement: string,
     currentMileage: number,
-    lastServiceMileage: number
+    lastServiceMileage: number,
+    transportType: string,
+    registeredDate: Date
   ) {
     try {
       await this.prisma.transportation.create({
@@ -70,6 +72,8 @@ export class TransportationService {
           measurement,
           currentMileage,
           lastServiceMileage,
+          transportType,
+          registeredDate,
         },
       });
     } catch (e) {
@@ -101,7 +105,9 @@ export class TransportationService {
     engine: string,
     measurement: string,
     currentMileage: number,
-    lastServiceMileage: number
+    lastServiceMileage: number,
+    transportType: string,
+    registeredDate: Date
   ) {
     try {
       await this.prisma.transportation.update({
@@ -115,6 +121,8 @@ export class TransportationService {
           measurement,
           currentMileage,
           lastServiceMileage,
+          transportType,
+          registeredDate,
         },
         where: { id },
       });
@@ -131,7 +139,7 @@ export class TransportationService {
   ): Promise<PaginatedTransportation> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId } = args;
+    const { createdById, search, assignedToId, transportType } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -141,6 +149,12 @@ export class TransportationService {
     if (assignedToId) {
       where.AND.push({
         assignees: { some: { userId: assignedToId } },
+      });
+    }
+
+    if (transportType) {
+      where.AND.push({
+        transportType,
       });
     }
     //for now these only
@@ -163,6 +177,8 @@ export class TransportationService {
       where,
       include: {
         createdBy: true,
+        sparePRs: { orderBy: { id: 'desc' } },
+        breakdowns: { orderBy: { id: 'desc' } },
       },
     });
 
