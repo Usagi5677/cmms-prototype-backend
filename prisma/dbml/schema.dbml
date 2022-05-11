@@ -400,6 +400,7 @@ Enum PeriodicMaintenanceStatus {
 
 Enum TransportationStatus {
   Working
+  Pending
   Breakdown
 }
 

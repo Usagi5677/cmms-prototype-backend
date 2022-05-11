@@ -33,6 +33,17 @@ import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args
 import { PaginatedTransportationPeriodicMaintenance } from 'src/models/pagination/transportation-periodic-maintenance-connection.model';
 import { PaginatedTransportationHistory } from 'src/models/pagination/transportation-history-connection.model';
 import { TransportationHistoryConnectionArgs } from 'src/models/args/transportation-history-connection.args';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import * as moment from 'moment';
+import { TransportationStatus } from 'src/common/enums/transportationStatus';
+
+export interface TransportationHistoryInterface {
+  transportationId: number;
+  type: string;
+  description: string;
+  completedById?: number;
+}
 
 @Injectable()
 export class TransportationService {
@@ -41,6 +52,8 @@ export class TransportationService {
     private userService: UserService,
     private readonly redisCacheService: RedisCacheService,
     private readonly notificationService: NotificationService,
+    @InjectQueue('cmms-transportation-history')
+    private transportationHistoryQueue: Queue,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
     private configService: ConfigService
   ) {}
@@ -62,9 +75,9 @@ export class TransportationService {
   ) {
     try {
       const interServiceMileage = currentMileage - lastServiceMileage;
-      await this.prisma.transportation.create({
+      const transportation = await this.prisma.transportation.create({
         data: {
-          createdById: 1,
+          createdById: user.id,
           machineNumber,
           model,
           type,
@@ -78,6 +91,12 @@ export class TransportationService {
           registeredDate,
           interServiceMileage,
         },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Transportation Add',
+        description: `Transportation created`,
+        transportationId: transportation.id,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -99,6 +118,7 @@ export class TransportationService {
 
   //** Edit Transportation */
   async editTransportation(
+    user: User,
     id: number,
     machineNumber: string,
     model: string,
@@ -113,6 +133,105 @@ export class TransportationService {
     registeredDate: Date
   ) {
     try {
+      const transportation = await this.prisma.transportation.findFirst({
+        where: { id },
+      });
+      if (transportation.machineNumber != machineNumber) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Machine number changed from ${transportation.machineNumber} to ${machineNumber}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.model != model) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Model changed from ${transportation.model} to ${model}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.type != type) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Type changed from ${transportation.type} to ${type}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.department != department) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Department changed from ${transportation.department} to ${department}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.location != location) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Location changed from ${transportation.location} to ${location}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.currentMileage != currentMileage) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Current Mileage changed from ${transportation.currentMileage} to ${currentMileage}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.lastServiceMileage != lastServiceMileage) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Last Service Mileage changed from ${transportation.lastServiceMileage} to ${lastServiceMileage}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.engine != engine) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Engine changed from ${transportation.engine} to ${engine}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.measurement != engine) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Measurement changed from ${transportation.measurement} to ${measurement}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (transportation.transportType != transportType) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Transport Type changed from ${transportation.transportType} to ${transportType}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+      if (
+        moment(transportation.registeredDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
+      ) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Registered date changed from ${moment(
+            transportation.registeredDate
+          ).format('DD MMMM YYYY')} to ${moment(registeredDate).format(
+            'DD MMMM YYYY'
+          )}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+
       await this.prisma.transportation.update({
         data: {
           machineNumber,
@@ -128,6 +247,39 @@ export class TransportationService {
           registeredDate,
         },
         where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set transportation status. */
+  async setTransportationStatus(
+    user: User,
+    transportationId: number,
+    status: TransportationStatus
+  ) {
+    try {
+      if (status === 'Working') {
+        await this.prisma.transportationBreakdown.updateMany({
+          where: { transportationId },
+          data: { status: 'Done' },
+        });
+        await this.prisma.transportationRepair.updateMany({
+          where: { transportationId },
+          data: { status: 'Done' },
+        });
+      }
+      await this.prisma.transportation.update({
+        where: { id: transportationId },
+        data: { status, statusChangedAt: new Date() },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Transportation Status Change',
+        description: `(${transportationId}) Set status to ${status}`,
+        transportationId: transportationId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -232,6 +384,12 @@ export class TransportationService {
       await this.prisma.transportationChecklistItem.create({
         data: { transportationId, description, type },
       });
+      await this.createTransportationHistoryInBackground({
+        type: 'Add Checklist',
+        description: `Added new checklist`,
+        transportationId: transportationId,
+        completedById: user.id,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -246,6 +404,27 @@ export class TransportationService {
     type: string
   ) {
     try {
+      const checklist = await this.prisma.transportationChecklistItem.findFirst(
+        {
+          where: { id },
+        }
+      );
+      if (checklist.description != description) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Checklist Edit',
+          description: `Description changed from ${checklist.description} to ${description}.`,
+          transportationId: checklist.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (checklist.type != type) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Checklist Edit',
+          description: `Type changed from ${checklist.type} to ${type}.`,
+          transportationId: checklist.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationChecklistItem.update({
         where: { id },
         data: { description, type },
@@ -259,6 +438,21 @@ export class TransportationService {
   //** Delete transportation checklist item. */
   async deleteTransportationChecklistItem(user: User, id: number) {
     try {
+      const checklist = await this.prisma.transportationChecklistItem.findFirst(
+        {
+          where: { id },
+          select: {
+            transportationId: true,
+            description: true,
+          },
+        }
+      );
+      await this.createTransportationHistoryInBackground({
+        type: 'Checklist Delete',
+        description: `Checklist (${checklist.description}) deleted.`,
+        transportationId: checklist.transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationChecklistItem.delete({
         where: { id },
       });
@@ -276,6 +470,29 @@ export class TransportationService {
   ) {
     //no user context yet
     try {
+      const checklist = await this.prisma.transportationChecklistItem.findFirst(
+        {
+          where: { id },
+          select: {
+            transportationId: true,
+            description: true,
+          },
+        }
+      );
+      complete
+        ? await this.createTransportationHistoryInBackground({
+            type: 'Toggled',
+            description: `Checklist (${checklist.description}) completed.`,
+            transportationId: checklist.transportationId,
+            completedById: user.id,
+          })
+        : await this.createTransportationHistoryInBackground({
+            type: 'Toggled',
+            description: `Checklist (${checklist.description}) unchecked.`,
+            transportationId: checklist.transportationId,
+            completedById: user.id,
+          });
+
       await this.prisma.transportationChecklistItem.update({
         where: { id },
         data: complete
@@ -298,14 +515,21 @@ export class TransportationService {
     notificationReminder: number
   ) {
     try {
-      await this.prisma.transportationPeriodicMaintenance.create({
-        data: {
-          transportationId,
-          title,
-          description,
-          period,
-          notificationReminder,
-        },
+      const periodicMaintenance =
+        await this.prisma.transportationPeriodicMaintenance.create({
+          data: {
+            transportationId,
+            title,
+            description,
+            period,
+            notificationReminder,
+          },
+        });
+      await this.createTransportationHistoryInBackground({
+        type: 'Add Periodic Maintenance',
+        description: `Added periodic maintenance (${periodicMaintenance.id})`,
+        transportationId: transportationId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -323,6 +547,49 @@ export class TransportationService {
     notificationReminder: number
   ) {
     try {
+      const periodicMaintenance =
+        await this.prisma.transportationPeriodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            transportationId: true,
+            title: true,
+            description: true,
+            period: true,
+            notificationReminder: true,
+          },
+        });
+      if (periodicMaintenance.title != title) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Title changed from ${periodicMaintenance.title} to ${title}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (periodicMaintenance.description != description) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Description changed from ${periodicMaintenance.description} to ${description}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (periodicMaintenance.period != period) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Period changed from ${periodicMaintenance.period} to ${period}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (periodicMaintenance.notificationReminder != notificationReminder) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Notification reminder changed from ${periodicMaintenance.notificationReminder} to ${notificationReminder}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
         data: { title, description, period, notificationReminder },
@@ -336,6 +603,21 @@ export class TransportationService {
   //** Delete transport periodic maintenance. */
   async deleteTransportationPeriodicMaintenance(user: User, id: number) {
     try {
+      const periodicMaintenance =
+        await this.prisma.transportationPeriodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            transportationId: true,
+            title: true,
+          },
+        });
+
+      await this.createTransportationHistoryInBackground({
+        type: 'Periodic Maintenance Delete',
+        description: `(${id}) Periodic Maintenance (${periodicMaintenance.title}) deleted.`,
+        transportationId: periodicMaintenance.transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationPeriodicMaintenance.delete({
         where: { id },
       });
@@ -352,10 +634,44 @@ export class TransportationService {
     status: PeriodicMaintenanceStatus
   ) {
     try {
-      //put condition for status done later
+      let completedFlag = false;
+      const periodicMaintenance =
+        await this.prisma.transportationPeriodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            transportationId: true,
+          },
+        });
+      if (status == 'Done') {
+        completedFlag = true;
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Pending') {
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Missed') {
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: periodicMaintenance.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -371,6 +687,19 @@ export class TransportationService {
     description: string
   ) {
     try {
+      const repair = await this.prisma.transportationRepair.create({
+        data: {
+          transportationId,
+          title,
+          description,
+        },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Add Repair',
+        description: `Added repair (${repair.id})`,
+        transportationId: transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationRepair.create({
         data: {
           transportationId,
@@ -392,6 +721,30 @@ export class TransportationService {
     description: string
   ) {
     try {
+      const repair = await this.prisma.transportationRepair.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          title: true,
+          description: true,
+        },
+      });
+      if (repair.title != title) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Edit',
+          description: `(${id}) Title changed from ${repair.title} to ${title}.`,
+          transportationId: repair.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (repair.description != description) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Edit',
+          description: `(${id}) Description changed from ${repair.description} to ${description}.`,
+          transportationId: repair.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationRepair.update({
         where: { id },
         data: { title, description },
@@ -405,6 +758,19 @@ export class TransportationService {
   //** Delete transportation repair. */
   async deleteTransportationRepair(user: User, id: number) {
     try {
+      const repair = await this.prisma.transportationRepair.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          title: true,
+        },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Repair Delete',
+        description: `(${id}) Repair (${repair.title}) deleted.`,
+        transportationId: repair.transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationRepair.delete({
         where: { id },
       });
@@ -421,10 +787,35 @@ export class TransportationService {
     status: RepairStatus
   ) {
     try {
-      //put condition for status done later
+      let completedFlag = false;
+      const repair = await this.prisma.transportationRepair.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+        },
+      });
+      if (status == 'Done') {
+        completedFlag = true;
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: repair.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Pending') {
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: repair.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationRepair.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -441,13 +832,19 @@ export class TransportationService {
     description: string
   ) {
     try {
-      await this.prisma.transportationSparePR.create({
+      const sparePR = await this.prisma.transportationSparePR.create({
         data: {
           transportationId,
           requestedDate,
           title,
           description,
         },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Add Spare PR',
+        description: `Added spare PR (${sparePR.id})`,
+        transportationId: transportationId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -464,6 +861,46 @@ export class TransportationService {
     description: string
   ) {
     try {
+      const sparePR = await this.prisma.transportationSparePR.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          title: true,
+          description: true,
+          requestedDate: true,
+        },
+      });
+      if (sparePR.title != title) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Spare PR Edit',
+          description: `(${id}) Title changed from ${sparePR.title} to ${title}.`,
+          transportationId: sparePR.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (sparePR.description != description) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Spare PR Edit',
+          description: `(${id}) Description changed from ${sparePR.description} to ${description}.`,
+          transportationId: sparePR.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (
+        moment(sparePR.requestedDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(requestedDate).format('DD MMMM YYYY HH:mm:ss')
+      ) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Spare PR Edit',
+          description: `Requested date changed from ${moment(
+            sparePR.requestedDate
+          ).format('DD MMMM YYYY')} to ${moment(requestedDate).format(
+            'DD MMMM YYYY'
+          )}.`,
+          transportationId: sparePR.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationSparePR.update({
         where: { id },
         data: { requestedDate, title, description },
@@ -477,6 +914,19 @@ export class TransportationService {
   //** Delete transportation spare pr. */
   async deleteTransportationSparePR(user: User, id: number) {
     try {
+      const sparePR = await this.prisma.transportationSparePR.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          title: true,
+        },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Spare PR Delete',
+        description: `(${id}) Spare PR (${sparePR.title}) deleted.`,
+        transportationId: sparePR.transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationSparePR.delete({
         where: { id },
       });
@@ -493,10 +943,35 @@ export class TransportationService {
     status: SparePRStatus
   ) {
     try {
-      //put condition for status done later
+      let completedFlag = false;
+      const sparePR = await this.prisma.transportationSparePR.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+        },
+      });
+      if (status == 'Done') {
+        completedFlag = true;
+        await this.createTransportationHistoryInBackground({
+          type: 'Spare PR Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: sparePR.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Pending') {
+        await this.createTransportationHistoryInBackground({
+          type: 'Spare PR Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: sparePR.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationSparePR.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -512,12 +987,22 @@ export class TransportationService {
     description: string
   ) {
     try {
-      await this.prisma.transportationBreakdown.create({
+      const breakdown = await this.prisma.transportationBreakdown.create({
         data: {
           transportationId,
           title,
           description,
         },
+      });
+      await this.prisma.transportation.update({
+        where: { id: transportationId },
+        data: { status: 'Breakdown' },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Add Breakdown',
+        description: `Added breakdown (${breakdown.id})`,
+        transportationId: transportationId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
@@ -533,6 +1018,30 @@ export class TransportationService {
     description: string
   ) {
     try {
+      const breakdown = await this.prisma.transportationBreakdown.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          title: true,
+          description: true,
+        },
+      });
+      if (breakdown.title != title) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Breakdown Edit',
+          description: `(${id}) Title changed from ${breakdown.title} to ${title}.`,
+          transportationId: breakdown.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (breakdown.description != description) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Breakdown Edit',
+          description: `(${id}) Description changed from ${breakdown.description} to ${description}.`,
+          transportationId: breakdown.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationBreakdown.update({
         where: { id },
         data: { title, description },
@@ -546,6 +1055,19 @@ export class TransportationService {
   //** Delete transportation breakdown. */
   async deleteTransportationBreakdown(user: User, id: number) {
     try {
+      const breakdown = await this.prisma.transportationBreakdown.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          title: true,
+        },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Breakdown Delete',
+        description: `(${id}) Breakdown (${breakdown.title}) deleted.`,
+        transportationId: breakdown.transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationBreakdown.delete({
         where: { id },
       });
@@ -562,10 +1084,54 @@ export class TransportationService {
     status: BreakdownStatus
   ) {
     try {
-      //put condition for status done later
+      let completedFlag = false;
+      let transportationStatus;
+      const breakdown = await this.prisma.transportationBreakdown.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+        },
+      });
+      if (status == 'Done') {
+        completedFlag = true;
+        transportationStatus = 'Working';
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: breakdown.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Pending') {
+        transportationStatus = 'Pending';
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: breakdown.transportationId,
+          completedById: user.id,
+        });
+      }
+      if (status == 'Breakdown') {
+        transportationStatus = 'Breakdown';
+        await this.createTransportationHistoryInBackground({
+          type: 'Repair Status',
+          description: `(${id}) Set status to ${status}.`,
+          transportationId: breakdown.transportationId,
+          completedById: user.id,
+        });
+
+        //set transportation status
+        await this.prisma.transportation.update({
+          where: { id: breakdown.transportationId },
+          data: { status: transportationStatus },
+        });
+      }
+
       await this.prisma.transportationBreakdown.update({
         where: { id },
-        data: { status },
+        data: completedFlag
+          ? { completedById: user.id, completedAt: new Date(), status }
+          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -896,9 +1462,45 @@ export class TransportationService {
     };
   }
 
+  //** Create transportation history */
+  async createTransportationHistory(
+    transportationHistory: TransportationHistoryInterface
+  ) {
+    await this.prisma.transportationHistory.create({
+      data: {
+        transportationId: transportationHistory.transportationId,
+        type: transportationHistory.type,
+        description: transportationHistory.description,
+        completedById: transportationHistory.completedById,
+      },
+    });
+  }
+
+  //** Create transportation history in background */
+  async createTransportationHistoryInBackground(
+    transportationHistory: TransportationHistoryInterface
+  ) {
+    await this.transportationHistoryQueue.add('createTransportationHistory', {
+      transportationHistory,
+    });
+  }
+
   //** Delete transportation attachment. */
   async deleteTransportationAttachment(id: number, user: User) {
     try {
+      const attachment = await this.prisma.transportationAttachment.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          description: true,
+        },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'Attachment Delete',
+        description: `(${id}) Attachment (${attachment.description}) deleted.`,
+        transportationId: attachment.transportationId,
+        completedById: user.id,
+      });
       await this.prisma.transportationAttachment.delete({
         where: { id },
       });
@@ -908,13 +1510,28 @@ export class TransportationService {
     }
   }
 
-  //** Edit transportation breakdown */
+  //** Edit transportation attachment */
   async editTransportationAttachment(
     user: User,
     id: number,
     description: string
   ) {
     try {
+      const attachment = await this.prisma.transportationAttachment.findFirst({
+        where: { id },
+        select: {
+          transportationId: true,
+          description: true,
+        },
+      });
+      if (attachment.description != description) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Attachment Edit',
+          description: `(${id}) Description changed from ${attachment.description} to ${description}.`,
+          transportationId: attachment.transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationAttachment.update({
         where: { id },
         data: { description },

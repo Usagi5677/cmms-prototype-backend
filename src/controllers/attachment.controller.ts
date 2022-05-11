@@ -22,6 +22,7 @@ import * as moment from 'moment';
 import { extname } from 'path';
 import { MachineService } from 'src/services/machine.service';
 import { CreateTransportationAttachmentInput } from 'src/resolvers/attachment/dto/create-transportation-attachment.input';
+import { TransportationService } from 'src/services/transportation.service';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -29,7 +30,8 @@ export class AttachmentController {
     private prisma: PrismaService,
     private readonly userService: UserService,
     private readonly attachmentService: AttachmentService,
-    private readonly machineService: MachineService
+    private readonly machineService: MachineService,
+    private readonly transportationService: TransportationService
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -150,6 +152,15 @@ export class AttachmentController {
         },
       });
       try {
+        //add to history
+        await this.transportationService.createTransportationHistoryInBackground(
+          {
+            type: 'Add Attachment',
+            description: `Added attachment (${newAttachment.id})`,
+            transportationId: parseInt(transportationId),
+            completedById: user.id,
+          }
+        );
         await this.attachmentService.uploadFile(attachment, {
           name: sharepointFileName,
         });

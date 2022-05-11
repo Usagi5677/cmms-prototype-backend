@@ -307,6 +307,7 @@ type Mutation {
   setTransportationPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
+  setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleMachineChecklistItem(complete: Boolean!, id: Int!): String!
   toggleTransportationChecklistItem(complete: Boolean!, id: Int!): String!
 }
@@ -710,7 +711,7 @@ type Subscription {
 
 type Transportation {
   assignees: [User!]
-  breakdowns: [MachineBreakdown!]
+  breakdowns: [TransportationBreakdown!]
   checklistItems: [ChecklistItem!]
 
   """Identifies the date and time when the object was created."""
@@ -719,7 +720,7 @@ type Transportation {
   currentMileage: Int
   department: String!
   engine: String!
-  histories: [MachineHistory!]
+  histories: [TransportationHistory!]
   id: Int!
   interServiceMileage: Int
   lastServiceMileage: Int
@@ -729,9 +730,9 @@ type Transportation {
   model: String!
   periodicMaintenancePlans: [TransportationPeriodicMaintenance!]
   registeredDate: Date
-  repairs: [MachineRepair!]
+  repairs: [TransportationRepair!]
   sparePRs: [TransportationSparePR!]
-  status: MachineStatus
+  status: TransportationStatus
   statusChangedAt: Date
   transportType: String
   type: String!
@@ -928,6 +929,13 @@ type TransportationSparePRPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+"""Transportation statuses."""
+enum TransportationStatus {
+  Breakdown
+  Pending
+  Working
 }
 
 type User {

@@ -37,6 +37,7 @@ import { PaginatedTransportationPeriodicMaintenance } from 'src/models/paginatio
 import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args/transportation-periodic-maintenance-connection.args';
 import { PaginatedTransportationHistory } from 'src/models/pagination/transportation-history-connection.model';
 import { TransportationHistoryConnectionArgs } from 'src/models/args/transportation-history-connection.args';
+import { TransportationStatus } from 'src/common/enums/transportationStatus';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
@@ -94,6 +95,7 @@ export class TransportationResolver {
 
   @Mutation(() => String)
   async editTransportation(
+    @UserEntity() user: User,
     @Args('id') id: number,
     @Args('machineNumber') machineNumber: string,
     @Args('model') model: string,
@@ -108,6 +110,7 @@ export class TransportationResolver {
     @Args('registeredDate') registeredDate: Date
   ): Promise<String> {
     await this.transportationService.editTransportation(
+      user,
       id,
       machineNumber,
       model,
@@ -122,6 +125,21 @@ export class TransportationResolver {
       registeredDate
     );
     return `Transportation updated.`;
+  }
+
+  @Mutation(() => String)
+  async setTransportationStatus(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('status', { type: () => TransportationStatus })
+    status: TransportationStatus
+  ): Promise<String> {
+    await this.transportationService.setTransportationStatus(
+      user,
+      transportationId,
+      status
+    );
+    return `Transportation status set to ${status}.`;
   }
 
   @Query(() => Transportation)

@@ -7,6 +7,7 @@ import { RedisCacheModule } from 'src/redisCache.module';
 import { UserModule } from '../user/user.module';
 import { MachineModule } from '../machine/machine.module';
 import { AttachmentResolver } from './attachment.resolver';
+import { TransportationModule } from '../transportation/transportation.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AttachmentResolver } from './attachment.resolver';
     RedisCacheModule,
     UserModule,
     MachineModule,
+    TransportationModule,
   ],
   controllers: [AttachmentController],
   providers: [AttachmentService, AttachmentResolver],

@@ -5,10 +5,23 @@ import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
 import { TransportationResolver } from './transportation.resolver';
 import { TransportationService } from 'src/services/transportation.service';
+import { BullModule } from '@nestjs/bull';
+import { TransportationConsumer } from './transportation.consumer';
 
 @Module({
-  imports: [RedisCacheModule, UserModule, NotificationModule],
-  providers: [TransportationResolver, TransportationService],
+  imports: [
+    RedisCacheModule,
+    UserModule,
+    NotificationModule,
+    BullModule.registerQueue({
+      name: 'cmms-transportation-history',
+    }),
+  ],
+  providers: [
+    TransportationResolver,
+    TransportationService,
+    TransportationConsumer,
+  ],
   exports: [TransportationService],
 })
 export class TransportationModule {}

@@ -1,11 +1,11 @@
 import { ObjectType } from '@nestjs/graphql';
-import { MachineStatus } from 'src/common/enums/machineStatus';
+import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { BaseModel } from './base.model';
 import { ChecklistItem } from './checklist-item.model';
-import { MachineBreakdown } from './machine-breakdown.model';
-import { MachineHistory } from './machine-history.model';
-import { MachineRepair } from './machine-repair.model';
+import { TransportationBreakdown } from './transportation-breakdown.model';
+import { TransportationHistory } from './transportation-history.model';
 import { TransportationPeriodicMaintenance } from './transportation-periodic-maintenance.model';
+import { TransportationRepair } from './transportation-repair.model';
 import { TransportationSparePR } from './transportation-sparePR.model';
 import { User } from './user.model';
 
@@ -24,13 +24,13 @@ export class Transportation extends BaseModel {
   interServiceMileage?: number;
   measurement?: string;
   transportType?: string;
-  status?: MachineStatus;
+  status?: TransportationStatus;
   statusChangedAt?: Date;
   assignees?: User[];
   checklistItems?: ChecklistItem[];
   periodicMaintenancePlans?: TransportationPeriodicMaintenance[];
-  repairs?: MachineRepair[];
-  breakdowns?: MachineBreakdown[];
+  repairs?: TransportationRepair[];
+  breakdowns?: TransportationBreakdown[];
   sparePRs?: TransportationSparePR[];
-  histories?: MachineHistory[];
+  histories?: TransportationHistory[];
 }
