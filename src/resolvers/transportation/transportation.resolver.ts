@@ -535,4 +535,32 @@ export class TransportationResolver {
       args
     );
   }
+
+  @Mutation(() => String)
+  async removeTransportationAttachment(
+    @Args('id') id: number,
+    @UserEntity() user: User
+  ): Promise<String> {
+    try {
+      await this.transportationService.deleteTransportationAttachment(id, user);
+      return `Attachment removed.`;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  @Mutation(() => String)
+  async editTransportationAttachment(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('description') description: string
+  ): Promise<String> {
+    await this.transportationService.editTransportationAttachment(
+      user,
+      id,
+      description
+    );
+    return `Attachment updated.`;
+  }
 }

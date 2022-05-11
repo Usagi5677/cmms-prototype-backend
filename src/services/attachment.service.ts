@@ -14,8 +14,10 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { MachineAttachmentConnectionArgs } from 'src/models/args/machine-attachment-connection.args';
+import { TransportationAttachmentConnectionArgs } from 'src/models/args/transportation-attachment-connection.args';
 import { MachineAttachment } from 'src/models/machine-attachment.model';
 import { PaginatedMachineAttachment } from 'src/models/pagination/machine-attachment-connection.model';
+import { PaginatedTransportationAttachment } from 'src/models/pagination/transportation-attachment-connection.model';
 import { User } from 'src/models/user.model';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisCacheService } from 'src/redisCache.service';
@@ -230,6 +232,63 @@ export class AttachmentService {
     const count = await this.prisma.machineAttachment.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       machineAttachment.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  async getTransportationAttachmentWithPagination(
+    user: User,
+    args: TransportationAttachmentConnectionArgs
+  ): Promise<PaginatedTransportationAttachment> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, transportationId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (transportationId) {
+      where.AND.push({ transportationId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the transportation ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationAttachment =
+      await this.prisma.transportationAttachment.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: { user: true },
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.transportationAttachment.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationAttachment.slice(0, limit),
       args,
       {
         arrayLength: count,

@@ -895,4 +895,33 @@ export class TransportationService {
       },
     };
   }
+
+  //** Delete transportation attachment. */
+  async deleteTransportationAttachment(id: number, user: User) {
+    try {
+      await this.prisma.transportationAttachment.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit transportation breakdown */
+  async editTransportationAttachment(
+    user: User,
+    id: number,
+    description: string
+  ) {
+    try {
+      await this.prisma.transportationAttachment.update({
+        where: { id },
+        data: { description },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

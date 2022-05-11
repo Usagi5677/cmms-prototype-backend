@@ -21,6 +21,7 @@ import { UserService } from 'src/services/user.service';
 import * as moment from 'moment';
 import { extname } from 'path';
 import { MachineService } from 'src/services/machine.service';
+import { CreateTransportationAttachmentInput } from 'src/resolvers/attachment/dto/create-transportation-attachment.input';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -88,11 +89,89 @@ export class AttachmentController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
+  @Get('machine/:id')
   async viewMachineAttachment(@Req() req, @Param() params, @Res() res) {
     const user = req.user;
     const attachmentId = parseInt(params.id);
     const attachment = await this.prisma.machineAttachment.findFirst({
+      where: { id: attachmentId },
+    });
+    if (!attachment) {
+      throw new BadRequestException('Attachment does not exist.');
+    }
+    const file = await this.attachmentService.getFile(
+      attachment.sharepointFileName
+    );
+    const fileData = file.data;
+    res.set({
+      'Content-Disposition': `inline; filename=${
+        attachment.originalName ?? attachment.sharepointFileName
+      }`,
+      'Content-Type': attachment.mimeType ?? null,
+    });
+    res.end(fileData);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('transportation-upload')
+  @UseInterceptors(FileInterceptor('attachment'))
+  async uploadTransportAttachment(
+    @Req() req,
+    @UploadedFile() attachment: Express.Multer.File,
+    @Body()
+    {
+      transportationId,
+      description,
+      isPublic,
+    }: CreateTransportationAttachmentInput
+  ) {
+    const user = req.user;
+
+    // Max allowed file size in bytes.
+    const maxFileSize = 2 * 1000000;
+    if (attachment.size > maxFileSize) {
+      throw new BadRequestException('File size cannot be greater than 2 MB.');
+    }
+    const mode = 'Public';
+    let newAttachment: any;
+    const sharepointFileName = `${user.rcno}_${moment().unix()}${extname(
+      attachment.originalname
+    )}`;
+    try {
+      newAttachment = await this.prisma.transportationAttachment.create({
+        data: {
+          userId: user.id,
+          transportationId: parseInt(transportationId),
+          description,
+          mode,
+          originalName: attachment.originalname,
+          mimeType: attachment.mimetype,
+          sharepointFileName,
+        },
+      });
+      try {
+        await this.attachmentService.uploadFile(attachment, {
+          name: sharepointFileName,
+        });
+      } catch (error) {
+        if (newAttachment?.id) {
+          await this.prisma.transportationAttachment.delete({
+            where: { id: newAttachment.id },
+          });
+        }
+        throw error;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('transportation/:id')
+  async viewTransportationAttachment(@Req() req, @Param() params, @Res() res) {
+    const user = req.user;
+    const attachmentId = parseInt(params.id);
+    const attachment = await this.prisma.transportationAttachment.findFirst({
       where: { id: attachmentId },
     });
     if (!attachment) {

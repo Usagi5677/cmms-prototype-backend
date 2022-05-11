@@ -285,6 +285,7 @@ type Mutation {
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
+  editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, id: Int!, title: String!): String!
   editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
   editTransportationPeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
@@ -296,6 +297,7 @@ type Mutation {
   removeMachine(machineId: Int!): String!
   removeMachineAttachment(id: Int!): String!
   removeTransportation(transportationId: Int!): String!
+  removeTransportationAttachment(id: Int!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setMachineRepairStatus(id: Int!, status: RepairStatus!): String!
@@ -362,6 +364,11 @@ type PaginatedMachineSparePR {
 type PaginatedTransportation {
   edges: [TransportationEdge!]
   pageInfo: TransportationPageInfo
+}
+
+type PaginatedTransportationAttachment {
+  edges: [TransportationAttachmentEdge!]
+  pageInfo: TransportationAttachmentPageInfo
 }
 
 type PaginatedTransportationBreakdown {
@@ -661,6 +668,22 @@ type Query {
   redisGet(key: String!): String
   redisKeys: [String!]!
   sayHello: String!
+  transportationAttachment(id: Int!): TransportationAttachment!
+  transportationAttachments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationAttachment!
 }
 
 """Repair statuses."""
@@ -715,6 +738,36 @@ type Transportation {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type TransportationAttachment {
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  mimeType: String
+  mode: String!
+  originalName: String
+  sharepointFileName: String
+  transportationId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationAttachmentEdge {
+  cursor: String
+  node: TransportationAttachment
+}
+
+type TransportationAttachmentPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type TransportationBreakdown {
