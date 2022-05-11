@@ -607,9 +607,7 @@ export class TransportationService {
         skip: offset,
         take: limitPlusOne,
         where,
-        include: {
-          transportation: true,
-        },
+        orderBy: { id: 'desc' },
       });
 
     const count = await this.prisma.transportationRepair.count({ where });

@@ -453,7 +453,7 @@ export class TransportationResolver {
   }
 
   @Query(() => PaginatedTransportationRepair)
-  async getAllTransportationRepairOfTransportation(
+  async getAllRepairOfTransportation(
     @UserEntity() user: User,
     @Args() args: TransportationRepairConnectionArgs
   ): Promise<PaginatedTransportationRepair> {

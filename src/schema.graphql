@@ -375,8 +375,8 @@ type PaginatedTransportationPeriodicMaintenance {
 }
 
 type PaginatedTransportationRepair {
-  edges: [MachineRepairEdge!]
-  pageInfo: MachineRepairPageInfo
+  edges: [TransportationRepairEdge!]
+  pageInfo: TransportationRepairPageInfo
 }
 
 type PaginatedTransportationSparePR {
@@ -538,6 +538,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineRepair!
+  getAllRepairOfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationRepair!
   getAllSparePROfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -602,21 +617,6 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationBreakdown!
-  getAllTransportationRepairOfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationRepair!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
   machineAttachment(id: Int!): MachineAttachment!
@@ -734,6 +734,35 @@ type TransportationPeriodicMaintenanceEdge {
 }
 
 type TransportationPeriodicMaintenancePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type TransportationRepair {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  status: RepairStatus!
+  title: String!
+  transportationId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationRepairEdge {
+  cursor: String
+  node: TransportationRepair
+}
+
+type TransportationRepairPageInfo {
   count: Int!
   endCursor: String
   hasNextPage: Boolean!

@@ -1109,9 +1109,6 @@ export class MachineService {
       skip: offset,
       take: limitPlusOne,
       where,
-      include: {
-        machine: true,
-      },
       orderBy: { id: 'desc' },
     });
 
