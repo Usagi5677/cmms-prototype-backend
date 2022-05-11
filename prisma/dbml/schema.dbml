@@ -29,6 +29,7 @@ Table User {
   TransportationRepairs TransportationRepair [not null]
   TransportationBreakdowns TransportationBreakdown [not null]
   TransportationSparePRs TransportationSparePR [not null]
+  TransportationHistories TransportationHistory [not null]
 }
 
 Table Notification {
@@ -311,6 +312,8 @@ Table TransportationHistory {
   updatedAt DateTime [not null]
   transportationId Int [not null]
   transportation Transportation [not null]
+  completedById Int
+  completedBy User
   type String [not null]
   description String [not null]
 }
@@ -461,6 +464,8 @@ Ref: TransportAttachment.userId > User.id
 Ref: TransportAttachment.transportationId > Transportation.id
 
 Ref: TransportationHistory.transportationId > Transportation.id
+
+Ref: TransportationHistory.completedById > User.id
 
 Ref: TransportationRepair.transportationId > Transportation.id
 

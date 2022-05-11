@@ -369,6 +369,11 @@ type PaginatedTransportationBreakdown {
   pageInfo: TransportationBreakdownPageInfo
 }
 
+type PaginatedTransportationHistory {
+  edges: [TransportationHistoryEdge!]
+  pageInfo: TransportationHistoryPageInfo
+}
+
 type PaginatedTransportationPeriodicMaintenance {
   edges: [TransportationPeriodicMaintenanceEdge!]
   pageInfo: TransportationPeriodicMaintenancePageInfo
@@ -490,6 +495,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineHistory!
+  getAllHistoryOfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationHistory!
   getAllMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -729,6 +749,34 @@ type TransportationBreakdownPageInfo {
 type TransportationEdge {
   cursor: String
   node: Transportation
+}
+
+type TransportationHistory {
+  completedBy: User
+  completedById: Int
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  transportationId: Int
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationHistoryEdge {
+  cursor: String
+  node: TransportationHistory
+}
+
+type TransportationHistoryPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type TransportationPageInfo {

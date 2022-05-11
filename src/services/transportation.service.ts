@@ -16,7 +16,6 @@ import { UserService } from './user.service';
 import { NotificationService } from './notification.service';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
-import emailTemplate from 'src/common/helpers/emailTemplate';
 import { ConfigService } from '@nestjs/config';
 import { PaginatedTransportation } from 'src/models/pagination/transportation-connection.model';
 import { TransportationConnectionArgs } from 'src/models/args/transportation-connection.args';
@@ -24,8 +23,6 @@ import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceS
 import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
-import { MachineRepairConnectionArgs } from 'src/models/args/machine-repair-connection.args';
-import { PaginatedMachineRepair } from 'src/models/pagination/machine-repair-connection.model';
 import { TransportationBreakdownConnectionArgs } from 'src/models/args/transportation-breakdown-connection.args';
 import { PaginatedTransportationBreakdown } from 'src/models/pagination/transportation-breakdown-connection.model';
 import { TransportationRepairConnectionArgs } from 'src/models/args/transportation-repair-connection.args';
@@ -34,6 +31,8 @@ import { TransportationSparePRConnectionArgs } from 'src/models/args/transportat
 import { PaginatedTransportationSparePR } from 'src/models/pagination/transportation-sparePR-connection.model';
 import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args/transportation-periodic-maintenance-connection.args';
 import { PaginatedTransportationPeriodicMaintenance } from 'src/models/pagination/transportation-periodic-maintenance-connection.model';
+import { PaginatedTransportationHistory } from 'src/models/pagination/transportation-history-connection.model';
+import { TransportationHistoryConnectionArgs } from 'src/models/args/transportation-history-connection.args';
 
 @Injectable()
 export class TransportationService {
@@ -728,6 +727,66 @@ export class TransportationService {
     const count = await this.prisma.transportationSparePR.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       transportationSparePR.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get transportation's history. Results are paginated. User cursor argument to go forward/backward. */
+  async getTransportationHistoryWithPagination(
+    user: User,
+    args: TransportationHistoryConnectionArgs
+  ): Promise<PaginatedTransportationHistory> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, transportationId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (transportationId) {
+      where.AND.push({ transportationId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the transportation ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationHistory =
+      await this.prisma.transportationHistory.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          completedBy: true,
+        },
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.transportationHistory.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationHistory.slice(0, limit),
       args,
       {
         arrayLength: count,

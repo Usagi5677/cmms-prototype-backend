@@ -41,6 +41,7 @@ model User {
   TransportationRepairs                        TransportationRepair[]
   TransportationBreakdowns                     TransportationBreakdown[]
   TransportationSparePRs                       TransportationSparePR[]
+  TransportationHistories                      TransportationHistory[]
 }
 
 model Notification {
@@ -302,7 +303,7 @@ model TransportationAssignment {
   userId           Int
   user             User           @relation(fields: [userId], references: [id])
   transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, transportationId])
 }
@@ -312,7 +313,7 @@ model TransportationChecklistItem {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   description      String
   completedById    Int?
   completedBy      User?          @relation(fields: [completedById], references: [id])
@@ -325,7 +326,7 @@ model TransportationPeriodicMaintenance {
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
   transportationId     Int
-  transportation       Transportation            @relation(fields: [transportationId], references: [id])
+  transportation       Transportation            @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   title                String
   description          String
   period               Int?
@@ -343,7 +344,7 @@ model TransportAttachment {
   userId             Int
   user               User           @relation(fields: [userId], references: [id])
   transportationId   Int
-  transportation     Transportation @relation(fields: [transportationId], references: [id])
+  transportation     Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   description        String
   mimeType           String?
   originalName       String?
@@ -356,7 +357,9 @@ model TransportationHistory {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
+  completedById    Int?
+  completedBy      User?          @relation(fields: [completedById], references: [id])
   type             String
   description      String
 }
@@ -366,7 +369,7 @@ model TransportationRepair {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   title            String
   description      String
   completedById    Int?
@@ -380,7 +383,7 @@ model TransportationBreakdown {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   transportationId Int
-  transportation   Transportation  @relation(fields: [transportationId], references: [id])
+  transportation   Transportation  @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   title            String
   description      String
   completedById    Int?
@@ -394,7 +397,7 @@ model TransportationSparePR {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id])
+  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   requestedDate    DateTime
   title            String
   description      String

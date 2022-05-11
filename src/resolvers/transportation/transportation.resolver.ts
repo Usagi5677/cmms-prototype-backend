@@ -35,6 +35,8 @@ import { PaginatedTransportationSparePR } from 'src/models/pagination/transporta
 import { TransportationSparePRConnectionArgs } from 'src/models/args/transportation-sparePR-connection.args';
 import { PaginatedTransportationPeriodicMaintenance } from 'src/models/pagination/transportation-periodic-maintenance-connection.model';
 import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args/transportation-periodic-maintenance-connection.args';
+import { PaginatedTransportationHistory } from 'src/models/pagination/transportation-history-connection.model';
+import { TransportationHistoryConnectionArgs } from 'src/models/args/transportation-history-connection.args';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
@@ -452,6 +454,17 @@ export class TransportationResolver {
     );
   }
 
+  @Query(() => PaginatedTransportationSparePR)
+  async getAllSparePROfTransportation(
+    @UserEntity() user: User,
+    @Args() args: TransportationSparePRConnectionArgs
+  ): Promise<PaginatedTransportationSparePR> {
+    return await this.transportationService.getTransportationSparePRWithPagination(
+      user,
+      args
+    );
+  }
+
   @Query(() => PaginatedTransportationRepair)
   async getAllRepairOfTransportation(
     @UserEntity() user: User,
@@ -474,12 +487,12 @@ export class TransportationResolver {
     );
   }
 
-  @Query(() => PaginatedTransportationSparePR)
-  async getAllSparePROfTransportation(
+  @Query(() => PaginatedTransportationHistory)
+  async getAllHistoryOfTransportation(
     @UserEntity() user: User,
-    @Args() args: TransportationSparePRConnectionArgs
-  ): Promise<PaginatedTransportationSparePR> {
-    return await this.transportationService.getTransportationSparePRWithPagination(
+    @Args() args: TransportationHistoryConnectionArgs
+  ): Promise<PaginatedTransportationHistory> {
+    return await this.transportationService.getTransportationHistoryWithPagination(
       user,
       args
     );
