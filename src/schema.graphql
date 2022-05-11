@@ -365,8 +365,8 @@ type PaginatedTransportation {
 }
 
 type PaginatedTransportationBreakdown {
-  edges: [MachineBreakdownEdge!]
-  pageInfo: MachineBreakdownPageInfo
+  edges: [TransportationBreakdownEdge!]
+  pageInfo: TransportationBreakdownPageInfo
 }
 
 type PaginatedTransportationPeriodicMaintenance {
@@ -460,6 +460,21 @@ type Query {
     machineId: Int!
     search: String
   ): PaginatedMachineBreakdown!
+  getAllBreakdownOfTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    transportationId: Int!
+  ): PaginatedTransportationBreakdown!
   getAllHistoryOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -602,21 +617,6 @@ type Query {
     self: Boolean
     transportType: String
   ): PaginatedTransportation!
-  getAllTransportationBreakdownOfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationBreakdown!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
   machineAttachment(id: Int!): MachineAttachment!
@@ -695,6 +695,35 @@ type Transportation {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type TransportationBreakdown {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+  status: BreakdownStatus!
+  title: String!
+  transportationId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TransportationBreakdownEdge {
+  cursor: String
+  node: TransportationBreakdown
+}
+
+type TransportationBreakdownPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type TransportationEdge {

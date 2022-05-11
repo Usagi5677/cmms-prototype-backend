@@ -464,7 +464,7 @@ export class TransportationResolver {
   }
 
   @Query(() => PaginatedTransportationBreakdown)
-  async getAllTransportationBreakdownOfTransportation(
+  async getAllBreakdownOfTransportation(
     @UserEntity() user: User,
     @Args() args: TransportationBreakdownConnectionArgs
   ): Promise<PaginatedTransportationBreakdown> {
