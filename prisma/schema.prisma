@@ -42,6 +42,7 @@ model User {
   TransportationBreakdowns                     TransportationBreakdown[]
   TransportationSparePRs                       TransportationSparePR[]
   TransportationHistories                      TransportationHistory[]
+  roleCreated                                  Role[]
 }
 
 model Notification {
@@ -55,12 +56,12 @@ model Notification {
 }
 
 enum Permission {
-  AddMachine
-  EditMachine
-  DeleteMachine
-  AddTransportation
-  EditTransportation
-  DeleteTransportation
+  ADD_MACHINE
+  EDIT_MACHINE
+  DELETE_MACHINE
+  ADD_TRANSPORTATION
+  EDIT_TRANSPORTATION
+  DELETE_TRANSPORTATION
 }
 
 model Role {
@@ -68,6 +69,8 @@ model Role {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   name            String
+  createdById     Int
+  createdBy       User             @relation(fields: [createdById], references: [id])
   userRoles       UserRole[]
   permissionRoles PermissionRole[]
 }
@@ -78,8 +81,8 @@ model UserRole {
   updatedAt DateTime @updatedAt
   userId    Int
   roleId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
 }
@@ -90,7 +93,7 @@ model PermissionRole {
   updatedAt  DateTime   @updatedAt
   roleId     Int
   permission Permission
-  role       Role       @relation(fields: [roleId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permission])
 }

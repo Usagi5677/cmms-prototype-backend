@@ -38,6 +38,7 @@ import { PaginatedMachinePeriodicMaintenance } from 'src/models/pagination/machi
 import { MachinePeriodicMaintenanceConnectionArgs } from 'src/models/args/machine-periodic-maintenance-connection.args';
 import { PaginatedMachineHistory } from 'src/models/pagination/machine-history-connection.model';
 import { MachineHistoryConnectionArgs } from 'src/models/args/machine-history-connection.args';
+import { PermissionsGuard } from 'src/guards/permissions.guard';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Machine)

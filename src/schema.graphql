@@ -258,11 +258,13 @@ type Mutation {
   addMachinePeriodicMaintenance(description: String!, machineId: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
+  addRole(name: String!): String!
   addTransportationBreakdown(description: String!, title: String!, transportationId: Int!): String!
   addTransportationChecklistItem(description: String!, transportationId: Int!, type: String!): String!
   addTransportationPeriodicMaintenance(description: String!, notificationReminder: Int!, period: Int!, title: String!, transportationId: Int!): String!
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
+  assignPermission(permissions: [Permission!]!, roleId: Int!): String!
   assignUsersToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUsersToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
@@ -284,6 +286,7 @@ type Mutation {
   editMachinePeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
+  editRole(id: Int!, name: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, id: Int!, title: String!): String!
@@ -296,6 +299,7 @@ type Mutation {
   readNotification(notificationId: Int!): String!
   removeMachine(machineId: Int!): String!
   removeMachineAttachment(id: Int!): String!
+  removeRole(id: Int!): String!
   removeTransportation(transportationId: Int!): String!
   removeTransportationAttachment(id: Int!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
@@ -362,6 +366,11 @@ type PaginatedMachineSparePR {
   pageInfo: MachineSparePRPageInfo
 }
 
+type PaginatedPermissionRole {
+  edges: [RolesEdge!]
+  pageInfo: RolesPageInfo
+}
+
 type PaginatedTransportation {
   edges: [TransportationEdge!]
   pageInfo: TransportationPageInfo
@@ -402,6 +411,26 @@ enum PeriodicMaintenanceStatus {
   Done
   Missed
   Pending
+}
+
+"""All permissions."""
+enum Permission {
+  ADD_MACHINE
+  ADD_TRANSPORTATION
+  DELETE_MACHINE
+  DELETE_TRANSPORTATION
+  EDIT_MACHINE
+  EDIT_TRANSPORTATION
+}
+
+type PermissionRole {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  permission: Permission!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
 }
 
 type Profile {
@@ -596,6 +625,22 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationRepair!
+  getAllRoles(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedPermissionRole!
   getAllSparePROfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -697,6 +742,31 @@ enum RepairStatus {
 enum Role {
   Admin
   Agent
+}
+
+type Roles {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  id: Int!
+  name: String!
+  permissionRoles: [PermissionRole!]!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type RolesEdge {
+  cursor: String
+  node: Roles
+}
+
+type RolesPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 """Spare pr statuses."""

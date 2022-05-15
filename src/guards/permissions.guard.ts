@@ -21,7 +21,7 @@ export class PermissionsGuard implements CanActivate {
     }
     const user = GqlExecutionContext.create(context).getContext().req.user;
     const userRolesPermissions =
-      await this.userService.getUserRolesPermissionsList(1);
+      await this.userService.getUserRolesPermissionsList(user.id);
     return permissions.some((p) => userRolesPermissions.includes(p));
   }
 }
