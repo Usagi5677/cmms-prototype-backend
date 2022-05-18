@@ -26,6 +26,7 @@ import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-co
 import { PermissionEnum } from 'src/common/enums/permission';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
+import { Roles as RoleModel } from 'src/models/roles.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => PermissionRole)
@@ -84,5 +85,13 @@ export class PermissionRoleResolver {
       permissions
     );
     return `Assigned permission.`;
+  }
+
+  @Query(() => [RoleModel])
+  async getRoles(): Promise<RoleModel[]> {
+    const roles: any = await this.prisma.role.findMany({
+      orderBy: { id: 'asc' },
+    });
+    return roles;
   }
 }

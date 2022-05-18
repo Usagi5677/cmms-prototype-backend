@@ -3,13 +3,13 @@ import { PermissionEnum } from 'src/common/enums/permission';
 
 import { BaseModel } from './base.model';
 import { PermissionRole } from './permission-role.model';
-import { UserRoles } from './user-roles.model';
+import { Roles } from './roles.model';
 import { User } from './user.model';
 
 @ObjectType()
-export class Roles extends BaseModel {
-  createdBy: User;
+export class UserRoles extends BaseModel {
   id: number;
-  name: string;
-  permissionRoles: PermissionRole[];
+  roleId: number;
+  userId: number;
+  role?: Roles;
 }

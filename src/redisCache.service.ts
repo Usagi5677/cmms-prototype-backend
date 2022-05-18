@@ -3,7 +3,8 @@ import { createClient, RedisClientType } from 'redis';
 
 @Injectable()
 export class RedisCacheService {
-  constructor() {}
+  //constructor() {}
+  PREFIX = 'cmms';
   async connect(): Promise<RedisClientType<any>> {
     const client = createClient();
     client.on('error', (err) => console.log('Redis Client Error', err));
@@ -12,8 +13,8 @@ export class RedisCacheService {
   }
 
   parseWithDate(jsonString: string): any {
-    var reDateDetect = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/; // startswith: 2015-04-29T22:06:55
-    var resultObject = JSON.parse(jsonString, (key: any, value: any) => {
+    const reDateDetect = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/; // startswith: 2015-04-29T22:06:55
+    const resultObject = JSON.parse(jsonString, (key: any, value: any) => {
       if (typeof value == 'string' && reDateDetect.exec(value)) {
         return new Date(value);
       }
@@ -24,7 +25,7 @@ export class RedisCacheService {
 
   async get(key): Promise<any> {
     const client = await this.connect();
-    const valueJSON = await client.get(`cmms:${key}`);
+    const valueJSON = await client.get(`${this.PREFIX}:${key}`);
     const value = this.parseWithDate(valueJSON);
     client.quit();
     return value;
@@ -33,7 +34,7 @@ export class RedisCacheService {
   async set(key, value, ttl) {
     const client = await this.connect();
     const valueJSON = JSON.stringify(value);
-    await client.set(`cmms:${key}`, valueJSON, { EX: ttl });
+    await client.set(`${this.PREFIX}:${key}`, valueJSON, { EX: ttl });
     client.quit();
   }
 
@@ -53,15 +54,29 @@ export class RedisCacheService {
 
   async getKeys() {
     const client = await this.connect();
-    const keysWithPrefix = await client.keys('cmms:*');
+    const keysWithPrefix = await client.keys(`${this.PREFIX}:*`);
     client.quit();
-    return keysWithPrefix.map((k) => k.split('cmms:')[1]);
+    return keysWithPrefix.map((k) => k.split(`${this.PREFIX}:`)[1]);
+  }
+
+  async getKeysPattern(pattern: string) {
+    const client = await this.connect();
+    const keysWithPrefix = await client.keys(`${this.PREFIX}:${pattern}`);
+    client.quit();
+    return keysWithPrefix.map((k) => k.split(`${this.PREFIX}:`)[1]);
   }
 
   async del(key) {
     const client = await this.connect();
-    await client.del(`cmms:${key}`);
+    await client.del(`${this.PREFIX}:${key}`);
     client.quit();
+  }
+
+  async delPattern(pattern: string) {
+    const keys = await this.getKeysPattern(pattern);
+    for (const key of keys) {
+      await this.del(key);
+    }
   }
 
   async deleteAll() {

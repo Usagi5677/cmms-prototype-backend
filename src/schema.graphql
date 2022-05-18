@@ -253,6 +253,7 @@ enum MachineStatus {
 }
 
 type Mutation {
+  addAppUser(roles: [Int!]!, userId: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
   addMachinePeriodicMaintenance(description: String!, machineId: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
@@ -264,6 +265,7 @@ type Mutation {
   addTransportationPeriodicMaintenance(description: String!, notificationReminder: Int!, period: Int!, title: String!, transportationId: Int!): String!
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
+  addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPermission(permissions: [Permission!]!, roleId: Int!): String!
   assignUsersToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUsersToTransportation(transportationId: Int!, userIds: [Int!]!): String!
@@ -302,6 +304,7 @@ type Mutation {
   removeRole(id: Int!): String!
   removeTransportation(transportationId: Int!): String!
   removeTransportationAttachment(id: Int!): String!
+  removeUserRole(roleId: Int!, userId: Int!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setMachineRepairStatus(id: Int!, status: RepairStatus!): String!
@@ -406,6 +409,11 @@ type PaginatedTransportationSparePR {
   pageInfo: TransportationSparePRPageInfo
 }
 
+type PaginatedUsers {
+  edges: [UserEdge!]
+  pageInfo: UserPageInfo
+}
+
 """Periodic Maintenance statuses."""
 enum PeriodicMaintenanceStatus {
   Done
@@ -416,10 +424,16 @@ enum PeriodicMaintenanceStatus {
 """All permissions."""
 enum Permission {
   ADD_MACHINE
+  ADD_PERMISSION
+  ADD_ROLE
   ADD_TRANSPORTATION
   DELETE_MACHINE
+  DELETE_PERMISSION
+  DELETE_ROLE
   DELETE_TRANSPORTATION
   EDIT_MACHINE
+  EDIT_PERMISSION
+  EDIT_ROLE
   EDIT_TRANSPORTATION
 }
 
@@ -690,6 +704,21 @@ type Query {
     self: Boolean
     transportType: String
   ): PaginatedTransportation!
+  getAllUsers(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedUsers!
+  getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
   machineAttachment(id: Int!): MachineAttachment!
@@ -714,6 +743,7 @@ type Query {
   redisGet(key: String!): String
   redisKeys: [String!]!
   sayHello: String!
+  searchAPSUsers(query: String!): [User!]!
   transportationAttachment(id: Int!): TransportationAttachment!
   transportationAttachments(
     """Paginate after opaque cursor"""
@@ -736,12 +766,6 @@ type Query {
 enum RepairStatus {
   Done
   Pending
-}
-
-"""All user roles."""
-enum Role {
-  Admin
-  Agent
 }
 
 type Roles {
@@ -1014,12 +1038,38 @@ type User {
   email: String!
   fullName: String!
   id: Int!
+  permissions: [String!]
   rcno: Int!
-  roles: [Role!]
+  roles: [UserRoles!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   userId: String!
+}
+
+type UserEdge {
+  cursor: String
+  node: User
+}
+
+type UserPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type UserRoles {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  role: Roles
+  roleId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  userId: Int!
 }
 
 type UserWithRoles {
@@ -1027,6 +1077,6 @@ type UserWithRoles {
   fullName: String!
   id: Int!
   rcno: Int!
-  roles: [String!]!
+  roles: [UserRoles!]
   userId: String!
 }

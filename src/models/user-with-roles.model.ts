@@ -1,4 +1,6 @@
 import { ObjectType } from '@nestjs/graphql';
+import { Roles } from './roles.model';
+import { UserRoles } from './user-roles.model';
 
 @ObjectType()
 export class UserWithRoles {
@@ -7,5 +9,5 @@ export class UserWithRoles {
   fullName: string;
   userId: string;
   email: string;
-  roles: string[];
+  roles?: UserRoles[];
 }

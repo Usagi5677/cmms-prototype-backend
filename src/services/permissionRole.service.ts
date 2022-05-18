@@ -101,6 +101,7 @@ export class PermissionRoleService {
       include: {
         permissionRoles: true,
         createdBy: true,
+        userRoles: true,
       },
     });
     const count = await this.prisma.role.count({ where });
