@@ -2,6 +2,7 @@ import { ObjectType } from '@nestjs/graphql';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { BaseModel } from './base.model';
 import { ChecklistItem } from './checklist-item.model';
+import { TransportationAssign } from './transportation-assign.model';
 import { TransportationBreakdown } from './transportation-breakdown.model';
 import { TransportationHistory } from './transportation-history.model';
 import { TransportationPeriodicMaintenance } from './transportation-periodic-maintenance.model';

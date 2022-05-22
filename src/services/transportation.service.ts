@@ -37,6 +37,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import * as moment from 'moment';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
+import { Transportation } from 'src/models/transportation.model';
 
 export interface TransportationHistoryInterface {
   transportationId: number;
@@ -294,13 +295,19 @@ export class TransportationService {
       include: {
         createdBy: true,
         checklistItems: true,
+        assignees: { include: { user: true } },
       },
     });
     if (!transportation)
       throw new BadRequestException('Transportation not found.');
 
     // Assigning data from db to the gql shape as it does not match 1:1
-    return transportation;
+    const transportationResp = new Transportation();
+    Object.assign(transportationResp, transportation);
+    transportationResp.assignees = transportation.assignees.map(
+      (assign) => assign.user
+    );
+    return transportationResp;
   }
 
   //** Get transportation. Results are paginated. User cursor argument to go forward/backward. */
@@ -1376,13 +1383,28 @@ export class TransportationService {
     transportationId: number,
     userIds: number[]
   ) {
-    // Check for roles later
-
     try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          id: { in: userIds },
+        },
+        select: {
+          fullName: true,
+          rcno: true,
+        },
+      });
+      users.forEach((userData) => {
+        this.createTransportationHistoryInBackground({
+          type: 'User Assign',
+          description: `${userData.fullName} (${userData.rcno}) assigned to transportation.`,
+          transportationId: transportationId,
+          completedById: user.id,
+        });
+      });
       await this.prisma.transportationAssignment.createMany({
-        data: userIds.map((userId, index) => ({
+        data: userIds.map((userId) => ({
           transportationId,
-          userId: userId,
+          userId,
         })),
       });
     } catch (e) {
@@ -1397,6 +1419,37 @@ export class TransportationService {
         console.log(e);
         throw new InternalServerErrorException('Unexpected error occured.');
       }
+    }
+  }
+
+  //** unassign user from transportation. */
+  async unassignUserFromTransportation(
+    user: User,
+    transportationId: number,
+    userId: number
+  ) {
+    try {
+      const unassign = await this.prisma.user.findFirst({
+        where: {
+          id: userId,
+        },
+        select: {
+          fullName: true,
+          rcno: true,
+        },
+      });
+      await this.createTransportationHistoryInBackground({
+        type: 'User Unassigned',
+        description: `${unassign.fullName} (${unassign.rcno}) unassigned from transportation.`,
+        transportationId: transportationId,
+        completedById: user.id,
+      });
+      await this.prisma.transportationAssignment.deleteMany({
+        where: { transportationId, userId },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 

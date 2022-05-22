@@ -517,7 +517,7 @@ export class TransportationResolver {
   }
 
   @Mutation(() => String)
-  async assignUsersToTransportation(
+  async assignUserToTransportation(
     @UserEntity() user: User,
     @Args('transportationId') transportationId: number,
     @Args('userIds', { type: () => [Int] }) userIds: number[]
@@ -530,6 +530,20 @@ export class TransportationResolver {
     return `Successfully assigned user${
       userIds.length > 1 ? 's' : ''
     } to transportation.`;
+  }
+
+  @Mutation(() => String)
+  async unassignUserFromTransportation(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('userId') userId: number
+  ): Promise<string> {
+    await this.transportationService.unassignUserFromTransportation(
+      user,
+      transportationId,
+      userId
+    );
+    return `Successfully unassigned user from transportation.`;
   }
 
   @Query(() => PaginatedTransportation)

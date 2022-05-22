@@ -14,6 +14,7 @@ import { UserWithRoles } from 'src/models/user-with-roles.model';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { RedisCacheService } from 'src/redisCache.service';
+import { PermissionEnum } from 'src/common/enums/permission';
 
 @Resolver(() => User)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -120,6 +121,52 @@ export class UserResolver {
 
       await this.redisCacheService.delPattern(`roles-${targetUserId}-*`);
       return 'User role added.';
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  /** find users with permission. */
+  @Query(() => [User])
+  async getUsersWithPermission(
+    @Args('permissions', { type: () => [PermissionEnum] })
+    permissions: PermissionEnum[]
+  ): Promise<User[]> {
+    try {
+      //get all role ids which have permission
+      const roleIDs = await this.prisma.permissionRole.findMany({
+        where: {
+          permission: { in: permissions },
+        },
+        select: {
+          roleId: true,
+        },
+      });
+      //clean it up
+      const cleanRoleIDs = roleIDs.map((roleID) => roleID.roleId);
+      //get all users which have that role id
+      const userIds = await this.prisma.userRole.findMany({
+        where: {
+          roleId: { in: cleanRoleIDs },
+        },
+        select: {
+          userId: true,
+        },
+      });
+
+      //clean it up
+      const cleanUserIds = userIds.map((userId) => userId.userId);
+      //unique users only
+      const uniqueUserIds = [...new Set(cleanUserIds)];
+
+      //find unique users
+      const users = await this.prisma.user.findMany({
+        where: {
+          id: { in: uniqueUserIds },
+        },
+      });
+      return users;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

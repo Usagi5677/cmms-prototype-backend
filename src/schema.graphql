@@ -267,8 +267,8 @@ type Mutation {
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPermission(permissions: [Permission!]!, roleId: Int!): String!
-  assignUsersToMachine(machineId: Int!, userIds: [Int!]!): String!
-  assignUsersToTransportation(transportationId: Int!, userIds: [Int!]!): String!
+  assignUserToMachine(machineId: Int!, userIds: [Int!]!): String!
+  assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   deleteMachineBreakdown(id: Int!): String!
@@ -317,6 +317,8 @@ type Mutation {
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleMachineChecklistItem(complete: Boolean!, id: Int!): String!
   toggleTransportationChecklistItem(complete: Boolean!, id: Int!): String!
+  unassignUserFromMachine(machineId: Int!, userId: Int!): String!
+  unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
 }
 
 type Notification {
@@ -424,17 +426,57 @@ enum PeriodicMaintenanceStatus {
 """All permissions."""
 enum Permission {
   ADD_MACHINE
+  ADD_MACHINE_ATTACHMENT
+  ADD_MACHINE_BREAKDOWN
+  ADD_MACHINE_CHECKLIST
+  ADD_MACHINE_PERIODIC_MAINTENANCE
+  ADD_MACHINE_REPAIR
+  ADD_MACHINE_SPARE_PR
   ADD_PERMISSION
   ADD_ROLE
   ADD_TRANSPORTATION
+  ADD_TRANSPORTATION_ATTACHMENT
+  ADD_TRANSPORTATION_BREAKDOWN
+  ADD_TRANSPORTATION_CHECKLIST
+  ADD_TRANSPORTATION_PERIODIC_MAINTENANCE
+  ADD_TRANSPORTATION_REPAIR
+  ADD_TRANSPORTATION_SPARE_PR
+  ASSIGN_USER_TO_MACHINE
+  ASSIGN_USER_TO_TRANSPORTATION
   DELETE_MACHINE
+  DELETE_MACHINE_ATTACHMENT
+  DELETE_MACHINE_BREAKDOWN
+  DELETE_MACHINE_CHECKLIST
+  DELETE_MACHINE_PERIODIC_MAINTENANCE
+  DELETE_MACHINE_REPAIR
+  DELETE_MACHINE_SPARE_PR
   DELETE_PERMISSION
   DELETE_ROLE
   DELETE_TRANSPORTATION
+  DELETE_TRANSPORTATION_ATTACHMENT
+  DELETE_TRANSPORTATION_BREAKDOWN
+  DELETE_TRANSPORTATION_CHECKLIST
+  DELETE_TRANSPORTATION_PERIODIC_MAINTENANCE
+  DELETE_TRANSPORTATION_REPAIR
+  DELETE_TRANSPORTATION_SPARE_PR
   EDIT_MACHINE
+  EDIT_MACHINE_ATTACHMENT
+  EDIT_MACHINE_BREAKDOWN
+  EDIT_MACHINE_CHECKLIST
+  EDIT_MACHINE_PERIODIC_MAINTENANCE
+  EDIT_MACHINE_REPAIR
+  EDIT_MACHINE_SPARE_PR
   EDIT_PERMISSION
   EDIT_ROLE
   EDIT_TRANSPORTATION
+  EDIT_TRANSPORTATION_ATTACHMENT
+  EDIT_TRANSPORTATION_BREAKDOWN
+  EDIT_TRANSPORTATION_CHECKLIST
+  EDIT_TRANSPORTATION_PERIODIC_MAINTENANCE
+  EDIT_TRANSPORTATION_REPAIR
+  EDIT_TRANSPORTATION_SPARE_PR
+  UNASSIGN_USER_TO_MACHINE
+  UNASSIGN_USER_TO_TRANSPORTATION
 }
 
 type PermissionRole {
@@ -721,6 +763,7 @@ type Query {
   getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
+  getUsersWithPermission(permissions: [Permission!]!): [User!]!
   machineAttachment(id: Int!): MachineAttachment!
   machineAttachments(
     """Paginate after opaque cursor"""

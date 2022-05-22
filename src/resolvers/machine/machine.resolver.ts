@@ -441,7 +441,7 @@ export class MachineResolver {
   }
 
   @Mutation(() => String)
-  async assignUsersToMachine(
+  async assignUserToMachine(
     @UserEntity() user: User,
     @Args('machineId') machineId: number,
     @Args('userIds', { type: () => [Int] }) userIds: number[]
@@ -450,6 +450,16 @@ export class MachineResolver {
     return `Successfully assigned user${
       userIds.length > 1 ? 's' : ''
     } to machine.`;
+  }
+
+  @Mutation(() => String)
+  async unassignUserFromMachine(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('userId') userId: number
+  ): Promise<string> {
+    await this.machineService.unassignUserFromMachine(user, machineId, userId);
+    return `Successfully unassigned user from machine.`;
   }
 
   @Query(() => PaginatedMachine)

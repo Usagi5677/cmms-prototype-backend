@@ -8,6 +8,7 @@ import { MachineRepair } from './machine-repair.model';
 import { MachineSparePR } from './machine-sparePR.model';
 import { MachinePeriodicMaintenance } from './machine-periodic-maintenance.model';
 import { User } from './user.model';
+import { MachineAssign } from './machine-assign.model';
 
 @ObjectType()
 export class Machine extends BaseModel {

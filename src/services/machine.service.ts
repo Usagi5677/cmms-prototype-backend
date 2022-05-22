@@ -36,6 +36,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import * as moment from 'moment';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
+import { Machine } from 'src/models/machine.model';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -252,12 +253,16 @@ export class MachineService {
       include: {
         createdBy: true,
         checklistItems: true,
+        assignees: { include: { user: true } },
       },
     });
     if (!machine) throw new BadRequestException('Machine not found.');
 
     // Assigning data from db to the gql shape as it does not match 1:1
-    return machine;
+    const machineResp = new Machine();
+    Object.assign(machineResp, machine);
+    machineResp.assignees = machine.assignees.map((assign) => assign.user);
+    return machineResp;
   }
 
   //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
@@ -1243,13 +1248,28 @@ export class MachineService {
 
   //** Assign 'user' to machine. */
   async assignUserToMachine(user: User, machineId: number, userIds: number[]) {
-    // Check for roles later
-
     try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          id: { in: userIds },
+        },
+        select: {
+          fullName: true,
+          rcno: true,
+        },
+      });
+      users.forEach((userData) => {
+        this.createMachineHistoryInBackground({
+          type: 'User Assign',
+          description: `${userData.fullName} (${userData.rcno}) assigned to machine.`,
+          machineId: machineId,
+          completedById: user.id,
+        });
+      });
       await this.prisma.machineAssignment.createMany({
-        data: userIds.map((userId, index) => ({
+        data: userIds.map((userId) => ({
           machineId,
-          userId: userId,
+          userId,
         })),
       });
     } catch (e) {
@@ -1264,6 +1284,33 @@ export class MachineService {
         console.log(e);
         throw new InternalServerErrorException('Unexpected error occured.');
       }
+    }
+  }
+
+  //** unassign user from machine. */
+  async unassignUserFromMachine(user: User, machineId: number, userId: number) {
+    try {
+      const unassign = await this.prisma.user.findFirst({
+        where: {
+          id: userId,
+        },
+        select: {
+          fullName: true,
+          rcno: true,
+        },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'User Unassigned',
+        description: `${unassign.fullName} (${unassign.rcno}) unassigned from machine.`,
+        machineId: machineId,
+        completedById: user.id,
+      });
+      await this.prisma.machineAssignment.deleteMany({
+        where: { machineId, userId },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
