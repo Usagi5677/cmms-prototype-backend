@@ -1439,6 +1439,10 @@ export class MachineService {
   async createMachineHistory(machineHistory: MachineHistoryInterface) {
     const machine = await this.prisma.machine.findFirst({
       where: { id: machineHistory.machineId },
+      select: {
+        status: true,
+        type: true,
+      },
     });
     await this.prisma.machineHistory.create({
       data: {
