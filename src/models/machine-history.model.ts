@@ -1,4 +1,6 @@
-import { ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
+import { Prisma } from '@prisma/client';
+import { MachineStatus } from 'src/common/enums/machineStatus';
 import { BaseModel } from './base.model';
 import { User } from './user.model';
 
@@ -9,4 +11,5 @@ export class MachineHistory extends BaseModel {
   machineId?: number;
   completedBy?: User;
   completedById?: number;
+  machineStatus?: MachineStatus;
 }

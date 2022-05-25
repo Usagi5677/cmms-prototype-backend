@@ -176,6 +176,8 @@ Table MachineHistory {
   completedBy User
   type String [not null]
   description String [not null]
+  machineStatus MachineStatus
+  machineType String
 }
 
 Table MachineRepair {

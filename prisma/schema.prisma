@@ -256,15 +256,17 @@ model MachinePeriodicMaintenance {
 }
 
 model MachineHistory {
-  id            Int      @id @default(autoincrement())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   machineId     Int
-  machine       Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machine       Machine        @relation(fields: [machineId], references: [id], onDelete: Cascade)
   completedById Int?
-  completedBy   User?    @relation(fields: [completedById], references: [id])
+  completedBy   User?          @relation(fields: [completedById], references: [id])
   type          String
   description   String
+  machineStatus MachineStatus?
+  machineType   String?
 }
 
 model MachineRepair {

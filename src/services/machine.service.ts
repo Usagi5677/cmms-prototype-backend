@@ -43,6 +43,8 @@ export interface MachineHistoryInterface {
   type: string;
   description: string;
   completedById?: number;
+  machineStatus?: MachineStatus;
+  machineType?: string;
 }
 
 @Injectable()
@@ -1435,12 +1437,17 @@ export class MachineService {
 
   //** Create machine history */
   async createMachineHistory(machineHistory: MachineHistoryInterface) {
+    const machine = await this.prisma.machine.findFirst({
+      where: { id: machineHistory.machineId },
+    });
     await this.prisma.machineHistory.create({
       data: {
         machineId: machineHistory.machineId,
         type: machineHistory.type,
         description: machineHistory.description,
         completedById: machineHistory.completedById,
+        machineStatus: machine.status,
+        machineType: machine.type,
       },
     });
   }

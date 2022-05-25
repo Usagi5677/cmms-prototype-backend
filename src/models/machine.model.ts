@@ -12,7 +12,7 @@ import { MachineAssign } from './machine-assign.model';
 
 @ObjectType()
 export class Machine extends BaseModel {
-  createdBy: User;
+  createdBy?: User;
   machineNumber: string;
   registeredDate?: Date;
   model: string;

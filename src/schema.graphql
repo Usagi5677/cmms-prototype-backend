@@ -33,7 +33,7 @@ type Machine {
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  createdBy: User!
+  createdBy: User
   currentRunningHrs: Int
   histories: [MachineHistory!]
   id: Int!
@@ -128,6 +128,7 @@ type MachineHistory {
   description: String!
   id: Int!
   machineId: Int
+  machineStatus: MachineStatus
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -213,6 +214,19 @@ type MachineRepairPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+type MachineReport {
+  breakdown: Int!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  type: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  working: Int!
 }
 
 type MachineSparePR {
@@ -760,6 +774,7 @@ type Query {
     last: Int
     search: String
   ): PaginatedUsers!
+  getMachineReport(from: Date!, to: Date!): [MachineReport!]!
   getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
