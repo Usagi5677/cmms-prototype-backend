@@ -38,6 +38,7 @@ import { TransportationPeriodicMaintenanceConnectionArgs } from 'src/models/args
 import { PaginatedTransportationHistory } from 'src/models/pagination/transportation-history-connection.model';
 import { TransportationHistoryConnectionArgs } from 'src/models/args/transportation-history-connection.args';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
+import { TransportationReport } from 'src/models/transportation-report.model';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
@@ -594,5 +595,14 @@ export class TransportationResolver {
       description
     );
     return `Attachment updated.`;
+  }
+
+  @Query(() => [TransportationReport])
+  async getTransportationReport(
+    @UserEntity() user: User,
+    @Args('from') from: Date,
+    @Args('to') to: Date
+  ): Promise<TransportationReport[]> {
+    return this.transportationService.getTransportationReport(user, from, to);
   }
 }

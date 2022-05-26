@@ -778,6 +778,7 @@ type Query {
   getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
+  getTransportationReport(from: Date!, to: Date!): [TransportationReport!]!
   getUsersWithPermission(permissions: [Permission!]!): [User!]!
   machineAttachment(id: Int!): MachineAttachment!
   machineAttachments(
@@ -1051,6 +1052,19 @@ type TransportationRepairPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+type TransportationReport {
+  breakdown: Int!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  type: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  working: Int!
 }
 
 type TransportationSparePR {

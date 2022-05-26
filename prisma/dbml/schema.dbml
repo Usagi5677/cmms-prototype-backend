@@ -321,6 +321,8 @@ Table TransportationHistory {
   completedBy User
   type String [not null]
   description String [not null]
+  transportationStatus TransportationStatus
+  transportationType String
 }
 
 Table TransportationRepair {

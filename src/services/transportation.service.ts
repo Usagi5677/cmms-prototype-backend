@@ -1519,12 +1519,21 @@ export class TransportationService {
   async createTransportationHistory(
     transportationHistory: TransportationHistoryInterface
   ) {
+    const transportation = await this.prisma.transportation.findFirst({
+      where: { id: transportationHistory.transportationId },
+      select: {
+        status: true,
+        type: true,
+      },
+    });
     await this.prisma.transportationHistory.create({
       data: {
         transportationId: transportationHistory.transportationId,
         type: transportationHistory.type,
         description: transportationHistory.description,
         completedById: transportationHistory.completedById,
+        transportationStatus: transportation.status,
+        transportationType: transportation.type,
       },
     });
   }
@@ -1589,6 +1598,78 @@ export class TransportationService {
         where: { id },
         data: { description },
       });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Get transportation report */
+  async getTransportationReport(user: User, from: Date, to: Date) {
+    try {
+      const fromDate = moment(from).startOf('day');
+      const statusHistoryArray = [];
+      const transportationReportArray = [];
+      const toDate = moment(to).endOf('day');
+
+      //get all transportation
+      const transportations = await this.prisma.transportation.findMany({
+        select: {
+          id: true,
+          type: true,
+        },
+      });
+
+      //get all history of transportation based on closest date
+      for (let index = 0; index < transportations.length; index++) {
+        const statusHistory = await this.prisma.transportationHistory.findFirst(
+          {
+            where: {
+              transportationId: transportations[index].id,
+              createdAt: { lte: toDate.toDate() },
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          }
+        );
+        statusHistoryArray.push(statusHistory);
+      }
+
+      //find all working and breakdown status of transportation type
+      for (let i = 0; i < statusHistoryArray.length; i++) {
+        let working = 0;
+        let breakdown = 0;
+        statusHistoryArray.find((e) => {
+          if (
+            e?.transportationStatus == 'Working' &&
+            e?.transportationType == statusHistoryArray[i].transportationType
+          ) {
+            working++;
+          }
+          if (
+            e?.transportationStatus == 'Breakdown' &&
+            e?.transportationType == statusHistoryArray[i].transportationType
+          ) {
+            breakdown++;
+          }
+        });
+        //if it exist then don't add to array
+        let found = false;
+        transportationReportArray?.find((e) => {
+          if (e.type == statusHistoryArray[i]?.transportationType) {
+            found = true;
+          }
+        });
+        if (!found) {
+          transportationReportArray.push({
+            type: statusHistoryArray[i]?.transportationType,
+            working: working,
+            breakdown: breakdown,
+          });
+        }
+      }
+      return transportationReportArray;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

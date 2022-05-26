@@ -405,15 +405,17 @@ model TransportationAttachment {
 }
 
 model TransportationHistory {
-  id               Int            @id @default(autoincrement())
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
-  completedById    Int?
-  completedBy      User?          @relation(fields: [completedById], references: [id])
-  type             String
-  description      String
+  id                   Int                   @id @default(autoincrement())
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  transportationId     Int
+  transportation       Transportation        @relation(fields: [transportationId], references: [id], onDelete: Cascade)
+  completedById        Int?
+  completedBy          User?                 @relation(fields: [completedById], references: [id])
+  type                 String
+  description          String
+  transportationStatus TransportationStatus?
+  transportationType   String?
 }
 
 model TransportationRepair {

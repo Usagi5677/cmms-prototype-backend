@@ -535,66 +535,6 @@ export class MachineResolver {
     @Args('from') from: Date,
     @Args('to') to: Date
   ): Promise<MachineReport[]> {
-    const fromDate = moment(from).startOf('day');
-    const statusHistoryArray = [];
-    const machineReportArray = [];
-    const toDate = moment(to).endOf('day');
-
-    //get all machines
-    const machines = await this.prisma.machine.findMany({
-      select: {
-        id: true,
-        type: true,
-      },
-    });
-
-    //get all history of machine based on closest date
-    for (let index = 0; index < machines.length; index++) {
-      const statusHistory = await this.prisma.machineHistory.findFirst({
-        where: {
-          machineId: machines[index].id,
-          createdAt: { lte: toDate.toDate() },
-        },
-        orderBy: {
-          id: 'desc',
-        },
-      });
-      statusHistoryArray.push(statusHistory);
-    }
-
-    //find all working and breakdown of machine type
-    for (let i = 0; i < statusHistoryArray.length; i++) {
-      let working = 0;
-      let breakdown = 0;
-      statusHistoryArray.find((e) => {
-        if (
-          e?.machineStatus == 'Working' &&
-          e?.machineType == statusHistoryArray[i].machineType
-        ) {
-          working++;
-        }
-        if (
-          e?.machineStatus == 'Breakdown' &&
-          e?.machineType == statusHistoryArray[i].machineType
-        ) {
-          breakdown++;
-        }
-      });
-      //if it exist then don't add to array
-      let found = false;
-      machineReportArray?.find((e) => {
-        if (e.type == statusHistoryArray[i]?.machineType) {
-          found = true;
-        }
-      });
-      if (!found) {
-        machineReportArray.push({
-          type: statusHistoryArray[i]?.machineType,
-          working: working,
-          breakdown: breakdown,
-        });
-      }
-    }
-    return machineReportArray;
+    return this.machineService.getMachineReport(user, from, to);
   }
 }
