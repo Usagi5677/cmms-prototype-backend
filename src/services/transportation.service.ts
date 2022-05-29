@@ -106,8 +106,19 @@ export class TransportationService {
   }
 
   //** Delete transportation. */
-  async deleteTransportation(id: number) {
+  async deleteTransportation(id: number, user: User) {
     try {
+      const transportationUsers = await this.getTransportationUserIds(
+        id,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted transportation (${id})}`,
+          link: `/transportation/${id}`,
+        });
+      }
       await this.prisma.transportation.delete({
         where: { id },
       });
@@ -233,6 +244,18 @@ export class TransportationService {
         });
       }
 
+      const transportationUsers = await this.getTransportationUserIds(
+        id,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited transportation (${id})}`,
+          link: `/transportation/${id}`,
+        });
+      }
+
       await this.prisma.transportation.update({
         data: {
           machineNumber,
@@ -282,6 +305,17 @@ export class TransportationService {
         transportationId: transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) set status to ${status} on transportation ${transportationId}`,
+          link: `/transportation/${transportationId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -317,7 +351,7 @@ export class TransportationService {
   ): Promise<PaginatedTransportation> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, transportType } = args;
+    const { createdById, search, assignedToId, transportType, status } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -334,6 +368,10 @@ export class TransportationService {
       where.AND.push({
         transportType,
       });
+    }
+
+    if (status) {
+      where.AND.push({ status });
     }
     //for now these only
     if (search) {
@@ -397,6 +435,17 @@ export class TransportationService {
         transportationId: transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new checklist on transportation ${transportationId}`,
+          link: `/transportation/${transportationId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -432,6 +481,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        checklist.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited checklist (${checklist.id}) on transportation ${checklist.transportationId}`,
+          link: `/transportation/${checklist.transportationId}`,
+        });
+      }
       await this.prisma.transportationChecklistItem.update({
         where: { id },
         data: { description, type },
@@ -449,6 +509,7 @@ export class TransportationService {
         {
           where: { id },
           select: {
+            id: true,
             transportationId: true,
             description: true,
           },
@@ -460,6 +521,17 @@ export class TransportationService {
         transportationId: checklist.transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        checklist.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted checklist (${checklist.id}) on transportation ${checklist.transportationId}`,
+          link: `/transportation/${checklist.transportationId}`,
+        });
+      }
       await this.prisma.transportationChecklistItem.delete({
         where: { id },
       });
@@ -481,6 +553,7 @@ export class TransportationService {
         {
           where: { id },
           select: {
+            id: true,
             transportationId: true,
             description: true,
           },
@@ -500,6 +573,21 @@ export class TransportationService {
             completedById: user.id,
           });
 
+      const transportationUsers = await this.getTransportationUserIds(
+        checklist.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) set checklist (${
+            checklist.id
+          }) on transportation ${checklist.transportationId} to ${
+            complete ? `completed ` : `unchecked.`
+          }`,
+          link: `/transportation/${checklist.transportationId}`,
+        });
+      }
       await this.prisma.transportationChecklistItem.update({
         where: { id },
         data: complete
@@ -538,6 +626,17 @@ export class TransportationService {
         transportationId: transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        periodicMaintenance.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new periodic maintenance on transportation ${transportationId}`,
+          link: `/transportation/${transportationId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -558,6 +657,7 @@ export class TransportationService {
         await this.prisma.transportationPeriodicMaintenance.findFirst({
           where: { id },
           select: {
+            id: true,
             transportationId: true,
             title: true,
             description: true,
@@ -597,6 +697,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        periodicMaintenance.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited periodic transportation (${periodicMaintenance.id}) on transportation ${periodicMaintenance.transportationId}`,
+          link: `/transportation/${periodicMaintenance.transportationId}`,
+        });
+      }
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
         data: { title, description, period, notificationReminder },
@@ -614,11 +725,23 @@ export class TransportationService {
         await this.prisma.transportationPeriodicMaintenance.findFirst({
           where: { id },
           select: {
+            id: true,
             transportationId: true,
             title: true,
           },
         });
 
+      const transportationUsers = await this.getTransportationUserIds(
+        periodicMaintenance.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted periodic maintenance (${periodicMaintenance.id}) on transportation ${periodicMaintenance.transportationId}`,
+          link: `/transportation/${periodicMaintenance.transportationId}`,
+        });
+      }
       await this.createTransportationHistoryInBackground({
         type: 'Periodic Maintenance Delete',
         description: `(${id}) Periodic Maintenance (${periodicMaintenance.title}) deleted.`,
@@ -674,6 +797,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        periodicMaintenance.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) set periodic maintenance status to (${status}) on transportation ${periodicMaintenance.transportationId}`,
+          link: `/transportation/${periodicMaintenance.transportationId}`,
+        });
+      }
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
         data: completedFlag
@@ -707,6 +841,17 @@ export class TransportationService {
         transportationId: transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new repair on transportation ${transportationId}`,
+          link: `/transportation/${transportationId}`,
+        });
+      }
       await this.prisma.transportationRepair.create({
         data: {
           transportationId,
@@ -731,6 +876,7 @@ export class TransportationService {
       const repair = await this.prisma.transportationRepair.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           title: true,
           description: true,
@@ -752,6 +898,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        repair.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited repair (${repair.id}) on transportation ${repair.transportationId}`,
+          link: `/transportation/${repair.transportationId}`,
+        });
+      }
       await this.prisma.transportationRepair.update({
         where: { id },
         data: { title, description },
@@ -768,6 +925,7 @@ export class TransportationService {
       const repair = await this.prisma.transportationRepair.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           title: true,
         },
@@ -778,6 +936,17 @@ export class TransportationService {
         transportationId: repair.transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        repair.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted repair (${repair.id}) on transportation ${repair.transportationId}`,
+          link: `/transportation/${repair.transportationId}`,
+        });
+      }
       await this.prisma.transportationRepair.delete({
         where: { id },
       });
@@ -818,6 +987,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        repair.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) set repair status to (${status}) on transportation ${repair.transportationId}`,
+          link: `/transportation/${repair.transportationId}`,
+        });
+      }
       await this.prisma.transportationRepair.update({
         where: { id },
         data: completedFlag
@@ -853,6 +1033,17 @@ export class TransportationService {
         transportationId: transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new spare PR on transportation ${transportationId}`,
+          link: `/transportation/${sparePR.transportationId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -871,6 +1062,7 @@ export class TransportationService {
       const sparePR = await this.prisma.transportationSparePR.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           title: true,
           description: true,
@@ -908,6 +1100,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        sparePR.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited spare PR (${sparePR.id}) on transportation ${sparePR.transportationId}`,
+          link: `/transportation/${sparePR.transportationId}`,
+        });
+      }
       await this.prisma.transportationSparePR.update({
         where: { id },
         data: { requestedDate, title, description },
@@ -924,6 +1127,7 @@ export class TransportationService {
       const sparePR = await this.prisma.transportationSparePR.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           title: true,
         },
@@ -934,6 +1138,17 @@ export class TransportationService {
         transportationId: sparePR.transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        sparePR.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted spare PR (${sparePR.id}) on transportation ${sparePR.transportationId}`,
+          link: `/transportation/${sparePR.transportationId}`,
+        });
+      }
       await this.prisma.transportationSparePR.delete({
         where: { id },
       });
@@ -974,6 +1189,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        sparePR.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) set spare PR status to (${status}) on transportation ${sparePR.transportationId}`,
+          link: `/transportation/${sparePR.transportationId}`,
+        });
+      }
       await this.prisma.transportationSparePR.update({
         where: { id },
         data: completedFlag
@@ -1011,6 +1237,17 @@ export class TransportationService {
         transportationId: transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new breakdown on transportation ${transportationId}`,
+          link: `/transportation/${transportationId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -1028,6 +1265,7 @@ export class TransportationService {
       const breakdown = await this.prisma.transportationBreakdown.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           title: true,
           description: true,
@@ -1049,6 +1287,17 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      const transportationUsers = await this.getTransportationUserIds(
+        breakdown.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited breakdown (${breakdown.id}) on transportation ${breakdown.transportationId}`,
+          link: `/transportation/${breakdown.transportationId}`,
+        });
+      }
       await this.prisma.transportationBreakdown.update({
         where: { id },
         data: { title, description },
@@ -1065,6 +1314,7 @@ export class TransportationService {
       const breakdown = await this.prisma.transportationBreakdown.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           title: true,
         },
@@ -1075,6 +1325,17 @@ export class TransportationService {
         transportationId: breakdown.transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        breakdown.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted breakdown (${breakdown.id}) on transportation ${breakdown.transportationId}`,
+          link: `/transportation/${breakdown.transportationId}`,
+        });
+      }
       await this.prisma.transportationBreakdown.delete({
         where: { id },
       });
@@ -1126,7 +1387,17 @@ export class TransportationService {
           transportationId: breakdown.transportationId,
           completedById: user.id,
         });
-
+        const transportationUsers = await this.getTransportationUserIds(
+          breakdown.transportationId,
+          user.id
+        );
+        for (let index = 0; index < transportationUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: transportationUsers[index],
+            body: `${user.fullName} (${user.rcno}) set breakdown status to (${status}) on transportation ${breakdown.transportationId}`,
+            link: `/transportation/${breakdown.transportationId}`,
+          });
+        }
         //set transportation status
         await this.prisma.transportation.update({
           where: { id: breakdown.transportationId },
@@ -1384,23 +1655,63 @@ export class TransportationService {
     userIds: number[]
   ) {
     try {
-      const users = await this.prisma.user.findMany({
+      const transportationUserIds = await this.getTransportationUserIds(
+        transportationId,
+        user.id
+      );
+      const transportationUsersExceptNewAssignments =
+        transportationUserIds.filter((id) => !userIds.includes(id));
+      const newAssignments = await this.prisma.user.findMany({
         where: {
           id: { in: userIds },
         },
         select: {
+          id: true,
           fullName: true,
           rcno: true,
+          email: true,
         },
       });
-      users.forEach((userData) => {
-        this.createTransportationHistoryInBackground({
+
+      // Text format new assignments into a readable list with commas and 'and'
+      // at the end.
+      const newAssignmentsFormatted = newAssignments
+        .map((a) => `${a.fullName} (${a.rcno})`)
+        .join(', ')
+        .replace(/, ([^,]*)$/, ' and $1');
+      // Notification to transportation assigned users except new assignments
+      for (const id of transportationUsersExceptNewAssignments) {
+        await this.notificationService.createInBackground({
+          userId: id,
+          body: `${user.fullName} (${user.rcno}) assigned ${newAssignmentsFormatted} to transportation ${transportationId}`,
+          link: `/transportation/${transportationId}`,
+        });
+        await this.createTransportationHistoryInBackground({
           type: 'User Assign',
-          description: `${userData.fullName} (${userData.rcno}) assigned to transportation.`,
+          description: `${user.fullName} (${user.rcno}) assigned ${newAssignmentsFormatted} to transportation ${transportationId}`,
           transportationId: transportationId,
           completedById: user.id,
         });
-      });
+      }
+
+      // Notification to new assignments
+      const newAssignmentsWithoutCurrentUser = newAssignments.filter(
+        (na) => na.id !== user.id
+      );
+      const emailBody = `You have been assigned to transportation ${transportationId}`;
+      for (const newAssignment of newAssignmentsWithoutCurrentUser) {
+        await this.notificationService.createInBackground({
+          userId: newAssignment.id,
+          body: emailBody,
+          link: `/transportation/${transportationId}`,
+        });
+        await this.createTransportationHistoryInBackground({
+          type: 'User Assign',
+          description: `${newAssignment.fullName} (${newAssignment.rcno}) assigned to transportation.`,
+          transportationId: transportationId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.transportationAssignment.createMany({
         data: userIds.map((userId) => ({
           transportationId,
@@ -1553,6 +1864,7 @@ export class TransportationService {
       const attachment = await this.prisma.transportationAttachment.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           description: true,
         },
@@ -1563,6 +1875,17 @@ export class TransportationService {
         transportationId: attachment.transportationId,
         completedById: user.id,
       });
+      const transportationUsers = await this.getTransportationUserIds(
+        attachment.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted attachment (${attachment.id}) on transportation ${attachment.transportationId}`,
+          link: `/transportation/${attachment.transportationId}`,
+        });
+      }
       await this.prisma.transportationAttachment.delete({
         where: { id },
       });
@@ -1582,6 +1905,7 @@ export class TransportationService {
       const attachment = await this.prisma.transportationAttachment.findFirst({
         where: { id },
         select: {
+          id: true,
           transportationId: true,
           description: true,
         },
@@ -1592,6 +1916,17 @@ export class TransportationService {
           description: `(${id}) Description changed from ${attachment.description} to ${description}.`,
           transportationId: attachment.transportationId,
           completedById: user.id,
+        });
+      }
+      const transportationUsers = await this.getTransportationUserIds(
+        attachment.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited attachment (${attachment.id}) on transportation ${attachment.transportationId}`,
+          link: `/transportation/${attachment.transportationId}`,
         });
       }
       await this.prisma.transportationAttachment.update({
@@ -1674,5 +2009,34 @@ export class TransportationService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  // Get unique array of ids of transportation assigned users
+  async getTransportationUserIds(
+    transportationId: number,
+    removeUserId?: number
+  ): Promise<number[]> {
+    // get all users involved in ticket
+    const getAssignedUsers =
+      await this.prisma.transportationAssignment.findMany({
+        where: {
+          transportationId,
+        },
+      });
+
+    const combinedIDs = [...getAssignedUsers.map((a) => a.userId)];
+
+    // get unique ids only
+    const unique = [...new Set(combinedIDs)];
+
+    // If removeUserId variable has not been passed, return array
+    if (!removeUserId) {
+      return unique;
+    }
+
+    // Otherwise remove the given user id from array and then return
+    return unique.filter((id) => {
+      return id != removeUserId;
+    });
   }
 }

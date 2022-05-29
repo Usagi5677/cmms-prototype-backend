@@ -101,8 +101,16 @@ export class MachineService {
   }
 
   //** Delete machine. */
-  async deleteMachine(id: number) {
+  async deleteMachine(id: number, user: User) {
     try {
+      const machineUsers = await this.getMachineUserIds(id, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted machine (${id})}`,
+          link: `/machine/${id}`,
+        });
+      }
       await this.prisma.machine.delete({
         where: { id },
       });
@@ -200,6 +208,14 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      const machineUsers = await this.getMachineUserIds(id, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited machine (${id})}`,
+          link: `/machine/${id}`,
+        });
+      }
       await this.prisma.machine.update({
         data: {
           machineNumber,
@@ -242,6 +258,15 @@ export class MachineService {
         machineId: machineId,
         completedById: user.id,
       });
+
+      const machineUsers = await this.getMachineUserIds(machineId, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) set status to ${status} on machine ${machineId}`,
+          link: `/machine/${machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -274,7 +299,7 @@ export class MachineService {
   ): Promise<PaginatedMachine> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId } = args;
+    const { createdById, search, assignedToId, status } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -286,6 +311,10 @@ export class MachineService {
       where.AND.push({
         assignees: { some: { userId: assignedToId } },
       });
+    }
+
+    if (status) {
+      where.AND.push({ status });
     }
     //for now these only
     if (search) {
@@ -349,6 +378,14 @@ export class MachineService {
         machineId: machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(machineId, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new checklist on machine ${machineId}`,
+          link: `/machine/${machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -387,6 +424,17 @@ export class MachineService {
         where: { id },
         data: { description, type },
       });
+      const machineUsers = await this.getMachineUserIds(
+        checklist.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited checklist (${checklist.id}) on machine ${checklist.machineId}`,
+          link: `/machine/${checklist.machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -399,6 +447,7 @@ export class MachineService {
       const checklist = await this.prisma.machineChecklistItem.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           description: true,
         },
@@ -409,6 +458,17 @@ export class MachineService {
         machineId: checklist.machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(
+        checklist.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted checklist (${checklist.id}) on machine ${checklist.machineId}`,
+          link: `/machine/${checklist.machineId}`,
+        });
+      }
       await this.prisma.machineChecklistItem.delete({
         where: { id },
       });
@@ -425,6 +485,7 @@ export class MachineService {
       const checklist = await this.prisma.machineChecklistItem.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           description: true,
         },
@@ -442,7 +503,21 @@ export class MachineService {
             machineId: checklist.machineId,
             completedById: user.id,
           });
-
+      const machineUsers = await this.getMachineUserIds(
+        checklist.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) set checklist (${
+            checklist.id
+          }) on machine ${checklist.machineId} to ${
+            complete ? `completed ` : `unchecked.`
+          }`,
+          link: `/machine/${checklist.machineId}`,
+        });
+      }
       await this.prisma.machineChecklistItem.update({
         where: { id },
         data: complete
@@ -481,6 +556,17 @@ export class MachineService {
         machineId: machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(
+        periodicMaintenance.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new periodic maintenance on machine ${machineId}`,
+          link: `/machine/${machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -501,6 +587,7 @@ export class MachineService {
         await this.prisma.machinePeriodicMaintenance.findFirst({
           where: { id },
           select: {
+            id: true,
             machineId: true,
             title: true,
             description: true,
@@ -540,6 +627,17 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      const machineUsers = await this.getMachineUserIds(
+        periodicMaintenance.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited periodic maintenance (${periodicMaintenance.id}) on machine ${periodicMaintenance.machineId}`,
+          link: `/machine/${periodicMaintenance.machineId}`,
+        });
+      }
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: { title, description, period, notificationReminder },
@@ -557,10 +655,22 @@ export class MachineService {
         await this.prisma.machinePeriodicMaintenance.findFirst({
           where: { id },
           select: {
+            id: true,
             machineId: true,
             title: true,
           },
         });
+      const machineUsers = await this.getMachineUserIds(
+        periodicMaintenance.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted periodic maintenance (${periodicMaintenance.id}) on machine ${periodicMaintenance.machineId}`,
+          link: `/machine/${periodicMaintenance.machineId}`,
+        });
+      }
 
       await this.createMachineHistoryInBackground({
         type: 'Periodic Maintenance Delete',
@@ -617,6 +727,17 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      const machineUsers = await this.getMachineUserIds(
+        periodicMaintenance.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) set periodic maintenance status to (${status}) on machine ${periodicMaintenance.machineId}`,
+          link: `/machine/${periodicMaintenance.machineId}`,
+        });
+      }
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: completedFlag
@@ -649,6 +770,14 @@ export class MachineService {
         machineId: machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(machineId, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new repair on machine ${machineId}`,
+          link: `/machine/${machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -666,6 +795,7 @@ export class MachineService {
       const repair = await this.prisma.machineRepair.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           title: true,
           description: true,
@@ -688,6 +818,17 @@ export class MachineService {
         });
       }
 
+      const machineUsers = await this.getMachineUserIds(
+        repair.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited repair (${repair.id}) on machine ${repair.machineId}`,
+          link: `/machine/${repair.machineId}`,
+        });
+      }
       await this.prisma.machineRepair.update({
         where: { id },
         data: { title, description },
@@ -704,6 +845,7 @@ export class MachineService {
       const repair = await this.prisma.machineRepair.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           title: true,
         },
@@ -714,6 +856,17 @@ export class MachineService {
         machineId: repair.machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(
+        repair.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted repair (${repair.id}) on machine ${repair.machineId}`,
+          link: `/machine/${repair.machineId}`,
+        });
+      }
       await this.prisma.machineRepair.delete({
         where: { id },
       });
@@ -748,6 +901,17 @@ export class MachineService {
           description: `(${id}) Set status to ${status}.`,
           machineId: repair.machineId,
           completedById: user.id,
+        });
+      }
+      const machineUsers = await this.getMachineUserIds(
+        repair.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) set repair status to (${status}) on machine ${repair.machineId}`,
+          link: `/machine/${repair.machineId}`,
         });
       }
       await this.prisma.machineRepair.update({
@@ -785,6 +949,14 @@ export class MachineService {
         machineId: machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(machineId, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new spare PR on machine ${machineId}`,
+          link: `/machine/${sparePR.machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -803,6 +975,7 @@ export class MachineService {
       const sparePR = await this.prisma.machineSparePR.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           title: true,
           description: true,
@@ -840,6 +1013,17 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      const machineUsers = await this.getMachineUserIds(
+        sparePR.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited spare PR (${sparePR.id}) on machine ${sparePR.machineId}`,
+          link: `/machine/${sparePR.machineId}`,
+        });
+      }
       await this.prisma.machineSparePR.update({
         where: { id },
         data: { requestedDate, title, description },
@@ -856,6 +1040,7 @@ export class MachineService {
       const sparePR = await this.prisma.machineSparePR.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           title: true,
         },
@@ -866,6 +1051,17 @@ export class MachineService {
         machineId: sparePR.machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(
+        sparePR.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted spare PR (${sparePR.id}) on machine ${sparePR.machineId}`,
+          link: `/machine/${sparePR.machineId}`,
+        });
+      }
       await this.prisma.machineSparePR.delete({
         where: { id },
       });
@@ -900,6 +1096,17 @@ export class MachineService {
           description: `(${id}) Set status to ${status}.`,
           machineId: sparePR.machineId,
           completedById: user.id,
+        });
+      }
+      const machineUsers = await this.getMachineUserIds(
+        sparePR.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) set spare PR status to (${status}) on machine ${sparePR.machineId}`,
+          link: `/machine/${sparePR.machineId}`,
         });
       }
       await this.prisma.machineSparePR.update({
@@ -939,6 +1146,14 @@ export class MachineService {
         machineId: machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(machineId, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new breakdown on machine ${machineId}`,
+          link: `/machine/${machineId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -956,6 +1171,7 @@ export class MachineService {
       const breakdown = await this.prisma.machineBreakdown.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           title: true,
           description: true,
@@ -977,6 +1193,17 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      const machineUsers = await this.getMachineUserIds(
+        breakdown.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited breakdown (${breakdown.id}) on machine ${breakdown.machineId}`,
+          link: `/machine/${breakdown.machineId}`,
+        });
+      }
       await this.prisma.machineBreakdown.update({
         where: { id },
         data: { title, description },
@@ -993,6 +1220,7 @@ export class MachineService {
       const breakdown = await this.prisma.machineBreakdown.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           title: true,
         },
@@ -1003,6 +1231,17 @@ export class MachineService {
         machineId: breakdown.machineId,
         completedById: user.id,
       });
+      const machineUsers = await this.getMachineUserIds(
+        breakdown.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted breakdown (${breakdown.id}) on machine ${breakdown.machineId}`,
+          link: `/machine/${breakdown.machineId}`,
+        });
+      }
       await this.prisma.machineBreakdown.delete({
         where: { id },
       });
@@ -1055,6 +1294,17 @@ export class MachineService {
           completedById: user.id,
         });
 
+        const machineUsers = await this.getMachineUserIds(
+          breakdown.machineId,
+          user.id
+        );
+        for (let index = 0; index < machineUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: machineUsers[index],
+            body: `${user.fullName} (${user.rcno}) set breakdown status to (${status}) on machine ${breakdown.machineId}`,
+            link: `/machine/${breakdown.machineId}`,
+          });
+        }
         //set machine status
         await this.prisma.machine.update({
           where: { id: breakdown.machineId },
@@ -1251,23 +1501,61 @@ export class MachineService {
   //** Assign 'user' to machine. */
   async assignUserToMachine(user: User, machineId: number, userIds: number[]) {
     try {
-      const users = await this.prisma.user.findMany({
+      const machineUserIds = await this.getMachineUserIds(machineId, user.id);
+      const machineUsersExceptNewAssignments = machineUserIds.filter(
+        (id) => !userIds.includes(id)
+      );
+      const newAssignments = await this.prisma.user.findMany({
         where: {
           id: { in: userIds },
         },
         select: {
+          id: true,
           fullName: true,
           rcno: true,
+          email: true,
         },
       });
-      users.forEach((userData) => {
-        this.createMachineHistoryInBackground({
+
+      // Text format new assignments into a readable list with commas and 'and'
+      // at the end.
+      const newAssignmentsFormatted = newAssignments
+        .map((a) => `${a.fullName} (${a.rcno})`)
+        .join(', ')
+        .replace(/, ([^,]*)$/, ' and $1');
+      // Notification to machine assigned users except new assignments
+      for (const id of machineUsersExceptNewAssignments) {
+        await this.notificationService.createInBackground({
+          userId: id,
+          body: `${user.fullName} (${user.rcno}) assigned ${newAssignmentsFormatted} to machine ${machineId}`,
+          link: `/machine/${machineId}`,
+        });
+        await this.createMachineHistoryInBackground({
           type: 'User Assign',
-          description: `${userData.fullName} (${userData.rcno}) assigned to machine.`,
+          description: `${user.fullName} (${user.rcno}) assigned ${newAssignmentsFormatted} to machine ${machineId}`,
           machineId: machineId,
           completedById: user.id,
         });
-      });
+      }
+
+      // Notification to new assignments
+      const newAssignmentsWithoutCurrentUser = newAssignments.filter(
+        (na) => na.id !== user.id
+      );
+      const emailBody = `You have been assigned to machine ${machineId}`;
+      for (const newAssignment of newAssignmentsWithoutCurrentUser) {
+        await this.notificationService.createInBackground({
+          userId: newAssignment.id,
+          body: emailBody,
+          link: `/machine/${machineId}`,
+        });
+        await this.createMachineHistoryInBackground({
+          type: 'User Assign',
+          description: `${newAssignment.fullName} (${newAssignment.rcno}) assigned to machine.`,
+          machineId: machineId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.machineAssignment.createMany({
         data: userIds.map((userId) => ({
           machineId,
@@ -1471,10 +1759,22 @@ export class MachineService {
       const attachment = await this.prisma.machineAttachment.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           description: true,
         },
       });
+      const machineUsers = await this.getMachineUserIds(
+        attachment.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) deleted attachment (${attachment.id}) on machine ${attachment.machineId}`,
+          link: `/machine/${attachment.machineId}`,
+        });
+      }
       await this.createMachineHistoryInBackground({
         type: 'Attachment Delete',
         description: `(${id}) Attachment (${attachment.description}) deleted.`,
@@ -1496,6 +1796,7 @@ export class MachineService {
       const attachment = await this.prisma.machineAttachment.findFirst({
         where: { id },
         select: {
+          id: true,
           machineId: true,
           description: true,
         },
@@ -1506,6 +1807,17 @@ export class MachineService {
           description: `(${id}) Description changed from ${attachment.description} to ${description}.`,
           machineId: attachment.machineId,
           completedById: user.id,
+        });
+      }
+      const machineUsers = await this.getMachineUserIds(
+        attachment.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited attachment (${attachment.id}) on machine ${attachment.machineId}`,
+          link: `/machine/${attachment.machineId}`,
         });
       }
       await this.prisma.machineAttachment.update({
@@ -1586,5 +1898,33 @@ export class MachineService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  // Get unique array of ids of machine assigned users
+  async getMachineUserIds(
+    machineId: number,
+    removeUserId?: number
+  ): Promise<number[]> {
+    // get all users involved in ticket
+    const getAssignedUsers = await this.prisma.machineAssignment.findMany({
+      where: {
+        machineId,
+      },
+    });
+
+    const combinedIDs = [...getAssignedUsers.map((a) => a.userId)];
+
+    // get unique ids only
+    const unique = [...new Set(combinedIDs)];
+
+    // If removeUserId variable has not been passed, return array
+    if (!removeUserId) {
+      return unique;
+    }
+
+    // Otherwise remove the given user id from array and then return
+    return unique.filter((id) => {
+      return id != removeUserId;
+    });
   }
 }

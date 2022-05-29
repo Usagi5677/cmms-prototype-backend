@@ -39,6 +39,7 @@ import { PaginatedTransportationHistory } from 'src/models/pagination/transporta
 import { TransportationHistoryConnectionArgs } from 'src/models/args/transportation-history-connection.args';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { TransportationReport } from 'src/models/transportation-report.model';
+import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
@@ -83,10 +84,14 @@ export class TransportationResolver {
 
   @Mutation(() => String)
   async removeTransportation(
+    @UserEntity() user: User,
     @Args('transportationId') transportationId: number
   ): Promise<String> {
     try {
-      await this.transportationService.deleteTransportation(transportationId);
+      await this.transportationService.deleteTransportation(
+        transportationId,
+        user
+      );
       return `Transportation removed.`;
     } catch (e) {
       console.log(e);
@@ -604,5 +609,27 @@ export class TransportationResolver {
     @Args('to') to: Date
   ): Promise<TransportationReport[]> {
     return this.transportationService.getTransportationReport(user, from, to);
+  }
+
+  @Query(() => BreakdownNotif)
+  async breakdownVesselCount() {
+    const transportation = await this.prisma.transportation.findMany({
+      where: { status: 'Breakdown', transportType: 'Vessel' },
+    });
+    const breakdownNotifModal = {
+      count: transportation.length,
+    };
+    return breakdownNotifModal;
+  }
+
+  @Query(() => BreakdownNotif)
+  async breakdownVehicleCount() {
+    const transportation = await this.prisma.transportation.findMany({
+      where: { status: 'Breakdown', transportType: 'Vehicle' },
+    });
+    const breakdownNotifModal = {
+      count: transportation.length,
+    };
+    return breakdownNotifModal;
   }
 }

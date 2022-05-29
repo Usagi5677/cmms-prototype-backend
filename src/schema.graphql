@@ -2,6 +2,17 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type BreakdownNotif {
+  count: Int
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 """Breakdown statuses."""
 enum BreakdownStatus {
   Breakdown
@@ -537,6 +548,7 @@ type Query {
     last: Int
     search: String
     self: Boolean
+    status: MachineStatus
   ): PaginatedMachine!
   assignedTransportations(
     """Paginate after opaque cursor"""
@@ -555,8 +567,12 @@ type Query {
     last: Int
     search: String
     self: Boolean
+    status: TransportationStatus
     transportType: String
   ): PaginatedTransportation!
+  breakdownMachineCount: BreakdownNotif!
+  breakdownVehicleCount: BreakdownNotif!
+  breakdownVesselCount: BreakdownNotif!
   getAllBreakdownOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -634,6 +650,7 @@ type Query {
     last: Int
     search: String
     self: Boolean
+    status: MachineStatus
   ): PaginatedMachine!
   getAllPeriodicMaintenanceOfMachine(
     """Paginate after opaque cursor"""
@@ -758,6 +775,7 @@ type Query {
     last: Int
     search: String
     self: Boolean
+    status: TransportationStatus
     transportType: String
   ): PaginatedTransportation!
   getAllUsers(
@@ -859,7 +877,7 @@ enum SparePRStatus {
 }
 
 type Subscription {
-  notificationCreated: Notification!
+  notificationCreated(userId: Int!): Notification!
 }
 
 type Transportation {
