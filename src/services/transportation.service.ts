@@ -38,6 +38,7 @@ import { Queue } from 'bull';
 import * as moment from 'moment';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { Transportation } from 'src/models/transportation.model';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 export interface TransportationHistoryInterface {
   transportationId: number;
@@ -607,7 +608,8 @@ export class TransportationService {
     title: string,
     description: string,
     period: number,
-    notificationReminder: number
+    notificationReminder: number,
+    fixedDate: Date
   ) {
     try {
       const periodicMaintenance =
@@ -618,6 +620,7 @@ export class TransportationService {
             description,
             period,
             notificationReminder,
+            fixedDate,
           },
         });
       await this.createTransportationHistoryInBackground({
@@ -2038,5 +2041,67 @@ export class TransportationService {
     return unique.filter((id) => {
       return id != removeUserId;
     });
+  }
+
+  //check periodic maintenance every hour. notify based on the notification hour
+  //set status to Missed based on period
+  @Cron(CronExpression.EVERY_HOUR)
+  async updatePeriodicMaintenanceStatus() {
+    const now = moment();
+    const periodicMaintenance =
+      await this.prisma.transportationPeriodicMaintenance.findMany();
+
+    for (let index = 0; index < periodicMaintenance.length; index++) {
+      const notifHour = periodicMaintenance[index].notificationReminder;
+      const period = periodicMaintenance[index].period;
+      const fixedDate = moment(periodicMaintenance[index].fixedDate);
+      const notifDate = moment(fixedDate);
+      const periodDate = moment(fixedDate);
+      notifDate.add(notifHour, 'h');
+      periodDate.add(period, 'h');
+      if (notifDate.isSame(now)) {
+        const users = await this.prisma.transportationAssignment.findMany({
+          where: {
+            transportationId: periodicMaintenance[index].transportationId,
+          },
+        });
+        for (let index = 0; index < users.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: users[index].userId,
+            body: `Periodic maintenance (${periodicMaintenance[index].id}) on transportation ${periodicMaintenance[index].transportationId} reminder`,
+            link: `/transportation/${periodicMaintenance[index].transportationId}`,
+          });
+        }
+      }
+      if (periodDate.isSame(now)) {
+        const users = await this.prisma.transportationAssignment.findMany({
+          where: {
+            transportationId: periodicMaintenance[index].transportationId,
+          },
+        });
+        if (periodicMaintenance[index].status === 'Pending') {
+          await this.prisma.transportationPeriodicMaintenance.update({
+            where: {
+              id: periodicMaintenance[index].id,
+            },
+            data: {
+              status: 'Missed',
+            },
+          });
+        }
+        for (let index = 0; index < users.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: users[index].userId,
+            body: `Periodic maintenance (${periodicMaintenance[index].id}) on transportation ${periodicMaintenance[index].transportationId} automatically set to missed`,
+            link: `/transportation/${periodicMaintenance[index].transportationId}`,
+          });
+        }
+        await this.createTransportationHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${periodicMaintenance[index].id}) set status automatically to Missed.`,
+          transportationId: periodicMaintenance[index].transportationId,
+        });
+      }
+    }
   }
 }

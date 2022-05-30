@@ -160,6 +160,7 @@ Table MachinePeriodicMaintenance {
   description String [not null]
   period Int
   notificationReminder Int
+  fixedDate DateTime
   completedById Int
   completedBy User
   completedAt DateTime
@@ -290,6 +291,7 @@ Table TransportationPeriodicMaintenance {
   description String [not null]
   period Int
   notificationReminder Int
+  fixedDate DateTime
   completedById Int
   completedBy User
   completedAt DateTime

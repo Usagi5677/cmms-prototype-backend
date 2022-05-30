@@ -13,4 +13,5 @@ export class MachinePeriodicMaintenance extends BaseModel {
   status: PeriodicMaintenanceStatus;
   completedBy?: User;
   completedAt?: Date;
+  fixedDate?: Date;
 }

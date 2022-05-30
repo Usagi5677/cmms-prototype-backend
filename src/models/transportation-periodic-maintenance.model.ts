@@ -13,4 +13,5 @@ export class TransportationPeriodicMaintenance extends BaseModel {
   status: PeriodicMaintenanceStatus;
   completedBy?: User;
   completedAt?: Date;
+  fixedDate?: Date;
 }

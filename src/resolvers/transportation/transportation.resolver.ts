@@ -235,7 +235,8 @@ export class TransportationResolver {
     @Args('title') title: string,
     @Args('description') description: string,
     @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number
+    @Args('notificationReminder') notificationReminder: number,
+    @Args('fixedDate') fixedDate: Date
   ): Promise<String> {
     await this.transportationService.createTransportationPeriodicMaintenance(
       user,
@@ -243,7 +244,8 @@ export class TransportationResolver {
       title,
       description,
       period,
-      notificationReminder
+      notificationReminder,
+      fixedDate
     );
     return `Added periodic maintenance to transportation.`;
   }

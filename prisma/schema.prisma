@@ -249,6 +249,7 @@ model MachinePeriodicMaintenance {
   description          String
   period               Int?
   notificationReminder Int?
+  fixedDate            DateTime?
   completedById        Int?
   completedBy          User?                     @relation(fields: [completedById], references: [id])
   completedAt          DateTime?
@@ -383,6 +384,7 @@ model TransportationPeriodicMaintenance {
   description          String
   period               Int?
   notificationReminder Int?
+  fixedDate            DateTime?
   completedById        Int?
   completedBy          User?                     @relation(fields: [completedById], references: [id])
   completedAt          DateTime?

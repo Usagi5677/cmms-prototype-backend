@@ -218,7 +218,8 @@ export class MachineResolver {
     @Args('title') title: string,
     @Args('description') description: string,
     @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number
+    @Args('notificationReminder') notificationReminder: number,
+    @Args('fixedDate') fixedDate: Date
   ): Promise<String> {
     await this.machineService.createMachinePeriodicMaintenance(
       user,
@@ -226,7 +227,8 @@ export class MachineResolver {
       title,
       description,
       period,
-      notificationReminder
+      notificationReminder,
+      fixedDate
     );
     return `Added periodic maintenance to machine.`;
   }

@@ -174,6 +174,7 @@ type MachinePeriodicMaintenance {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   description: String!
+  fixedDate: Date
   id: Int!
   machineId: Int!
   notificationReminder: Int
@@ -281,13 +282,13 @@ type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
-  addMachinePeriodicMaintenance(description: String!, machineId: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
+  addMachinePeriodicMaintenance(description: String!, fixedDate: Date!, machineId: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
   addRole(name: String!): String!
   addTransportationBreakdown(description: String!, title: String!, transportationId: Int!): String!
   addTransportationChecklistItem(description: String!, transportationId: Int!, type: String!): String!
-  addTransportationPeriodicMaintenance(description: String!, notificationReminder: Int!, period: Int!, title: String!, transportationId: Int!): String!
+  addTransportationPeriodicMaintenance(description: String!, fixedDate: Date!, notificationReminder: Int!, period: Int!, title: String!, transportationId: Int!): String!
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
@@ -1019,6 +1020,7 @@ type TransportationPeriodicMaintenance {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   description: String!
+  fixedDate: Date
   id: Int!
   notificationReminder: Int
   period: Int

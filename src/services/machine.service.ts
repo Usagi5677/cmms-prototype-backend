@@ -37,6 +37,7 @@ import { Queue } from 'bull';
 import * as moment from 'moment';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { Machine } from 'src/models/machine.model';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -537,7 +538,8 @@ export class MachineService {
     title: string,
     description: string,
     period: number,
-    notificationReminder: number
+    notificationReminder: number,
+    fixedDate: Date
   ) {
     try {
       const periodicMaintenance =
@@ -548,6 +550,7 @@ export class MachineService {
             description,
             period,
             notificationReminder,
+            fixedDate,
           },
         });
       await this.createMachineHistoryInBackground({
@@ -1926,5 +1929,67 @@ export class MachineService {
     return unique.filter((id) => {
       return id != removeUserId;
     });
+  }
+
+  //check periodic maintenance every hour. notify based on the notification hour
+  //set status to Missed based on period
+  @Cron(CronExpression.EVERY_HOUR)
+  async updatePeriodicMaintenanceStatus() {
+    const now = moment();
+    const periodicMaintenance =
+      await this.prisma.machinePeriodicMaintenance.findMany();
+
+    for (let index = 0; index < periodicMaintenance.length; index++) {
+      const notifHour = periodicMaintenance[index].notificationReminder;
+      const period = periodicMaintenance[index].period;
+      const fixedDate = moment(periodicMaintenance[index].fixedDate);
+      const notifDate = moment(fixedDate);
+      const periodDate = moment(fixedDate);
+      notifDate.add(notifHour, 'h');
+      periodDate.add(period, 'h');
+      if (notifDate.isSame(now)) {
+        const users = await this.prisma.machineAssignment.findMany({
+          where: {
+            machineId: periodicMaintenance[index].machineId,
+          },
+        });
+        for (let index = 0; index < users.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: users[index].userId,
+            body: `Periodic maintenance (${periodicMaintenance[index].id}) on machine ${periodicMaintenance[index].machineId} reminder`,
+            link: `/machine/${periodicMaintenance[index].machineId}`,
+          });
+        }
+      }
+      if (periodDate.isSame(now)) {
+        const users = await this.prisma.machineAssignment.findMany({
+          where: {
+            machineId: periodicMaintenance[index].machineId,
+          },
+        });
+        if (periodicMaintenance[index].status === 'Pending') {
+          await this.prisma.machinePeriodicMaintenance.update({
+            where: {
+              id: periodicMaintenance[index].id,
+            },
+            data: {
+              status: 'Missed',
+            },
+          });
+        }
+        for (let index = 0; index < users.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: users[index].userId,
+            body: `Periodic maintenance (${periodicMaintenance[index].id}) on machine ${periodicMaintenance[index].machineId} automatically set to missed`,
+            link: `/machine/${periodicMaintenance[index].machineId}`,
+          });
+        }
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Status',
+          description: `(${periodicMaintenance[index].id}) set status automatically to Missed.`,
+          machineId: periodicMaintenance[index].machineId,
+        });
+      }
+    }
   }
 }
