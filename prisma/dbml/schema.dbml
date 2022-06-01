@@ -179,6 +179,9 @@ Table MachineHistory {
   description String [not null]
   machineStatus MachineStatus
   machineType String
+  currentRunningHrs Int
+  lastServiceHrs Int
+  interServiceHrs Int
 }
 
 Table MachineRepair {

@@ -45,6 +45,7 @@ import { MachineReport } from 'src/models/machine-report.model';
 import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { BreakdownNotif } from 'src/models/breakdownNotif.model';
+import { MachineUsageHistory } from 'src/models/machine-usage-history.model';
 
 @Resolver(() => Machine)
 export class MachineResolver {
@@ -594,5 +595,15 @@ export class MachineResolver {
       count: machine.length,
     };
     return breakdownNotifModal;
+  }
+
+  @Query(() => [MachineUsageHistory])
+  async singleMachineUsageHistory(
+    @UserEntity() user: User,
+    @Args('machineId') machineId: number,
+    @Args('from') from: Date,
+    @Args('to') to: Date
+  ): Promise<MachineUsageHistory[]> {
+    return this.machineService.getMachineUsage(user, machineId, from, to);
   }
 }

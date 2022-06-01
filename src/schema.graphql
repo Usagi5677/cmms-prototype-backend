@@ -278,6 +278,19 @@ enum MachineStatus {
   Working
 }
 
+type MachineUsageHistory {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  currentRunningHrs: Int!
+  date: Date!
+  id: Int!
+  interServiceHrs: Int!
+  lastServiceHrs: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
@@ -822,6 +835,7 @@ type Query {
   redisKeys: [String!]!
   sayHello: String!
   searchAPSUsers(query: String!): [User!]!
+  singleMachineUsageHistory(from: Date!, machineId: Int!, to: Date!): [MachineUsageHistory!]!
   transportationAttachment(id: Int!): TransportationAttachment!
   transportationAttachments(
     """Paginate after opaque cursor"""

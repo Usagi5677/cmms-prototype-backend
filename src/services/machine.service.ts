@@ -46,6 +46,9 @@ export interface MachineHistoryInterface {
   completedById?: number;
   machineStatus?: MachineStatus;
   machineType?: string;
+  currentRunningHrs?: number;
+  lastServiceHrs?: number;
+  interServiceHrs?: number;
 }
 
 @Injectable()
@@ -184,6 +187,8 @@ export class MachineService {
           description: `Current Running Hrs changed from ${machine.currentRunningHrs} to ${currentRunningHrs}.`,
           machineId: id,
           completedById: user.id,
+          currentRunningHrs: currentRunningHrs,
+          lastServiceHrs: lastServiceHrs,
         });
       }
       if (machine.lastServiceHrs != lastServiceHrs) {
@@ -192,6 +197,8 @@ export class MachineService {
           description: `Last Service Hrs changed from ${machine.lastServiceHrs} to ${lastServiceHrs}.`,
           machineId: id,
           completedById: user.id,
+          currentRunningHrs: currentRunningHrs,
+          lastServiceHrs: lastServiceHrs,
         });
       }
       if (
@@ -217,6 +224,7 @@ export class MachineService {
           link: `/machine/${id}`,
         });
       }
+      const interServiceHrs = currentRunningHrs - lastServiceHrs;
       await this.prisma.machine.update({
         data: {
           machineNumber,
@@ -227,6 +235,7 @@ export class MachineService {
           currentRunningHrs,
           lastServiceHrs,
           registeredDate,
+          interServiceHrs,
         },
         where: { id },
       });
@@ -1733,8 +1742,19 @@ export class MachineService {
       select: {
         status: true,
         type: true,
+        currentRunningHrs: true,
+        lastServiceHrs: true,
+        interServiceHrs: true,
       },
     });
+    const currentRunningHrs = machineHistory.currentRunningHrs
+      ? machineHistory.currentRunningHrs
+      : machine.currentRunningHrs;
+    const lastServiceHrs = machineHistory.lastServiceHrs
+      ? machineHistory.lastServiceHrs
+      : machine.lastServiceHrs;
+    const interServiceHrs = currentRunningHrs - lastServiceHrs;
+
     await this.prisma.machineHistory.create({
       data: {
         machineId: machineHistory.machineId,
@@ -1743,6 +1763,9 @@ export class MachineService {
         completedById: machineHistory.completedById,
         machineStatus: machine.status,
         machineType: machine.type,
+        currentRunningHrs: currentRunningHrs,
+        lastServiceHrs: lastServiceHrs,
+        interServiceHrs: interServiceHrs,
       },
     });
   }
@@ -1990,6 +2013,59 @@ export class MachineService {
           machineId: periodicMaintenance[index].machineId,
         });
       }
+    }
+  }
+
+  //** Get machine usage */
+  async getMachineUsage(user: User, machineId: number, from: Date, to: Date) {
+    try {
+      const today = moment();
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `usageHistoryByDate-${machineId}-${fromDate.format(
+        'DD-MMMM-YYYY'
+      )}-${toDate.format('DD-MMMM-YYYY')}`;
+      let usageHistoryByDate = await this.redisCacheService.get(key);
+      if (!usageHistoryByDate) {
+        usageHistoryByDate = [];
+        //get all usage of machine between date
+        const machineUsageHistoryArray =
+          await this.prisma.machineHistory.findMany({
+            where: {
+              machineId,
+              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          });
+        const days = toDate.diff(fromDate, 'days') + 1;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const currentRunningHrs =
+            machineUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.currentRunningHrs ?? 0;
+          const lastServiceHrs =
+            machineUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.lastServiceHrs ?? 0;
+          const interServiceHrs =
+            machineUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.interServiceHrs ?? 0;
+          usageHistoryByDate.push({
+            date: day.toDate(),
+            currentRunningHrs,
+            lastServiceHrs,
+            interServiceHrs,
+          });
+        }
+      }
+      return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 }
