@@ -863,13 +863,6 @@ export class TransportationService {
           link: `/transportation/${transportationId}`,
         });
       }
-      await this.prisma.transportationRepair.create({
-        data: {
-          transportationId,
-          title,
-          description,
-        },
-      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

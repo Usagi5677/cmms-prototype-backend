@@ -789,7 +789,27 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationSparePR!
-  getAllTransportation(
+  getAllTransportationVehicles(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    self: Boolean
+    status: TransportationStatus
+    transportType: String
+  ): PaginatedTransportation!
+  getAllTransportationVessels(
     """Paginate after opaque cursor"""
     after: String
     assignedToId: Int

@@ -79,6 +79,7 @@ export class UserResolver {
   }
 
   /** Add app user with roles. If user does not exist in db, fetches from APS. */
+  @Permissions('ADD_USER_WITH_ROLE')
   @Mutation(() => String)
   async addAppUser(
     @Args('userId') userId: string,
@@ -89,6 +90,7 @@ export class UserResolver {
   }
 
   /** Remove role from user. */
+  @Permissions('EDIT_USER_ROLE')
   @Mutation(() => String)
   async removeUserRole(
     @UserEntity() user: User,
@@ -103,6 +105,7 @@ export class UserResolver {
   }
 
   /** Add user role. */
+  @Permissions('EDIT_USER_ROLE')
   @Mutation(() => String)
   async addUserRole(
     @Args('userId') targetUserId: number,

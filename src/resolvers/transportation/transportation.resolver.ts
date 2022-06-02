@@ -41,8 +41,10 @@ import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { TransportationReport } from 'src/models/transportation-report.model';
 import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 import { TransportationUsageHistory } from 'src/models/transportation-usage-history.model';
+import { PermissionsGuard } from 'src/guards/permissions.guard';
+import { Permissions } from 'src/decorators/permissions.decorator';
 
-@UseGuards(GqlAuthGuard)
+@UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Transportation)
 export class TransportationResolver {
   constructor(
@@ -51,6 +53,7 @@ export class TransportationResolver {
     private prisma: PrismaService
   ) {}
 
+  @Permissions('ADD_TRANSPORTATION')
   @Mutation(() => String)
   async createTransportation(
     @UserEntity() user: User,
@@ -83,6 +86,7 @@ export class TransportationResolver {
     return `Successfully created transportation.`;
   }
 
+  @Permissions('DELETE_TRANSPORTATION')
   @Mutation(() => String)
   async removeTransportation(
     @UserEntity() user: User,
@@ -100,6 +104,7 @@ export class TransportationResolver {
     }
   }
 
+  @Permissions('EDIT_TRANSPORTATION')
   @Mutation(() => String)
   async editTransportation(
     @UserEntity() user: User,
@@ -134,6 +139,7 @@ export class TransportationResolver {
     return `Transportation updated.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION')
   @Mutation(() => String)
   async setTransportationStatus(
     @UserEntity() user: User,
@@ -149,6 +155,7 @@ export class TransportationResolver {
     return `Transportation status set to ${status}.`;
   }
 
+  @Permissions('VIEW_VEHICLE', 'VIEW_VESSEL')
   @Query(() => Transportation)
   async getSingleTransportation(
     @UserEntity() user: User,
@@ -160,8 +167,9 @@ export class TransportationResolver {
     );
   }
 
+  @Permissions('VIEW_ALL_VESSELS')
   @Query(() => PaginatedTransportation)
-  async getAllTransportation(
+  async getAllTransportationVessels(
     @UserEntity() user: User,
     @Args() args: TransportationConnectionArgs
   ): Promise<PaginatedTransportation> {
@@ -171,6 +179,19 @@ export class TransportationResolver {
     );
   }
 
+  @Permissions('VIEW_ALL_VEHICLES')
+  @Query(() => PaginatedTransportation)
+  async getAllTransportationVehicles(
+    @UserEntity() user: User,
+    @Args() args: TransportationConnectionArgs
+  ): Promise<PaginatedTransportation> {
+    return await this.transportationService.getTransportationWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Permissions('ADD_TRANSPORTATION_CHECKLIST')
   @Mutation(() => String)
   async addTransportationChecklistItem(
     @UserEntity() user: User,
@@ -187,6 +208,7 @@ export class TransportationResolver {
     return `Added checklist item to transportation.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_CHECKLIST')
   @Mutation(() => String)
   async editTransportationChecklistItem(
     @UserEntity() user: User,
@@ -203,6 +225,7 @@ export class TransportationResolver {
     return `Checklist item updated.`;
   }
 
+  @Permissions('DELETE_TRANSPORTATION_CHECKLIST')
   @Mutation(() => String)
   async deleteTransportationChecklistItem(
     @UserEntity() user: User,
@@ -215,6 +238,7 @@ export class TransportationResolver {
     return `Checklist item deleted.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_CHECKLIST')
   @Mutation(() => String)
   async toggleTransportationChecklistItem(
     @UserEntity() user: User,
@@ -229,6 +253,7 @@ export class TransportationResolver {
     return `Checklist item updated.`;
   }
 
+  @Permissions('ADD_TRANSPORTATION_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async addTransportationPeriodicMaintenance(
     @UserEntity() user: User,
@@ -251,6 +276,7 @@ export class TransportationResolver {
     return `Added periodic maintenance to transportation.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async editTransportationPeriodicMaintenance(
     @UserEntity() user: User,
@@ -271,6 +297,7 @@ export class TransportationResolver {
     return `Periodic maintenance updated.`;
   }
 
+  @Permissions('DELETE_TRANSPORTATION_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async deleteTransportationPeriodicMaintenance(
     @UserEntity() user: User,
@@ -283,6 +310,7 @@ export class TransportationResolver {
     return `Periodic maintenance deleted.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async setTransportationPeriodicMaintenanceStatus(
     @UserEntity() user: User,
@@ -298,6 +326,7 @@ export class TransportationResolver {
     return `Periodic maintenance status updated.`;
   }
 
+  @Permissions('ADD_TRANSPORTATION_REPAIR')
   @Mutation(() => String)
   async addTransportationRepair(
     @UserEntity() user: User,
@@ -314,6 +343,7 @@ export class TransportationResolver {
     return `Added repair to transportation.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_REPAIR')
   @Mutation(() => String)
   async editTransportationRepair(
     @UserEntity() user: User,
@@ -330,6 +360,7 @@ export class TransportationResolver {
     return `Repair updated.`;
   }
 
+  @Permissions('DELETE_TRANSPORTATION_REPAIR')
   @Mutation(() => String)
   async deleteTransportationRepair(
     @UserEntity() user: User,
@@ -339,6 +370,7 @@ export class TransportationResolver {
     return `Repair deleted.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_REPAIR')
   @Mutation(() => String)
   async setTransportationRepairStatus(
     @UserEntity() user: User,
@@ -354,6 +386,7 @@ export class TransportationResolver {
     return `Repair status updated.`;
   }
 
+  @Permissions('ADD_TRANSPORTATION_SPARE_PR')
   @Mutation(() => String)
   async addTransportationSparePR(
     @UserEntity() user: User,
@@ -372,6 +405,7 @@ export class TransportationResolver {
     return `Added Spare PR to transportation.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_SPARE_PR')
   @Mutation(() => String)
   async editTransportationSparePR(
     @UserEntity() user: User,
@@ -390,6 +424,7 @@ export class TransportationResolver {
     return `Spare PR updated.`;
   }
 
+  @Permissions('DELETE_TRANSPORTATION_SPARE_PR')
   @Mutation(() => String)
   async deleteTransportationSparePR(
     @UserEntity() user: User,
@@ -399,6 +434,7 @@ export class TransportationResolver {
     return `Spare PR deleted.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_SPARE_PR')
   @Mutation(() => String)
   async setTransportationSparePRStatus(
     @UserEntity() user: User,
@@ -414,6 +450,7 @@ export class TransportationResolver {
     return `Spare PR status updated.`;
   }
 
+  @Permissions('ADD_TRANSPORTATION_BREAKDOWN')
   @Mutation(() => String)
   async addTransportationBreakdown(
     @UserEntity() user: User,
@@ -430,6 +467,7 @@ export class TransportationResolver {
     return `Added Breakdown to transportation.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_BREAKDOWN')
   @Mutation(() => String)
   async editTransportationBreakdown(
     @UserEntity() user: User,
@@ -446,6 +484,7 @@ export class TransportationResolver {
     return `Spare PR updated.`;
   }
 
+  @Permissions('DELETE_TRANSPORTATION_BREAKDOWN')
   @Mutation(() => String)
   async deleteTransportationBreakdown(
     @UserEntity() user: User,
@@ -455,6 +494,7 @@ export class TransportationResolver {
     return `Breakdown deleted.`;
   }
 
+  @Permissions('EDIT_TRANSPORTATION_BREAKDOWN')
   @Mutation(() => String)
   async setTransportationBreakdownStatus(
     @UserEntity() user: User,
@@ -525,6 +565,7 @@ export class TransportationResolver {
     );
   }
 
+  @Permissions('ASSIGN_USER_TO_TRANSPORTATION')
   @Mutation(() => String)
   async assignUserToTransportation(
     @UserEntity() user: User,
@@ -541,6 +582,7 @@ export class TransportationResolver {
     } to transportation.`;
   }
 
+  @Permissions('UNASSIGN_USER_TO_TRANSPORTATION')
   @Mutation(() => String)
   async unassignUserFromTransportation(
     @UserEntity() user: User,
@@ -577,6 +619,7 @@ export class TransportationResolver {
     );
   }
 
+  @Permissions('DELETE_TRANSPORTATION_ATTACHMENT')
   @Mutation(() => String)
   async removeTransportationAttachment(
     @Args('id') id: number,
@@ -591,6 +634,7 @@ export class TransportationResolver {
     }
   }
 
+  @Permissions('EDIT_TRANSPORTATION_ATTACHMENT')
   @Mutation(() => String)
   async editTransportationAttachment(
     @UserEntity() user: User,
@@ -605,6 +649,7 @@ export class TransportationResolver {
     return `Attachment updated.`;
   }
 
+  @Permissions('VIEW_TRANSPORTATION_REPORT')
   @Query(() => [TransportationReport])
   async getTransportationReport(
     @UserEntity() user: User,
@@ -651,6 +696,7 @@ export class TransportationResolver {
     );
   }
 
+  @Permissions('EDIT_TRANSPORTATION_USAGE')
   @Mutation(() => String)
   async editTransportationUsage(
     @UserEntity() user: User,
