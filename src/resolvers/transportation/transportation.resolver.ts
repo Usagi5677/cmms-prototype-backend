@@ -40,6 +40,7 @@ import { TransportationHistoryConnectionArgs } from 'src/models/args/transportat
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { TransportationReport } from 'src/models/transportation-report.model';
 import { BreakdownNotif } from 'src/models/breakdownNotif.model';
+import { TransportationUsageHistory } from 'src/models/transportation-usage-history.model';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Transportation)
@@ -633,5 +634,20 @@ export class TransportationResolver {
       count: transportation.length,
     };
     return breakdownNotifModal;
+  }
+
+  @Query(() => [TransportationUsageHistory])
+  async singleTransportationUsageHistory(
+    @UserEntity() user: User,
+    @Args('transportationId') transportationId: number,
+    @Args('from') from: Date,
+    @Args('to') to: Date
+  ): Promise<TransportationUsageHistory[]> {
+    return this.transportationService.getTransportationUsage(
+      user,
+      transportationId,
+      from,
+      to
+    );
   }
 }

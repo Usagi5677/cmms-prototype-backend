@@ -328,6 +328,9 @@ Table TransportationHistory {
   description String [not null]
   transportationStatus TransportationStatus
   transportationType String
+  currentMileage Int
+  lastServiceMileage Int
+  interServiceMileage Int
 }
 
 Table TransportationRepair {

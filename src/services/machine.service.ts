@@ -2022,7 +2022,7 @@ export class MachineService {
       const today = moment();
       const fromDate = moment(from).startOf('day');
       const toDate = moment(to).endOf('day');
-      const key = `usageHistoryByDate-${machineId}-${fromDate.format(
+      const key = `machineUsageHistoryByDate-${machineId}-${fromDate.format(
         'DD-MMMM-YYYY'
       )}-${toDate.format('DD-MMMM-YYYY')}`;
       let usageHistoryByDate = await this.redisCacheService.get(key);

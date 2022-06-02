@@ -597,6 +597,7 @@ export class MachineResolver {
     return breakdownNotifModal;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => [MachineUsageHistory])
   async singleMachineUsageHistory(
     @UserEntity() user: User,

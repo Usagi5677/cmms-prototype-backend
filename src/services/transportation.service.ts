@@ -45,6 +45,8 @@ export interface TransportationHistoryInterface {
   type: string;
   description: string;
   completedById?: number;
+  currentMileage?: number;
+  lastServiceMileage?: number;
 }
 
 @Injectable()
@@ -195,6 +197,8 @@ export class TransportationService {
           description: `Current Mileage changed from ${transportation.currentMileage} to ${currentMileage}.`,
           transportationId: id,
           completedById: user.id,
+          currentMileage: currentMileage,
+          lastServiceMileage: lastServiceMileage,
         });
       }
       if (transportation.lastServiceMileage != lastServiceMileage) {
@@ -203,6 +207,8 @@ export class TransportationService {
           description: `Last Service Mileage changed from ${transportation.lastServiceMileage} to ${lastServiceMileage}.`,
           transportationId: id,
           completedById: user.id,
+          currentMileage: currentMileage,
+          lastServiceMileage: lastServiceMileage,
         });
       }
       if (transportation.engine != engine) {
@@ -257,6 +263,7 @@ export class TransportationService {
         });
       }
 
+      const interServiceMileage = currentMileage - lastServiceMileage;
       await this.prisma.transportation.update({
         data: {
           machineNumber,
@@ -268,6 +275,7 @@ export class TransportationService {
           measurement,
           currentMileage,
           lastServiceMileage,
+          interServiceMileage,
           transportType,
           registeredDate,
         },
@@ -1838,8 +1846,18 @@ export class TransportationService {
       select: {
         status: true,
         type: true,
+        currentMileage: true,
+        lastServiceMileage: true,
+        interServiceMileage: true,
       },
     });
+    const currentMileage = transportationHistory.currentMileage
+      ? transportationHistory.currentMileage
+      : transportation.currentMileage;
+    const lastServiceMileage = transportationHistory.lastServiceMileage
+      ? transportationHistory.lastServiceMileage
+      : transportation.lastServiceMileage;
+    const interServiceMileage = currentMileage - lastServiceMileage;
     await this.prisma.transportationHistory.create({
       data: {
         transportationId: transportationHistory.transportationId,
@@ -1848,6 +1866,9 @@ export class TransportationService {
         completedById: transportationHistory.completedById,
         transportationStatus: transportation.status,
         transportationType: transportation.type,
+        currentMileage: currentMileage,
+        lastServiceMileage: lastServiceMileage,
+        interServiceMileage: interServiceMileage,
       },
     });
   }
@@ -2102,6 +2123,64 @@ export class TransportationService {
           transportationId: periodicMaintenance[index].transportationId,
         });
       }
+    }
+  }
+
+  //** Get transportation usage */
+  async getTransportationUsage(
+    user: User,
+    transportationId: number,
+    from: Date,
+    to: Date
+  ) {
+    try {
+      const today = moment();
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `transportationUsageHistoryByDate-${transportationId}-${fromDate.format(
+        'DD-MMMM-YYYY'
+      )}-${toDate.format('DD-MMMM-YYYY')}`;
+      let usageHistoryByDate = await this.redisCacheService.get(key);
+      if (!usageHistoryByDate) {
+        usageHistoryByDate = [];
+        //get all usage of transportation between date
+        const transportationUsageHistoryArray =
+          await this.prisma.transportationHistory.findMany({
+            where: {
+              transportationId,
+              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          });
+        const days = toDate.diff(fromDate, 'days') + 1;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const currentMileage =
+            transportationUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.currentMileage ?? 0;
+          const lastServiceMileage =
+            transportationUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.lastServiceMileage ?? 0;
+          const interServiceMileage =
+            transportationUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.interServiceMileage ?? 0;
+          usageHistoryByDate.push({
+            date: day.toDate(),
+            currentMileage,
+            lastServiceMileage,
+            interServiceMileage,
+          });
+        }
+      }
+      return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 }

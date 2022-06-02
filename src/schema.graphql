@@ -836,6 +836,7 @@ type Query {
   sayHello: String!
   searchAPSUsers(query: String!): [User!]!
   singleMachineUsageHistory(from: Date!, machineId: Int!, to: Date!): [MachineUsageHistory!]!
+  singleTransportationUsageHistory(from: Date!, to: Date!, transportationId: Int!): [TransportationUsageHistory!]!
   transportationAttachment(id: Int!): TransportationAttachment!
   transportationAttachments(
     """Paginate after opaque cursor"""
@@ -1136,6 +1137,19 @@ enum TransportationStatus {
   Breakdown
   Pending
   Working
+}
+
+type TransportationUsageHistory {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  currentMileage: Int!
+  date: Date!
+  id: Int!
+  interServiceMileage: Int!
+  lastServiceMileage: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
 }
 
 type User {

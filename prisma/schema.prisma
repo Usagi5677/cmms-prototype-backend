@@ -422,6 +422,9 @@ model TransportationHistory {
   description          String
   transportationStatus TransportationStatus?
   transportationType   String?
+  currentMileage       Int?
+  lastServiceMileage   Int?
+  interServiceMileage  Int?
 }
 
 model TransportationRepair {
