@@ -40,6 +40,7 @@ import { MachinePeriodicMaintenanceConnectionArgs } from 'src/models/args/machin
 import { PaginatedMachineHistory } from 'src/models/pagination/machine-history-connection.model';
 import { MachineHistoryConnectionArgs } from 'src/models/args/machine-history-connection.args';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
+import { Permissions } from 'src/decorators/permissions.decorator';
 import * as moment from 'moment';
 import { MachineReport } from 'src/models/machine-report.model';
 import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
@@ -48,6 +49,7 @@ import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 import { MachineUsageHistory } from 'src/models/machine-usage-history.model';
 
 @Resolver(() => Machine)
+@UseGuards(GqlAuthGuard, PermissionsGuard)
 export class MachineResolver {
   constructor(
     private machineService: MachineService,
@@ -56,7 +58,7 @@ export class MachineResolver {
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub
   ) {}
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ADD_MACHINE')
   @Mutation(() => String)
   async createMachine(
     @UserEntity() user: User,
@@ -83,7 +85,7 @@ export class MachineResolver {
     return `Successfully created machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE')
   @Mutation(() => String)
   async removeMachine(
     @UserEntity() user: User,
@@ -98,7 +100,7 @@ export class MachineResolver {
     }
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE')
   @Mutation(() => String)
   async editMachine(
     @UserEntity() user: User,
@@ -127,7 +129,7 @@ export class MachineResolver {
     return `Machine updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE')
   @Mutation(() => String)
   async setMachineStatus(
     @UserEntity() user: User,
@@ -138,7 +140,7 @@ export class MachineResolver {
     return `Machine status set to ${status}.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('VIEW_MACHINE')
   @Query(() => Machine)
   async getSingleMachine(
     @UserEntity() user: User,
@@ -147,7 +149,7 @@ export class MachineResolver {
     return await this.machineService.getSingleMachine(user, machineId);
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('VIEW_ALL_MACHINES')
   @Query(() => PaginatedMachine)
   async getAllMachine(
     @UserEntity() user: User,
@@ -156,7 +158,7 @@ export class MachineResolver {
     return await this.machineService.getMachineWithPagination(user, args);
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ADD_MACHINE_CHECKLIST')
   @Mutation(() => String)
   async addMachineChecklistItem(
     @UserEntity() user: User,
@@ -173,7 +175,7 @@ export class MachineResolver {
     return `Added checklist item to machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_CHECKLIST')
   @Mutation(() => String)
   async editMachineChecklistItem(
     @UserEntity() user: User,
@@ -190,7 +192,7 @@ export class MachineResolver {
     return `Checklist item updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE_CHECKLIST')
   @Mutation(() => String)
   async deleteMachineChecklistItem(
     @UserEntity() user: User,
@@ -200,7 +202,7 @@ export class MachineResolver {
     return `Checklist item deleted.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_CHECKLIST')
   @Mutation(() => String)
   async toggleMachineChecklistItem(
     @UserEntity() user: User,
@@ -211,7 +213,7 @@ export class MachineResolver {
     return `Checklist item updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ADD_MACHINE_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async addMachinePeriodicMaintenance(
     @UserEntity() user: User,
@@ -234,7 +236,7 @@ export class MachineResolver {
     return `Added periodic maintenance to machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async editMachinePeriodicMaintenance(
     @UserEntity() user: User,
@@ -255,7 +257,7 @@ export class MachineResolver {
     return `Periodic maintenance updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async deleteMachinePeriodicMaintenance(
     @UserEntity() user: User,
@@ -265,7 +267,7 @@ export class MachineResolver {
     return `Periodic maintenance deleted.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async setMachinePeriodicMaintenanceStatus(
     @UserEntity() user: User,
@@ -281,7 +283,7 @@ export class MachineResolver {
     return `Periodic maintenance status updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ADD_MACHINE_REPAIR')
   @Mutation(() => String)
   async addMachineRepair(
     @UserEntity() user: User,
@@ -298,7 +300,7 @@ export class MachineResolver {
     return `Added repair to machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_REPAIR')
   @Mutation(() => String)
   async editMachineRepair(
     @UserEntity() user: User,
@@ -310,7 +312,7 @@ export class MachineResolver {
     return `Repair updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE_REPAIR')
   @Mutation(() => String)
   async deleteMachineRepair(
     @UserEntity() user: User,
@@ -320,7 +322,7 @@ export class MachineResolver {
     return `Repair deleted.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_REPAIR')
   @Mutation(() => String)
   async setMachineRepairStatus(
     @UserEntity() user: User,
@@ -332,7 +334,7 @@ export class MachineResolver {
     return `Repair status updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ADD_MACHINE_SPARE_PR')
   @Mutation(() => String)
   async addMachineSparePR(
     @UserEntity() user: User,
@@ -351,7 +353,7 @@ export class MachineResolver {
     return `Added Spare PR to machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_SPARE_PR')
   @Mutation(() => String)
   async editMachineSparePR(
     @UserEntity() user: User,
@@ -370,7 +372,7 @@ export class MachineResolver {
     return `Spare PR updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE_SPARE_PR')
   @Mutation(() => String)
   async deleteMachineSparePR(
     @UserEntity() user: User,
@@ -380,7 +382,7 @@ export class MachineResolver {
     return `Spare PR deleted.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_SPARE_PR')
   @Mutation(() => String)
   async setMachineSparePRStatus(
     @UserEntity() user: User,
@@ -392,7 +394,7 @@ export class MachineResolver {
     return `Spare PR status updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ADD_MACHINE_BREAKDOWN')
   @Mutation(() => String)
   async addMachineBreakdown(
     @UserEntity() user: User,
@@ -409,7 +411,7 @@ export class MachineResolver {
     return `Added Breakdown to machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_BREAKDOWN')
   @Mutation(() => String)
   async editMachineBreakdown(
     @UserEntity() user: User,
@@ -426,7 +428,7 @@ export class MachineResolver {
     return `Breakdown updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE_BREAKDOWN')
   @Mutation(() => String)
   async deleteMachineBreakdown(
     @UserEntity() user: User,
@@ -436,7 +438,7 @@ export class MachineResolver {
     return `Breakdown deleted.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_BREAKDOWN')
   @Mutation(() => String)
   async setMachineBreakdownStatus(
     @UserEntity() user: User,
@@ -448,7 +450,6 @@ export class MachineResolver {
     return `Breakdown status updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => PaginatedMachineRepair)
   async getAllRepairOfMachine(
     @UserEntity() user: User,
@@ -457,7 +458,6 @@ export class MachineResolver {
     return await this.machineService.getMachineRepairWithPagination(user, args);
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => PaginatedMachineBreakdown)
   async getAllBreakdownOfMachine(
     @UserEntity() user: User,
@@ -469,7 +469,6 @@ export class MachineResolver {
     );
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => PaginatedMachineSparePR)
   async getAllSparePROfMachine(
     @UserEntity() user: User,
@@ -481,7 +480,7 @@ export class MachineResolver {
     );
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('ASSIGN_USER_TO_MACHINE')
   @Mutation(() => String)
   async assignUserToMachine(
     @UserEntity() user: User,
@@ -494,7 +493,7 @@ export class MachineResolver {
     } to machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('UNASSIGN_USER_TO_MACHINE')
   @Mutation(() => String)
   async unassignUserFromMachine(
     @UserEntity() user: User,
@@ -505,7 +504,7 @@ export class MachineResolver {
     return `Successfully unassigned user from machine.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('VIEW_ALL_ASSIGNED_MACHINES')
   @Query(() => PaginatedMachine)
   async assignedMachines(
     @UserEntity() user: User,
@@ -525,7 +524,6 @@ export class MachineResolver {
     return await this.machineService.getMachineWithPagination(user, args);
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => PaginatedMachinePeriodicMaintenance)
   async getAllPeriodicMaintenanceOfMachine(
     @UserEntity() user: User,
@@ -537,7 +535,6 @@ export class MachineResolver {
     );
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => PaginatedMachineHistory)
   async getAllHistoryOfMachine(
     @UserEntity() user: User,
@@ -549,7 +546,7 @@ export class MachineResolver {
     );
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('DELETE_MACHINE_ATTACHMENT')
   @Mutation(() => String)
   async removeMachineAttachment(
     @Args('id') id: number,
@@ -564,7 +561,7 @@ export class MachineResolver {
     }
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_ATTACHMENT')
   @Mutation(() => String)
   async editMachineAttachment(
     @UserEntity() user: User,
@@ -575,7 +572,7 @@ export class MachineResolver {
     return `Attachment updated.`;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('VIEW_MACHINERY_REPORT')
   @Query(() => [MachineReport])
   async getMachineReport(
     @UserEntity() user: User,
@@ -585,7 +582,6 @@ export class MachineResolver {
     return this.machineService.getMachineReport(user, from, to);
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => BreakdownNotif)
   async breakdownMachineCount() {
     const machine = await this.prisma.machine.findMany({
@@ -597,7 +593,6 @@ export class MachineResolver {
     return breakdownNotifModal;
   }
 
-  @UseGuards(GqlAuthGuard)
   @Query(() => [MachineUsageHistory])
   async singleMachineUsageHistory(
     @UserEntity() user: User,
@@ -608,7 +603,7 @@ export class MachineResolver {
     return this.machineService.getMachineUsage(user, machineId, from, to);
   }
 
-  @UseGuards(GqlAuthGuard)
+  @Permissions('EDIT_MACHINE_USAGE')
   @Mutation(() => String)
   async editMachineUsage(
     @UserEntity() user: User,

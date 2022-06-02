@@ -26,7 +26,7 @@ export class UserResolver {
     private redisCacheService: RedisCacheService
   ) {}
 
-  @Permissions('AddMachine')
+  @Permissions('ADD_MACHINE')
   @Query(() => String)
   sayHello(): string {
     return 'Hello World!';
