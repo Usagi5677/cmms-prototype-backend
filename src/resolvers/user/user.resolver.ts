@@ -48,16 +48,7 @@ export class UserResolver {
         },
       },
     });
-    if (userDB) {
-      return userDB;
-    }
-    await this.userService.createUser(
-      user.rcno,
-      user.userId,
-      user.fullName,
-      user.email
-    );
-    return user;
+    return userDB;
   }
 
   @Query(() => Profile)
