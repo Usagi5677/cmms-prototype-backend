@@ -74,6 +74,7 @@ export class AttachmentService {
       client_secret: CLIENT_SECRET,
       resource: RESOURCE,
     });
+
     try {
       const result = await lastValueFrom(
         this.httpService
@@ -84,6 +85,7 @@ export class AttachmentService {
           })
           .pipe(map((resp) => resp.data))
       );
+
       await this.redisCacheService.set(
         this.SP_TOKEN_KEY,
         result.access_token,
@@ -129,7 +131,9 @@ export class AttachmentService {
     );
 
     const url = `${this.siteUrl}/_api/web/getFolderByServerRelativeUrl('${this.serverRelativeUrlToFolder}${path}')/files/add(overwrite=true, url='${fileNameWithExtension}')`;
+
     const token = await this.getSharePointAccessToken();
+
     try {
       const result = await lastValueFrom(
         this.httpService
@@ -144,6 +148,7 @@ export class AttachmentService {
           })
           .pipe(map((resp) => resp.data))
       );
+
       if (result.error) {
         if (
           result.error.code ===
@@ -160,8 +165,10 @@ export class AttachmentService {
       this.logger.debug(
         `${new Date().toLocaleTimeString()} - Upload of file ${fileNameWithExtension} completed!`
       );
+
       return result;
     } catch (e) {
+      console.log(e);
       this.logger.error('Thrown Error', e.response.data.error);
       throw new InternalServerErrorException(
         'An error occurred uploading file'

@@ -274,7 +274,7 @@ type MachineSparePRPageInfo {
 """Machine statuses."""
 enum MachineStatus {
   Breakdown
-  Pending
+  Idle
   Working
 }
 
@@ -327,6 +327,7 @@ type Mutation {
   editMachinePeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
+  editMachineUsage(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!): String!
   editRole(id: Int!, name: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationAttachment(description: String!, id: Int!): String!
@@ -335,6 +336,7 @@ type Mutation {
   editTransportationPeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
   editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
+  editTransportationUsage(currentMileage: Int!, id: Int!, lastServiceMileage: Int!): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
@@ -471,7 +473,6 @@ enum Permission {
   ADD_MACHINE_PERIODIC_MAINTENANCE
   ADD_MACHINE_REPAIR
   ADD_MACHINE_SPARE_PR
-  ADD_PERMISSION
   ADD_ROLE
   ADD_TRANSPORTATION
   ADD_TRANSPORTATION_ATTACHMENT
@@ -480,6 +481,8 @@ enum Permission {
   ADD_TRANSPORTATION_PERIODIC_MAINTENANCE
   ADD_TRANSPORTATION_REPAIR
   ADD_TRANSPORTATION_SPARE_PR
+  ADD_USER_WITH_ROLE
+  ASSIGN_PERMISSION
   ASSIGN_USER_TO_MACHINE
   ASSIGN_USER_TO_TRANSPORTATION
   DELETE_MACHINE
@@ -489,7 +492,6 @@ enum Permission {
   DELETE_MACHINE_PERIODIC_MAINTENANCE
   DELETE_MACHINE_REPAIR
   DELETE_MACHINE_SPARE_PR
-  DELETE_PERMISSION
   DELETE_ROLE
   DELETE_TRANSPORTATION
   DELETE_TRANSPORTATION_ATTACHMENT
@@ -505,7 +507,7 @@ enum Permission {
   EDIT_MACHINE_PERIODIC_MAINTENANCE
   EDIT_MACHINE_REPAIR
   EDIT_MACHINE_SPARE_PR
-  EDIT_PERMISSION
+  EDIT_MACHINE_USAGE
   EDIT_ROLE
   EDIT_TRANSPORTATION
   EDIT_TRANSPORTATION_ATTACHMENT
@@ -514,8 +516,23 @@ enum Permission {
   EDIT_TRANSPORTATION_PERIODIC_MAINTENANCE
   EDIT_TRANSPORTATION_REPAIR
   EDIT_TRANSPORTATION_SPARE_PR
+  EDIT_TRANSPORTATION_USAGE
+  EDIT_USER_ROLE
   UNASSIGN_USER_TO_MACHINE
   UNASSIGN_USER_TO_TRANSPORTATION
+  VIEW_ALL_ASSIGNED_MACHINES
+  VIEW_ALL_ASSIGNED_VEHICLES
+  VIEW_ALL_ASSIGNED_VESSELS
+  VIEW_ALL_MACHINES
+  VIEW_ALL_VEHICLES
+  VIEW_ALL_VESSELS
+  VIEW_MACHINE
+  VIEW_MACHINERY_REPORT
+  VIEW_ROLES
+  VIEW_TRANSPORTATION_REPORT
+  VIEW_USERS
+  VIEW_VEHICLE
+  VIEW_VESSEL
 }
 
 type PermissionRole {
@@ -1135,7 +1152,7 @@ type TransportationSparePRPageInfo {
 """Transportation statuses."""
 enum TransportationStatus {
   Breakdown
-  Pending
+  Idle
   Working
 }
 

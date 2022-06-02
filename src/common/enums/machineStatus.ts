@@ -2,7 +2,7 @@ import { registerEnumType } from '@nestjs/graphql';
 
 export enum MachineStatus {
   Working = 'Working',
-  Pending = 'Pending',
+  Idle = 'Idle',
   Breakdown = 'Breakdown',
 }
 

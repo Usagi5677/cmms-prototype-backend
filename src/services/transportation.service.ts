@@ -2002,13 +2002,13 @@ export class TransportationService {
         statusHistoryArray.find((e) => {
           if (
             e?.transportationStatus == 'Working' &&
-            e?.transportationType == statusHistoryArray[i].transportationType
+            e?.transportationType == statusHistoryArray[i]?.transportationType
           ) {
             working++;
           }
           if (
             e?.transportationStatus == 'Breakdown' &&
-            e?.transportationType == statusHistoryArray[i].transportationType
+            e?.transportationType == statusHistoryArray[i]?.transportationType
           ) {
             breakdown++;
           }
@@ -2178,6 +2178,65 @@ export class TransportationService {
         }
       }
       return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit Transportation usage */
+  async editTransportationUsage(
+    user: User,
+    id: number,
+    currentMileage: number,
+    lastServiceMileage: number
+  ) {
+    try {
+      const transportation = await this.prisma.transportation.findFirst({
+        where: { id },
+      });
+
+      if (transportation.currentMileage != currentMileage) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Current Mileage changed from ${transportation.currentMileage} to ${currentMileage}.`,
+          transportationId: id,
+          completedById: user.id,
+          currentMileage: currentMileage,
+          lastServiceMileage: lastServiceMileage,
+        });
+      }
+      if (transportation.lastServiceMileage != lastServiceMileage) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Last Service Mileage changed from ${transportation.lastServiceMileage} to ${lastServiceMileage}.`,
+          transportationId: id,
+          completedById: user.id,
+          currentMileage: currentMileage,
+          lastServiceMileage: lastServiceMileage,
+        });
+      }
+      const transportationUsers = await this.getTransportationUserIds(
+        id,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited transportation (${id})}`,
+          link: `/transportation/${id}`,
+        });
+      }
+
+      const interServiceMileage = currentMileage - lastServiceMileage;
+      await this.prisma.transportation.update({
+        where: { id },
+        data: {
+          currentMileage,
+          lastServiceMileage,
+          interServiceMileage,
+        },
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

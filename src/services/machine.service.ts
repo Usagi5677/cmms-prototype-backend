@@ -1893,13 +1893,13 @@ export class MachineService {
         statusHistoryArray.find((e) => {
           if (
             e?.machineStatus == 'Working' &&
-            e?.machineType == statusHistoryArray[i].machineType
+            e?.machineType == statusHistoryArray[i]?.machineType
           ) {
             working++;
           }
           if (
             e?.machineStatus == 'Breakdown' &&
-            e?.machineType == statusHistoryArray[i].machineType
+            e?.machineType == statusHistoryArray[i]?.machineType
           ) {
             breakdown++;
           }
@@ -2063,6 +2063,61 @@ export class MachineService {
         }
       }
       return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Edit machine usage */
+  async editMachineUsage(
+    user: User,
+    id: number,
+    currentRunningHrs: number,
+    lastServiceHrs: number
+  ) {
+    try {
+      const machine = await this.prisma.machine.findFirst({
+        where: { id },
+      });
+      if (machine.currentRunningHrs != currentRunningHrs) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Current Running Hrs changed from ${machine.currentRunningHrs} to ${currentRunningHrs}.`,
+          machineId: id,
+          completedById: user.id,
+          currentRunningHrs: currentRunningHrs,
+          lastServiceHrs: lastServiceHrs,
+        });
+      }
+      if (machine.lastServiceHrs != lastServiceHrs) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Last Service Hrs changed from ${machine.lastServiceHrs} to ${lastServiceHrs}.`,
+          machineId: id,
+          completedById: user.id,
+          currentRunningHrs: currentRunningHrs,
+          lastServiceHrs: lastServiceHrs,
+        });
+      }
+
+      const machineUsers = await this.getMachineUserIds(id, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) edited machine (${id})}`,
+          link: `/machine/${id}`,
+        });
+      }
+      const interServiceHrs = currentRunningHrs - lastServiceHrs;
+      await this.prisma.machine.update({
+        data: {
+          currentRunningHrs,
+          lastServiceHrs,
+          interServiceHrs,
+        },
+        where: { id },
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

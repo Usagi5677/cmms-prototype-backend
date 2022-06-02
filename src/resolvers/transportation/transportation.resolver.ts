@@ -650,4 +650,20 @@ export class TransportationResolver {
       to
     );
   }
+
+  @Mutation(() => String)
+  async editTransportationUsage(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('currentMileage') currentMileage: number,
+    @Args('lastServiceMileage') lastServiceMileage: number
+  ): Promise<String> {
+    await this.transportationService.editTransportationUsage(
+      user,
+      id,
+      currentMileage,
+      lastServiceMileage
+    );
+    return `Transportation usage updated.`;
+  }
 }

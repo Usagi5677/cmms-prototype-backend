@@ -607,4 +607,21 @@ export class MachineResolver {
   ): Promise<MachineUsageHistory[]> {
     return this.machineService.getMachineUsage(user, machineId, from, to);
   }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => String)
+  async editMachineUsage(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('currentRunningHrs') currentRunningHrs: number,
+    @Args('lastServiceHrs') lastServiceHrs: number
+  ): Promise<String> {
+    await this.machineService.editMachineUsage(
+      user,
+      id,
+      currentRunningHrs,
+      lastServiceHrs
+    );
+    return `Machine usage updated.`;
+  }
 }
