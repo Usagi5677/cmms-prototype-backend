@@ -25,7 +25,6 @@ export class AuthService {
   async validateUser(uuid: string): Promise<User> {
     // First check cache
     let user = await this.redisCacheService.get(`user-uuid-${uuid}`);
-    console.log(user);
     if (!user) {
       // If not in cache, call database
       user = await this.prisma.user.findUnique({ where: { userId: uuid } });
