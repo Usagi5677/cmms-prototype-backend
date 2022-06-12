@@ -12,13 +12,14 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const permissions = this.reflector.getAllAndOverride<Permission[]>(
+    const permissions = this.reflector.getAllAndOverride<string[]>(
       'permissions',
       [context.getHandler(), context.getClass()]
     );
     if (!permissions) {
       return true;
     }
+    console.log(permissions);
     const user = GqlExecutionContext.create(context).getContext().req.user;
     const userRolesPermissions =
       await this.userService.getUserRolesPermissionsList(user.id);

@@ -125,11 +125,7 @@ export class PermissionRoleService {
   }
 
   //** assign permission. */
-  async assignPermission(
-    user: User,
-    roleId: number,
-    permissions: PermissionEnum[]
-  ) {
+  async assignPermission(user: User, roleId: number, permissions: number[]) {
     try {
       await this.prisma.permissionRole.deleteMany({
         where: { roleId },
@@ -137,7 +133,7 @@ export class PermissionRoleService {
       await this.prisma.permissionRole.createMany({
         data: permissions.map((permission) => ({
           roleId,
-          permission,
+          permissionId: permission,
         })),
       });
       await this.redisCacheService.del(`permissions-${user.id}`);

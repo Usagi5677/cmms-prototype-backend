@@ -77,7 +77,7 @@ export class PermissionRoleResolver {
     @UserEntity() user: User,
     @Args('roleId') roleId: number,
     @Args('permissions', { type: () => [PermissionEnum] })
-    permissions: PermissionEnum[]
+    permissions: number[]
   ): Promise<String> {
     await this.permissionRoleService.assignPermission(
       user,

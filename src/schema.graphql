@@ -535,11 +535,23 @@ enum Permission {
   VIEW_VESSEL
 }
 
+type PermissionModel {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 type PermissionRole {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   id: Int!
-  permission: Permission!
+  permission: PermissionModel!
+  permissionId: Int!
+  roleId: Int!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -848,7 +860,7 @@ type Query {
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
   getTransportationReport(from: Date!, to: Date!): [TransportationReport!]!
-  getUsersWithPermission(permissions: [Permission!]!): [User!]!
+  getUsersWithPermission(permissions: [Int!]!): [User!]!
   machineAttachment(id: Int!): MachineAttachment!
   machineAttachments(
     """Paginate after opaque cursor"""
