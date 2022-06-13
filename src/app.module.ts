@@ -18,6 +18,7 @@ import { MachineModule } from './resolvers/machine/machine.module';
 import { TransportationModule } from './resolvers/transportation/transportation.module';
 import { AttachmentModule } from './resolvers/attachment/attachment.module';
 import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.module';
+import { SeedPermissionsService } from './services/seed-permissions.service';
 
 @Module({
   imports: [
@@ -72,6 +73,6 @@ import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService, AppResolver, DateScalar],
+  providers: [AppService, AppResolver, DateScalar, SeedPermissionsService],
 })
 export class AppModule {}
