@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { permissions } from 'src/constants';
-
+/*
 @Injectable()
 export class SeedPermissionsService implements OnApplicationBootstrap {
   constructor(private prisma: PrismaService) {}
@@ -33,3 +33,4 @@ export class SeedPermissionsService implements OnApplicationBootstrap {
     }
   }
 }
+*/

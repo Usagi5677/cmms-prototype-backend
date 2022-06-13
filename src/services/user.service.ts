@@ -57,13 +57,13 @@ export class UserService {
         where: { roleId: { in: userRoles.map((r) => r.roleId) } },
       });
       console.log(rolesPermissions);
-      permissions = await this.prisma.permission.findMany({
-        where: { id: { in: rolesPermissions.map((r) => r.permissionId) } },
-      });
-      const permissionNames = permissions.map((p) => p.name);
+      //permissions = await this.prisma.permission.findMany({
+      //  where: { id: { in: rolesPermissions.map((r) => r.permissionId) } },
+      //});
+      permissions = rolesPermissions.map((p) => p.permission);
       await this.redisCacheService.setForMonth(
         `permissions-${id}`,
-        permissionNames
+        permissions
       );
     }
     return permissions;

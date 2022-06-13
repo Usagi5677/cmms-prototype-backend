@@ -1,7 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { Permission } from '@prisma/client';
 import { UserService } from 'src/services/user.service';
 
 @Injectable()

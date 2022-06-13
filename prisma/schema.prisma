@@ -55,14 +55,6 @@ model Notification {
   readAt    DateTime?
 }
 
-model Permission {
-  id             Int              @id @default(autoincrement())
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  name           String
-  PermissionRole PermissionRole[]
-}
-
 model Role {
   id              Int              @id @default(autoincrement())
   createdAt       DateTime         @default(now())
@@ -87,15 +79,12 @@ model UserRole {
 }
 
 model PermissionRole {
-  id           Int        @id @default(autoincrement())
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  roleId       Int
-  permissionId Int
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId])
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  roleId     Int
+  permission String
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 }
 
 model Machine {

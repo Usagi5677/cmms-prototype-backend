@@ -305,7 +305,7 @@ type Mutation {
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
-  assignPermission(permissions: [Permission!]!, roleId: Int!): String!
+  assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
@@ -464,93 +464,11 @@ enum PeriodicMaintenanceStatus {
   Pending
 }
 
-"""All permissions."""
-enum Permission {
-  ADD_MACHINE
-  ADD_MACHINE_ATTACHMENT
-  ADD_MACHINE_BREAKDOWN
-  ADD_MACHINE_CHECKLIST
-  ADD_MACHINE_PERIODIC_MAINTENANCE
-  ADD_MACHINE_REPAIR
-  ADD_MACHINE_SPARE_PR
-  ADD_ROLE
-  ADD_TRANSPORTATION
-  ADD_TRANSPORTATION_ATTACHMENT
-  ADD_TRANSPORTATION_BREAKDOWN
-  ADD_TRANSPORTATION_CHECKLIST
-  ADD_TRANSPORTATION_PERIODIC_MAINTENANCE
-  ADD_TRANSPORTATION_REPAIR
-  ADD_TRANSPORTATION_SPARE_PR
-  ADD_USER_WITH_ROLE
-  ASSIGN_PERMISSION
-  ASSIGN_USER_TO_MACHINE
-  ASSIGN_USER_TO_TRANSPORTATION
-  DELETE_MACHINE
-  DELETE_MACHINE_ATTACHMENT
-  DELETE_MACHINE_BREAKDOWN
-  DELETE_MACHINE_CHECKLIST
-  DELETE_MACHINE_PERIODIC_MAINTENANCE
-  DELETE_MACHINE_REPAIR
-  DELETE_MACHINE_SPARE_PR
-  DELETE_ROLE
-  DELETE_TRANSPORTATION
-  DELETE_TRANSPORTATION_ATTACHMENT
-  DELETE_TRANSPORTATION_BREAKDOWN
-  DELETE_TRANSPORTATION_CHECKLIST
-  DELETE_TRANSPORTATION_PERIODIC_MAINTENANCE
-  DELETE_TRANSPORTATION_REPAIR
-  DELETE_TRANSPORTATION_SPARE_PR
-  EDIT_MACHINE
-  EDIT_MACHINE_ATTACHMENT
-  EDIT_MACHINE_BREAKDOWN
-  EDIT_MACHINE_CHECKLIST
-  EDIT_MACHINE_PERIODIC_MAINTENANCE
-  EDIT_MACHINE_REPAIR
-  EDIT_MACHINE_SPARE_PR
-  EDIT_MACHINE_USAGE
-  EDIT_ROLE
-  EDIT_TRANSPORTATION
-  EDIT_TRANSPORTATION_ATTACHMENT
-  EDIT_TRANSPORTATION_BREAKDOWN
-  EDIT_TRANSPORTATION_CHECKLIST
-  EDIT_TRANSPORTATION_PERIODIC_MAINTENANCE
-  EDIT_TRANSPORTATION_REPAIR
-  EDIT_TRANSPORTATION_SPARE_PR
-  EDIT_TRANSPORTATION_USAGE
-  EDIT_USER_ROLE
-  UNASSIGN_USER_TO_MACHINE
-  UNASSIGN_USER_TO_TRANSPORTATION
-  VIEW_ALL_ASSIGNED_MACHINES
-  VIEW_ALL_ASSIGNED_VEHICLES
-  VIEW_ALL_ASSIGNED_VESSELS
-  VIEW_ALL_MACHINES
-  VIEW_ALL_VEHICLES
-  VIEW_ALL_VESSELS
-  VIEW_MACHINE
-  VIEW_MACHINERY_REPORT
-  VIEW_ROLES
-  VIEW_TRANSPORTATION_REPORT
-  VIEW_USERS
-  VIEW_VEHICLE
-  VIEW_VESSEL
-}
-
-type PermissionModel {
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  name: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
 type PermissionRole {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   id: Int!
-  permission: PermissionModel!
-  permissionId: Int!
+  permission: String!
   roleId: Int!
 
   """Identifies the date and time when the object was last updated."""
@@ -860,7 +778,7 @@ type Query {
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
   getTransportationReport(from: Date!, to: Date!): [TransportationReport!]!
-  getUsersWithPermission(permissions: [Int!]!): [User!]!
+  getUsersWithPermission(permissions: [String!]!): [User!]!
   machineAttachment(id: Int!): MachineAttachment!
   machineAttachments(
     """Paginate after opaque cursor"""

@@ -41,11 +41,7 @@ export class UserResolver {
           include: {
             role: {
               include: {
-                permissionRoles: {
-                  include: {
-                    permission: true,
-                  },
-                },
+                permissionRoles: true,
               },
             },
           },
@@ -137,14 +133,13 @@ export class UserResolver {
   /** find users with permission. */
   @Query(() => [User])
   async getUsersWithPermission(
-    @Args('permissions', { type: () => [Number] })
-    permissions: number[]
+    @Args('permissions', { type: () => [String] }) permissions: string[]
   ): Promise<User[]> {
     try {
       //get all role ids which have permission
       const roleIDs = await this.prisma.permissionRole.findMany({
         where: {
-          permissionId: { in: permissions },
+          permission: { in: permissions },
         },
         select: {
           roleId: true,
