@@ -170,16 +170,18 @@ model MachineAttachment {
 }
 
 model MachineChecklistItem {
-  id            Int       @id @default(autoincrement())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  machineId     Int
-  machine       Machine   @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  description   String
-  completedById Int?
-  completedBy   User?     @relation(fields: [completedById], references: [id])
-  completedAt   DateTime?
-  type          String    @default("Daily")
+  id                  Int       @id @default(autoincrement())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  machineId           Int
+  machine             Machine   @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  description         String
+  completedById       Int?
+  completedBy         User?     @relation(fields: [completedById], references: [id])
+  completedAt         DateTime?
+  type                String    @default("Daily")
+  currentMeterReading Int?
+  workingHour         Int?
 }
 
 model MachinePeriodicMaintenance {
@@ -309,16 +311,19 @@ model TransportationAssignment {
 }
 
 model TransportationChecklistItem {
-  id               Int            @id @default(autoincrement())
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  transportationId Int
-  transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
-  description      String
-  completedById    Int?
-  completedBy      User?          @relation(fields: [completedById], references: [id])
-  completedAt      DateTime?
-  type             String         @default("Daily")
+  id                  Int            @id @default(autoincrement())
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  transportationId    Int
+  transportation      Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
+  description         String
+  completedById       Int?
+  completedBy         User?          @relation(fields: [completedById], references: [id])
+  completedAt         DateTime?
+  type                String         @default("Daily")
+  currentMeterReading Int?
+  workingHour         Int?
+  measurement         String?
 }
 
 model TransportationPeriodicMaintenance {

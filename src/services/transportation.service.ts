@@ -553,56 +553,107 @@ export class TransportationService {
   //** Set checklist item as complete or incomplete. */
   async toggleTransportationChecklistItem(
     user: User,
-    id: number,
-    complete: boolean
+    id: number[],
+    currentMeterReading: number,
+    workingHour: number,
+    uncheckId: number[]
   ) {
-    //no user context yet
     try {
-      const checklist = await this.prisma.transportationChecklistItem.findFirst(
-        {
-          where: { id },
-          select: {
-            id: true,
-            transportationId: true,
-            description: true,
-          },
-        }
-      );
-      complete
-        ? await this.createTransportationHistoryInBackground({
-            type: 'Toggled',
-            description: `Checklist (${checklist.description}) completed.`,
-            transportationId: checklist.transportationId,
-            completedById: user.id,
-          })
-        : await this.createTransportationHistoryInBackground({
-            type: 'Toggled',
-            description: `Checklist (${checklist.description}) unchecked.`,
-            transportationId: checklist.transportationId,
-            completedById: user.id,
+      for (let index = 0; index < id.length; index++) {
+        const checklist =
+          await this.prisma.transportationChecklistItem.findFirst({
+            where: { id: id[index] },
+            select: {
+              id: true,
+              transportationId: true,
+              description: true,
+              completedById: true,
+              transportation: {
+                select: {
+                  transportType: true,
+                },
+              },
+            },
           });
 
-      const transportationUsers = await this.getTransportationUserIds(
-        checklist.transportationId,
-        user.id
-      );
-      for (let index = 0; index < transportationUsers.length; index++) {
-        await this.notificationService.createInBackground({
-          userId: transportationUsers[index],
-          body: `${user.fullName} (${user.rcno}) set checklist (${
-            checklist.id
-          }) on transportation ${checklist.transportationId} to ${
-            complete ? `completed ` : `unchecked.`
-          }`,
-          link: `/transportation/${checklist.transportationId}`,
+        await this.createTransportationHistoryInBackground({
+          type: 'Toggled',
+          description: `Checklist (${checklist.description}) completed.`,
+          transportationId: checklist.transportationId,
+          completedById: user.id,
+        });
+
+        const transportationUsers = await this.getTransportationUserIds(
+          checklist.transportationId,
+          user.id
+        );
+        for (let index = 0; index < transportationUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: transportationUsers[index],
+            body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on transportation ${checklist.transportationId} to completed`,
+            link: `/transportation/${checklist.transportationId}`,
+          });
+        }
+        await this.prisma.transportationChecklistItem.update({
+          where: { id: id[index] },
+          data: {
+            completedById: user.id,
+            completedAt: new Date(),
+            currentMeterReading,
+            workingHour,
+            measurement:
+              checklist.transportation.transportType === 'Vessel' ? 'hr' : 'km',
+          },
         });
       }
-      await this.prisma.transportationChecklistItem.update({
-        where: { id },
-        data: complete
-          ? { completedById: 1, completedAt: new Date() }
-          : { completedById: null, completedAt: null },
-      });
+
+      for (let index = 0; index < uncheckId.length; index++) {
+        const checklist =
+          await this.prisma.transportationChecklistItem.findFirst({
+            where: { id: uncheckId[index] },
+            select: {
+              id: true,
+              transportationId: true,
+              description: true,
+              completedById: true,
+              transportation: {
+                select: {
+                  transportType: true,
+                },
+              },
+            },
+          });
+
+        await this.createTransportationHistoryInBackground({
+          type: 'Toggled',
+          description: `Checklist (${checklist.description}) unchecked.`,
+          transportationId: checklist.transportationId,
+          completedById: user.id,
+        });
+
+        const transportationUsers = await this.getTransportationUserIds(
+          checklist.transportationId,
+          user.id
+        );
+        for (let index = 0; index < transportationUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: transportationUsers[index],
+            body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on transportation ${checklist.transportationId} to unchecked.`,
+            link: `/transportation/${checklist.transportationId}`,
+          });
+        }
+        await this.prisma.transportationChecklistItem.update({
+          where: { id: uncheckId[index] },
+          data: {
+            completedById: null,
+            completedAt: null,
+            currentMeterReading,
+            workingHour,
+            measurement:
+              checklist.transportation.transportType === 'Vessel' ? 'hr' : 'km',
+          },
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

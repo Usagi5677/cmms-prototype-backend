@@ -144,6 +144,8 @@ Table MachineChecklistItem {
   completedBy User
   completedAt DateTime
   type String [not null, default: 'Daily']
+  currentMeterReading Int
+  workingHour Int
 }
 
 Table MachinePeriodicMaintenance {
@@ -278,6 +280,9 @@ Table TransportationChecklistItem {
   completedBy User
   completedAt DateTime
   type String [not null, default: 'Daily']
+  currentMeterReading Int
+  workingHour Int
+  measurement String
 }
 
 Table TransportationPeriodicMaintenance {

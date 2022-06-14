@@ -206,10 +206,18 @@ export class MachineResolver {
   @Mutation(() => String)
   async toggleMachineChecklistItem(
     @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('complete') complete: boolean
+    @Args('id', { type: () => [Int] }) id: number[],
+    @Args('currentMeterReading') currentMeterReading: number,
+    @Args('workingHour') workingHour: number,
+    @Args('uncheckId', { type: () => [Int] }) uncheckId: number[]
   ): Promise<String> {
-    await this.machineService.toggleMachineChecklistItem(user, id, complete);
+    await this.machineService.toggleMachineChecklistItem(
+      user,
+      id,
+      currentMeterReading,
+      workingHour,
+      uncheckId
+    );
     return `Checklist item updated.`;
   }
 

@@ -242,13 +242,17 @@ export class TransportationResolver {
   @Mutation(() => String)
   async toggleTransportationChecklistItem(
     @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('complete') complete: boolean
+    @Args('id', { type: () => [Int] }) id: number[],
+    @Args('currentMeterReading') currentMeterReading: number,
+    @Args('workingHour') workingHour: number,
+    @Args('uncheckId', { type: () => [Int] }) uncheckId: number[]
   ): Promise<String> {
     await this.transportationService.toggleTransportationChecklistItem(
       user,
       id,
-      complete
+      currentMeterReading,
+      workingHour,
+      uncheckId
     );
     return `Checklist item updated.`;
   }

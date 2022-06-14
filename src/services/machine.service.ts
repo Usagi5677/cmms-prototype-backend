@@ -489,51 +489,95 @@ export class MachineService {
   }
 
   //** Set checklist item as complete or incomplete. */
-  async toggleMachineChecklistItem(user: User, id: number, complete: boolean) {
-    //no user context yet
+  async toggleMachineChecklistItem(
+    user: User,
+    id: number[],
+    currentMeterReading: number,
+    workingHour: number,
+    uncheckId: number[]
+  ) {
     try {
-      const checklist = await this.prisma.machineChecklistItem.findFirst({
-        where: { id },
-        select: {
-          id: true,
-          machineId: true,
-          description: true,
-        },
-      });
-      complete
-        ? await this.createMachineHistoryInBackground({
-            type: 'Toggled',
-            description: `Checklist (${checklist.description}) completed.`,
-            machineId: checklist.machineId,
-            completedById: user.id,
-          })
-        : await this.createMachineHistoryInBackground({
-            type: 'Toggled',
-            description: `Checklist (${checklist.description}) unchecked.`,
-            machineId: checklist.machineId,
-            completedById: user.id,
+      //const uniqueIDs = [...new Set(id)];
+
+      for (let index = 0; index < id.length; index++) {
+        const checklist = await this.prisma.machineChecklistItem.findFirst({
+          where: { id: id[index] },
+          select: {
+            id: true,
+            machineId: true,
+            description: true,
+            completedById: true,
+          },
+        });
+
+        await this.createMachineHistoryInBackground({
+          type: 'Toggled',
+          description: `Checklist (${checklist.description}) completed.`,
+          machineId: checklist.machineId,
+          completedById: user.id,
+        });
+
+        const machineUsers = await this.getMachineUserIds(
+          checklist.machineId,
+          user.id
+        );
+        for (let index = 0; index < machineUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: machineUsers[index],
+            body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on machine ${checklist.machineId} to completed`,
+            link: `/machine/${checklist.machineId}`,
           });
-      const machineUsers = await this.getMachineUserIds(
-        checklist.machineId,
-        user.id
-      );
-      for (let index = 0; index < machineUsers.length; index++) {
-        await this.notificationService.createInBackground({
-          userId: machineUsers[index],
-          body: `${user.fullName} (${user.rcno}) set checklist (${
-            checklist.id
-          }) on machine ${checklist.machineId} to ${
-            complete ? `completed ` : `unchecked.`
-          }`,
-          link: `/machine/${checklist.machineId}`,
+        }
+        await this.prisma.machineChecklistItem.update({
+          where: { id: id[index] },
+          data: {
+            completedById: user.id,
+            completedAt: new Date(),
+            currentMeterReading,
+            workingHour,
+          },
         });
       }
-      await this.prisma.machineChecklistItem.update({
-        where: { id },
-        data: complete
-          ? { completedById: 1, completedAt: new Date() }
-          : { completedById: null, completedAt: null },
-      });
+
+      for (let index = 0; index < uncheckId.length; index++) {
+        const checklist = await this.prisma.machineChecklistItem.findFirst({
+          where: { id: uncheckId[index] },
+          select: {
+            id: true,
+            machineId: true,
+            description: true,
+            completedById: true,
+          },
+        });
+
+        await this.createMachineHistoryInBackground({
+          type: 'Toggled',
+          description: `Checklist (${checklist.description}) unchecked.`,
+          machineId: checklist.machineId,
+          completedById: user.id,
+        });
+
+        const machineUsers = await this.getMachineUserIds(
+          checklist.machineId,
+          user.id
+        );
+        for (let index = 0; index < machineUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: machineUsers[index],
+            body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on machine ${checklist.machineId} to unchecked`,
+            link: `/machine/${checklist.machineId}`,
+          });
+        }
+        await this.prisma.machineChecklistItem.update({
+          where: { id: uncheckId[index] },
+          data: {
+            completedById: null,
+            completedAt: null,
+            currentMeterReading,
+            workingHour,
+          },
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

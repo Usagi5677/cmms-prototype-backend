@@ -356,8 +356,8 @@ type Mutation {
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
-  toggleMachineChecklistItem(complete: Boolean!, id: Int!): String!
-  toggleTransportationChecklistItem(complete: Boolean!, id: Int!): String!
+  toggleMachineChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
+  toggleTransportationChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
 }

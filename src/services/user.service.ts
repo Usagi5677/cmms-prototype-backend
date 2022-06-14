@@ -47,8 +47,6 @@ export class UserService {
   //** Get permissions of user roles. First checks cache. If not in cache, gets from db and adds to cache */
   async getUserRolesPermissionsList(id: number): Promise<string[]> {
     let permissions = await this.redisCacheService.get(`permissions-${id}`);
-    console.log('permissions');
-    console.log(permissions);
     if (!permissions) {
       const userRoles = await this.prisma.userRole.findMany({
         where: { userId: id },
@@ -56,7 +54,7 @@ export class UserService {
       const rolesPermissions = await this.prisma.permissionRole.findMany({
         where: { roleId: { in: userRoles.map((r) => r.roleId) } },
       });
-      console.log(rolesPermissions);
+      //console.log(rolesPermissions);
       //permissions = await this.prisma.permission.findMany({
       //  where: { id: { in: rolesPermissions.map((r) => r.permissionId) } },
       //});
