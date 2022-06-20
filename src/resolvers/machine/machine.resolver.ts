@@ -230,7 +230,9 @@ export class MachineResolver {
     @Args('description') description: string,
     @Args('period') period: number,
     @Args('notificationReminder') notificationReminder: number,
-    @Args('fixedDate') fixedDate: Date
+    @Args('fixedDate') fixedDate: Date,
+    @Args('tasks', { nullable: true, type: () => [String] })
+    tasks: string[]
   ): Promise<String> {
     await this.machineService.createMachinePeriodicMaintenance(
       user,
@@ -239,7 +241,8 @@ export class MachineResolver {
       description,
       period,
       notificationReminder,
-      fixedDate
+      fixedDate,
+      tasks
     );
     return `Added periodic maintenance to machine.`;
   }
@@ -626,5 +629,40 @@ export class MachineResolver {
       lastServiceHrs
     );
     return `Machine usage updated.`;
+  }
+
+  @Mutation(() => String)
+  async addMachinePeriodicMaintenanceSubTask(
+    @UserEntity() user: User,
+    @Args('parentTaskId') parentTaskId: number,
+    @Args('periodicMaintenanceId') periodicMaintenanceId: number,
+    @Args('name') name: string
+  ): Promise<String> {
+    await this.machineService.createMachinePeriodicMaintenanceSubTask(
+      user,
+      parentTaskId,
+      periodicMaintenanceId,
+      name
+    );
+    return `Added sub task to periodic maintenance.`;
+  }
+
+  @Mutation(() => String)
+  async toggleTask(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.machineService.toggleTask(user, id, complete);
+    return `Task updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteTask(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<string> {
+    await this.machineService.deleteTask(user, id);
+    return `Task deleted.`;
   }
 }

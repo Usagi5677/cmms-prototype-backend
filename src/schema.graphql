@@ -159,6 +159,23 @@ type MachineHistoryPageInfo {
   startCursor: String
 }
 
+type MachinePMTask {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String
+  parentTask: MachinePMTask
+  parentTaskId: Int
+  periodicMaintenanceId: Int
+  subTasks: [MachinePMTask!]
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 type MachinePageInfo {
   count: Int!
   endCursor: String
@@ -168,6 +185,7 @@ type MachinePageInfo {
 }
 
 type MachinePeriodicMaintenance {
+  MachinePeriodicMaintenanceTask: [MachinePMTask!]
   completedAt: Date
   completedBy: User
 
@@ -295,7 +313,8 @@ type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
-  addMachinePeriodicMaintenance(description: String!, fixedDate: Date!, machineId: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
+  addMachinePeriodicMaintenance(description: String!, fixedDate: Date!, machineId: Int!, notificationReminder: Int!, period: Int!, tasks: [String!], title: String!): String!
+  addMachinePeriodicMaintenanceSubTask(name: String!, parentTaskId: Int!, periodicMaintenanceId: Int!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
   addRole(name: String!): String!
@@ -315,6 +334,7 @@ type Mutation {
   deleteMachinePeriodicMaintenance(id: Int!): String!
   deleteMachineRepair(id: Int!): String!
   deleteMachineSparePR(id: Int!): String!
+  deleteTask(id: Int!): String!
   deleteTransportationBreakdown(id: Int!): String!
   deleteTransportationChecklistItem(id: Int!): String!
   deleteTransportationPeriodicMaintenance(id: Int!): String!
@@ -357,6 +377,7 @@ type Mutation {
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleMachineChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
+  toggleTask(complete: Boolean!, id: Int!): String!
   toggleTransportationChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!

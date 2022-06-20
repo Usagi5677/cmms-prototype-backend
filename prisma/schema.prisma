@@ -43,6 +43,7 @@ model User {
   TransportationSparePRs                       TransportationSparePR[]
   TransportationHistories                      TransportationHistory[]
   roleCreated                                  Role[]
+  MachinePeriodicMaintenanceTasks              MachinePeriodicMaintenanceTask[]
 }
 
 model Notification {
@@ -185,20 +186,34 @@ model MachineChecklistItem {
 }
 
 model MachinePeriodicMaintenance {
-  id                   Int                       @id @default(autoincrement())
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
-  machineId            Int
-  machine              Machine                   @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  title                String
-  description          String
-  period               Int?
-  notificationReminder Int?
-  fixedDate            DateTime?
-  completedById        Int?
-  completedBy          User?                     @relation(fields: [completedById], references: [id])
-  completedAt          DateTime?
-  status               PeriodicMaintenanceStatus @default(Pending)
+  id                             Int                              @id @default(autoincrement())
+  createdAt                      DateTime                         @default(now())
+  updatedAt                      DateTime                         @updatedAt
+  machineId                      Int
+  machine                        Machine                          @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  title                          String
+  description                    String
+  period                         Int?
+  notificationReminder           Int?
+  fixedDate                      DateTime?
+  completedById                  Int?
+  completedBy                    User?                            @relation(fields: [completedById], references: [id])
+  completedAt                    DateTime?
+  status                         PeriodicMaintenanceStatus        @default(Pending)
+  MachinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask[]
+}
+
+model MachinePeriodicMaintenanceTask {
+  id                    Int                              @id @default(autoincrement())
+  periodicMaintenanceId Int
+  periodicMaintenance   MachinePeriodicMaintenance       @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
+  parentTaskId          Int?
+  name                  String
+  completedById         Int?
+  completedBy           User?                            @relation(fields: [completedById], references: [id])
+  completedAt           DateTime?
+  parentTask            MachinePeriodicMaintenanceTask?  @relation("taskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks              MachinePeriodicMaintenanceTask[] @relation("taskLink")
 }
 
 model MachineHistory {

@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
@@ -592,7 +593,8 @@ export class MachineService {
     description: string,
     period: number,
     notificationReminder: number,
-    fixedDate: Date
+    fixedDate: Date,
+    tasks: string[]
   ) {
     try {
       const periodicMaintenance =
@@ -606,6 +608,13 @@ export class MachineService {
             fixedDate,
           },
         });
+
+      await this.prisma.machinePeriodicMaintenanceTask.createMany({
+        data: tasks.map((task) => ({
+          periodicMaintenanceId: periodicMaintenance.id,
+          name: task,
+        })),
+      });
       await this.createMachineHistoryInBackground({
         type: 'Add Periodic Maintenance',
         description: `Added periodic maintenance (${periodicMaintenance.id})`,
@@ -1696,6 +1705,15 @@ export class MachineService {
         where,
         include: {
           completedBy: true,
+          MachinePeriodicMaintenanceTask: {
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: true,
+                },
+              },
+            },
+          },
         },
         orderBy: { id: 'desc' },
       });
@@ -2160,6 +2178,101 @@ export class MachineService {
           lastServiceHrs,
           interServiceHrs,
         },
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Create machine periodic maintenance Sub task. */
+  async createMachinePeriodicMaintenanceSubTask(
+    user: User,
+    parentTaskId: number,
+    periodicMaintenanceId: number,
+    name: string
+  ) {
+    try {
+      //get parent's parent's task
+      const task = await this.prisma.machinePeriodicMaintenanceTask.findFirst({
+        where: {
+          id: parentTaskId,
+        },
+        include: {
+          parentTask: {
+            include: {
+              parentTask: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      //if it exists then don't create new task. Only 2 level of parents exist
+      if (task?.parentTask?.parentTask?.id) {
+        throw new UnauthorizedException('Cannot add sub tasks to a sub task.');
+      }
+      await this.prisma.machinePeriodicMaintenanceTask.create({
+        data: {
+          parentTaskId,
+          periodicMaintenanceId,
+          name,
+        },
+      });
+      const machine = await this.prisma.machinePeriodicMaintenance.findFirst({
+        where: {
+          id: periodicMaintenanceId,
+        },
+        include: {
+          machine: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+      await this.createMachineHistoryInBackground({
+        type: 'Add Sub task',
+        description: `Added sub task to periodic maintenance (${periodicMaintenanceId})`,
+        machineId: machine.id,
+        completedById: user.id,
+      });
+      const machineUsers = await this.getMachineUserIds(machine.id, user.id);
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new sub task in machine (${machine.id})'s periodic maintenance (${periodicMaintenanceId}) `,
+          link: `/machine/${machine.id}`,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set task as complete or incomplete. */
+  async toggleTask(user: User, id: number, complete: boolean) {
+    try {
+      await this.prisma.machinePeriodicMaintenanceTask.update({
+        where: { id },
+        data: complete
+          ? { completedById: user.id, completedAt: new Date() }
+          : { completedById: null, completedAt: null },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete task. */
+  async deleteTask(user: User, id: number) {
+    try {
+      await this.prisma.machinePeriodicMaintenanceTask.delete({
         where: { id },
       });
     } catch (e) {

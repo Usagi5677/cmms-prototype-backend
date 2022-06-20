@@ -31,6 +31,7 @@ Table User {
   TransportationSparePRs TransportationSparePR [not null]
   TransportationHistories TransportationHistory [not null]
   roleCreated Role [not null]
+  MachinePeriodicMaintenanceTasks MachinePeriodicMaintenanceTask [not null]
 }
 
 Table Notification {
@@ -163,6 +164,20 @@ Table MachinePeriodicMaintenance {
   completedBy User
   completedAt DateTime
   status PeriodicMaintenanceStatus [not null, default: 'Pending']
+  MachinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask [not null]
+}
+
+Table MachinePeriodicMaintenanceTask {
+  id Int [pk, increment]
+  periodicMaintenanceId Int [not null]
+  periodicMaintenance MachinePeriodicMaintenance [not null]
+  parentTaskId Int
+  name String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  parentTask MachinePeriodicMaintenanceTask
+  subTasks MachinePeriodicMaintenanceTask [not null]
 }
 
 Table MachineHistory {
@@ -438,6 +453,12 @@ Ref: MachineChecklistItem.completedById > User.id
 Ref: MachinePeriodicMaintenance.machineId > Machine.id
 
 Ref: MachinePeriodicMaintenance.completedById > User.id
+
+Ref: MachinePeriodicMaintenanceTask.periodicMaintenanceId > MachinePeriodicMaintenance.id
+
+Ref: MachinePeriodicMaintenanceTask.completedById > User.id
+
+Ref: MachinePeriodicMaintenanceTask.parentTaskId - MachinePeriodicMaintenanceTask.id
 
 Ref: MachineHistory.machineId > Machine.id
 
