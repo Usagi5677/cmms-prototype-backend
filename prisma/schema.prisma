@@ -100,11 +100,12 @@ model Machine {
   type                     String
   zone                     String
   location                 String
-  currentRunningHrs        Int?
-  lastServiceHrs           Int?
-  interServiceHrs          Int?
+  currentRunning           Int?
+  lastService              Int?
+  interService             Int?
   status                   MachineStatus                @default(Working)
   statusChangedAt          DateTime?
+  measurement              String?                      @default("km")
   assignees                MachineAssignment[]
   checklistItems           MachineChecklistItem[]
   periodicMaintenancePlans MachinePeriodicMaintenance[]
@@ -217,20 +218,20 @@ model MachinePeriodicMaintenanceTask {
 }
 
 model MachineHistory {
-  id                Int            @id @default(autoincrement())
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  machineId         Int
-  machine           Machine        @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  completedById     Int?
-  completedBy       User?          @relation(fields: [completedById], references: [id])
-  type              String
-  description       String
-  machineStatus     MachineStatus?
-  machineType       String?
-  currentRunningHrs Int?
-  lastServiceHrs    Int?
-  interServiceHrs   Int?
+  id             Int            @id @default(autoincrement())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  machineId      Int
+  machine        Machine        @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  completedById  Int?
+  completedBy    User?          @relation(fields: [completedById], references: [id])
+  type           String
+  description    String
+  machineStatus  MachineStatus?
+  machineType    String?
+  currentRunning Int?
+  lastService    Int?
+  interService   Int?
 
 }
 

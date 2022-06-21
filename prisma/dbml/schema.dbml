@@ -90,11 +90,12 @@ Table Machine {
   type String [not null]
   zone String [not null]
   location String [not null]
-  currentRunningHrs Int
-  lastServiceHrs Int
-  interServiceHrs Int
+  currentRunning Int
+  lastService Int
+  interService Int
   status MachineStatus [not null, default: 'Working']
   statusChangedAt DateTime
+  measurement String [default: 'km']
   assignees MachineAssignment [not null]
   checklistItems MachineChecklistItem [not null]
   periodicMaintenancePlans MachinePeriodicMaintenance [not null]
@@ -192,9 +193,9 @@ Table MachineHistory {
   description String [not null]
   machineStatus MachineStatus
   machineType String
-  currentRunningHrs Int
-  lastServiceHrs Int
-  interServiceHrs Int
+  currentRunning Int
+  lastService Int
+  interService Int
 }
 
 Table MachineRepair {

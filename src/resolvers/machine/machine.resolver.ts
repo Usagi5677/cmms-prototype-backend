@@ -67,9 +67,10 @@ export class MachineResolver {
     @Args('type') type: string,
     @Args('zone') zone: string,
     @Args('location') location: string,
-    @Args('currentRunningHrs') currentRunningHrs: number,
-    @Args('lastServiceHrs') lastServiceHrs: number,
-    @Args('registeredDate') registeredDate: Date
+    @Args('currentRunning') currentRunning: number,
+    @Args('lastService') lastService: number,
+    @Args('registeredDate') registeredDate: Date,
+    @Args('measurement') measurement: string
   ): Promise<String> {
     await this.machineService.createMachine(
       user,
@@ -78,9 +79,10 @@ export class MachineResolver {
       type,
       zone,
       location,
-      currentRunningHrs,
-      lastServiceHrs,
-      registeredDate
+      currentRunning,
+      lastService,
+      registeredDate,
+      measurement
     );
     return `Successfully created machine.`;
   }
@@ -110,9 +112,10 @@ export class MachineResolver {
     @Args('type') type: string,
     @Args('zone') zone: string,
     @Args('location') location: string,
-    @Args('currentRunningHrs') currentRunningHrs: number,
-    @Args('lastServiceHrs') lastServiceHrs: number,
-    @Args('registeredDate') registeredDate: Date
+    @Args('currentRunning') currentRunning: number,
+    @Args('lastService') lastService: number,
+    @Args('registeredDate') registeredDate: Date,
+    @Args('measurement') measurement: string
   ): Promise<String> {
     await this.machineService.editMachine(
       id,
@@ -121,10 +124,11 @@ export class MachineResolver {
       type,
       zone,
       location,
-      currentRunningHrs,
-      lastServiceHrs,
+      currentRunning,
+      lastService,
       registeredDate,
-      user
+      user,
+      measurement
     );
     return `Machine updated.`;
   }
@@ -255,7 +259,10 @@ export class MachineResolver {
     @Args('title') title: string,
     @Args('description') description: string,
     @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number
+    @Args('notificationReminder') notificationReminder: number,
+    @Args('fixedDate') fixedDate: Date,
+    @Args('tasks', { nullable: true, type: () => [String] })
+    tasks: string[]
   ): Promise<String> {
     await this.machineService.editMachinePeriodicMaintenance(
       user,
@@ -263,7 +270,9 @@ export class MachineResolver {
       title,
       description,
       period,
-      notificationReminder
+      notificationReminder,
+      fixedDate,
+      tasks
     );
     return `Periodic maintenance updated.`;
   }
@@ -619,14 +628,14 @@ export class MachineResolver {
   async editMachineUsage(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('currentRunningHrs') currentRunningHrs: number,
-    @Args('lastServiceHrs') lastServiceHrs: number
+    @Args('currentRunning') currentRunning: number,
+    @Args('lastService') lastService: number
   ): Promise<String> {
     await this.machineService.editMachineUsage(
       user,
       id,
-      currentRunningHrs,
-      lastServiceHrs
+      currentRunning,
+      lastService
     );
     return `Machine usage updated.`;
   }

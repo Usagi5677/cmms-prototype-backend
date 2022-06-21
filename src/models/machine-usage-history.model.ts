@@ -4,7 +4,7 @@ import { BaseModel } from './base.model';
 @ObjectType()
 export class MachineUsageHistory extends BaseModel {
   date: Date;
-  currentRunningHrs: number;
-  lastServiceHrs: number;
-  interServiceHrs: number;
+  currentRunning: number;
+  lastService: number;
+  interService: number;
 }

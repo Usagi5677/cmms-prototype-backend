@@ -19,9 +19,10 @@ export class Machine extends BaseModel {
   type: string;
   zone: string;
   location: string;
-  currentRunningHrs?: number;
-  lastServiceHrs?: number;
-  interServiceHrs?: number;
+  currentRunning?: number;
+  lastService?: number;
+  interService?: number;
+  measurement?: string;
   status?: MachineStatus;
   statusChangedAt?: Date;
   assignees?: User[];

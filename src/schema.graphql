@@ -45,13 +45,14 @@ type Machine {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   createdBy: User
-  currentRunningHrs: Int
+  currentRunning: Int
   histories: [MachineHistory!]
   id: Int!
-  interServiceHrs: Int
-  lastServiceHrs: Int
+  interService: Int
+  lastService: Int
   location: String!
   machineNumber: String!
+  measurement: String
   model: String!
   periodicMaintenancePlans: [MachinePeriodicMaintenance!]
   registeredDate: Date
@@ -299,11 +300,11 @@ enum MachineStatus {
 type MachineUsageHistory {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  currentRunningHrs: Int!
+  currentRunning: Int!
   date: Date!
   id: Int!
-  interServiceHrs: Int!
-  lastServiceHrs: Int!
+  interService: Int!
+  lastService: Int!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -327,7 +328,7 @@ type Mutation {
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
-  createMachine(currentRunningHrs: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
+  createMachine(currentRunning: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   deleteMachineBreakdown(id: Int!): String!
   deleteMachineChecklistItem(id: Int!): String!
@@ -340,14 +341,14 @@ type Mutation {
   deleteTransportationPeriodicMaintenance(id: Int!): String!
   deleteTransportationRepair(id: Int!): String!
   deleteTransportationSparePR(id: Int!): String!
-  editMachine(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!, location: String!, machineNumber: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
+  editMachine(currentRunning: Int!, id: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, id: Int!, title: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
-  editMachinePeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
+  editMachinePeriodicMaintenance(description: String!, fixedDate: Date!, id: Int!, notificationReminder: Int!, period: Int!, tasks: [String!], title: String!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
-  editMachineUsage(currentRunningHrs: Int!, id: Int!, lastServiceHrs: Int!): String!
+  editMachineUsage(currentRunning: Int!, id: Int!, lastService: Int!): String!
   editRole(id: Int!, name: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationAttachment(description: String!, id: Int!): String!

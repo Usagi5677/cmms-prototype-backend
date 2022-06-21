@@ -47,9 +47,9 @@ export interface MachineHistoryInterface {
   completedById?: number;
   machineStatus?: MachineStatus;
   machineType?: string;
-  currentRunningHrs?: number;
-  lastServiceHrs?: number;
-  interServiceHrs?: number;
+  currentRunning?: number;
+  lastService?: number;
+  interService?: number;
 }
 
 @Injectable()
@@ -72,12 +72,13 @@ export class MachineService {
     type: string,
     zone: string,
     location: string,
-    currentRunningHrs: number,
-    lastServiceHrs: number,
-    registeredDate?: Date
+    currentRunning: number,
+    lastService: number,
+    registeredDate?: Date,
+    measurement?: string
   ) {
     try {
-      const interServiceHrs = currentRunningHrs - lastServiceHrs;
+      const interService = currentRunning - lastService;
       const machine = await this.prisma.machine.create({
         data: {
           createdById: user.id,
@@ -86,10 +87,11 @@ export class MachineService {
           type,
           zone,
           location,
-          currentRunningHrs,
-          lastServiceHrs,
-          interServiceHrs,
+          currentRunning,
+          lastService,
+          interService,
           registeredDate,
+          measurement,
         },
       });
 
@@ -133,10 +135,11 @@ export class MachineService {
     type: string,
     zone: string,
     location: string,
-    currentRunningHrs: number,
-    lastServiceHrs: number,
+    currentRunning: number,
+    lastService: number,
     registeredDate: Date,
-    user: User
+    user: User,
+    measurement: string
   ) {
     try {
       const machine = await this.prisma.machine.findFirst({
@@ -182,24 +185,34 @@ export class MachineService {
           completedById: user.id,
         });
       }
-      if (machine.currentRunningHrs != currentRunningHrs) {
+      if (machine.currentRunning != currentRunning) {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
-          description: `Current Running Hrs changed from ${machine.currentRunningHrs} to ${currentRunningHrs}.`,
+          description: `Current Running changed from ${machine.currentRunning} to ${currentRunning}.`,
           machineId: id,
           completedById: user.id,
-          currentRunningHrs: currentRunningHrs,
-          lastServiceHrs: lastServiceHrs,
+          currentRunning: currentRunning,
+          lastService: lastService,
         });
       }
-      if (machine.lastServiceHrs != lastServiceHrs) {
+      if (machine.lastService != lastService) {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
-          description: `Last Service Hrs changed from ${machine.lastServiceHrs} to ${lastServiceHrs}.`,
+          description: `Last Service changed from ${machine.lastService} to ${lastService}.`,
           machineId: id,
           completedById: user.id,
-          currentRunningHrs: currentRunningHrs,
-          lastServiceHrs: lastServiceHrs,
+          currentRunning: currentRunning,
+          lastService: lastService,
+        });
+      }
+      if (machine.measurement != measurement) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Measurement changed from ${machine.measurement} to ${measurement}.`,
+          machineId: id,
+          completedById: user.id,
+          currentRunning: currentRunning,
+          lastService: lastService,
         });
       }
       if (
@@ -225,7 +238,7 @@ export class MachineService {
           link: `/machine/${id}`,
         });
       }
-      const interServiceHrs = currentRunningHrs - lastServiceHrs;
+      const interService = currentRunning - lastService;
       await this.prisma.machine.update({
         data: {
           machineNumber,
@@ -233,10 +246,11 @@ export class MachineService {
           type,
           zone,
           location,
-          currentRunningHrs,
-          lastServiceHrs,
+          currentRunning,
+          lastService,
           registeredDate,
-          interServiceHrs,
+          interService,
+          measurement,
         },
         where: { id },
       });
@@ -645,7 +659,9 @@ export class MachineService {
     title: string,
     description: string,
     period: number,
-    notificationReminder: number
+    notificationReminder: number,
+    fixedDate: Date,
+    tasks: string[]
   ) {
     try {
       const periodicMaintenance =
@@ -658,6 +674,7 @@ export class MachineService {
             description: true,
             period: true,
             notificationReminder: true,
+            fixedDate: true,
           },
         });
       if (periodicMaintenance.title != title) {
@@ -692,6 +709,22 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      if (periodicMaintenance.fixedDate != fixedDate) {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Fixed date changed from ${periodicMaintenance.fixedDate} to ${fixedDate}.`,
+          machineId: periodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
+      if (periodicMaintenance.fixedDate != fixedDate) {
+        await this.createMachineHistoryInBackground({
+          type: 'Periodic Maintenance Edit',
+          description: `(${id}) Fixed date changed from ${periodicMaintenance.fixedDate} to ${fixedDate}.`,
+          machineId: periodicMaintenance.machineId,
+          completedById: user.id,
+        });
+      }
       const machineUsers = await this.getMachineUserIds(
         periodicMaintenance.machineId,
         user.id
@@ -706,6 +739,12 @@ export class MachineService {
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
         data: { title, description, period, notificationReminder },
+      });
+      await this.prisma.machinePeriodicMaintenanceTask.createMany({
+        data: tasks.map((task) => ({
+          periodicMaintenanceId: periodicMaintenance.id,
+          name: task,
+        })),
       });
     } catch (e) {
       console.log(e);
@@ -1804,18 +1843,18 @@ export class MachineService {
       select: {
         status: true,
         type: true,
-        currentRunningHrs: true,
-        lastServiceHrs: true,
-        interServiceHrs: true,
+        currentRunning: true,
+        lastService: true,
+        interService: true,
       },
     });
-    const currentRunningHrs = machineHistory.currentRunningHrs
-      ? machineHistory.currentRunningHrs
-      : machine.currentRunningHrs;
-    const lastServiceHrs = machineHistory.lastServiceHrs
-      ? machineHistory.lastServiceHrs
-      : machine.lastServiceHrs;
-    const interServiceHrs = currentRunningHrs - lastServiceHrs;
+    const currentRunning = machineHistory.currentRunning
+      ? machineHistory.currentRunning
+      : machine.currentRunning;
+    const lastService = machineHistory.lastService
+      ? machineHistory.lastService
+      : machine.lastService;
+    const interService = currentRunning - lastService;
 
     await this.prisma.machineHistory.create({
       data: {
@@ -1825,9 +1864,9 @@ export class MachineService {
         completedById: machineHistory.completedById,
         machineStatus: machine.status,
         machineType: machine.type,
-        currentRunningHrs: currentRunningHrs,
-        lastServiceHrs: lastServiceHrs,
-        interServiceHrs: interServiceHrs,
+        currentRunning: currentRunning,
+        lastService: lastService,
+        interService: interService,
       },
     });
   }
@@ -2104,23 +2143,23 @@ export class MachineService {
         const days = toDate.diff(fromDate, 'days') + 1;
         for (let i = 0; i < days; i++) {
           const day = fromDate.clone().add(i, 'day');
-          const currentRunningHrs =
+          const currentRunning =
             machineUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.currentRunningHrs ?? 0;
-          const lastServiceHrs =
+            )?.currentRunning ?? 0;
+          const lastService =
             machineUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.lastServiceHrs ?? 0;
-          const interServiceHrs =
+            )?.lastService ?? 0;
+          const interService =
             machineUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.interServiceHrs ?? 0;
+            )?.interService ?? 0;
           usageHistoryByDate.push({
             date: day.toDate(),
-            currentRunningHrs,
-            lastServiceHrs,
-            interServiceHrs,
+            currentRunning,
+            lastService,
+            interService,
           });
         }
       }
@@ -2135,31 +2174,31 @@ export class MachineService {
   async editMachineUsage(
     user: User,
     id: number,
-    currentRunningHrs: number,
-    lastServiceHrs: number
+    currentRunning: number,
+    lastService: number
   ) {
     try {
       const machine = await this.prisma.machine.findFirst({
         where: { id },
       });
-      if (machine.currentRunningHrs != currentRunningHrs) {
+      if (machine.currentRunning != currentRunning) {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
-          description: `Current Running Hrs changed from ${machine.currentRunningHrs} to ${currentRunningHrs}.`,
+          description: `Current Running changed from ${machine.currentRunning} to ${currentRunning}.`,
           machineId: id,
           completedById: user.id,
-          currentRunningHrs: currentRunningHrs,
-          lastServiceHrs: lastServiceHrs,
+          currentRunning: currentRunning,
+          lastService: lastService,
         });
       }
-      if (machine.lastServiceHrs != lastServiceHrs) {
+      if (machine.lastService != lastService) {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
-          description: `Last Service Hrs changed from ${machine.lastServiceHrs} to ${lastServiceHrs}.`,
+          description: `Last Service changed from ${machine.lastService} to ${lastService}.`,
           machineId: id,
           completedById: user.id,
-          currentRunningHrs: currentRunningHrs,
-          lastServiceHrs: lastServiceHrs,
+          currentRunning: currentRunning,
+          lastService: lastService,
         });
       }
 
@@ -2171,12 +2210,12 @@ export class MachineService {
           link: `/machine/${id}`,
         });
       }
-      const interServiceHrs = currentRunningHrs - lastServiceHrs;
+      const interService = currentRunning - lastService;
       await this.prisma.machine.update({
         data: {
-          currentRunningHrs,
-          lastServiceHrs,
-          interServiceHrs,
+          currentRunning,
+          lastService,
+          interService,
         },
         where: { id },
       });
@@ -2263,6 +2302,91 @@ export class MachineService {
           ? { completedById: user.id, completedAt: new Date() }
           : { completedById: null, completedAt: null },
       });
+
+      const taskData =
+        await this.prisma.machinePeriodicMaintenanceTask.findFirst({
+          where: {
+            id: id,
+          },
+          include: {
+            parentTask: {
+              include: {
+                parentTask: {
+                  include: {
+                    parentTask: true,
+                    subTasks: true,
+                  },
+                },
+                subTasks: true,
+              },
+            },
+            subTasks: {
+              include: {
+                subTasks: true,
+              },
+            },
+          },
+        });
+
+      const innerSubTaskLength = taskData?.parentTask?.subTasks?.filter(
+        (task) => task.completedAt !== null
+      ).length;
+
+      const subTaskLength = taskData?.parentTask?.parentTask?.subTasks?.filter(
+        (task) => task.completedAt !== null
+      ).length;
+
+      if (taskData?.subTasks.length >= 0) {
+        await this.prisma.machinePeriodicMaintenanceTask.updateMany({
+          where: {
+            id: {
+              in: taskData?.subTasks.map((subtask) => subtask.id),
+            },
+          },
+          data: complete
+            ? { completedById: user.id, completedAt: new Date() }
+            : { completedById: null, completedAt: null },
+        });
+        taskData?.subTasks.forEach(async (subtask) => {
+          await this.prisma.machinePeriodicMaintenanceTask.updateMany({
+            where: {
+              id: {
+                in: subtask?.subTasks.map((innerSubtask) => innerSubtask.id),
+              },
+            },
+            data: complete
+              ? { completedById: user.id, completedAt: new Date() }
+              : { completedById: null, completedAt: null },
+          });
+        });
+      }
+
+      if (
+        taskData?.parentTask?.subTasks?.length === innerSubTaskLength &&
+        taskData?.parentTask?.subTasks?.length !== undefined
+      ) {
+        await this.prisma.machinePeriodicMaintenanceTask.update({
+          where: {
+            id: taskData?.parentTask?.id,
+          },
+          data: complete
+            ? { completedById: user.id, completedAt: new Date() }
+            : { completedById: null, completedAt: null },
+        });
+      }
+      if (
+        taskData?.parentTask?.parentTask?.subTasks?.length === subTaskLength &&
+        taskData?.parentTask?.parentTask?.subTasks?.length !== undefined
+      ) {
+        await this.prisma.machinePeriodicMaintenanceTask.update({
+          where: {
+            id: taskData?.parentTask?.parentTask?.id,
+          },
+          data: complete
+            ? { completedById: user.id, completedAt: new Date() }
+            : { completedById: null, completedAt: null },
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
