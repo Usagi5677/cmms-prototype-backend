@@ -9,11 +9,11 @@ export class MachinePeriodicMaintenance extends BaseModel {
   title: string;
   description: string;
   machineId: number;
-  period?: number;
-  notificationReminder?: number;
+  measurement?: string;
+  value?: number;
   status: PeriodicMaintenanceStatus;
   completedBy?: User;
   completedAt?: Date;
-  fixedDate?: Date;
+  startDate?: Date;
   MachinePeriodicMaintenanceTask?: MachinePMTask[];
 }

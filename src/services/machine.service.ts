@@ -605,9 +605,9 @@ export class MachineService {
     machineId: number,
     title: string,
     description: string,
-    period: number,
-    notificationReminder: number,
-    fixedDate: Date,
+    measurement: string,
+    value: number,
+    startDate: Date,
     tasks: string[]
   ) {
     try {
@@ -617,9 +617,9 @@ export class MachineService {
             machineId,
             title,
             description,
-            period,
-            notificationReminder,
-            fixedDate,
+            measurement,
+            value,
+            startDate,
           },
         });
 
@@ -658,9 +658,9 @@ export class MachineService {
     id: number,
     title: string,
     description: string,
-    period: number,
-    notificationReminder: number,
-    fixedDate: Date,
+    measurement: string,
+    value: number,
+    startDate: Date,
     tasks: string[]
   ) {
     try {
@@ -672,9 +672,9 @@ export class MachineService {
             machineId: true,
             title: true,
             description: true,
-            period: true,
-            notificationReminder: true,
-            fixedDate: true,
+            measurement: true,
+            startDate: true,
+            value: true,
           },
         });
       if (periodicMaintenance.title != title) {
@@ -693,34 +693,29 @@ export class MachineService {
           completedById: user.id,
         });
       }
-      if (periodicMaintenance.period != period) {
+      if (periodicMaintenance.measurement != measurement) {
         await this.createMachineHistoryInBackground({
           type: 'Periodic Maintenance Edit',
-          description: `(${id}) Period changed from ${periodicMaintenance.period} to ${period}.`,
+          description: `(${id}) Measurement changed from ${periodicMaintenance.measurement} to ${measurement}.`,
           machineId: periodicMaintenance.machineId,
           completedById: user.id,
         });
       }
-      if (periodicMaintenance.notificationReminder != notificationReminder) {
+      if (periodicMaintenance.value != value) {
         await this.createMachineHistoryInBackground({
           type: 'Periodic Maintenance Edit',
-          description: `(${id}) Notification reminder changed from ${periodicMaintenance.notificationReminder} to ${notificationReminder}.`,
+          description: `(${id}) Value changed from ${periodicMaintenance.value} to ${value}.`,
           machineId: periodicMaintenance.machineId,
           completedById: user.id,
         });
       }
-      if (periodicMaintenance.fixedDate != fixedDate) {
+      if (
+        moment(periodicMaintenance.startDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(startDate).format('DD MMMM YYYY HH:mm:ss')
+      ) {
         await this.createMachineHistoryInBackground({
           type: 'Periodic Maintenance Edit',
-          description: `(${id}) Fixed date changed from ${periodicMaintenance.fixedDate} to ${fixedDate}.`,
-          machineId: periodicMaintenance.machineId,
-          completedById: user.id,
-        });
-      }
-      if (periodicMaintenance.fixedDate != fixedDate) {
-        await this.createMachineHistoryInBackground({
-          type: 'Periodic Maintenance Edit',
-          description: `(${id}) Fixed date changed from ${periodicMaintenance.fixedDate} to ${fixedDate}.`,
+          description: `(${id}) Start date changed from ${periodicMaintenance.startDate} to ${startDate}.`,
           machineId: periodicMaintenance.machineId,
           completedById: user.id,
         });
@@ -738,7 +733,13 @@ export class MachineService {
       }
       await this.prisma.machinePeriodicMaintenance.update({
         where: { id },
-        data: { title, description, period, notificationReminder },
+        data: {
+          title,
+          description,
+          measurement,
+          value,
+          startDate,
+        },
       });
       await this.prisma.machinePeriodicMaintenanceTask.createMany({
         data: tasks.map((task) => ({
@@ -2056,21 +2057,55 @@ export class MachineService {
   }
 
   //check periodic maintenance every hour. notify based on the notification hour
-  //set status to Missed based on period
   @Cron(CronExpression.EVERY_HOUR)
   async updatePeriodicMaintenanceStatus() {
     const now = moment();
     const periodicMaintenance =
-      await this.prisma.machinePeriodicMaintenance.findMany();
+      await this.prisma.machinePeriodicMaintenance.findMany({
+        include: {
+          machine: {
+            select: {
+              currentRunning: true,
+            },
+          },
+        },
+      });
 
     for (let index = 0; index < periodicMaintenance.length; index++) {
-      const notifHour = periodicMaintenance[index].notificationReminder;
-      const period = periodicMaintenance[index].period;
-      const fixedDate = moment(periodicMaintenance[index].fixedDate);
-      const notifDate = moment(fixedDate);
-      const periodDate = moment(fixedDate);
-      notifDate.add(notifHour, 'h');
-      periodDate.add(period, 'h');
+      const value = periodicMaintenance[index].value;
+
+      //const fixedDate = moment(periodicMaintenance[index].fixedDate);
+      const notifDate = moment(periodicMaintenance[index].startDate);
+      if (periodicMaintenance[index].measurement === 'hour') {
+        notifDate.add(value, 'h');
+      } else if (periodicMaintenance[index].measurement === 'day') {
+        notifDate.add(value, 'd');
+      } else if (periodicMaintenance[index].measurement === 'km') {
+        if (value >= periodicMaintenance[index].machine.currentRunning) {
+          const users = await this.prisma.machineAssignment.findMany({
+            where: {
+              machineId: periodicMaintenance[index].machineId,
+            },
+          });
+          for (let index = 0; index < users.length; index++) {
+            await this.notificationService.createInBackground({
+              userId: users[index].userId,
+              body: `Periodic maintenance (${periodicMaintenance[index].id}) on machine ${periodicMaintenance[index].machineId} km reminder`,
+              link: `/machine/${periodicMaintenance[index].machineId}`,
+            });
+          }
+          await this.prisma.machinePeriodicMaintenance.update({
+            where: {
+              id: periodicMaintenance[index].id,
+            },
+            data: {
+              startDate: moment(notifDate).format('DD MMMM YYYY HH:mm:ss'),
+            },
+          });
+        }
+      }
+      //notifDate.add(notifHour, 'h');
+
       if (notifDate.isSame(now)) {
         const users = await this.prisma.machineAssignment.findMany({
           where: {
@@ -2084,35 +2119,6 @@ export class MachineService {
             link: `/machine/${periodicMaintenance[index].machineId}`,
           });
         }
-      }
-      if (periodDate.isSame(now)) {
-        const users = await this.prisma.machineAssignment.findMany({
-          where: {
-            machineId: periodicMaintenance[index].machineId,
-          },
-        });
-        if (periodicMaintenance[index].status === 'Pending') {
-          await this.prisma.machinePeriodicMaintenance.update({
-            where: {
-              id: periodicMaintenance[index].id,
-            },
-            data: {
-              status: 'Missed',
-            },
-          });
-        }
-        for (let index = 0; index < users.length; index++) {
-          await this.notificationService.createInBackground({
-            userId: users[index].userId,
-            body: `Periodic maintenance (${periodicMaintenance[index].id}) on machine ${periodicMaintenance[index].machineId} automatically set to missed`,
-            link: `/machine/${periodicMaintenance[index].machineId}`,
-          });
-        }
-        await this.createMachineHistoryInBackground({
-          type: 'Periodic Maintenance Status',
-          description: `(${periodicMaintenance[index].id}) set status automatically to Missed.`,
-          machineId: periodicMaintenance[index].machineId,
-        });
       }
     }
   }

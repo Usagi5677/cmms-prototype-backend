@@ -232,9 +232,9 @@ export class MachineResolver {
     @Args('machineId') machineId: number,
     @Args('title') title: string,
     @Args('description') description: string,
-    @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number,
-    @Args('fixedDate') fixedDate: Date,
+    @Args('measurement') measurement: string,
+    @Args('value') value: number,
+    @Args('startDate') startDate: Date,
     @Args('tasks', { nullable: true, type: () => [String] })
     tasks: string[]
   ): Promise<String> {
@@ -243,9 +243,9 @@ export class MachineResolver {
       machineId,
       title,
       description,
-      period,
-      notificationReminder,
-      fixedDate,
+      measurement,
+      value,
+      startDate,
       tasks
     );
     return `Added periodic maintenance to machine.`;
@@ -258,9 +258,9 @@ export class MachineResolver {
     @Args('id') id: number,
     @Args('title') title: string,
     @Args('description') description: string,
-    @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number,
-    @Args('fixedDate') fixedDate: Date,
+    @Args('measurement') measurement: string,
+    @Args('value') value: number,
+    @Args('startDate') startDate: Date,
     @Args('tasks', { nullable: true, type: () => [String] })
     tasks: string[]
   ): Promise<String> {
@@ -269,9 +269,9 @@ export class MachineResolver {
       id,
       title,
       description,
-      period,
-      notificationReminder,
-      fixedDate,
+      measurement,
+      value,
+      startDate,
       tasks
     );
     return `Periodic maintenance updated.`;

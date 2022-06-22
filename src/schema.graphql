@@ -193,16 +193,16 @@ type MachinePeriodicMaintenance {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   description: String!
-  fixedDate: Date
   id: Int!
   machineId: Int!
-  notificationReminder: Int
-  period: Int
+  measurement: String
+  startDate: Date
   status: PeriodicMaintenanceStatus!
   title: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  value: Int
 }
 
 type MachinePeriodicMaintenanceEdge {
@@ -314,7 +314,7 @@ type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
-  addMachinePeriodicMaintenance(description: String!, fixedDate: Date!, machineId: Int!, notificationReminder: Int!, period: Int!, tasks: [String!], title: String!): String!
+  addMachinePeriodicMaintenance(description: String!, machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   addMachinePeriodicMaintenanceSubTask(name: String!, parentTaskId: Int!, periodicMaintenanceId: Int!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
@@ -345,7 +345,7 @@ type Mutation {
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, id: Int!, title: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
-  editMachinePeriodicMaintenance(description: String!, fixedDate: Date!, id: Int!, notificationReminder: Int!, period: Int!, tasks: [String!], title: String!): String!
+  editMachinePeriodicMaintenance(description: String!, id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editMachineUsage(currentRunning: Int!, id: Int!, lastService: Int!): String!

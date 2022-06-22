@@ -158,9 +158,9 @@ Table MachinePeriodicMaintenance {
   machine Machine [not null]
   title String [not null]
   description String [not null]
-  period Int
-  notificationReminder Int
-  fixedDate DateTime
+  measurement String
+  value Int
+  startDate DateTime
   completedById Int
   completedBy User
   completedAt DateTime

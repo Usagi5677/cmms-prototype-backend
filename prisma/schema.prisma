@@ -194,9 +194,9 @@ model MachinePeriodicMaintenance {
   machine                        Machine                          @relation(fields: [machineId], references: [id], onDelete: Cascade)
   title                          String
   description                    String
-  period                         Int?
-  notificationReminder           Int?
-  fixedDate                      DateTime?
+  measurement                    String?
+  value                          Int?
+  startDate                      DateTime?
   completedById                  Int?
   completedBy                    User?                            @relation(fields: [completedById], references: [id])
   completedAt                    DateTime?
