@@ -56,4 +56,11 @@ export class AttachmentResolver {
       args
     );
   }
+
+  @Query(() => MachineAttachment)
+  async getMachineLatestAttachment(
+    @Args('machineId') machineId: number
+  ): Promise<MachineAttachment> {
+    return await this.attachmentService.getMachineLatestAttachment(machineId);
+  }
 }

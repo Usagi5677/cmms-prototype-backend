@@ -795,6 +795,7 @@ type Query {
     last: Int
     search: String
   ): PaginatedUsers!
+  getMachineLatestAttachment(machineId: Int!): MachineAttachment!
   getMachineReport(from: Date!, to: Date!): [MachineReport!]!
   getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!

@@ -312,4 +312,20 @@ export class AttachmentService {
       },
     };
   }
+
+  async getMachineLatestAttachment(
+    machineId: number
+  ): Promise<MachineAttachment> {
+    const machineAttachment = await this.prisma.machineAttachment.findFirst({
+      where: {
+        machineId,
+        mimeType: 'image/jpeg',
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    });
+
+    return machineAttachment;
+  }
 }
