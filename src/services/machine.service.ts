@@ -1750,9 +1750,13 @@ export class MachineService {
               subTasks: {
                 include: {
                   subTasks: true,
+                  completedBy: true,
                 },
+                orderBy: { id: 'desc' },
               },
+              completedBy: true,
             },
+            orderBy: { id: 'desc' },
           },
         },
         orderBy: { id: 'desc' },
