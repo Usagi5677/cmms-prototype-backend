@@ -11,4 +11,5 @@ export class MachineBreakdown extends BaseModel {
   completedBy?: User;
   completedAt?: Date;
   status: BreakdownStatus;
+  estimatedDateOfRepair?: Date;
 }

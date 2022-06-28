@@ -1311,7 +1311,8 @@ export class TransportationService {
     user: User,
     id: number,
     title: string,
-    description: string
+    description: string,
+    estimatedDateOfRepair: Date
   ) {
     try {
       const breakdown = await this.prisma.transportationBreakdown.findFirst({
@@ -1321,6 +1322,7 @@ export class TransportationService {
           transportationId: true,
           title: true,
           description: true,
+          estimatedDateOfRepair: true,
         },
       });
       if (breakdown.title != title) {
@@ -1339,6 +1341,22 @@ export class TransportationService {
           completedById: user.id,
         });
       }
+      if (
+        moment(breakdown.estimatedDateOfRepair).format(
+          'DD MMMM YYYY HH:mm:ss'
+        ) != moment(estimatedDateOfRepair).format('DD MMMM YYYY HH:mm:ss')
+      ) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Breakdown Edit',
+          description: `Estimated date of repair changed from ${moment(
+            breakdown.estimatedDateOfRepair
+          ).format('DD MMMM YYYY')} to ${moment(estimatedDateOfRepair).format(
+            'DD MMMM YYYY'
+          )}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
       const transportationUsers = await this.getTransportationUserIds(
         breakdown.transportationId,
         user.id
@@ -1352,7 +1370,7 @@ export class TransportationService {
       }
       await this.prisma.transportationBreakdown.update({
         where: { id },
-        data: { title, description },
+        data: { title, description, estimatedDateOfRepair },
       });
     } catch (e) {
       console.log(e);
@@ -1558,6 +1576,9 @@ export class TransportationService {
         skip: offset,
         take: limitPlusOne,
         where,
+        include: {
+          completedBy: true,
+        },
         orderBy: { id: 'desc' },
       });
 
@@ -2306,6 +2327,40 @@ export class TransportationService {
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //check breakdown every week. notify assigned users if breakdown exists
+  @Cron(CronExpression.EVERY_WEEK)
+  async checkTransportationBreakdownExist() {
+    const breakdown = await this.prisma.transportationBreakdown.findMany();
+    const now = moment().startOf('day');
+
+    for (let index = 0; index < breakdown.length; index++) {
+      if (breakdown[index].status === 'Breakdown') {
+        const end = moment(breakdown[index].createdAt).endOf('day');
+
+        if (moment.duration(end.diff(now)).asDays() >= 7) {
+          const users = await this.prisma.transportationAssignment.findMany({
+            where: {
+              transportationId: breakdown[index].transportationId,
+            },
+          });
+
+          for (let index = 0; index < users.length; index++) {
+            await this.notificationService.createInBackground({
+              userId: users[index].userId,
+              body: `Reminder: Transportation ${breakdown[index].transportationId} has been broken for 1 week`,
+              link: `/transportation/${breakdown[index].transportationId}`,
+            });
+          }
+          await this.createTransportationHistoryInBackground({
+            type: 'Breakdown',
+            description: `(${breakdown[index].id}) breakdown has been notified to all assigned users.`,
+            transportationId: breakdown[index].transportationId,
+          });
+        }
+      }
     }
   }
 }

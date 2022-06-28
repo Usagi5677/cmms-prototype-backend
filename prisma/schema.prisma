@@ -250,17 +250,18 @@ model MachineRepair {
 }
 
 model MachineBreakdown {
-  id            Int             @id @default(autoincrement())
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  machineId     Int
-  machine       Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  title         String
-  description   String
-  completedById Int?
-  completedBy   User?           @relation(fields: [completedById], references: [id])
-  completedAt   DateTime?
-  status        BreakdownStatus @default(Breakdown)
+  id                    Int             @id @default(autoincrement())
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  machineId             Int
+  machine               Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  title                 String
+  description           String
+  completedById         Int?
+  completedBy           User?           @relation(fields: [completedById], references: [id])
+  completedAt           DateTime?
+  estimatedDateOfRepair DateTime?
+  status                BreakdownStatus @default(Breakdown)
 }
 
 model MachineSparePR {
@@ -406,17 +407,18 @@ model TransportationRepair {
 }
 
 model TransportationBreakdown {
-  id               Int             @id @default(autoincrement())
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  transportationId Int
-  transportation   Transportation  @relation(fields: [transportationId], references: [id], onDelete: Cascade)
-  title            String
-  description      String
-  completedById    Int?
-  completedBy      User?           @relation(fields: [completedById], references: [id])
-  completedAt      DateTime?
-  status           BreakdownStatus @default(Breakdown)
+  id                    Int             @id @default(autoincrement())
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  transportationId      Int
+  transportation        Transportation  @relation(fields: [transportationId], references: [id], onDelete: Cascade)
+  title                 String
+  description           String
+  completedById         Int?
+  completedBy           User?           @relation(fields: [completedById], references: [id])
+  completedAt           DateTime?
+  estimatedDateOfRepair DateTime?
+  status                BreakdownStatus @default(Breakdown)
 }
 
 model TransportationSparePR {

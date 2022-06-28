@@ -223,6 +223,7 @@ Table MachineBreakdown {
   completedById Int
   completedBy User
   completedAt DateTime
+  estimatedDateOfRepair DateTime
   status BreakdownStatus [not null, default: 'Breakdown']
 }
 
@@ -375,6 +376,7 @@ Table TransportationBreakdown {
   completedById Int
   completedBy User
   completedAt DateTime
+  estimatedDateOfRepair DateTime
   status BreakdownStatus [not null, default: 'Breakdown']
 }
 

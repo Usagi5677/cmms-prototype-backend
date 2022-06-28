@@ -11,4 +11,5 @@ export class TransportationBreakdown extends BaseModel {
   completedBy?: User;
   completedAt?: Date;
   status: BreakdownStatus;
+  estimatedDateOfRepair?: Date;
 }

@@ -104,6 +104,7 @@ type MachineBreakdown {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   description: String!
+  estimatedDateOfRepair: Date
   id: Int!
   machineId: Int!
   status: BreakdownStatus!
@@ -344,7 +345,7 @@ type Mutation {
   deleteTransportationSparePR(id: Int!): String!
   editMachine(currentRunning: Int!, id: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   editMachineAttachment(description: String!, id: Int!): String!
-  editMachineBreakdown(description: String!, id: Int!, title: String!): String!
+  editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
   editMachinePeriodicMaintenance(description: String!, id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
@@ -353,7 +354,7 @@ type Mutation {
   editRole(id: Int!, name: String!): String!
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationAttachment(description: String!, id: Int!): String!
-  editTransportationBreakdown(description: String!, id: Int!, title: String!): String!
+  editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
   editTransportationPeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
@@ -956,6 +957,7 @@ type TransportationBreakdown {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   description: String!
+  estimatedDateOfRepair: Date
   id: Int!
   status: BreakdownStatus!
   title: String!

@@ -477,15 +477,17 @@ export class TransportationResolver {
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('title') title: string,
-    @Args('description') description: string
+    @Args('description') description: string,
+    @Args('estimatedDateOfRepair') estimatedDateOfRepair: Date
   ): Promise<String> {
     await this.transportationService.editTransportationBreakdown(
       user,
       id,
       title,
-      description
+      description,
+      estimatedDateOfRepair
     );
-    return `Spare PR updated.`;
+    return `Breakdown updated.`;
   }
 
   @Permissions('DELETE_TRANSPORTATION_BREAKDOWN')

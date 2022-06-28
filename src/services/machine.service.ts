@@ -1264,7 +1264,8 @@ export class MachineService {
     user: User,
     id: number,
     title: string,
-    description: string
+    description: string,
+    estimatedDateOfRepair: Date
   ) {
     try {
       const breakdown = await this.prisma.machineBreakdown.findFirst({
@@ -1274,6 +1275,7 @@ export class MachineService {
           machineId: true,
           title: true,
           description: true,
+          estimatedDateOfRepair: true,
         },
       });
       if (breakdown.title != title) {
@@ -1292,6 +1294,22 @@ export class MachineService {
           completedById: user.id,
         });
       }
+      if (
+        moment(breakdown.estimatedDateOfRepair).format(
+          'DD MMMM YYYY HH:mm:ss'
+        ) != moment(estimatedDateOfRepair).format('DD MMMM YYYY HH:mm:ss')
+      ) {
+        await this.createMachineHistoryInBackground({
+          type: 'Breakdown Edit',
+          description: `Estimated date of repair changed from ${moment(
+            breakdown.estimatedDateOfRepair
+          ).format('DD MMMM YYYY')} to ${moment(estimatedDateOfRepair).format(
+            'DD MMMM YYYY'
+          )}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
       const machineUsers = await this.getMachineUserIds(
         breakdown.machineId,
         user.id
@@ -1305,7 +1323,7 @@ export class MachineService {
       }
       await this.prisma.machineBreakdown.update({
         where: { id },
-        data: { title, description },
+        data: { title, description, estimatedDateOfRepair },
       });
     } catch (e) {
       console.log(e);
@@ -1513,7 +1531,7 @@ export class MachineService {
       take: limitPlusOne,
       where,
       include: {
-        machine: true,
+        completedBy: true,
       },
       orderBy: { id: 'desc' },
     });
@@ -2431,6 +2449,40 @@ export class MachineService {
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //check breakdown every week. notify assigned users if breakdown exists
+  @Cron(CronExpression.EVERY_WEEK)
+  async checkMachineBreakdownExist() {
+    const breakdown = await this.prisma.machineBreakdown.findMany();
+    const now = moment().startOf('day');
+
+    for (let index = 0; index < breakdown.length; index++) {
+      if (breakdown[index].status === 'Breakdown') {
+        const end = moment(breakdown[index].createdAt).endOf('day');
+
+        if (moment.duration(end.diff(now)).asDays() >= 7) {
+          const users = await this.prisma.machineAssignment.findMany({
+            where: {
+              machineId: breakdown[index].machineId,
+            },
+          });
+
+          for (let index = 0; index < users.length; index++) {
+            await this.notificationService.createInBackground({
+              userId: users[index].userId,
+              body: `Reminder: Machine ${breakdown[index].machineId} has been broken for 1 week`,
+              link: `/machine/${breakdown[index].machineId}`,
+            });
+          }
+          await this.createMachineHistoryInBackground({
+            type: 'Breakdown',
+            description: `(${breakdown[index].id}) breakdown has been notified to all assigned users.`,
+            machineId: breakdown[index].machineId,
+          });
+        }
+      }
     }
   }
 }

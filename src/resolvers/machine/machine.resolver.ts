@@ -437,13 +437,15 @@ export class MachineResolver {
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('title') title: string,
-    @Args('description') description: string
+    @Args('description') description: string,
+    @Args('estimatedDateOfRepair') estimatedDateOfRepair: Date
   ): Promise<String> {
     await this.machineService.editMachineBreakdown(
       user,
       id,
       title,
-      description
+      description,
+      estimatedDateOfRepair
     );
     return `Breakdown updated.`;
   }
