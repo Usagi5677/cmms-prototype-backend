@@ -218,20 +218,20 @@ model MachinePeriodicMaintenanceTask {
 }
 
 model MachineHistory {
-  id             Int            @id @default(autoincrement())
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  machineId      Int
-  machine        Machine        @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  completedById  Int?
-  completedBy    User?          @relation(fields: [completedById], references: [id])
-  type           String
-  description    String
-  machineStatus  MachineStatus?
-  machineType    String?
-  currentRunning Int?
-  lastService    Int?
-  interService   Int?
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  machineId     Int
+  machine       Machine        @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  completedById Int?
+  completedBy   User?          @relation(fields: [completedById], references: [id])
+  type          String
+  description   String
+  machineStatus MachineStatus?
+  machineType   String?
+  workingHour   Int?
+  idleHour      Int?
+  breakdownHour Int?
 
 }
 
@@ -386,9 +386,9 @@ model TransportationHistory {
   description          String
   transportationStatus TransportationStatus?
   transportationType   String?
-  currentMileage       Int?
-  lastServiceMileage   Int?
-  interServiceMileage  Int?
+  workingHour          Int?
+  idleHour             Int?
+  breakdownHour        Int?
 }
 
 model TransportationRepair {

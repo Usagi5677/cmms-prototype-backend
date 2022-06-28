@@ -298,16 +298,17 @@ enum MachineStatus {
 }
 
 type MachineUsageHistory {
+  breakdownHour: Int!
+
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  currentRunning: Int!
   date: Date!
   id: Int!
-  interService: Int!
-  lastService: Int!
+  idleHour: Int!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  workingHour: Int!
 }
 
 type Mutation {
@@ -1130,16 +1131,17 @@ enum TransportationStatus {
 }
 
 type TransportationUsageHistory {
+  breakdownHour: Int!
+
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  currentMileage: Int!
   date: Date!
   id: Int!
-  interServiceMileage: Int!
-  lastServiceMileage: Int!
+  idleHour: Int!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  workingHour: Int!
 }
 
 type User {

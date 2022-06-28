@@ -45,8 +45,9 @@ export interface TransportationHistoryInterface {
   type: string;
   description: string;
   completedById?: number;
-  currentMileage?: number;
-  lastServiceMileage?: number;
+  workingHour?: number;
+  idleHour?: number;
+  breakdownHour?: number;
 }
 
 @Injectable()
@@ -197,8 +198,6 @@ export class TransportationService {
           description: `Current Mileage changed from ${transportation.currentMileage} to ${currentMileage}.`,
           transportationId: id,
           completedById: user.id,
-          currentMileage: currentMileage,
-          lastServiceMileage: lastServiceMileage,
         });
       }
       if (transportation.lastServiceMileage != lastServiceMileage) {
@@ -207,8 +206,6 @@ export class TransportationService {
           description: `Last Service Mileage changed from ${transportation.lastServiceMileage} to ${lastServiceMileage}.`,
           transportationId: id,
           completedById: user.id,
-          currentMileage: currentMileage,
-          lastServiceMileage: lastServiceMileage,
         });
       }
       if (transportation.engine != engine) {
@@ -1890,18 +1887,47 @@ export class TransportationService {
       select: {
         status: true,
         type: true,
-        currentMileage: true,
-        lastServiceMileage: true,
-        interServiceMileage: true,
       },
     });
-    const currentMileage = transportationHistory.currentMileage
-      ? transportationHistory.currentMileage
-      : transportation.currentMileage;
-    const lastServiceMileage = transportationHistory.lastServiceMileage
-      ? transportationHistory.lastServiceMileage
-      : transportation.lastServiceMileage;
-    const interServiceMileage = currentMileage - lastServiceMileage;
+    const transportationChecklistItem =
+      await this.prisma.transportationChecklistItem.findFirst({
+        where: {
+          transportationId: transportationHistory.transportationId,
+          NOT: [{ workingHour: null }],
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+
+    const now = moment();
+    const workingHour = transportationChecklistItem.workingHour;
+    let idleHour;
+    let breakdownHour;
+    if (transportation.status === 'Idle') {
+      const fromDate = await this.prisma.transportationHistory.findFirst({
+        where: {
+          transportationStatus: 'Working',
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+      const duration = moment.duration(now.diff(fromDate.createdAt));
+      idleHour = duration.asHours();
+    }
+    if (transportation.status === 'Breakdown') {
+      const fromDate = await this.prisma.transportationHistory.findFirst({
+        where: {
+          transportationStatus: 'Working',
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+      const duration = moment.duration(now.diff(fromDate.createdAt));
+      breakdownHour = duration.asHours();
+    }
     await this.prisma.transportationHistory.create({
       data: {
         transportationId: transportationHistory.transportationId,
@@ -1910,9 +1936,9 @@ export class TransportationService {
         completedById: transportationHistory.completedById,
         transportationStatus: transportation.status,
         transportationType: transportation.type,
-        currentMileage: currentMileage,
-        lastServiceMileage: lastServiceMileage,
-        interServiceMileage: interServiceMileage,
+        workingHour: workingHour,
+        idleHour: idleHour,
+        breakdownHour: breakdownHour,
       },
     });
   }
@@ -2201,23 +2227,23 @@ export class TransportationService {
         const days = toDate.diff(fromDate, 'days') + 1;
         for (let i = 0; i < days; i++) {
           const day = fromDate.clone().add(i, 'day');
-          const currentMileage =
+          const workingHour =
             transportationUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.currentMileage ?? 0;
-          const lastServiceMileage =
+            )?.workingHour ?? 0;
+          const idleHour =
             transportationUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.lastServiceMileage ?? 0;
-          const interServiceMileage =
+            )?.idleHour ?? 0;
+          const breakdownHour =
             transportationUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.interServiceMileage ?? 0;
+            )?.breakdownHour ?? 0;
           usageHistoryByDate.push({
             date: day.toDate(),
-            currentMileage,
-            lastServiceMileage,
-            interServiceMileage,
+            workingHour,
+            idleHour,
+            breakdownHour,
           });
         }
       }
@@ -2246,8 +2272,6 @@ export class TransportationService {
           description: `Current Mileage changed from ${transportation.currentMileage} to ${currentMileage}.`,
           transportationId: id,
           completedById: user.id,
-          currentMileage: currentMileage,
-          lastServiceMileage: lastServiceMileage,
         });
       }
       if (transportation.lastServiceMileage != lastServiceMileage) {
@@ -2256,8 +2280,6 @@ export class TransportationService {
           description: `Last Service Mileage changed from ${transportation.lastServiceMileage} to ${lastServiceMileage}.`,
           transportationId: id,
           completedById: user.id,
-          currentMileage: currentMileage,
-          lastServiceMileage: lastServiceMileage,
         });
       }
       const transportationUsers = await this.getTransportationUserIds(

@@ -193,9 +193,9 @@ Table MachineHistory {
   description String [not null]
   machineStatus MachineStatus
   machineType String
-  currentRunning Int
-  lastService Int
-  interService Int
+  workingHour Int
+  idleHour Int
+  breakdownHour Int
 }
 
 Table MachineRepair {
@@ -345,9 +345,9 @@ Table TransportationHistory {
   description String [not null]
   transportationStatus TransportationStatus
   transportationType String
-  currentMileage Int
-  lastServiceMileage Int
-  interServiceMileage Int
+  workingHour Int
+  idleHour Int
+  breakdownHour Int
 }
 
 Table TransportationRepair {

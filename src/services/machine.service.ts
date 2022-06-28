@@ -47,9 +47,9 @@ export interface MachineHistoryInterface {
   completedById?: number;
   machineStatus?: MachineStatus;
   machineType?: string;
-  currentRunning?: number;
-  lastService?: number;
-  interService?: number;
+  workingHour?: number;
+  idleHour?: number;
+  breakdownHour?: number;
 }
 
 @Injectable()
@@ -191,8 +191,6 @@ export class MachineService {
           description: `Current Running changed from ${machine.currentRunning} to ${currentRunning}.`,
           machineId: id,
           completedById: user.id,
-          currentRunning: currentRunning,
-          lastService: lastService,
         });
       }
       if (machine.lastService != lastService) {
@@ -201,8 +199,6 @@ export class MachineService {
           description: `Last Service changed from ${machine.lastService} to ${lastService}.`,
           machineId: id,
           completedById: user.id,
-          currentRunning: currentRunning,
-          lastService: lastService,
         });
       }
       if (machine.measurement != measurement) {
@@ -211,8 +207,6 @@ export class MachineService {
           description: `Measurement changed from ${machine.measurement} to ${measurement}.`,
           machineId: id,
           completedById: user.id,
-          currentRunning: currentRunning,
-          lastService: lastService,
         });
       }
       if (
@@ -1848,18 +1842,47 @@ export class MachineService {
       select: {
         status: true,
         type: true,
-        currentRunning: true,
-        lastService: true,
-        interService: true,
       },
     });
-    const currentRunning = machineHistory.currentRunning
-      ? machineHistory.currentRunning
-      : machine.currentRunning;
-    const lastService = machineHistory.lastService
-      ? machineHistory.lastService
-      : machine.lastService;
-    const interService = currentRunning - lastService;
+    const machineChecklistItem =
+      await this.prisma.machineChecklistItem.findFirst({
+        where: {
+          machineId: machineHistory.machineId,
+          NOT: [{ workingHour: null }],
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+
+    const now = moment();
+    const workingHour = machineChecklistItem.workingHour;
+    let idleHour;
+    let breakdownHour;
+    if (machine.status === 'Idle') {
+      const fromDate = await this.prisma.machineHistory.findFirst({
+        where: {
+          machineStatus: 'Working',
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+      const duration = moment.duration(now.diff(fromDate.createdAt));
+      idleHour = duration.asHours();
+    }
+    if (machine.status === 'Breakdown') {
+      const fromDate = await this.prisma.machineHistory.findFirst({
+        where: {
+          machineStatus: 'Working',
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+      const duration = moment.duration(now.diff(fromDate.createdAt));
+      breakdownHour = duration.asHours();
+    }
 
     await this.prisma.machineHistory.create({
       data: {
@@ -1869,9 +1892,9 @@ export class MachineService {
         completedById: machineHistory.completedById,
         machineStatus: machine.status,
         machineType: machine.type,
-        currentRunning: currentRunning,
-        lastService: lastService,
-        interService: interService,
+        workingHour: workingHour,
+        idleHour: idleHour,
+        breakdownHour: breakdownHour,
       },
     });
   }
@@ -2127,7 +2150,7 @@ export class MachineService {
     }
   }
 
-  //** Get machine usage */
+  //** Get machine usage report*/
   async getMachineUsage(user: User, machineId: number, from: Date, to: Date) {
     try {
       const today = moment();
@@ -2153,23 +2176,23 @@ export class MachineService {
         const days = toDate.diff(fromDate, 'days') + 1;
         for (let i = 0; i < days; i++) {
           const day = fromDate.clone().add(i, 'day');
-          const currentRunning =
+          const workingHour =
             machineUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.currentRunning ?? 0;
-          const lastService =
+            )?.workingHour ?? 0;
+          const idleHour =
             machineUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.lastService ?? 0;
-          const interService =
+            )?.idleHour ?? 0;
+          const breakdownHour =
             machineUsageHistoryArray.find((usage) =>
               moment(usage.createdAt).isSame(day, 'day')
-            )?.interService ?? 0;
+            )?.breakdownHour ?? 0;
           usageHistoryByDate.push({
             date: day.toDate(),
-            currentRunning,
-            lastService,
-            interService,
+            workingHour,
+            idleHour,
+            breakdownHour,
           });
         }
       }
@@ -2197,8 +2220,6 @@ export class MachineService {
           description: `Current Running changed from ${machine.currentRunning} to ${currentRunning}.`,
           machineId: id,
           completedById: user.id,
-          currentRunning: currentRunning,
-          lastService: lastService,
         });
       }
       if (machine.lastService != lastService) {
@@ -2207,8 +2228,6 @@ export class MachineService {
           description: `Last Service changed from ${machine.lastService} to ${lastService}.`,
           machineId: id,
           completedById: user.id,
-          currentRunning: currentRunning,
-          lastService: lastService,
         });
       }
 
