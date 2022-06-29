@@ -140,6 +140,7 @@ type MachineHistory {
   createdAt: Date!
   description: String!
   id: Int!
+  location: String
   machineId: Int
   machineStatus: MachineStatus
   type: String!
@@ -993,6 +994,7 @@ type TransportationHistory {
   createdAt: Date!
   description: String!
   id: Int!
+  location: String
   transportationId: Int
   type: String!
 

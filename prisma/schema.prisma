@@ -232,7 +232,7 @@ model MachineHistory {
   workingHour   Int?
   idleHour      Int?
   breakdownHour Int?
-
+  location      String?
 }
 
 model MachineRepair {
@@ -390,6 +390,7 @@ model TransportationHistory {
   workingHour          Int?
   idleHour             Int?
   breakdownHour        Int?
+  location             String?
 }
 
 model TransportationRepair {

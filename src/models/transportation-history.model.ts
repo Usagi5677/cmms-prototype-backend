@@ -9,4 +9,5 @@ export class TransportationHistory extends BaseModel {
   transportationId?: number;
   completedBy?: User;
   completedById?: number;
+  location?: string;
 }

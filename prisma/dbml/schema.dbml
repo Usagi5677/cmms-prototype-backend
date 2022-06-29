@@ -196,6 +196,7 @@ Table MachineHistory {
   workingHour Int
   idleHour Int
   breakdownHour Int
+  location String
 }
 
 Table MachineRepair {
@@ -349,6 +350,7 @@ Table TransportationHistory {
   workingHour Int
   idleHour Int
   breakdownHour Int
+  location String
 }
 
 Table TransportationRepair {

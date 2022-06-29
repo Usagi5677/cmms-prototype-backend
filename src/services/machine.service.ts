@@ -50,6 +50,7 @@ export interface MachineHistoryInterface {
   workingHour?: number;
   idleHour?: number;
   breakdownHour?: number;
+  location?: string;
 }
 
 @Injectable()
@@ -267,17 +268,18 @@ export class MachineService {
           data: { status: 'Done' },
         });
       }
-      await this.prisma.machine.update({
-        where: { id: machineId },
-        data: { status, statusChangedAt: new Date() },
-      });
+
       await this.createMachineHistoryInBackground({
         type: 'Machine Status Change',
         description: `(${machineId}) Set status to ${status}`,
         machineId: machineId,
         completedById: user.id,
+        machineStatus: status,
       });
-
+      await this.prisma.machine.update({
+        where: { id: machineId },
+        data: { status, statusChangedAt: new Date() },
+      });
       const machineUsers = await this.getMachineUserIds(machineId, user.id);
       for (let index = 0; index < machineUsers.length; index++) {
         await this.notificationService.createInBackground({
@@ -1860,6 +1862,7 @@ export class MachineService {
       select: {
         status: true,
         type: true,
+        location: true,
       },
     });
     const machineChecklistItem =
@@ -1908,11 +1911,14 @@ export class MachineService {
         type: machineHistory.type,
         description: machineHistory.description,
         completedById: machineHistory.completedById,
-        machineStatus: machine.status,
+        machineStatus: machineHistory.machineStatus
+          ? machineHistory.machineStatus
+          : machine.status,
         machineType: machine.type,
         workingHour: workingHour,
         idleHour: idleHour,
         breakdownHour: breakdownHour,
+        location: machine.location,
       },
     });
   }
