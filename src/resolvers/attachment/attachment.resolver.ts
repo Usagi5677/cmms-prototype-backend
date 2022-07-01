@@ -63,4 +63,13 @@ export class AttachmentResolver {
   ): Promise<MachineAttachment> {
     return await this.attachmentService.getMachineLatestAttachment(machineId);
   }
+
+  @Query(() => TransportationAttachment)
+  async getTransportationLatestAttachment(
+    @Args('transportationId') transportationId: number
+  ): Promise<TransportationAttachment> {
+    return await this.attachmentService.getTransportationLatestAttachment(
+      transportationId
+    );
+  }
 }

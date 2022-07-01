@@ -598,11 +598,14 @@ type Query {
 
     """Paginate first"""
     first: Int
+    from: Date
 
     """Paginate last"""
     last: Int
+    location: String
     machineId: Int!
     search: String
+    to: Date
   ): PaginatedMachineHistory!
   getAllHistoryOfTransportation(
     """Paginate after opaque cursor"""
@@ -613,10 +616,13 @@ type Query {
 
     """Paginate first"""
     first: Int
+    from: Date
 
     """Paginate last"""
     last: Int
+    location: String
     search: String
+    to: Date
     transportationId: Int!
   ): PaginatedTransportationHistory!
   getAllMachine(
@@ -803,6 +809,7 @@ type Query {
   getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
+  getTransportationLatestAttachment(transportationId: Int!): TransportationAttachment!
   getTransportationReport(from: Date!, to: Date!): [TransportationReport!]!
   getUsersWithPermission(permissions: [String!]!): [User!]!
   machineAttachment(id: Int!): MachineAttachment!

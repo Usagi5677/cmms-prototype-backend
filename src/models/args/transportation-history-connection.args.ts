@@ -5,4 +5,7 @@ import ConnectionArgs from '../../common/pagination/connection-args';
 export class TransportationHistoryConnectionArgs extends ConnectionArgs {
   search?: string;
   transportationId: number;
+  from?: Date;
+  to?: Date;
+  location?: string;
 }

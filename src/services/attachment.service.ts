@@ -18,6 +18,7 @@ import { TransportationAttachmentConnectionArgs } from 'src/models/args/transpor
 import { MachineAttachment } from 'src/models/machine-attachment.model';
 import { PaginatedMachineAttachment } from 'src/models/pagination/machine-attachment-connection.model';
 import { PaginatedTransportationAttachment } from 'src/models/pagination/transportation-attachment-connection.model';
+import { TransportationAttachment } from 'src/models/transportation-attachment.model';
 import { User } from 'src/models/user.model';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisCacheService } from 'src/redisCache.service';
@@ -327,5 +328,22 @@ export class AttachmentService {
     });
 
     return machineAttachment;
+  }
+
+  async getTransportationLatestAttachment(
+    transportationId: number
+  ): Promise<TransportationAttachment> {
+    const transportationAttachment =
+      await this.prisma.transportationAttachment.findFirst({
+        where: {
+          transportationId,
+          mimeType: 'image/jpeg',
+        },
+        orderBy: {
+          id: 'desc',
+        },
+      });
+
+    return transportationAttachment;
   }
 }

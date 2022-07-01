@@ -1668,7 +1668,9 @@ export class TransportationService {
   ): Promise<PaginatedTransportationHistory> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, transportationId } = args;
+    const { search, transportationId, location, from, to } = args;
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -1676,10 +1678,19 @@ export class TransportationService {
     if (transportationId) {
       where.AND.push({ transportationId });
     }
+    if (location) {
+      where.AND.push({ location });
+    }
+
+    if (from && to) {
+      where.AND.push({
+        createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+      });
+    }
     //for now these only
     if (search) {
       const or: any = [
-        { title: { contains: search, mode: 'insensitive' } },
+        { type: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
       // If search contains all numbers, search the transportation ids as well

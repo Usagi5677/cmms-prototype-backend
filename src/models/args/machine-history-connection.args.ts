@@ -5,4 +5,7 @@ import ConnectionArgs from '../../common/pagination/connection-args';
 export class MachineHistoryConnectionArgs extends ConnectionArgs {
   search?: string;
   machineId: number;
+  from?: Date;
+  to?: Date;
+  location?: string;
 }
