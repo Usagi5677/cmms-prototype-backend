@@ -190,15 +190,14 @@ type MachinePageInfo {
 }
 
 type MachinePeriodicMaintenance {
-  MachinePeriodicMaintenanceTask: [MachinePMTask!]
   completedAt: Date
   completedBy: User
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  description: String!
   id: Int!
   machineId: Int!
+  machinePeriodicMaintenanceTask: [MachinePMTask!]
   measurement: String
   startDate: Date
   status: PeriodicMaintenanceStatus!
@@ -319,13 +318,13 @@ type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
-  addMachinePeriodicMaintenance(description: String!, machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
+  addMachinePeriodicMaintenance(machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
   addRole(name: String!): String!
   addTransportationBreakdown(description: String!, title: String!, transportationId: Int!): String!
   addTransportationChecklistItem(description: String!, transportationId: Int!, type: String!): String!
-  addTransportationPeriodicMaintenance(description: String!, fixedDate: Date!, notificationReminder: Int!, period: Int!, title: String!, transportationId: Int!): String!
+  addTransportationPeriodicMaintenance(measurement: String!, startDate: Date!, tasks: [String!], title: String!, transportationId: Int!, value: Int!): String!
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
@@ -335,14 +334,16 @@ type Mutation {
   createMachine(currentRunning: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   createMachinePeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
+  createTransportationPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   deleteMachineBreakdown(id: Int!): String!
   deleteMachineChecklistItem(id: Int!): String!
+  deleteMachinePMTask(id: Int!): String!
   deleteMachinePeriodicMaintenance(id: Int!): String!
   deleteMachineRepair(id: Int!): String!
   deleteMachineSparePR(id: Int!): String!
-  deleteTask(id: Int!): String!
   deleteTransportationBreakdown(id: Int!): String!
   deleteTransportationChecklistItem(id: Int!): String!
+  deleteTransportationPMTask(id: Int!): String!
   deleteTransportationPeriodicMaintenance(id: Int!): String!
   deleteTransportationRepair(id: Int!): String!
   deleteTransportationSparePR(id: Int!): String!
@@ -350,7 +351,7 @@ type Mutation {
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
-  editMachinePeriodicMaintenance(description: String!, id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
+  editMachinePeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editMachineUsage(currentRunning: Int!, id: Int!, lastService: Int!): String!
@@ -359,7 +360,7 @@ type Mutation {
   editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
-  editTransportationPeriodicMaintenance(description: String!, id: Int!, notificationReminder: Int!, period: Int!, title: String!): String!
+  editTransportationPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
   editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editTransportationUsage(currentMileage: Int!, id: Int!, lastServiceMileage: Int!): String!
@@ -383,8 +384,9 @@ type Mutation {
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleMachineChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
-  toggleTask(complete: Boolean!, id: Int!): String!
+  toggleMachinePMTask(complete: Boolean!, id: Int!): String!
   toggleTransportationChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
+  toggleTransportationPMTask(complete: Boolean!, id: Int!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
 }
@@ -907,11 +909,13 @@ type Transportation {
   createdAt: Date!
   createdBy: User!
   currentMileage: Int
+  deletedAt: Date
   department: String!
   engine: String!
   histories: [TransportationHistory!]
   id: Int!
   interServiceMileage: Int
+  isDeleted: Boolean
   lastServiceMileage: Int
   location: String!
   machineNumber: String!
@@ -1024,6 +1028,23 @@ type TransportationHistoryPageInfo {
   startCursor: String
 }
 
+type TransportationPMTask {
+  completedAt: Date
+  completedBy: User
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String
+  parentTask: TransportationPMTask
+  parentTaskId: Int
+  periodicMaintenanceId: Int
+  subTasks: [TransportationPMTask!]
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 type TransportationPageInfo {
   count: Int!
   endCursor: String
@@ -1038,17 +1059,17 @@ type TransportationPeriodicMaintenance {
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  description: String!
-  fixedDate: Date
   id: Int!
-  notificationReminder: Int
-  period: Int
+  measurement: String
+  startDate: Date
   status: PeriodicMaintenanceStatus!
   title: String!
   transportationId: Int!
+  transportationPeriodicMaintenanceTask: [TransportationPMTask!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  value: Int
 }
 
 type TransportationPeriodicMaintenanceEdge {

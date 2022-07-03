@@ -48,6 +48,7 @@ export interface TransportationHistoryInterface {
   workingHour?: number;
   idleHour?: number;
   breakdownHour?: number;
+  transportationStatus?: TransportationStatus;
 }
 
 @Injectable()
@@ -123,8 +124,13 @@ export class TransportationService {
           link: `/transportation/${id}`,
         });
       }
-      await this.prisma.transportation.delete({
+      await this.prisma.transportation.update({
         where: { id },
+        data: {
+          isDeleted: true,
+          deletedById: user.id,
+          deletedAt: new Date(),
+        },
       });
     } catch (e) {
       console.log(e);
@@ -669,10 +675,10 @@ export class TransportationService {
     user: User,
     transportationId: number,
     title: string,
-    description: string,
-    period: number,
-    notificationReminder: number,
-    fixedDate: Date
+    measurement: string,
+    value: number,
+    startDate: Date,
+    tasks: string[]
   ) {
     try {
       const periodicMaintenance =
@@ -680,12 +686,17 @@ export class TransportationService {
           data: {
             transportationId,
             title,
-            description,
-            period,
-            notificationReminder,
-            fixedDate,
+            measurement,
+            value,
+            startDate,
           },
         });
+      await this.prisma.transportationPeriodicMaintenanceTask.createMany({
+        data: tasks.map((task) => ({
+          periodicMaintenanceId: periodicMaintenance.id,
+          name: task,
+        })),
+      });
       await this.createTransportationHistoryInBackground({
         type: 'Add Periodic Maintenance',
         description: `Added periodic maintenance (${periodicMaintenance.id})`,
@@ -714,9 +725,10 @@ export class TransportationService {
     user: User,
     id: number,
     title: string,
-    description: string,
-    period: number,
-    notificationReminder: number
+    measurement: string,
+    value: number,
+    startDate: Date,
+    tasks: string[]
   ) {
     try {
       const periodicMaintenance =
@@ -726,9 +738,9 @@ export class TransportationService {
             id: true,
             transportationId: true,
             title: true,
-            description: true,
-            period: true,
-            notificationReminder: true,
+            measurement: true,
+            startDate: true,
+            value: true,
           },
         });
       if (periodicMaintenance.title != title) {
@@ -739,26 +751,29 @@ export class TransportationService {
           completedById: user.id,
         });
       }
-      if (periodicMaintenance.description != description) {
+      if (periodicMaintenance.measurement != measurement) {
         await this.createTransportationHistoryInBackground({
           type: 'Periodic Maintenance Edit',
-          description: `(${id}) Description changed from ${periodicMaintenance.description} to ${description}.`,
+          description: `(${id}) Measurement changed from ${periodicMaintenance.measurement} to ${measurement}.`,
           transportationId: periodicMaintenance.transportationId,
           completedById: user.id,
         });
       }
-      if (periodicMaintenance.period != period) {
+      if (periodicMaintenance.value != value) {
         await this.createTransportationHistoryInBackground({
           type: 'Periodic Maintenance Edit',
-          description: `(${id}) Period changed from ${periodicMaintenance.period} to ${period}.`,
+          description: `(${id}) Value changed from ${periodicMaintenance.value} to ${value}.`,
           transportationId: periodicMaintenance.transportationId,
           completedById: user.id,
         });
       }
-      if (periodicMaintenance.notificationReminder != notificationReminder) {
+      if (
+        moment(periodicMaintenance.startDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(startDate).format('DD MMMM YYYY HH:mm:ss')
+      ) {
         await this.createTransportationHistoryInBackground({
           type: 'Periodic Maintenance Edit',
-          description: `(${id}) Notification reminder changed from ${periodicMaintenance.notificationReminder} to ${notificationReminder}.`,
+          description: `(${id}) Start date changed from ${periodicMaintenance.startDate} to ${startDate}.`,
           transportationId: periodicMaintenance.transportationId,
           completedById: user.id,
         });
@@ -776,7 +791,18 @@ export class TransportationService {
       }
       await this.prisma.transportationPeriodicMaintenance.update({
         where: { id },
-        data: { title, description, period, notificationReminder },
+        data: {
+          title,
+          measurement,
+          value,
+          startDate,
+        },
+      });
+      await this.prisma.transportationPeriodicMaintenanceTask.createMany({
+        data: tasks.map((task) => ({
+          periodicMaintenanceId: periodicMaintenance.id,
+          name: task,
+        })),
       });
     } catch (e) {
       console.log(e);
@@ -1891,6 +1917,20 @@ export class TransportationService {
         where,
         include: {
           completedBy: true,
+          transportationPeriodicMaintenanceTask: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: { include: { completedBy: true } },
+                  completedBy: true,
+                },
+                orderBy: { id: 'asc' },
+              },
+              completedBy: true,
+            },
+            orderBy: { id: 'asc' },
+          },
         },
         orderBy: { id: 'desc' },
       });
@@ -1926,6 +1966,8 @@ export class TransportationService {
       select: {
         status: true,
         type: true,
+        location: true,
+        id: true,
       },
     });
     const transportationChecklistItem =
@@ -1940,9 +1982,10 @@ export class TransportationService {
       });
 
     const now = moment();
-    const workingHour = transportationChecklistItem.workingHour;
-    let idleHour;
-    let breakdownHour;
+    const workingHour = transportationChecklistItem?.workingHour;
+    let idleHour = 0;
+    let breakdownHour = 0;
+
     if (transportation.status === 'Idle') {
       const fromDate = await this.prisma.transportationHistory.findFirst({
         where: {
@@ -1973,11 +2016,14 @@ export class TransportationService {
         type: transportationHistory.type,
         description: transportationHistory.description,
         completedById: transportationHistory.completedById,
-        transportationStatus: transportation.status,
+        transportationStatus: transportationHistory.transportationStatus
+          ? transportationHistory.transportationStatus
+          : transportation.status,
         transportationType: transportation.type,
-        workingHour: workingHour,
+        workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,
+        location: transportation.location,
       },
     });
   }
@@ -2179,16 +2225,51 @@ export class TransportationService {
   async updatePeriodicMaintenanceStatus() {
     const now = moment();
     const periodicMaintenance =
-      await this.prisma.transportationPeriodicMaintenance.findMany();
+      await this.prisma.transportationPeriodicMaintenance.findMany({
+        include: {
+          transportation: {
+            select: {
+              currentMileage: true,
+            },
+          },
+        },
+      });
 
     for (let index = 0; index < periodicMaintenance.length; index++) {
-      const notifHour = periodicMaintenance[index].notificationReminder;
-      const period = periodicMaintenance[index].period;
-      const fixedDate = moment(periodicMaintenance[index].fixedDate);
-      const notifDate = moment(fixedDate);
-      const periodDate = moment(fixedDate);
-      notifDate.add(notifHour, 'h');
-      periodDate.add(period, 'h');
+      const value = periodicMaintenance[index].value;
+
+      //const fixedDate = moment(periodicMaintenance[index].fixedDate);
+      const notifDate = moment(periodicMaintenance[index].startDate);
+      if (periodicMaintenance[index].measurement === 'hour') {
+        notifDate.add(value, 'h');
+      } else if (periodicMaintenance[index].measurement === 'day') {
+        notifDate.add(value, 'd');
+      } else if (periodicMaintenance[index].measurement === 'km') {
+        if (value >= periodicMaintenance[index].transportation.currentMileage) {
+          const users = await this.prisma.transportationAssignment.findMany({
+            where: {
+              transportationId: periodicMaintenance[index].transportationId,
+            },
+          });
+          for (let index = 0; index < users.length; index++) {
+            await this.notificationService.createInBackground({
+              userId: users[index].userId,
+              body: `Periodic maintenance (${periodicMaintenance[index].id}) on transportation ${periodicMaintenance[index].transportationId} km reminder`,
+              link: `/transportation/${periodicMaintenance[index].transportationId}`,
+            });
+          }
+          await this.prisma.transportationPeriodicMaintenance.update({
+            where: {
+              id: periodicMaintenance[index].id,
+            },
+            data: {
+              startDate: moment(notifDate).format('DD MMMM YYYY HH:mm:ss'),
+            },
+          });
+        }
+      }
+      //notifDate.add(notifHour, 'h');
+
       if (notifDate.isSame(now)) {
         const users = await this.prisma.transportationAssignment.findMany({
           where: {
@@ -2202,35 +2283,6 @@ export class TransportationService {
             link: `/transportation/${periodicMaintenance[index].transportationId}`,
           });
         }
-      }
-      if (periodDate.isSame(now)) {
-        const users = await this.prisma.transportationAssignment.findMany({
-          where: {
-            transportationId: periodicMaintenance[index].transportationId,
-          },
-        });
-        if (periodicMaintenance[index].status === 'Pending') {
-          await this.prisma.transportationPeriodicMaintenance.update({
-            where: {
-              id: periodicMaintenance[index].id,
-            },
-            data: {
-              status: 'Missed',
-            },
-          });
-        }
-        for (let index = 0; index < users.length; index++) {
-          await this.notificationService.createInBackground({
-            userId: users[index].userId,
-            body: `Periodic maintenance (${periodicMaintenance[index].id}) on transportation ${periodicMaintenance[index].transportationId} automatically set to missed`,
-            link: `/transportation/${periodicMaintenance[index].transportationId}`,
-          });
-        }
-        await this.createTransportationHistoryInBackground({
-          type: 'Periodic Maintenance Status',
-          description: `(${periodicMaintenance[index].id}) set status automatically to Missed.`,
-          transportationId: periodicMaintenance[index].transportationId,
-        });
       }
     }
   }
@@ -2379,6 +2431,108 @@ export class TransportationService {
           });
         }
       }
+    }
+  }
+
+  //** Create transportation periodic maintenance Sub task. */
+  async createTransportationPeriodicMaintenanceTask(
+    user: User,
+    periodicMaintenanceId: number,
+    name: string,
+    parentTaskId?: number
+  ) {
+    try {
+      await this.prisma.transportationPeriodicMaintenanceTask.create({
+        data: {
+          parentTaskId,
+          periodicMaintenanceId,
+          name,
+        },
+      });
+      const transportationPeriodicMaintenance =
+        await this.prisma.transportationPeriodicMaintenance.findFirst({
+          where: {
+            id: periodicMaintenanceId,
+          },
+          include: {
+            transportation: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        });
+      const transportation = transportationPeriodicMaintenance.transportation;
+      await this.createTransportationHistoryInBackground({
+        type: 'Add Sub task',
+        description: `Added sub task to periodic maintenance (${periodicMaintenanceId})`,
+        transportationId: transportation.id,
+        completedById: user.id,
+      });
+      const transportationUsers = await this.getTransportationUserIds(
+        transportation.id,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) added new sub task in transportation (${transportation.id})'s periodic maintenance (${periodicMaintenanceId}) `,
+          link: `/transportation/${transportation.id}`,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set task as complete or incomplete. */
+  async toggleTransportationPMTask(user: User, id: number, complete: boolean) {
+    const completion = complete
+      ? { completedById: user.id, completedAt: new Date() }
+      : { completedById: null, completedAt: null };
+    const transactions: any = [
+      this.prisma.transportationPeriodicMaintenanceTask.update({
+        where: { id },
+        data: completion,
+      }),
+    ];
+    const subTasks =
+      await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+        where: { parentTaskId: id },
+        select: { id: true },
+      });
+    const subTaskIds = subTasks.map((st) => st.id);
+    if (subTaskIds.length > 0) {
+      transactions.push(
+        this.prisma.transportationPeriodicMaintenanceTask.updateMany({
+          where: {
+            OR: [
+              { id: { in: subTaskIds } },
+              { parentTaskId: { in: subTaskIds } },
+            ],
+          },
+          data: completion,
+        })
+      );
+    }
+    try {
+      await this.prisma.$transaction(transactions);
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Delete task. */
+  async deleteTransportationPMTask(user: User, id: number) {
+    try {
+      await this.prisma.transportationPeriodicMaintenanceTask.delete({
+        where: { id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 }

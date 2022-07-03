@@ -17,21 +17,24 @@ Table User {
   machineAttachments MachineAttachment [not null]
   machineChecklistCompletions MachineChecklistItem [not null]
   machinePeriodicMaintenanceCompletions MachinePeriodicMaintenance [not null]
-  MachineRepairs MachineRepair [not null]
-  MachineBreakdowns MachineBreakdown [not null]
-  MachineSparePRs MachineSparePR [not null]
-  MachineHistories MachineHistory [not null]
+  machineRepairs MachineRepair [not null]
+  machineBreakdowns MachineBreakdown [not null]
+  machineSparePRs MachineSparePR [not null]
+  machineHistories MachineHistory [not null]
   transportationCreated Transportation [not null]
   transportationAssignments TransportationAssignment [not null]
   transportAttachments TransportationAttachment [not null]
   transportationChecklistCompletions TransportationChecklistItem [not null]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance [not null]
-  TransportationRepairs TransportationRepair [not null]
-  TransportationBreakdowns TransportationBreakdown [not null]
-  TransportationSparePRs TransportationSparePR [not null]
-  TransportationHistories TransportationHistory [not null]
+  transportationRepairs TransportationRepair [not null]
+  transportationBreakdowns TransportationBreakdown [not null]
+  transportationSparePRs TransportationSparePR [not null]
+  transportationHistories TransportationHistory [not null]
   roleCreated Role [not null]
-  MachinePeriodicMaintenanceTasks MachinePeriodicMaintenanceTask [not null]
+  machinePeriodicMaintenanceTasks MachinePeriodicMaintenanceTask [not null]
+  machineDeleted Machine [not null]
+  transportationDeleted Transportation [not null]
+  TransportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask [not null]
 }
 
 Table Notification {
@@ -98,6 +101,8 @@ Table Machine {
   measurement String [default: 'km']
   isDeleted Boolean
   deletedAt DateTime
+  deletedById Int
+  deletedBy User
   assignees MachineAssignment [not null]
   checklistItems MachineChecklistItem [not null]
   periodicMaintenancePlans MachinePeriodicMaintenance [not null]
@@ -159,7 +164,6 @@ Table MachinePeriodicMaintenance {
   machineId Int [not null]
   machine Machine [not null]
   title String [not null]
-  description String [not null]
   measurement String
   value Int
   startDate DateTime
@@ -167,7 +171,7 @@ Table MachinePeriodicMaintenance {
   completedBy User
   completedAt DateTime
   status PeriodicMaintenanceStatus [not null, default: 'Pending']
-  MachinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask [not null]
+  machinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask [not null]
 }
 
 Table MachinePeriodicMaintenanceTask {
@@ -265,6 +269,10 @@ Table Transportation {
   interServiceMileage Int
   measurement String [default: 'km']
   transportType String [default: 'Vehicle']
+  isDeleted Boolean
+  deletedAt DateTime
+  deletedById Int
+  deletedBy User
   assignees TransportationAssignment [not null]
   checklistItems TransportationChecklistItem [not null]
   periodicMaintenancePlans TransportationPeriodicMaintenance [not null]
@@ -312,14 +320,14 @@ Table TransportationPeriodicMaintenance {
   transportationId Int [not null]
   transportation Transportation [not null]
   title String [not null]
-  description String [not null]
-  period Int
-  notificationReminder Int
-  fixedDate DateTime
+  measurement String
+  value Int
+  startDate DateTime
   completedById Int
   completedBy User
   completedAt DateTime
   status PeriodicMaintenanceStatus [not null, default: 'Pending']
+  transportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask [not null]
 }
 
 Table TransportationAttachment {
@@ -335,6 +343,19 @@ Table TransportationAttachment {
   originalName String
   sharepointFileName String
   mode String [not null, default: 'Public']
+}
+
+Table TransportationPeriodicMaintenanceTask {
+  id Int [pk, increment]
+  periodicMaintenanceId Int [not null]
+  periodicMaintenance TransportationPeriodicMaintenance [not null]
+  parentTaskId Int
+  name String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  parentTask TransportationPeriodicMaintenanceTask
+  subTasks TransportationPeriodicMaintenanceTask [not null]
 }
 
 Table TransportationHistory {
@@ -445,6 +466,8 @@ Ref: PermissionRole.roleId > Role.id
 
 Ref: Machine.createdById > User.id
 
+Ref: Machine.deletedById > User.id
+
 Ref: MachineAssignment.userId > User.id
 
 Ref: MachineAssignment.machineId > Machine.id
@@ -485,6 +508,8 @@ Ref: MachineSparePR.completedById > User.id
 
 Ref: Transportation.createdById > User.id
 
+Ref: Transportation.deletedById > User.id
+
 Ref: TransportationAssignment.userId > User.id
 
 Ref: TransportationAssignment.transportationId > Transportation.id
@@ -500,6 +525,12 @@ Ref: TransportationPeriodicMaintenance.completedById > User.id
 Ref: TransportationAttachment.userId > User.id
 
 Ref: TransportationAttachment.transportationId > Transportation.id
+
+Ref: TransportationPeriodicMaintenanceTask.periodicMaintenanceId > TransportationPeriodicMaintenance.id
+
+Ref: TransportationPeriodicMaintenanceTask.completedById > User.id
+
+Ref: TransportationPeriodicMaintenanceTask.parentTaskId - TransportationPeriodicMaintenanceTask.id
 
 Ref: TransportationHistory.transportationId > Transportation.id
 

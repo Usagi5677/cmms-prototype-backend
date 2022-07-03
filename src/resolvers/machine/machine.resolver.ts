@@ -231,7 +231,6 @@ export class MachineResolver {
     @UserEntity() user: User,
     @Args('machineId') machineId: number,
     @Args('title') title: string,
-    @Args('description') description: string,
     @Args('measurement') measurement: string,
     @Args('value') value: number,
     @Args('startDate') startDate: Date,
@@ -242,7 +241,6 @@ export class MachineResolver {
       user,
       machineId,
       title,
-      description,
       measurement,
       value,
       startDate,
@@ -257,7 +255,6 @@ export class MachineResolver {
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('title') title: string,
-    @Args('description') description: string,
     @Args('measurement') measurement: string,
     @Args('value') value: number,
     @Args('startDate') startDate: Date,
@@ -268,7 +265,6 @@ export class MachineResolver {
       user,
       id,
       title,
-      description,
       measurement,
       value,
       startDate,
@@ -659,21 +655,21 @@ export class MachineResolver {
   }
 
   @Mutation(() => String)
-  async toggleTask(
+  async toggleMachinePMTask(
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('complete') complete: boolean
   ): Promise<string> {
-    await this.machineService.toggleTask(user, id, complete);
+    await this.machineService.toggleMachinePMTask(user, id, complete);
     return `Task updated.`;
   }
 
   @Mutation(() => String)
-  async deleteTask(
+  async deleteMachinePMTask(
     @UserEntity() user: User,
     @Args('id') id: number
   ): Promise<string> {
-    await this.machineService.deleteTask(user, id);
+    await this.machineService.deleteMachinePMTask(user, id);
     return `Task deleted.`;
   }
 }

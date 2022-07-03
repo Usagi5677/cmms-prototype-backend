@@ -263,19 +263,20 @@ export class TransportationResolver {
     @UserEntity() user: User,
     @Args('transportationId') transportationId: number,
     @Args('title') title: string,
-    @Args('description') description: string,
-    @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number,
-    @Args('fixedDate') fixedDate: Date
+    @Args('measurement') measurement: string,
+    @Args('value') value: number,
+    @Args('startDate') startDate: Date,
+    @Args('tasks', { nullable: true, type: () => [String] })
+    tasks: string[]
   ): Promise<String> {
     await this.transportationService.createTransportationPeriodicMaintenance(
       user,
       transportationId,
       title,
-      description,
-      period,
-      notificationReminder,
-      fixedDate
+      measurement,
+      value,
+      startDate,
+      tasks
     );
     return `Added periodic maintenance to transportation.`;
   }
@@ -286,17 +287,20 @@ export class TransportationResolver {
     @UserEntity() user: User,
     @Args('id') id: number,
     @Args('title') title: string,
-    @Args('description') description: string,
-    @Args('period') period: number,
-    @Args('notificationReminder') notificationReminder: number
+    @Args('measurement') measurement: string,
+    @Args('value') value: number,
+    @Args('startDate') startDate: Date,
+    @Args('tasks', { nullable: true, type: () => [String] })
+    tasks: string[]
   ): Promise<String> {
     await this.transportationService.editTransportationPeriodicMaintenance(
       user,
       id,
       title,
-      description,
-      period,
-      notificationReminder
+      measurement,
+      value,
+      startDate,
+      tasks
     );
     return `Periodic maintenance updated.`;
   }
@@ -717,5 +721,44 @@ export class TransportationResolver {
       lastServiceMileage
     );
     return `Transportation usage updated.`;
+  }
+
+  @Mutation(() => String)
+  async createTransportationPeriodicMaintenanceTask(
+    @UserEntity() user: User,
+    @Args('periodicMaintenanceId') periodicMaintenanceId: number,
+    @Args('name') name: string,
+    @Args('parentTaskId', { nullable: true }) parentTaskId?: number
+  ): Promise<String> {
+    await this.transportationService.createTransportationPeriodicMaintenanceTask(
+      user,
+      periodicMaintenanceId,
+      name,
+      parentTaskId
+    );
+    return `Added task to periodic maintenance.`;
+  }
+
+  @Mutation(() => String)
+  async toggleTransportationPMTask(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.transportationService.toggleTransportationPMTask(
+      user,
+      id,
+      complete
+    );
+    return `Task updated.`;
+  }
+
+  @Mutation(() => String)
+  async deleteTransportationPMTask(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<string> {
+    await this.transportationService.deleteTransportationPMTask(user, id);
+    return `Task deleted.`;
   }
 }

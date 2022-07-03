@@ -7,7 +7,6 @@ import { User } from './user.model';
 @ObjectType()
 export class MachinePeriodicMaintenance extends BaseModel {
   title: string;
-  description: string;
   machineId: number;
   measurement?: string;
   value?: number;
@@ -15,5 +14,5 @@ export class MachinePeriodicMaintenance extends BaseModel {
   completedBy?: User;
   completedAt?: Date;
   startDate?: Date;
-  MachinePeriodicMaintenanceTask?: MachinePMTask[];
+  machinePeriodicMaintenanceTask?: MachinePMTask[];
 }

@@ -124,6 +124,7 @@ export class MachineService {
         where: { id },
         data: {
           isDeleted: true,
+          deletedById: user.id,
           deletedAt: new Date(),
         },
       });
@@ -612,7 +613,6 @@ export class MachineService {
     user: User,
     machineId: number,
     title: string,
-    description: string,
     measurement: string,
     value: number,
     startDate: Date,
@@ -624,7 +624,6 @@ export class MachineService {
           data: {
             machineId,
             title,
-            description,
             measurement,
             value,
             startDate,
@@ -665,7 +664,6 @@ export class MachineService {
     user: User,
     id: number,
     title: string,
-    description: string,
     measurement: string,
     value: number,
     startDate: Date,
@@ -679,7 +677,6 @@ export class MachineService {
             id: true,
             machineId: true,
             title: true,
-            description: true,
             measurement: true,
             startDate: true,
             value: true,
@@ -689,14 +686,6 @@ export class MachineService {
         await this.createMachineHistoryInBackground({
           type: 'Periodic Maintenance Edit',
           description: `(${id}) Title changed from ${periodicMaintenance.title} to ${title}.`,
-          machineId: periodicMaintenance.machineId,
-          completedById: user.id,
-        });
-      }
-      if (periodicMaintenance.description != description) {
-        await this.createMachineHistoryInBackground({
-          type: 'Periodic Maintenance Edit',
-          description: `(${id}) Description changed from ${periodicMaintenance.description} to ${description}.`,
           machineId: periodicMaintenance.machineId,
           completedById: user.id,
         });
@@ -743,7 +732,6 @@ export class MachineService {
         where: { id },
         data: {
           title,
-          description,
           measurement,
           value,
           startDate,
@@ -1772,7 +1760,7 @@ export class MachineService {
         where,
         include: {
           completedBy: true,
-          MachinePeriodicMaintenanceTask: {
+          machinePeriodicMaintenanceTask: {
             where: { parentTaskId: null },
             include: {
               subTasks: {
@@ -2379,11 +2367,11 @@ export class MachineService {
   }
 
   //** Set task as complete or incomplete. */
-  async toggleTask(user: User, id: number, complete: boolean) {
+  async toggleMachinePMTask(user: User, id: number, complete: boolean) {
     const completion = complete
       ? { completedById: user.id, completedAt: new Date() }
       : { completedById: null, completedAt: null };
-    let transactions: any = [
+    const transactions: any = [
       this.prisma.machinePeriodicMaintenanceTask.update({
         where: { id },
         data: completion,
@@ -2416,7 +2404,7 @@ export class MachineService {
   }
 
   //** Delete task. */
-  async deleteTask(user: User, id: number) {
+  async deleteMachinePMTask(user: User, id: number) {
     try {
       await this.prisma.machinePeriodicMaintenanceTask.delete({
         where: { id },

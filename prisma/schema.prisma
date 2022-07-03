@@ -15,10 +15,10 @@ generator dbml {
 }
 
 model User {
-  id                                           Int                                 @id @default(autoincrement())
-  createdAt                                    DateTime                            @default(now())
-  updatedAt                                    DateTime                            @updatedAt
-  userId                                       String                              @unique
+  id                                           Int                                     @id @default(autoincrement())
+  createdAt                                    DateTime                                @default(now())
+  updatedAt                                    DateTime                                @updatedAt
+  userId                                       String                                  @unique
   rcno                                         Int
   fullName                                     String
   email                                        String
@@ -29,21 +29,24 @@ model User {
   machineAttachments                           MachineAttachment[]
   machineChecklistCompletions                  MachineChecklistItem[]
   machinePeriodicMaintenanceCompletions        MachinePeriodicMaintenance[]
-  MachineRepairs                               MachineRepair[]
-  MachineBreakdowns                            MachineBreakdown[]
-  MachineSparePRs                              MachineSparePR[]
-  MachineHistories                             MachineHistory[]
+  machineRepairs                               MachineRepair[]
+  machineBreakdowns                            MachineBreakdown[]
+  machineSparePRs                              MachineSparePR[]
+  machineHistories                             MachineHistory[]
   transportationCreated                        Transportation[]
   transportationAssignments                    TransportationAssignment[]
   transportAttachments                         TransportationAttachment[]
   transportationChecklistCompletions           TransportationChecklistItem[]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance[]
-  TransportationRepairs                        TransportationRepair[]
-  TransportationBreakdowns                     TransportationBreakdown[]
-  TransportationSparePRs                       TransportationSparePR[]
-  TransportationHistories                      TransportationHistory[]
+  transportationRepairs                        TransportationRepair[]
+  transportationBreakdowns                     TransportationBreakdown[]
+  transportationSparePRs                       TransportationSparePR[]
+  transportationHistories                      TransportationHistory[]
   roleCreated                                  Role[]
-  MachinePeriodicMaintenanceTasks              MachinePeriodicMaintenanceTask[]
+  machinePeriodicMaintenanceTasks              MachinePeriodicMaintenanceTask[]
+  machineDeleted                               Machine[]                               @relation(name: "deletedBy")
+  transportationDeleted                        Transportation[]                        @relation(name: "transportDeletedBy")
+  TransportationPeriodicMaintenanceTask        TransportationPeriodicMaintenanceTask[]
 }
 
 model Notification {
@@ -108,6 +111,8 @@ model Machine {
   measurement              String?                      @default("km")
   isDeleted                Boolean?
   deletedAt                DateTime?
+  deletedById              Int?
+  deletedBy                User?                        @relation(name: "deletedBy", fields: [deletedById], references: [id])
   assignees                MachineAssignment[]
   checklistItems           MachineChecklistItem[]
   periodicMaintenancePlans MachinePeriodicMaintenance[]
@@ -195,7 +200,6 @@ model MachinePeriodicMaintenance {
   machineId                      Int
   machine                        Machine                          @relation(fields: [machineId], references: [id], onDelete: Cascade)
   title                          String
-  description                    String
   measurement                    String?
   value                          Int?
   startDate                      DateTime?
@@ -203,7 +207,7 @@ model MachinePeriodicMaintenance {
   completedBy                    User?                            @relation(fields: [completedById], references: [id])
   completedAt                    DateTime?
   status                         PeriodicMaintenanceStatus        @default(Pending)
-  MachinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask[]
+  machinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask[]
 }
 
 model MachinePeriodicMaintenanceTask {
@@ -301,6 +305,10 @@ model Transportation {
   interServiceMileage      Int?
   measurement              String?                             @default("km")
   transportType            String?                             @default("Vehicle")
+  isDeleted                Boolean?
+  deletedAt                DateTime?
+  deletedById              Int?
+  deletedBy                User?                               @relation(name: "transportDeletedBy", fields: [deletedById], references: [id])
   assignees                TransportationAssignment[]
   checklistItems           TransportationChecklistItem[]
   periodicMaintenancePlans TransportationPeriodicMaintenance[]
@@ -346,20 +354,20 @@ model TransportationChecklistItem {
 }
 
 model TransportationPeriodicMaintenance {
-  id                   Int                       @id @default(autoincrement())
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
-  transportationId     Int
-  transportation       Transportation            @relation(fields: [transportationId], references: [id], onDelete: Cascade)
-  title                String
-  description          String
-  period               Int?
-  notificationReminder Int?
-  fixedDate            DateTime?
-  completedById        Int?
-  completedBy          User?                     @relation(fields: [completedById], references: [id])
-  completedAt          DateTime?
-  status               PeriodicMaintenanceStatus @default(Pending)
+  id                                    Int                                     @id @default(autoincrement())
+  createdAt                             DateTime                                @default(now())
+  updatedAt                             DateTime                                @updatedAt
+  transportationId                      Int
+  transportation                        Transportation                          @relation(fields: [transportationId], references: [id], onDelete: Cascade)
+  title                                 String
+  measurement                           String?
+  value                                 Int?
+  startDate                             DateTime?
+  completedById                         Int?
+  completedBy                           User?                                   @relation(fields: [completedById], references: [id])
+  completedAt                           DateTime?
+  status                                PeriodicMaintenanceStatus               @default(Pending)
+  transportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask[]
 }
 
 model TransportationAttachment {
@@ -375,6 +383,19 @@ model TransportationAttachment {
   originalName       String?
   sharepointFileName String?
   mode               String         @default("Public")
+}
+
+model TransportationPeriodicMaintenanceTask {
+  id                    Int                                     @id @default(autoincrement())
+  periodicMaintenanceId Int
+  periodicMaintenance   TransportationPeriodicMaintenance       @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
+  parentTaskId          Int?
+  name                  String
+  completedById         Int?
+  completedBy           User?                                   @relation(fields: [completedById], references: [id])
+  completedAt           DateTime?
+  parentTask            TransportationPeriodicMaintenanceTask?  @relation("transportationTaskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks              TransportationPeriodicMaintenanceTask[] @relation("transportationTaskLink")
 }
 
 model TransportationHistory {
