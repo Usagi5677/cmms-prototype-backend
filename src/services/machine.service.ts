@@ -1760,10 +1760,11 @@ export class MachineService {
         include: {
           completedBy: true,
           MachinePeriodicMaintenanceTask: {
+            where: { parentTaskId: null },
             include: {
               subTasks: {
                 include: {
-                  subTasks: true,
+                  subTasks: { include: { completedBy: true } },
                   completedBy: true,
                 },
                 orderBy: { id: 'asc' },
@@ -2363,98 +2364,35 @@ export class MachineService {
 
   //** Set task as complete or incomplete. */
   async toggleTask(user: User, id: number, complete: boolean) {
-    try {
-      await this.prisma.machinePeriodicMaintenanceTask.update({
+    const completion = complete
+      ? { completedById: user.id, completedAt: new Date() }
+      : { completedById: null, completedAt: null };
+    let transactions: any = [
+      this.prisma.machinePeriodicMaintenanceTask.update({
         where: { id },
-        data: complete
-          ? { completedById: user.id, completedAt: new Date() }
-          : { completedById: null, completedAt: null },
-      });
-
-      const taskData =
-        await this.prisma.machinePeriodicMaintenanceTask.findFirst({
+        data: completion,
+      }),
+    ];
+    const subTasks = await this.prisma.machinePeriodicMaintenanceTask.findMany({
+      where: { parentTaskId: id },
+      select: { id: true },
+    });
+    const subTaskIds = subTasks.map((st) => st.id);
+    if (subTaskIds.length > 0) {
+      transactions.push(
+        this.prisma.machinePeriodicMaintenanceTask.updateMany({
           where: {
-            id: id,
+            OR: [
+              { id: { in: subTaskIds } },
+              { parentTaskId: { in: subTaskIds } },
+            ],
           },
-          include: {
-            parentTask: {
-              include: {
-                parentTask: {
-                  include: {
-                    parentTask: true,
-                    subTasks: true,
-                  },
-                },
-                subTasks: true,
-              },
-            },
-            subTasks: {
-              include: {
-                subTasks: true,
-              },
-            },
-          },
-        });
-
-      const innerSubTaskLength = taskData?.parentTask?.subTasks?.filter(
-        (task) => task.completedAt !== null
-      ).length;
-
-      const subTaskLength = taskData?.parentTask?.parentTask?.subTasks?.filter(
-        (task) => task.completedAt !== null
-      ).length;
-
-      if (taskData?.subTasks.length >= 0) {
-        await this.prisma.machinePeriodicMaintenanceTask.updateMany({
-          where: {
-            id: {
-              in: taskData?.subTasks.map((subtask) => subtask.id),
-            },
-          },
-          data: complete
-            ? { completedById: user.id, completedAt: new Date() }
-            : { completedById: null, completedAt: null },
-        });
-        taskData?.subTasks.forEach(async (subtask) => {
-          await this.prisma.machinePeriodicMaintenanceTask.updateMany({
-            where: {
-              id: {
-                in: subtask?.subTasks.map((innerSubtask) => innerSubtask.id),
-              },
-            },
-            data: complete
-              ? { completedById: user.id, completedAt: new Date() }
-              : { completedById: null, completedAt: null },
-          });
-        });
-      }
-
-      if (
-        taskData?.parentTask?.subTasks?.length === innerSubTaskLength &&
-        taskData?.parentTask?.subTasks?.length !== undefined
-      ) {
-        await this.prisma.machinePeriodicMaintenanceTask.update({
-          where: {
-            id: taskData?.parentTask?.id,
-          },
-          data: complete
-            ? { completedById: user.id, completedAt: new Date() }
-            : { completedById: null, completedAt: null },
-        });
-      }
-      if (
-        taskData?.parentTask?.parentTask?.subTasks?.length === subTaskLength &&
-        taskData?.parentTask?.parentTask?.subTasks?.length !== undefined
-      ) {
-        await this.prisma.machinePeriodicMaintenanceTask.update({
-          where: {
-            id: taskData?.parentTask?.parentTask?.id,
-          },
-          data: complete
-            ? { completedById: user.id, completedAt: new Date() }
-            : { completedById: null, completedAt: null },
-        });
-      }
+          data: completion,
+        })
+      );
+    }
+    try {
+      await this.prisma.$transaction(transactions);
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
