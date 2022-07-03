@@ -1766,11 +1766,11 @@ export class MachineService {
                   subTasks: true,
                   completedBy: true,
                 },
-                orderBy: { id: 'desc' },
+                orderBy: { id: 'asc' },
               },
               completedBy: true,
             },
-            orderBy: { id: 'desc' },
+            orderBy: { id: 'asc' },
           },
         },
         orderBy: { id: 'desc' },
@@ -2292,34 +2292,34 @@ export class MachineService {
   }
 
   //** Create machine periodic maintenance Sub task. */
-  async createMachinePeriodicMaintenanceSubTask(
+  async createMachinePeriodicMaintenanceTask(
     user: User,
-    parentTaskId: number,
     periodicMaintenanceId: number,
-    name: string
+    name: string,
+    parentTaskId?: number
   ) {
     try {
-      //get parent's parent's task
-      const task = await this.prisma.machinePeriodicMaintenanceTask.findFirst({
-        where: {
-          id: parentTaskId,
-        },
-        include: {
-          parentTask: {
-            include: {
-              parentTask: {
-                select: {
-                  id: true,
-                },
-              },
-            },
-          },
-        },
-      });
-      //if it exists then don't create new task. Only 2 level of parents exist
-      if (task?.parentTask?.parentTask?.id) {
-        throw new UnauthorizedException('Cannot add sub tasks to a sub task.');
-      }
+      // //get parent's parent's task
+      // const task = await this.prisma.machinePeriodicMaintenanceTask.findFirst({
+      //   where: {
+      //     id: parentTaskId,
+      //   },
+      //   include: {
+      //     parentTask: {
+      //       include: {
+      //         parentTask: {
+      //           select: {
+      //             id: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // });
+      // //if it exists then don't create new task. Only 2 level of parents exist
+      // if (task?.parentTask?.parentTask?.id) {
+      //   throw new UnauthorizedException('Cannot add sub tasks to a sub task.');
+      // }
       await this.prisma.machinePeriodicMaintenanceTask.create({
         data: {
           parentTaskId,
@@ -2327,18 +2327,20 @@ export class MachineService {
           name,
         },
       });
-      const machine = await this.prisma.machinePeriodicMaintenance.findFirst({
-        where: {
-          id: periodicMaintenanceId,
-        },
-        include: {
-          machine: {
-            select: {
-              id: true,
+      const machinePeriodicMaintenance =
+        await this.prisma.machinePeriodicMaintenance.findFirst({
+          where: {
+            id: periodicMaintenanceId,
+          },
+          include: {
+            machine: {
+              select: {
+                id: true,
+              },
             },
           },
-        },
-      });
+        });
+      const machine = machinePeriodicMaintenance.machine;
       await this.createMachineHistoryInBackground({
         type: 'Add Sub task',
         description: `Added sub task to periodic maintenance (${periodicMaintenanceId})`,

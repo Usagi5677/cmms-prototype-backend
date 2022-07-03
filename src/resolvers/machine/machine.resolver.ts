@@ -643,19 +643,19 @@ export class MachineResolver {
   }
 
   @Mutation(() => String)
-  async addMachinePeriodicMaintenanceSubTask(
+  async createMachinePeriodicMaintenanceTask(
     @UserEntity() user: User,
-    @Args('parentTaskId') parentTaskId: number,
     @Args('periodicMaintenanceId') periodicMaintenanceId: number,
-    @Args('name') name: string
+    @Args('name') name: string,
+    @Args('parentTaskId', { nullable: true }) parentTaskId?: number
   ): Promise<String> {
-    await this.machineService.createMachinePeriodicMaintenanceSubTask(
+    await this.machineService.createMachinePeriodicMaintenanceTask(
       user,
-      parentTaskId,
       periodicMaintenanceId,
-      name
+      name,
+      parentTaskId
     );
-    return `Added sub task to periodic maintenance.`;
+    return `Added task to periodic maintenance.`;
   }
 
   @Mutation(() => String)
