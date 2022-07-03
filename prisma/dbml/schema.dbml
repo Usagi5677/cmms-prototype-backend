@@ -96,6 +96,8 @@ Table Machine {
   status MachineStatus [not null, default: 'Working']
   statusChangedAt DateTime
   measurement String [default: 'km']
+  isDeleted Boolean
+  deletedAt DateTime
   assignees MachineAssignment [not null]
   checklistItems MachineChecklistItem [not null]
   periodicMaintenancePlans MachinePeriodicMaintenance [not null]

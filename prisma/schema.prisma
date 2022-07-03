@@ -106,6 +106,8 @@ model Machine {
   status                   MachineStatus                @default(Working)
   statusChangedAt          DateTime?
   measurement              String?                      @default("km")
+  isDeleted                Boolean?
+  deletedAt                DateTime?
   assignees                MachineAssignment[]
   checklistItems           MachineChecklistItem[]
   periodicMaintenancePlans MachinePeriodicMaintenance[]

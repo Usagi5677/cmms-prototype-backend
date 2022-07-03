@@ -46,9 +46,11 @@ type Machine {
   createdAt: Date!
   createdBy: User
   currentRunning: Int
+  deletedAt: Date
   histories: [MachineHistory!]
   id: Int!
   interService: Int
+  isDeleted: Boolean
   lastService: Int
   location: String!
   machineNumber: String!

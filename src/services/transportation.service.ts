@@ -556,6 +556,7 @@ export class TransportationService {
     uncheckId: number[]
   ) {
     try {
+      let transportationID;
       for (let index = 0; index < id.length; index++) {
         const checklist =
           await this.prisma.transportationChecklistItem.findFirst({
@@ -572,7 +573,7 @@ export class TransportationService {
               },
             },
           });
-
+        transportationID = checklist.transportationId;
         await this.createTransportationHistoryInBackground({
           type: 'Toggled',
           description: `Checklist (${checklist.description}) completed.`,
@@ -651,6 +652,12 @@ export class TransportationService {
           },
         });
       }
+      await this.prisma.transportation.update({
+        where: { id: transportationID },
+        data: {
+          currentMileage: currentMeterReading,
+        },
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

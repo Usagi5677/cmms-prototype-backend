@@ -39,6 +39,7 @@ import * as moment from 'moment';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { Machine } from 'src/models/machine.model';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ChecklistItem } from 'src/models/checklist-item.model';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -119,8 +120,12 @@ export class MachineService {
           link: `/machine/${id}`,
         });
       }
-      await this.prisma.machine.delete({
+      await this.prisma.machine.update({
         where: { id },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
       });
     } catch (e) {
       console.log(e);
@@ -509,7 +514,7 @@ export class MachineService {
   ) {
     try {
       //const uniqueIDs = [...new Set(id)];
-
+      let machineID;
       for (let index = 0; index < id.length; index++) {
         const checklist = await this.prisma.machineChecklistItem.findFirst({
           where: { id: id[index] },
@@ -520,7 +525,7 @@ export class MachineService {
             completedById: true,
           },
         });
-
+        machineID = checklist.machineId;
         await this.createMachineHistoryInBackground({
           type: 'Toggled',
           description: `Checklist (${checklist.description}) completed.`,
@@ -589,6 +594,13 @@ export class MachineService {
           },
         });
       }
+
+      await this.prisma.machine.update({
+        where: { id: machineID },
+        data: {
+          currentRunning: currentMeterReading,
+        },
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -1237,6 +1249,7 @@ export class MachineService {
           description,
         },
       });
+
       await this.prisma.machine.update({
         where: { id: machineId },
         data: { status: 'Breakdown' },
@@ -1876,6 +1889,7 @@ export class MachineService {
         status: true,
         type: true,
         location: true,
+        id: true,
       },
     });
     const machineChecklistItem =
@@ -1888,15 +1902,16 @@ export class MachineService {
           id: 'desc',
         },
       });
-
     const now = moment();
-    const workingHour = machineChecklistItem.workingHour;
-    let idleHour;
-    let breakdownHour;
+    const workingHour = machineChecklistItem?.workingHour;
+    let idleHour = 0;
+    let breakdownHour = 0;
+
     if (machine.status === 'Idle') {
       const fromDate = await this.prisma.machineHistory.findFirst({
         where: {
           machineStatus: 'Working',
+          machineId: machine.id,
         },
         orderBy: {
           id: 'desc',
@@ -1909,6 +1924,7 @@ export class MachineService {
       const fromDate = await this.prisma.machineHistory.findFirst({
         where: {
           machineStatus: 'Working',
+          machineId: machine.id,
         },
         orderBy: {
           id: 'desc',
@@ -1928,7 +1944,7 @@ export class MachineService {
           ? machineHistory.machineStatus
           : machine.status,
         machineType: machine.type,
-        workingHour: workingHour,
+        workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,
         location: machine.location,
