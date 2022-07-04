@@ -11,4 +11,5 @@ export class TransportationConnectionArgs extends ConnectionArgs {
   createdByUserId?: string;
   transportType?: string;
   status?: TransportationStatus;
+  location?: string;
 }

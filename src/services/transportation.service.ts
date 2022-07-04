@@ -363,7 +363,14 @@ export class TransportationService {
   ): Promise<PaginatedTransportation> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, transportType, status } = args;
+    const {
+      createdById,
+      search,
+      assignedToId,
+      transportType,
+      status,
+      location,
+    } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -385,7 +392,11 @@ export class TransportationService {
     if (status) {
       where.AND.push({ status });
     }
-    //for now these only
+
+    if (location) {
+      where.AND.push({ location });
+    }
+
     if (search) {
       const or: any = [
         { model: { contains: search, mode: 'insensitive' } },

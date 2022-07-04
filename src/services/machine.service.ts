@@ -326,7 +326,7 @@ export class MachineService {
   ): Promise<PaginatedMachine> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, status } = args;
+    const { createdById, search, assignedToId, status, location } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -343,7 +343,11 @@ export class MachineService {
     if (status) {
       where.AND.push({ status });
     }
-    //for now these only
+
+    if (location) {
+      where.AND.push({ location });
+    }
+
     if (search) {
       const or: any = [
         { model: { contains: search, mode: 'insensitive' } },

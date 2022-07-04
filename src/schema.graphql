@@ -536,6 +536,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: String
     search: String
     self: Boolean
     status: MachineStatus
@@ -555,6 +556,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: String
     search: String
     self: Boolean
     status: TransportationStatus
@@ -644,6 +646,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: String
     search: String
     self: Boolean
     status: MachineStatus
@@ -769,6 +772,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: String
     search: String
     self: Boolean
     status: TransportationStatus
@@ -789,6 +793,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: String
     search: String
     self: Boolean
     status: TransportationStatus
