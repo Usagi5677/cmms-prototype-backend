@@ -639,6 +639,7 @@ export class TransportationService {
             },
           });
 
+        transportationID = checklist.transportationId;
         await this.createTransportationHistoryInBackground({
           type: 'Toggled',
           description: `Checklist (${checklist.description}) unchecked.`,
