@@ -672,4 +672,15 @@ export class MachineResolver {
     await this.machineService.deleteMachinePMTask(user, id);
     return `Task deleted.`;
   }
+
+  @Query(() => PaginatedMachine)
+  async getAllMachineUtilization(
+    @UserEntity() user: User,
+    @Args() args: MachineConnectionArgs
+  ): Promise<PaginatedMachine> {
+    return await this.machineService.getMachineUtilizationWithPagination(
+      user,
+      args
+    );
+  }
 }

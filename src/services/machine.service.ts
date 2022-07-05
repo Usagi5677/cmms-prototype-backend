@@ -2457,4 +2457,80 @@ export class MachineService {
       }
     }
   }
+
+  //** Get machine utilization. Results are paginated. User cursor argument to go forward/backward. */
+  async getMachineUtilizationWithPagination(
+    user: User,
+    args: MachineConnectionArgs
+  ): Promise<PaginatedMachine> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { createdById, search, assignedToId, status, location } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (createdById) {
+      where.AND.push({ createdById });
+    }
+
+    if (assignedToId) {
+      where.AND.push({
+        assignees: { some: { userId: assignedToId } },
+      });
+    }
+
+    if (status) {
+      where.AND.push({ status });
+    }
+
+    if (location) {
+      where.AND.push({ location });
+    }
+
+    if (search) {
+      const or: any = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { machineNumber: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machine = await this.prisma.machine.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        histories: {
+          take: 1,
+          orderBy: {
+            id: 'desc',
+          },
+        },
+      },
+    });
+
+    const count = await this.prisma.machine.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machine.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
 }

@@ -135,6 +135,7 @@ type MachineEdge {
 }
 
 type MachineHistory {
+  breakdownHour: Int
   completedBy: User
   completedById: Int
 
@@ -142,13 +143,16 @@ type MachineHistory {
   createdAt: Date!
   description: String!
   id: Int!
+  idleHour: Int
   location: String
   machineId: Int
   machineStatus: MachineStatus
+  machineType: String
   type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  workingHour: Int
 }
 
 type MachineHistoryEdge {
@@ -632,6 +636,26 @@ type Query {
     transportationId: Int!
   ): PaginatedTransportationHistory!
   getAllMachine(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    location: String
+    search: String
+    self: Boolean
+    status: MachineStatus
+  ): PaginatedMachine!
+  getAllMachineUtilization(
     """Paginate after opaque cursor"""
     after: String
     assignedToId: Int

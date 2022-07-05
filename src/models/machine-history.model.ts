@@ -12,5 +12,9 @@ export class MachineHistory extends BaseModel {
   completedBy?: User;
   completedById?: number;
   machineStatus?: MachineStatus;
+  machineType?: string;
+  breakdownHour?: number;
+  idleHour?: number;
+  workingHour?: number;
   location?: string;
 }
