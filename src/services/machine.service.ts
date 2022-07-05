@@ -571,6 +571,7 @@ export class MachineService {
           },
         });
 
+        machineID = checklist.machineId;
         await this.createMachineHistoryInBackground({
           type: 'Toggled',
           description: `Checklist (${checklist.description}) unchecked.`,
