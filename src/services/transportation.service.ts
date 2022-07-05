@@ -340,7 +340,11 @@ export class TransportationService {
       where: { id: transportationId },
       include: {
         createdBy: true,
-        checklistItems: true,
+        checklistItems: {
+          include: {
+            completedBy: true,
+          },
+        },
         assignees: { include: { user: true } },
       },
     });

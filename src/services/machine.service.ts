@@ -306,7 +306,11 @@ export class MachineService {
       where: { id: machineId },
       include: {
         createdBy: true,
-        checklistItems: true,
+        checklistItems: {
+          include: {
+            completedBy: true,
+          },
+        },
         assignees: { include: { user: true } },
       },
     });
