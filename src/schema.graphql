@@ -2,6 +2,24 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AllMachineUsageHistory {
+  breakdownHour: Float
+  breakdownPercentage: Float
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  date: Date!
+  id: Int!
+  idleHour: Float
+  idlePercentage: Float
+  totalHour: Float
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  workingHour: Float
+  workingPercentage: Float
+}
+
 type BreakdownNotif {
   count: Int
 
@@ -135,7 +153,7 @@ type MachineEdge {
 }
 
 type MachineHistory {
-  breakdownHour: Int
+  breakdownHour: Float
   completedBy: User
   completedById: Int
 
@@ -143,7 +161,7 @@ type MachineHistory {
   createdAt: Date!
   description: String!
   id: Int!
-  idleHour: Int
+  idleHour: Float
   location: String
   machineId: Int
   machineStatus: MachineStatus
@@ -152,7 +170,7 @@ type MachineHistory {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  workingHour: Int
+  workingHour: Float
 }
 
 type MachineHistoryEdge {
@@ -305,17 +323,17 @@ enum MachineStatus {
 }
 
 type MachineUsageHistory {
-  breakdownHour: Int!
+  breakdownHour: Float
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   date: Date!
   id: Int!
-  idleHour: Int!
+  idleHour: Float
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  workingHour: Int!
+  workingHour: Float
 }
 
 type Mutation {
@@ -524,6 +542,7 @@ type Profile {
 }
 
 type Query {
+  allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
   appUsers: [User!]!
   assignedMachines(
     """Paginate after opaque cursor"""
@@ -1029,6 +1048,7 @@ type TransportationEdge {
 }
 
 type TransportationHistory {
+  breakdownHour: Float
   completedBy: User
   completedById: Int
 
@@ -1036,12 +1056,16 @@ type TransportationHistory {
   createdAt: Date!
   description: String!
   id: Int!
+  idleHour: Float
   location: String
   transportationId: Int
+  transportationStatus: TransportationStatus
+  transportationType: String
   type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  workingHour: Float
 }
 
 type TransportationHistoryEdge {
@@ -1194,17 +1218,17 @@ enum TransportationStatus {
 }
 
 type TransportationUsageHistory {
-  breakdownHour: Int!
+  breakdownHour: Float
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   date: Date!
   id: Int!
-  idleHour: Int!
+  idleHour: Float
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  workingHour: Int!
+  workingHour: Float
 }
 
 type User {

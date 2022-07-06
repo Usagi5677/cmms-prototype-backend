@@ -235,9 +235,9 @@ model MachineHistory {
   description   String
   machineStatus MachineStatus?
   machineType   String?
-  workingHour   Int?
-  idleHour      Int?
-  breakdownHour Int?
+  workingHour   Float?
+  idleHour      Float?
+  breakdownHour Float?
   location      String?
 }
 
@@ -410,9 +410,9 @@ model TransportationHistory {
   description          String
   transportationStatus TransportationStatus?
   transportationType   String?
-  workingHour          Int?
-  idleHour             Int?
-  breakdownHour        Int?
+  workingHour          Float?
+  idleHour             Float?
+  breakdownHour        Float?
   location             String?
 }
 

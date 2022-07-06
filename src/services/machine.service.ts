@@ -1916,7 +1916,7 @@ export class MachineService {
         },
       });
       const duration = moment.duration(now.diff(fromDate.createdAt));
-      idleHour = duration.asHours();
+      idleHour = parseFloat(duration.asHours().toFixed(2));
     }
     if (machine.status === 'Breakdown') {
       const fromDate = await this.prisma.machineHistory.findFirst({
@@ -1929,7 +1929,7 @@ export class MachineService {
         },
       });
       const duration = moment.duration(now.diff(fromDate.createdAt));
-      breakdownHour = duration.asHours();
+      breakdownHour = parseFloat(duration.asHours().toFixed(2));
     }
 
     await this.prisma.machineHistory.create({
@@ -2532,5 +2532,65 @@ export class MachineService {
         hasPreviousPage: offset >= limit,
       },
     };
+  }
+
+  //** Get all machine usage*/
+  async getAllMachineUsage(user: User, from: Date, to: Date) {
+    try {
+      const today = moment();
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `allMachineUsageHistoryByDate-${fromDate.format(
+        'DD-MMMM-YYYY'
+      )}-${toDate.format('DD-MMMM-YYYY')}`;
+      let usageHistoryByDate = await this.redisCacheService.get(key);
+      if (!usageHistoryByDate) {
+        usageHistoryByDate = [];
+        //get all usage of machine between date
+        const machineUsageHistoryArray =
+          await this.prisma.machineHistory.findMany({
+            where: {
+              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          });
+        const days = toDate.diff(fromDate, 'days') + 1;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const workingHour =
+            machineUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.workingHour ?? 0;
+          const idleHour =
+            machineUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.idleHour ?? 0;
+          const breakdownHour =
+            machineUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.breakdownHour ?? 0;
+          const totalHour = workingHour + idleHour + breakdownHour;
+          const workingPercentage = (workingHour / totalHour) * 100;
+          const idlePercentage = (idleHour / totalHour) * 100;
+          const breakdownPercentage = (breakdownHour / totalHour) * 100;
+          usageHistoryByDate.push({
+            date: day.toDate(),
+            workingHour,
+            idleHour,
+            breakdownHour,
+            totalHour,
+            workingPercentage: workingPercentage ? workingPercentage : 0,
+            idlePercentage: idlePercentage ? idlePercentage : 0,
+            breakdownPercentage: breakdownPercentage ? breakdownPercentage : 0,
+          });
+        }
+      }
+      return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

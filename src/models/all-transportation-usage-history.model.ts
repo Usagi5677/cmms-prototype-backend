@@ -3,7 +3,7 @@ import { GraphQLFloat } from 'graphql';
 import { BaseModel } from './base.model';
 
 @ObjectType()
-export class TransportationUsageHistory extends BaseModel {
+export class AllTransportationUsageHistory extends BaseModel {
   date: Date;
   @Field(() => GraphQLFloat)
   breakdownHour?: typeof GraphQLFloat;
@@ -11,4 +11,12 @@ export class TransportationUsageHistory extends BaseModel {
   idleHour?: typeof GraphQLFloat;
   @Field(() => GraphQLFloat)
   workingHour?: typeof GraphQLFloat;
+  @Field(() => GraphQLFloat)
+  totalHour?: typeof GraphQLFloat;
+  @Field(() => GraphQLFloat)
+  workingPercentage?: typeof GraphQLFloat;
+  @Field(() => GraphQLFloat)
+  idlePercentage?: typeof GraphQLFloat;
+  @Field(() => GraphQLFloat)
+  breakdownPercentage?: typeof GraphQLFloat;
 }

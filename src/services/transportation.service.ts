@@ -2551,4 +2551,140 @@ export class TransportationService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  //** Get transportations utilization. Results are paginated. User cursor argument to go forward/backward. */
+  async getTransportationUtilizationWithPagination(
+    user: User,
+    args: TransportationConnectionArgs
+  ): Promise<PaginatedTransportation> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { createdById, search, assignedToId, status, location } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (createdById) {
+      where.AND.push({ createdById });
+    }
+
+    if (assignedToId) {
+      where.AND.push({
+        assignees: { some: { userId: assignedToId } },
+      });
+    }
+
+    if (status) {
+      where.AND.push({ status });
+    }
+
+    if (location) {
+      where.AND.push({ location });
+    }
+
+    if (search) {
+      const or: any = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { machineNumber: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportation = await this.prisma.transportation.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        histories: {
+          take: 1,
+          orderBy: {
+            id: 'desc',
+          },
+        },
+      },
+    });
+
+    const count = await this.prisma.transportation.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportation.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get all transportation usage*/
+  async getAllTransportationUsage(user: User, from: Date, to: Date) {
+    try {
+      const today = moment();
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `allTransportationUsageHistoryByDate-${fromDate.format(
+        'DD-MMMM-YYYY'
+      )}-${toDate.format('DD-MMMM-YYYY')}`;
+      let usageHistoryByDate = await this.redisCacheService.get(key);
+      if (!usageHistoryByDate) {
+        usageHistoryByDate = [];
+        //get all usage of transportation between date
+        const transportationUsageHistoryArray =
+          await this.prisma.transportationHistory.findMany({
+            where: {
+              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          });
+        const days = toDate.diff(fromDate, 'days') + 1;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const workingHour =
+            transportationUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.workingHour ?? 0;
+          const idleHour =
+            transportationUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.idleHour ?? 0;
+          const breakdownHour =
+            transportationUsageHistoryArray.find((usage) =>
+              moment(usage.createdAt).isSame(day, 'day')
+            )?.breakdownHour ?? 0;
+          const totalHour = workingHour + idleHour + breakdownHour;
+          const workingPercentage = (workingHour / totalHour) * 100;
+          const idlePercentage = (idleHour / totalHour) * 100;
+          const breakdownPercentage = (breakdownHour / totalHour) * 100;
+          usageHistoryByDate.push({
+            date: day.toDate(),
+            workingHour,
+            idleHour,
+            breakdownHour,
+            totalHour,
+            workingPercentage: workingPercentage ? workingPercentage : 0,
+            idlePercentage: idlePercentage ? idlePercentage : 0,
+            breakdownPercentage: breakdownPercentage ? breakdownPercentage : 0,
+          });
+        }
+      }
+      return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

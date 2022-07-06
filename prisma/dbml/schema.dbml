@@ -199,9 +199,9 @@ Table MachineHistory {
   description String [not null]
   machineStatus MachineStatus
   machineType String
-  workingHour Int
-  idleHour Int
-  breakdownHour Int
+  workingHour Float
+  idleHour Float
+  breakdownHour Float
   location String
 }
 
@@ -370,9 +370,9 @@ Table TransportationHistory {
   description String [not null]
   transportationStatus TransportationStatus
   transportationType String
-  workingHour Int
-  idleHour Int
-  breakdownHour Int
+  workingHour Float
+  idleHour Float
+  breakdownHour Float
   location String
 }
 

@@ -47,6 +47,7 @@ import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 import { MachineUsageHistory } from 'src/models/machine-usage-history.model';
+import { AllMachineUsageHistory } from 'src/models/all-machine-usage-history.model';
 
 @Resolver(() => Machine)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -682,5 +683,14 @@ export class MachineResolver {
       user,
       args
     );
+  }
+
+  @Query(() => [AllMachineUsageHistory])
+  async allMachineUsageHistory(
+    @UserEntity() user: User,
+    @Args('from') from: Date,
+    @Args('to') to: Date
+  ): Promise<AllMachineUsageHistory[]> {
+    return this.machineService.getAllMachineUsage(user, from, to);
   }
 }
