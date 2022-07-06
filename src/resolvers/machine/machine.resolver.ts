@@ -693,4 +693,18 @@ export class MachineResolver {
   ): Promise<AllMachineUsageHistory[]> {
     return this.machineService.getAllMachineUsage(user, from, to);
   }
+
+  @Mutation(() => String)
+  async toggleVerifyMachinePeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('verify') verify: boolean
+  ): Promise<string> {
+    await this.machineService.toggleVerifyMachinePeriodicMaintenance(
+      user,
+      id,
+      verify
+    );
+    return `Periodic maintenance updated.`;
+  }
 }

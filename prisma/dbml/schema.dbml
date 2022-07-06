@@ -34,7 +34,9 @@ Table User {
   machinePeriodicMaintenanceTasks MachinePeriodicMaintenanceTask [not null]
   machineDeleted Machine [not null]
   transportationDeleted Transportation [not null]
-  TransportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask [not null]
+  transportationPeriodicMaintenanceTasks TransportationPeriodicMaintenanceTask [not null]
+  machinePeriodicMaintenances MachinePeriodicMaintenance [not null]
+  transportationPeriodicMaintenances TransportationPeriodicMaintenance [not null]
 }
 
 Table Notification {
@@ -171,6 +173,9 @@ Table MachinePeriodicMaintenance {
   completedBy User
   completedAt DateTime
   status PeriodicMaintenanceStatus [not null, default: 'Pending']
+  verifiedById Int
+  verifiedBy User
+  verifiedAt DateTime
   machinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask [not null]
 }
 
@@ -327,6 +332,9 @@ Table TransportationPeriodicMaintenance {
   completedBy User
   completedAt DateTime
   status PeriodicMaintenanceStatus [not null, default: 'Pending']
+  verifiedById Int
+  verifiedBy User
+  verifiedAt DateTime
   transportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask [not null]
 }
 
@@ -484,6 +492,8 @@ Ref: MachinePeriodicMaintenance.machineId > Machine.id
 
 Ref: MachinePeriodicMaintenance.completedById > User.id
 
+Ref: MachinePeriodicMaintenance.verifiedById > User.id
+
 Ref: MachinePeriodicMaintenanceTask.periodicMaintenanceId > MachinePeriodicMaintenance.id
 
 Ref: MachinePeriodicMaintenanceTask.completedById > User.id
@@ -521,6 +531,8 @@ Ref: TransportationChecklistItem.completedById > User.id
 Ref: TransportationPeriodicMaintenance.transportationId > Transportation.id
 
 Ref: TransportationPeriodicMaintenance.completedById > User.id
+
+Ref: TransportationPeriodicMaintenance.verifiedById > User.id
 
 Ref: TransportationAttachment.userId > User.id
 

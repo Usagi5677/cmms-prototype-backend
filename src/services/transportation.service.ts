@@ -1933,6 +1933,7 @@ export class TransportationService {
         where,
         include: {
           completedBy: true,
+          verifiedBy: true,
           transportationPeriodicMaintenanceTask: {
             where: { parentTaskId: null },
             include: {
@@ -2681,6 +2682,53 @@ export class TransportationService {
         }
       }
       return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set periodic maintenance as verified or unverified. */
+  async toggleVerifyTransportationPeriodicMaintenance(
+    user: User,
+    id: number,
+    verify: boolean
+  ) {
+    try {
+      const checklist =
+        await this.prisma.transportationPeriodicMaintenance.findFirst({
+          where: {
+            id,
+          },
+          select: {
+            transportationId: true,
+          },
+        });
+      await this.prisma.transportationPeriodicMaintenance.update({
+        where: { id },
+        data: verify
+          ? { verifiedById: user.id, verifiedAt: new Date() }
+          : { verifiedById: null, verifiedAt: null },
+      });
+
+      const transportationUsers = await this.getTransportationUserIds(
+        checklist.transportationId,
+        user.id
+      );
+      for (let index = 0; index < transportationUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: transportationUsers[index],
+          body: `${user.fullName} (${user.rcno}) verified periodic maintenance (${id}) on transportation ${checklist.transportationId}`,
+          link: `/machine/${checklist.transportationId}`,
+        });
+      }
+      await this.createTransportationHistoryInBackground({
+        type: 'Periodic maintenance verify',
+        description: verify
+          ? `Periodic maintenance (${id}) has been verified to be completed.`
+          : `Periodic maintenance (${id}) has been unverified.`,
+        transportationId: checklist.transportationId,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

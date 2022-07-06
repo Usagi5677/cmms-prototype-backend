@@ -46,7 +46,9 @@ model User {
   machinePeriodicMaintenanceTasks              MachinePeriodicMaintenanceTask[]
   machineDeleted                               Machine[]                               @relation(name: "deletedBy")
   transportationDeleted                        Transportation[]                        @relation(name: "transportDeletedBy")
-  TransportationPeriodicMaintenanceTask        TransportationPeriodicMaintenanceTask[]
+  transportationPeriodicMaintenanceTasks       TransportationPeriodicMaintenanceTask[]
+  machinePeriodicMaintenances                  MachinePeriodicMaintenance[]            @relation(name: "verifiedBy")
+  transportationPeriodicMaintenances           TransportationPeriodicMaintenance[]     @relation(name: "transportVerifiedBy")
 }
 
 model Notification {
@@ -207,6 +209,9 @@ model MachinePeriodicMaintenance {
   completedBy                    User?                            @relation(fields: [completedById], references: [id])
   completedAt                    DateTime?
   status                         PeriodicMaintenanceStatus        @default(Pending)
+  verifiedById                   Int?
+  verifiedBy                     User?                            @relation(name: "verifiedBy", fields: [verifiedById], references: [id])
+  verifiedAt                     DateTime?
   machinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask[]
 }
 
@@ -367,6 +372,9 @@ model TransportationPeriodicMaintenance {
   completedBy                           User?                                   @relation(fields: [completedById], references: [id])
   completedAt                           DateTime?
   status                                PeriodicMaintenanceStatus               @default(Pending)
+  verifiedById                          Int?
+  verifiedBy                            User?                                   @relation(name: "transportVerifiedBy", fields: [verifiedById], references: [id])
+  verifiedAt                            DateTime?
   transportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask[]
 }
 

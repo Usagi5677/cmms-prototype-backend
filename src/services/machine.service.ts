@@ -820,6 +820,43 @@ export class MachineService {
           machineId: periodicMaintenance.machineId,
           completedById: user.id,
         });
+        //find all users with permission
+        const permissionRoles = await this.prisma.permissionRole.findMany({
+          where: {
+            permission: 'VERIFY_MACHINE_PERIODIC_MAINTENANCE',
+          },
+          select: {
+            role: {
+              select: {
+                userRoles: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (permissionRoles) {
+          const IDs: number[] = [];
+          permissionRoles.map((perm) =>
+            perm.role.userRoles.map((user) => {
+              IDs.push(user.userId);
+            })
+          );
+
+          if (IDs) {
+            // get unique ids only
+            const unique = [...new Set(IDs)];
+            for (let index = 0; index < unique.length; index++) {
+              await this.notificationService.createInBackground({
+                userId: unique[index],
+                body: `Periodic maintenance (${id}) on machine (${periodicMaintenance.machineId})is ready to be verfied on machine`,
+                link: `/machine/${periodicMaintenance.machineId}`,
+              });
+            }
+          }
+        }
       }
       if (status == 'Pending') {
         await this.createMachineHistoryInBackground({
@@ -1769,6 +1806,7 @@ export class MachineService {
         where,
         include: {
           completedBy: true,
+          verifiedBy: true,
           machinePeriodicMaintenanceTask: {
             where: { parentTaskId: null },
             include: {
@@ -2588,6 +2626,52 @@ export class MachineService {
         }
       }
       return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set periodic maintenance as verified or unverified. */
+  async toggleVerifyMachinePeriodicMaintenance(
+    user: User,
+    id: number,
+    verify: boolean
+  ) {
+    try {
+      const checklist = await this.prisma.machinePeriodicMaintenance.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          machineId: true,
+        },
+      });
+      await this.prisma.machinePeriodicMaintenance.update({
+        where: { id },
+        data: verify
+          ? { verifiedById: user.id, verifiedAt: new Date() }
+          : { verifiedById: null, verifiedAt: null },
+      });
+
+      const machineUsers = await this.getMachineUserIds(
+        checklist.machineId,
+        user.id
+      );
+      for (let index = 0; index < machineUsers.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: machineUsers[index],
+          body: `${user.fullName} (${user.rcno}) verified periodic maintenance (${id}) on machine ${checklist.machineId}`,
+          link: `/machine/${checklist.machineId}`,
+        });
+      }
+      await this.createMachineHistoryInBackground({
+        type: 'Periodic maintenance verify',
+        description: verify
+          ? `Periodic maintenance (${id}) has been verified to be completed.`
+          : `Periodic maintenance (${id}) has been unverified.`,
+        machineId: checklist.machineId,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

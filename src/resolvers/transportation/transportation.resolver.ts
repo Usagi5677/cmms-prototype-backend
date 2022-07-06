@@ -782,4 +782,18 @@ export class TransportationResolver {
   ): Promise<AllTransportationUsageHistory[]> {
     return this.transportationService.getAllTransportationUsage(user, from, to);
   }
+
+  @Mutation(() => String)
+  async toggleVerifyTransportationPeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('verify') verify: boolean
+  ): Promise<string> {
+    await this.transportationService.toggleVerifyTransportationPeriodicMaintenance(
+      user,
+      id,
+      verify
+    );
+    return `Periodic maintenance updated.`;
+  }
 }
