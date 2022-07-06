@@ -2279,7 +2279,7 @@ export class TransportationService {
               id: periodicMaintenance[index].id,
             },
             data: {
-              startDate: moment(notifDate).format('DD MMMM YYYY HH:mm:ss'),
+              startDate: moment(notifDate).toDate(),
             },
           });
         }
@@ -2311,7 +2311,6 @@ export class TransportationService {
     to: Date
   ) {
     try {
-      const today = moment();
       const fromDate = moment(from).startOf('day');
       const toDate = moment(to).endOf('day');
       const key = `transportationUsageHistoryByDate-${transportationId}-${fromDate.format(
