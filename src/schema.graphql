@@ -20,6 +20,24 @@ type AllMachineUsageHistory {
   workingPercentage: Float
 }
 
+type AllTransportationUsageHistory {
+  breakdownHour: Float
+  breakdownPercentage: Float
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  date: Date!
+  id: Int!
+  idleHour: Float
+  idlePercentage: Float
+  totalHour: Float
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  workingHour: Float
+  workingPercentage: Float
+}
+
 type BreakdownNotif {
   count: Int
 
@@ -543,6 +561,7 @@ type Profile {
 
 type Query {
   allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
+  allTransportationUsageHistory(from: Date!, to: Date!): [AllTransportationUsageHistory!]!
   appUsers: [User!]!
   assignedMachines(
     """Paginate after opaque cursor"""
@@ -800,6 +819,27 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationSparePR!
+  getAllTransportationUtilization(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    location: String
+    search: String
+    self: Boolean
+    status: TransportationStatus
+    transportType: String
+  ): PaginatedTransportation!
   getAllTransportationVehicles(
     """Paginate after opaque cursor"""
     after: String

@@ -43,6 +43,7 @@ import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 import { TransportationUsageHistory } from 'src/models/transportation-usage-history.model';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
+import { AllTransportationUsageHistory } from 'src/models/all-transportation-usage-history.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Transportation)
@@ -760,5 +761,25 @@ export class TransportationResolver {
   ): Promise<string> {
     await this.transportationService.deleteTransportationPMTask(user, id);
     return `Task deleted.`;
+  }
+
+  @Query(() => PaginatedTransportation)
+  async getAllTransportationUtilization(
+    @UserEntity() user: User,
+    @Args() args: TransportationConnectionArgs
+  ): Promise<PaginatedTransportation> {
+    return await this.transportationService.getTransportationUtilizationWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => [AllTransportationUsageHistory])
+  async allTransportationUsageHistory(
+    @UserEntity() user: User,
+    @Args('from') from: Date,
+    @Args('to') to: Date
+  ): Promise<AllTransportationUsageHistory[]> {
+    return this.transportationService.getAllTransportationUsage(user, from, to);
   }
 }
