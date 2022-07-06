@@ -236,6 +236,7 @@ type MachinePeriodicMaintenance {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   id: Int!
+  machine: Machine
   machineId: Int!
   machinePeriodicMaintenanceTask: [MachinePMTask!]
   measurement: String
@@ -697,6 +698,22 @@ type Query {
     self: Boolean
     status: MachineStatus
   ): PaginatedMachine!
+  getAllMachinePeriodicMaintenance(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    machineId: Int
+    search: String
+    status: PeriodicMaintenanceStatus
+  ): PaginatedMachinePeriodicMaintenance!
   getAllMachineUtilization(
     """Paginate after opaque cursor"""
     after: String
@@ -729,8 +746,9 @@ type Query {
 
     """Paginate last"""
     last: Int
-    machineId: Int!
+    machineId: Int
     search: String
+    status: PeriodicMaintenanceStatus
   ): PaginatedMachinePeriodicMaintenance!
   getAllPeriodicMaintenanceOfTransportation(
     """Paginate after opaque cursor"""

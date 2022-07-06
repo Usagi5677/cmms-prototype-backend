@@ -1,8 +1,10 @@
 import { ArgsType } from '@nestjs/graphql';
+import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import ConnectionArgs from '../../common/pagination/connection-args';
 
 @ArgsType()
 export class MachinePeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   search?: string;
-  machineId: number;
+  machineId?: number;
+  status?: PeriodicMaintenanceStatus;
 }

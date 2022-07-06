@@ -707,4 +707,15 @@ export class MachineResolver {
     );
     return `Periodic maintenance updated.`;
   }
+
+  @Query(() => PaginatedMachinePeriodicMaintenance)
+  async getAllMachinePeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args() args: MachinePeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedMachinePeriodicMaintenance> {
+    return await this.machineService.getAllMachinePeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
+  }
 }
