@@ -763,7 +763,8 @@ type Query {
     """Paginate last"""
     last: Int
     search: String
-    transportationId: Int!
+    status: PeriodicMaintenanceStatus
+    transportationId: Int
   ): PaginatedTransportationPeriodicMaintenance!
   getAllRepairOfMachine(
     """Paginate after opaque cursor"""
@@ -841,6 +842,22 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationSparePR!
+  getAllTransportationPeriodicMaintenance(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    status: PeriodicMaintenanceStatus
+    transportationId: Int
+  ): PaginatedTransportationPeriodicMaintenance!
   getAllTransportationUtilization(
     """Paginate after opaque cursor"""
     after: String
@@ -1179,6 +1196,7 @@ type TransportationPeriodicMaintenance {
   startDate: Date
   status: PeriodicMaintenanceStatus!
   title: String!
+  transportation: Transportation
   transportationId: Int!
   transportationPeriodicMaintenanceTask: [TransportationPMTask!]
 

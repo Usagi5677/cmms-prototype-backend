@@ -796,4 +796,15 @@ export class TransportationResolver {
     );
     return `Periodic maintenance updated.`;
   }
+
+  @Query(() => PaginatedTransportationPeriodicMaintenance)
+  async getAllTransportationPeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args() args: TransportationPeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedTransportationPeriodicMaintenance> {
+    return await this.transportationService.getAllTransportationPeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
+  }
 }

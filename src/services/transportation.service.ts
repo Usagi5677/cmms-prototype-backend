@@ -2734,4 +2734,63 @@ export class TransportationService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  //** Get all transportation periodic maintenance. Results are paginated. User cursor argument to go forward/backward. */
+  async getAllTransportationPeriodicMaintenanceWithPagination(
+    user: User,
+    args: TransportationPeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedTransportationPeriodicMaintenance> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, status } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (status) {
+      where.AND.push({ status });
+    }
+
+    if (search) {
+      const or: any = [{ title: { contains: search, mode: 'insensitive' } }];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationPeriodicMaintenance =
+      await this.prisma.transportationPeriodicMaintenance.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          transportation: true,
+        },
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.transportationPeriodicMaintenance.count({
+      where,
+    });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationPeriodicMaintenance.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
 }
