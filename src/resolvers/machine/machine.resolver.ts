@@ -48,6 +48,7 @@ import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 import { MachineUsageHistory } from 'src/models/machine-usage-history.model';
 import { AllMachineUsageHistory } from 'src/models/all-machine-usage-history.model';
+import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
 
 @Resolver(() => Machine)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -714,6 +715,17 @@ export class MachineResolver {
     @Args() args: MachinePeriodicMaintenanceConnectionArgs
   ): Promise<PaginatedMachinePeriodicMaintenance> {
     return await this.machineService.getAllMachinePeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => PaginatedMachinePeriodicMaintenance)
+  async getAllMachinePeriodicMaintenanceTask(
+    @UserEntity() user: User,
+    @Args() args: MachinePeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedMachinePeriodicMaintenanceTask> {
+    return await this.machineService.getAllMachinePeriodicMaintenanceTasksWithPagination(
       user,
       args
     );

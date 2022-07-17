@@ -397,8 +397,12 @@ export class TransportationService {
       where.AND.push({ status });
     }
 
-    if (location) {
-      where.AND.push({ location });
+    if (location.length > 0) {
+      where.AND.push({
+        location: {
+          in: location,
+        },
+      });
     }
 
     if (search) {
@@ -2577,8 +2581,12 @@ export class TransportationService {
       where.AND.push({ status });
     }
 
-    if (location) {
-      where.AND.push({ location });
+    if (location.length > 0) {
+      where.AND.push({
+        location: {
+          in: location,
+        },
+      });
     }
 
     if (search) {
@@ -2742,13 +2750,23 @@ export class TransportationService {
   ): Promise<PaginatedTransportationPeriodicMaintenance> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, status } = args;
+    const { search, status, location } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
 
     if (status) {
       where.AND.push({ status });
+    }
+
+    if (location.length > 0) {
+      where.AND.push({
+        transportation: {
+          location: {
+            in: location,
+          },
+        },
+      });
     }
 
     if (search) {

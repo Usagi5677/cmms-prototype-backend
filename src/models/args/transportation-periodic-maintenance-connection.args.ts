@@ -7,4 +7,5 @@ export class TransportationPeriodicMaintenanceConnectionArgs extends ConnectionA
   search?: string;
   transportationId?: number;
   status?: PeriodicMaintenanceStatus;
+  location?: string[];
 }

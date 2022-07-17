@@ -583,7 +583,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: MachineStatus
@@ -603,7 +603,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: TransportationStatus
@@ -693,7 +693,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: MachineStatus
@@ -704,12 +704,32 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    complete: Boolean
 
     """Paginate first"""
     first: Int
 
     """Paginate last"""
     last: Int
+    location: [String!]
+    machineId: Int
+    search: String
+    status: PeriodicMaintenanceStatus
+  ): PaginatedMachinePeriodicMaintenance!
+  getAllMachinePeriodicMaintenanceTask(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    complete: Boolean
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    location: [String!]
     machineId: Int
     search: String
     status: PeriodicMaintenanceStatus
@@ -729,7 +749,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: MachineStatus
@@ -740,12 +760,14 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    complete: Boolean
 
     """Paginate first"""
     first: Int
 
     """Paginate last"""
     last: Int
+    location: [String!]
     machineId: Int
     search: String
     status: PeriodicMaintenanceStatus
@@ -762,6 +784,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: [String!]
     search: String
     status: PeriodicMaintenanceStatus
     transportationId: Int
@@ -854,6 +877,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    location: [String!]
     search: String
     status: PeriodicMaintenanceStatus
     transportationId: Int
@@ -873,7 +897,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: TransportationStatus
@@ -894,7 +918,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: TransportationStatus
@@ -915,7 +939,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: String
+    location: [String!]
     search: String
     self: Boolean
     status: TransportationStatus

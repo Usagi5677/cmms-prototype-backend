@@ -40,6 +40,7 @@ import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { Machine } from 'src/models/machine.model';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ChecklistItem } from 'src/models/checklist-item.model';
+import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -348,8 +349,12 @@ export class MachineService {
       where.AND.push({ status });
     }
 
-    if (location) {
-      where.AND.push({ location });
+    if (location.length > 0) {
+      where.AND.push({
+        location: {
+          in: location,
+        },
+      });
     }
 
     if (search) {
@@ -2521,10 +2526,13 @@ export class MachineService {
       where.AND.push({ status });
     }
 
-    if (location) {
-      where.AND.push({ location });
+    if (location.length > 0) {
+      where.AND.push({
+        location: {
+          in: location,
+        },
+      });
     }
-
     if (search) {
       const or: any = [
         { model: { contains: search, mode: 'insensitive' } },
@@ -2685,13 +2693,23 @@ export class MachineService {
   ): Promise<PaginatedMachinePeriodicMaintenance> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, status } = args;
+    const { search, status, location } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
 
     if (status) {
       where.AND.push({ status });
+    }
+
+    if (location.length > 0) {
+      where.AND.push({
+        machine: {
+          location: {
+            in: location,
+          },
+        },
+      });
     }
 
     if (search) {
@@ -2718,6 +2736,58 @@ export class MachineService {
     const count = await this.prisma.machinePeriodicMaintenance.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       machinePeriodicMaintenance.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get all machine periodic maintenance tasks. Results are paginated. User cursor argument to go forward/backward. */
+  async getAllMachinePeriodicMaintenanceTasksWithPagination(
+    user: User,
+    args: MachinePeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedMachinePeriodicMaintenanceTask> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, complete } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (search) {
+      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machinePeriodicMaintenanceTask =
+      await this.prisma.machinePeriodicMaintenanceTask.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.machinePeriodicMaintenanceTask.count({
+      where,
+    });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machinePeriodicMaintenanceTask.slice(0, limit),
       args,
       {
         arrayLength: count,
