@@ -18,5 +18,5 @@ export class TransportationPeriodicMaintenance extends BaseModel {
   transportationPeriodicMaintenanceTask?: TransportationPMTask[];
   verifiedBy?: User;
   verifiedAt?: Date;
-  transportation?: Transportation;
+  transportation: Transportation;
 }

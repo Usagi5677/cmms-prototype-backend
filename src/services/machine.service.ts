@@ -38,6 +38,8 @@ import { Queue } from 'bull';
 import * as moment from 'moment';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { Machine } from 'src/models/machine.model';
+import { MachinePMTask } from 'src/models/machine-PM-task.model';
+import { User as UserModel } from 'src/models/user.model';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ChecklistItem } from 'src/models/checklist-item.model';
 import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
@@ -317,11 +319,7 @@ export class MachineService {
     });
     if (!machine) throw new BadRequestException('Machine not found.');
 
-    // Assigning data from db to the gql shape as it does not match 1:1
-    const machineResp = new Machine();
-    Object.assign(machineResp, machine);
-    machineResp.assignees = machine.assignees.map((assign) => assign.user);
-    return machineResp;
+    return machine;
   }
 
   //** Get machine. Results are paginated. User cursor argument to go forward/backward. */
@@ -349,7 +347,7 @@ export class MachineService {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (location?.length > 0) {
       where.AND.push({
         location: {
           in: location,
@@ -2526,7 +2524,7 @@ export class MachineService {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (location?.length > 0) {
       where.AND.push({
         location: {
           in: location,
@@ -2702,7 +2700,7 @@ export class MachineService {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (location?.length > 0) {
       where.AND.push({
         machine: {
           location: {
@@ -2760,10 +2758,36 @@ export class MachineService {
   ): Promise<PaginatedMachinePeriodicMaintenanceTask> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, complete } = args;
+    const { search, complete, location, status } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+
+    if (location?.length > 0) {
+      where.AND.push({
+        periodicMaintenance: {
+          machine: {
+            location: {
+              in: location,
+            },
+          },
+        },
+      });
+    }
+
+    if (status) {
+      where.AND.push({
+        periodicMaintenance: {
+          status: status,
+        },
+      });
+    }
+
+    if (complete) {
+      where.AND.push({
+        NOT: [{ completedAt: null }],
+      });
+    }
 
     if (search) {
       const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
@@ -2780,6 +2804,21 @@ export class MachineService {
         skip: offset,
         take: limitPlusOne,
         where,
+        include: {
+          periodicMaintenance: {
+            include: {
+              machine: {
+                include: {
+                  assignees: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         orderBy: { id: 'desc' },
       });
 

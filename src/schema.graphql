@@ -74,7 +74,7 @@ type ChecklistItem {
 scalar Date
 
 type Machine {
-  assignees: [User!]
+  assignees: [MachineAssign!]
   breakdowns: [MachineBreakdown!]
   checklistItems: [ChecklistItem!]
 
@@ -103,6 +103,18 @@ type Machine {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   zone: String!
+}
+
+type MachineAssign {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  machineId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User
+  userId: Int!
 }
 
 type MachineAttachment {
@@ -214,11 +226,25 @@ type MachinePMTask {
   name: String
   parentTask: MachinePMTask
   parentTaskId: Int
+  periodicMaintenance: MachinePeriodicMaintenance!
   periodicMaintenanceId: Int
   subTasks: [MachinePMTask!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type MachinePMTaskEdge {
+  cursor: String
+  node: MachinePMTask
+}
+
+type MachinePMTaskPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type MachinePageInfo {
@@ -236,7 +262,7 @@ type MachinePeriodicMaintenance {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   id: Int!
-  machine: Machine
+  machine: Machine!
   machineId: Int!
   machinePeriodicMaintenanceTask: [MachinePMTask!]
   measurement: String
@@ -476,6 +502,11 @@ type PaginatedMachinePeriodicMaintenance {
   pageInfo: MachinePeriodicMaintenancePageInfo
 }
 
+type PaginatedMachinePeriodicMaintenanceTask {
+  edges: [MachinePMTaskEdge!]
+  pageInfo: MachinePMTaskPageInfo
+}
+
 type PaginatedMachineRepair {
   edges: [MachineRepairEdge!]
   pageInfo: MachineRepairPageInfo
@@ -514,6 +545,11 @@ type PaginatedTransportationHistory {
 type PaginatedTransportationPeriodicMaintenance {
   edges: [TransportationPeriodicMaintenanceEdge!]
   pageInfo: TransportationPeriodicMaintenancePageInfo
+}
+
+type PaginatedTransportationPeriodicMaintenanceTask {
+  edges: [TransportationPMTaskEdge!]
+  pageInfo: TransportationPMTaskPageInfo
 }
 
 type PaginatedTransportationRepair {
@@ -733,7 +769,7 @@ type Query {
     machineId: Int
     search: String
     status: PeriodicMaintenanceStatus
-  ): PaginatedMachinePeriodicMaintenance!
+  ): PaginatedMachinePeriodicMaintenanceTask!
   getAllMachineUtilization(
     """Paginate after opaque cursor"""
     after: String
@@ -778,6 +814,7 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    complete: Boolean
 
     """Paginate first"""
     first: Int
@@ -871,6 +908,7 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    complete: Boolean
 
     """Paginate first"""
     first: Int
@@ -882,6 +920,24 @@ type Query {
     status: PeriodicMaintenanceStatus
     transportationId: Int
   ): PaginatedTransportationPeriodicMaintenance!
+  getAllTransportationPeriodicMaintenanceTask(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    complete: Boolean
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    location: [String!]
+    search: String
+    status: PeriodicMaintenanceStatus
+    transportationId: Int
+  ): PaginatedTransportationPeriodicMaintenanceTask!
   getAllTransportationUtilization(
     """Paginate after opaque cursor"""
     after: String
@@ -1052,7 +1108,7 @@ type Subscription {
 }
 
 type Transportation {
-  assignees: [User!]
+  assignees: [TransportationAssign!]
   breakdowns: [TransportationBreakdown!]
   checklistItems: [ChecklistItem!]
 
@@ -1083,6 +1139,18 @@ type Transportation {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type TransportationAssign {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  transportationId: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User
+  userId: Int!
 }
 
 type TransportationAttachment {
@@ -1194,11 +1262,25 @@ type TransportationPMTask {
   name: String
   parentTask: TransportationPMTask
   parentTaskId: Int
+  periodicMaintenance: TransportationPeriodicMaintenance!
   periodicMaintenanceId: Int
   subTasks: [TransportationPMTask!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+}
+
+type TransportationPMTaskEdge {
+  cursor: String
+  node: TransportationPMTask
+}
+
+type TransportationPMTaskPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type TransportationPageInfo {
@@ -1220,7 +1302,7 @@ type TransportationPeriodicMaintenance {
   startDate: Date
   status: PeriodicMaintenanceStatus!
   title: String!
-  transportation: Transportation
+  transportation: Transportation!
   transportationId: Int!
   transportationPeriodicMaintenanceTask: [TransportationPMTask!]
 

@@ -39,6 +39,7 @@ import * as moment from 'moment';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { Transportation } from 'src/models/transportation.model';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { PaginatedTransportationPeriodicMaintenanceTask } from 'src/models/pagination/transportation-pm-tasks-connection.model';
 
 export interface TransportationHistoryInterface {
   transportationId: number;
@@ -351,13 +352,7 @@ export class TransportationService {
     if (!transportation)
       throw new BadRequestException('Transportation not found.');
 
-    // Assigning data from db to the gql shape as it does not match 1:1
-    const transportationResp = new Transportation();
-    Object.assign(transportationResp, transportation);
-    transportationResp.assignees = transportation.assignees.map(
-      (assign) => assign.user
-    );
-    return transportationResp;
+    return transportation;
   }
 
   //** Get transportation. Results are paginated. User cursor argument to go forward/backward. */
@@ -2795,6 +2790,101 @@ export class TransportationService {
     });
     const { edges, pageInfo } = connectionFromArraySlice(
       transportationPeriodicMaintenance.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get all transportation periodic maintenance tasks. Results are paginated. User cursor argument to go forward/backward. */
+  async getAllTransportationPeriodicMaintenanceTasksWithPagination(
+    user: User,
+    args: TransportationPeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedTransportationPeriodicMaintenanceTask> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, complete, location, status } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (location?.length > 0) {
+      where.AND.push({
+        periodicMaintenance: {
+          transportation: {
+            location: {
+              in: location,
+            },
+          },
+        },
+      });
+    }
+
+    if (status) {
+      where.AND.push({
+        periodicMaintenance: {
+          status: status,
+        },
+      });
+    }
+
+    if (complete) {
+      where.AND.push({
+        NOT: [{ completedAt: null }],
+      });
+    }
+
+    if (search) {
+      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
+      // If search contains all numbers, search the transportation ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const transportationPeriodicMaintenanceTask =
+      await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          periodicMaintenance: {
+            include: {
+              transportation: {
+                include: {
+                  assignees: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.transportationPeriodicMaintenanceTask.count(
+      {
+        where,
+      }
+    );
+    const { edges, pageInfo } = connectionFromArraySlice(
+      transportationPeriodicMaintenanceTask.slice(0, limit),
       args,
       {
         arrayLength: count,

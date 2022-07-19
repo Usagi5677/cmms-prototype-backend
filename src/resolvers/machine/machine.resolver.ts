@@ -720,7 +720,7 @@ export class MachineResolver {
     );
   }
 
-  @Query(() => PaginatedMachinePeriodicMaintenance)
+  @Query(() => PaginatedMachinePeriodicMaintenanceTask)
   async getAllMachinePeriodicMaintenanceTask(
     @UserEntity() user: User,
     @Args() args: MachinePeriodicMaintenanceConnectionArgs

@@ -18,5 +18,5 @@ export class MachinePeriodicMaintenance extends BaseModel {
   machinePeriodicMaintenanceTask?: MachinePMTask[];
   verifiedBy?: User;
   verifiedAt?: Date;
-  machine?: Machine;
+  machine: Machine;
 }

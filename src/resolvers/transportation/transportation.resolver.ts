@@ -44,6 +44,7 @@ import { TransportationUsageHistory } from 'src/models/transportation-usage-hist
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { AllTransportationUsageHistory } from 'src/models/all-transportation-usage-history.model';
+import { PaginatedTransportationPeriodicMaintenanceTask } from 'src/models/pagination/transportation-pm-tasks-connection.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Transportation)
@@ -803,6 +804,17 @@ export class TransportationResolver {
     @Args() args: TransportationPeriodicMaintenanceConnectionArgs
   ): Promise<PaginatedTransportationPeriodicMaintenance> {
     return await this.transportationService.getAllTransportationPeriodicMaintenanceWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => PaginatedTransportationPeriodicMaintenanceTask)
+  async getAllTransportationPeriodicMaintenanceTask(
+    @UserEntity() user: User,
+    @Args() args: TransportationPeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedTransportationPeriodicMaintenanceTask> {
+    return await this.transportationService.getAllTransportationPeriodicMaintenanceTasksWithPagination(
       user,
       args
     );
