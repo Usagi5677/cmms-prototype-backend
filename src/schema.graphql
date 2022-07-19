@@ -56,6 +56,12 @@ enum BreakdownStatus {
   Pending
 }
 
+input ChangeChecklistTemplateInput {
+  entityId: Int!
+  entityType: String!
+  newChecklistId: Int!
+}
+
 type ChecklistItem {
   completedAt: Date
   completedBy: User
@@ -70,8 +76,64 @@ type ChecklistItem {
   updatedAt: Date!
 }
 
+type ChecklistTemplate {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  items: [ChecklistTemplateItem!]!
+  machinesDaily: [Machine!]
+  machinesWeekly: [Machine!]
+  name: String
+  transportationDaily: [Transportation!]
+  transportationWeekly: [Transportation!]
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type ChecklistTemplateConnection {
+  edges: [ChecklistTemplateEdge!]
+  pageInfo: ChecklistTemplatePageInfo
+}
+
+type ChecklistTemplateEdge {
+  cursor: String
+  node: ChecklistTemplate
+}
+
+type ChecklistTemplateItem {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type ChecklistTemplatePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+input CreateChecklistTemplateInput {
+  items: [String!]!
+  name: String!
+  type: String!
+}
+
 """Date custom scalar type"""
 scalar Date
+
+input EntityChecklistTemplateInput {
+  entityId: Int!
+  entityType: String!
+  type: String!
+}
 
 type Machine {
   assignees: [MachineAssign!]
@@ -385,14 +447,13 @@ type MachineUsageHistory {
 
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
+  addChecklistTemplateItem(entityId: Int, entityType: String, id: Int!, name: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
-  addMachineChecklistItem(description: String!, machineId: Int!, type: String!): String!
   addMachinePeriodicMaintenance(machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   addMachineRepair(description: String!, machineId: Int!, title: String!): String!
   addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
   addRole(name: String!): String!
   addTransportationBreakdown(description: String!, title: String!, transportationId: Int!): String!
-  addTransportationChecklistItem(description: String!, transportationId: Int!, type: String!): String!
   addTransportationPeriodicMaintenance(measurement: String!, startDate: Date!, tasks: [String!], title: String!, transportationId: Int!, value: Int!): String!
   addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
@@ -400,18 +461,18 @@ type Mutation {
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
+  changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
+  createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createMachine(currentRunning: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   createMachinePeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createTransportation(currentMileage: Int!, department: String!, engine: String!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   createTransportationPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   deleteMachineBreakdown(id: Int!): String!
-  deleteMachineChecklistItem(id: Int!): String!
   deleteMachinePMTask(id: Int!): String!
   deleteMachinePeriodicMaintenance(id: Int!): String!
   deleteMachineRepair(id: Int!): String!
   deleteMachineSparePR(id: Int!): String!
   deleteTransportationBreakdown(id: Int!): String!
-  deleteTransportationChecklistItem(id: Int!): String!
   deleteTransportationPMTask(id: Int!): String!
   deleteTransportationPeriodicMaintenance(id: Int!): String!
   deleteTransportationRepair(id: Int!): String!
@@ -419,7 +480,6 @@ type Mutation {
   editMachine(currentRunning: Int!, id: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
-  editMachineChecklistItem(description: String!, id: Int!, type: String!): String!
   editMachinePeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
@@ -428,7 +488,6 @@ type Mutation {
   editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
-  editTransportationChecklistItem(description: String!, id: Int!, type: String!): String!
   editTransportationPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
   editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
@@ -436,6 +495,8 @@ type Mutation {
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
+  removeChecklistTemplate(id: Int!): String!
+  removeChecklistTemplateItem(entityId: Int, entityType: String, id: Int!, templateId: Int): String!
   removeMachine(machineId: Int!): String!
   removeMachineAttachment(id: Int!): String!
   removeRole(id: Int!): String!
@@ -452,14 +513,13 @@ type Mutation {
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
-  toggleMachineChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
   toggleMachinePMTask(complete: Boolean!, id: Int!): String!
-  toggleTransportationChecklistItem(currentMeterReading: Int!, id: [Int!]!, uncheckId: [Int!]!, workingHour: Int!): String!
   toggleTransportationPMTask(complete: Boolean!, id: Int!): String!
   toggleVerifyMachinePeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyTransportationPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
+  updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
 }
 
 type Notification {
@@ -657,6 +717,23 @@ type Query {
   breakdownMachineCount: BreakdownNotif!
   breakdownVehicleCount: BreakdownNotif!
   breakdownVesselCount: BreakdownNotif!
+  checklistTemplate(id: Int!): ChecklistTemplate!
+  checklistTemplates(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+    type: String
+  ): ChecklistTemplateConnection!
+  entityChecklistTemplate(input: EntityChecklistTemplateInput!): ChecklistTemplate!
   getAllBreakdownOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -1432,6 +1509,13 @@ type TransportationUsageHistory {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   workingHour: Float
+}
+
+input UpdateChecklistTemplateInput {
+  id: Int!
+  items: [String!]
+  name: String
+  type: String
 }
 
 type User {

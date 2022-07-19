@@ -15,7 +15,7 @@ Table User {
   machineCreated Machine [not null]
   machineAssignments MachineAssignment [not null]
   machineAttachments MachineAttachment [not null]
-  machineChecklistCompletions MachineChecklistItem [not null]
+  checklistCompletions ChecklistItem [not null]
   machinePeriodicMaintenanceCompletions MachinePeriodicMaintenance [not null]
   machineRepairs MachineRepair [not null]
   machineBreakdowns MachineBreakdown [not null]
@@ -24,7 +24,6 @@ Table User {
   transportationCreated Transportation [not null]
   transportationAssignments TransportationAssignment [not null]
   transportAttachments TransportationAttachment [not null]
-  transportationChecklistCompletions TransportationChecklistItem [not null]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance [not null]
   transportationRepairs TransportationRepair [not null]
   transportationBreakdowns TransportationBreakdown [not null]
@@ -105,8 +104,12 @@ Table Machine {
   deletedAt DateTime
   deletedById Int
   deletedBy User
+  dailyChecklistTemplateId Int
+  dailyChecklistTemplate ChecklistTemplate
+  weeklyChecklistTemplateId Int
+  weeklyChecklistTemplate ChecklistTemplate
+  checklists Checklist [not null]
   assignees MachineAssignment [not null]
-  checklistItems MachineChecklistItem [not null]
   periodicMaintenancePlans MachinePeriodicMaintenance [not null]
   histories MachineHistory [not null]
   attachments MachineAttachment [not null]
@@ -144,17 +147,58 @@ Table MachineAttachment {
   mode String [not null, default: 'Public']
 }
 
-Table MachineChecklistItem {
+Table ChecklistTemplate {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  machineId Int [not null]
-  machine Machine [not null]
+  name String
+  items ChecklistTemplateItem [not null]
+  type String [not null, default: 'Daily']
+  machinessDaily Machine [not null]
+  machinesWeekly Machine [not null]
+  transportationsDaily Transportation [not null]
+  transportationsWeekly Transportation [not null]
+}
+
+Table ChecklistTemplateItem {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  checklistTemplateId Int [not null]
+  checklistTemplate ChecklistTemplate [not null]
+  name String [not null]
+}
+
+Table Checklist {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  machineId Int
+  machine Machine
+  transportionId Int
+  transportion Transportation
+  from DateTime [not null]
+  to DateTime [not null]
+  type String [not null, default: 'Daily']
+  currentMeterReading Int
+  workingHour Int
+  items ChecklistItem [not null]
+
+  indexes {
+    (machineId, transportionId, from, to, type) [unique]
+  }
+}
+
+Table ChecklistItem {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  checklistId Int [not null]
+  checklist Checklist [not null]
   description String [not null]
   completedById Int
   completedBy User
   completedAt DateTime
-  type String [not null, default: 'Daily']
   currentMeterReading Int
   workingHour Int
 }
@@ -279,7 +323,11 @@ Table Transportation {
   deletedById Int
   deletedBy User
   assignees TransportationAssignment [not null]
-  checklistItems TransportationChecklistItem [not null]
+  dailyChecklistTemplateId Int
+  dailyChecklistTemplate ChecklistTemplate
+  weeklyChecklistTemplateId Int
+  weeklyChecklistTemplate ChecklistTemplate
+  checklists Checklist [not null]
   periodicMaintenancePlans TransportationPeriodicMaintenance [not null]
   attachments TransportationAttachment [not null]
   histories TransportationHistory [not null]
@@ -300,22 +348,6 @@ Table TransportationAssignment {
   indexes {
     (userId, transportationId) [unique]
   }
-}
-
-Table TransportationChecklistItem {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  type String [not null, default: 'Daily']
-  currentMeterReading Int
-  workingHour Int
-  measurement String
 }
 
 Table TransportationPeriodicMaintenance {
@@ -476,6 +508,10 @@ Ref: Machine.createdById > User.id
 
 Ref: Machine.deletedById > User.id
 
+Ref: Machine.dailyChecklistTemplateId > ChecklistTemplate.id
+
+Ref: Machine.weeklyChecklistTemplateId > ChecklistTemplate.id
+
 Ref: MachineAssignment.userId > User.id
 
 Ref: MachineAssignment.machineId > Machine.id
@@ -484,9 +520,15 @@ Ref: MachineAttachment.userId > User.id
 
 Ref: MachineAttachment.machineId > Machine.id
 
-Ref: MachineChecklistItem.machineId > Machine.id
+Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
 
-Ref: MachineChecklistItem.completedById > User.id
+Ref: Checklist.machineId > Machine.id
+
+Ref: Checklist.transportionId > Transportation.id
+
+Ref: ChecklistItem.checklistId > Checklist.id
+
+Ref: ChecklistItem.completedById > User.id
 
 Ref: MachinePeriodicMaintenance.machineId > Machine.id
 
@@ -520,13 +562,13 @@ Ref: Transportation.createdById > User.id
 
 Ref: Transportation.deletedById > User.id
 
+Ref: Transportation.dailyChecklistTemplateId > ChecklistTemplate.id
+
+Ref: Transportation.weeklyChecklistTemplateId > ChecklistTemplate.id
+
 Ref: TransportationAssignment.userId > User.id
 
 Ref: TransportationAssignment.transportationId > Transportation.id
-
-Ref: TransportationChecklistItem.transportationId > Transportation.id
-
-Ref: TransportationChecklistItem.completedById > User.id
 
 Ref: TransportationPeriodicMaintenance.transportationId > Transportation.id
 

@@ -27,7 +27,7 @@ model User {
   machineCreated                               Machine[]
   machineAssignments                           MachineAssignment[]
   machineAttachments                           MachineAttachment[]
-  machineChecklistCompletions                  MachineChecklistItem[]
+  checklistCompletions                         ChecklistItem[]
   machinePeriodicMaintenanceCompletions        MachinePeriodicMaintenance[]
   machineRepairs                               MachineRepair[]
   machineBreakdowns                            MachineBreakdown[]
@@ -36,7 +36,6 @@ model User {
   transportationCreated                        Transportation[]
   transportationAssignments                    TransportationAssignment[]
   transportAttachments                         TransportationAttachment[]
-  transportationChecklistCompletions           TransportationChecklistItem[]
   transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance[]
   transportationRepairs                        TransportationRepair[]
   transportationBreakdowns                     TransportationBreakdown[]
@@ -94,35 +93,39 @@ model PermissionRole {
 }
 
 model Machine {
-  id                       Int                          @id @default(autoincrement())
-  createdAt                DateTime                     @default(now())
-  updatedAt                DateTime                     @updatedAt
-  createdById              Int
-  createdBy                User                         @relation(fields: [createdById], references: [id])
-  machineNumber            String
-  registeredDate           DateTime?
-  model                    String
-  type                     String
-  zone                     String
-  location                 String
-  currentRunning           Int?
-  lastService              Int?
-  interService             Int?
-  status                   MachineStatus                @default(Working)
-  statusChangedAt          DateTime?
-  measurement              String?                      @default("km")
-  isDeleted                Boolean?
-  deletedAt                DateTime?
-  deletedById              Int?
-  deletedBy                User?                        @relation(name: "deletedBy", fields: [deletedById], references: [id])
-  assignees                MachineAssignment[]
-  checklistItems           MachineChecklistItem[]
-  periodicMaintenancePlans MachinePeriodicMaintenance[]
-  histories                MachineHistory[]
-  attachments              MachineAttachment[]
-  repairs                  MachineRepair[]
-  breakdowns               MachineBreakdown[]
-  sparePRs                 MachineSparePR[]
+  id                        Int                          @id @default(autoincrement())
+  createdAt                 DateTime                     @default(now())
+  updatedAt                 DateTime                     @updatedAt
+  createdById               Int
+  createdBy                 User                         @relation(fields: [createdById], references: [id])
+  machineNumber             String
+  registeredDate            DateTime?
+  model                     String
+  type                      String
+  zone                      String
+  location                  String
+  currentRunning            Int?
+  lastService               Int?
+  interService              Int?
+  status                    MachineStatus                @default(Working)
+  statusChangedAt           DateTime?
+  measurement               String?                      @default("km")
+  isDeleted                 Boolean?
+  deletedAt                 DateTime?
+  deletedById               Int?
+  deletedBy                 User?                        @relation(name: "deletedBy", fields: [deletedById], references: [id])
+  dailyChecklistTemplateId  Int?
+  dailyChecklistTemplate    ChecklistTemplate?           @relation("machineDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
+  weeklyChecklistTemplateId Int?
+  weeklyChecklistTemplate   ChecklistTemplate?           @relation("machineWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
+  checklists                Checklist[]
+  assignees                 MachineAssignment[]
+  periodicMaintenancePlans  MachinePeriodicMaintenance[]
+  histories                 MachineHistory[]
+  attachments               MachineAttachment[]
+  repairs                   MachineRepair[]
+  breakdowns                MachineBreakdown[]
+  sparePRs                  MachineSparePR[]
 }
 
 enum MachineStatus {
@@ -180,17 +183,56 @@ model MachineAttachment {
   mode               String   @default("Public")
 }
 
-model MachineChecklistItem {
+model ChecklistTemplate {
+  id                    Int                     @id @default(autoincrement())
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  name                  String?
+  items                 ChecklistTemplateItem[]
+  type                  String                  @default("Daily")
+  machinessDaily        Machine[]               @relation("machineDaily")
+  machinesWeekly        Machine[]               @relation("machineWeekly")
+  transportationsDaily  Transportation[]        @relation("transportationDaily")
+  transportationsWeekly Transportation[]        @relation("transportationWeekly")
+}
+
+model ChecklistTemplateItem {
+  id                  Int               @id @default(autoincrement())
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  checklistTemplateId Int
+  checklistTemplate   ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id], onDelete: Cascade)
+  name                String
+}
+
+model Checklist {
+  id                  Int             @id @default(autoincrement())
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  machineId           Int?
+  machine             Machine?        @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  transportionId      Int?
+  transportion        Transportation? @relation(fields: [transportionId], references: [id], onDelete: Cascade)
+  from                DateTime
+  to                  DateTime
+  type                String          @default("Daily")
+  currentMeterReading Int?
+  workingHour         Int?
+  items               ChecklistItem[]
+
+  @@unique([machineId, transportionId, from, to, type])
+}
+
+model ChecklistItem {
   id                  Int       @id @default(autoincrement())
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
-  machineId           Int
-  machine             Machine   @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  checklistId         Int
+  checklist           Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
   description         String
   completedById       Int?
   completedBy         User?     @relation(fields: [completedById], references: [id])
   completedAt         DateTime?
-  type                String    @default("Daily")
   currentMeterReading Int?
   workingHour         Int?
 }
@@ -291,37 +333,41 @@ model MachineSparePR {
 }
 
 model Transportation {
-  id                       Int                                 @id @default(autoincrement())
-  createdAt                DateTime                            @default(now())
-  updatedAt                DateTime                            @updatedAt
-  createdById              Int
-  createdBy                User                                @relation(fields: [createdById], references: [id])
-  machineNumber            String
-  registeredDate           DateTime?
-  model                    String?
-  type                     String?
-  location                 String
-  status                   TransportationStatus                @default(Working)
-  statusChangedAt          DateTime?
-  department               String?
-  engine                   String?
-  currentMileage           Int?
-  lastServiceMileage       Int?
-  interServiceMileage      Int?
-  measurement              String?                             @default("km")
-  transportType            String?                             @default("Vehicle")
-  isDeleted                Boolean?
-  deletedAt                DateTime?
-  deletedById              Int?
-  deletedBy                User?                               @relation(name: "transportDeletedBy", fields: [deletedById], references: [id])
-  assignees                TransportationAssignment[]
-  checklistItems           TransportationChecklistItem[]
-  periodicMaintenancePlans TransportationPeriodicMaintenance[]
-  attachments              TransportationAttachment[]
-  histories                TransportationHistory[]
-  repairs                  TransportationRepair[]
-  breakdowns               TransportationBreakdown[]
-  sparePRs                 TransportationSparePR[]
+  id                        Int                                 @id @default(autoincrement())
+  createdAt                 DateTime                            @default(now())
+  updatedAt                 DateTime                            @updatedAt
+  createdById               Int
+  createdBy                 User                                @relation(fields: [createdById], references: [id])
+  machineNumber             String
+  registeredDate            DateTime?
+  model                     String?
+  type                      String?
+  location                  String
+  status                    TransportationStatus                @default(Working)
+  statusChangedAt           DateTime?
+  department                String?
+  engine                    String?
+  currentMileage            Int?
+  lastServiceMileage        Int?
+  interServiceMileage       Int?
+  measurement               String?                             @default("km")
+  transportType             String?                             @default("Vehicle")
+  isDeleted                 Boolean?
+  deletedAt                 DateTime?
+  deletedById               Int?
+  deletedBy                 User?                               @relation(name: "transportDeletedBy", fields: [deletedById], references: [id])
+  assignees                 TransportationAssignment[]
+  dailyChecklistTemplateId  Int?
+  dailyChecklistTemplate    ChecklistTemplate?                  @relation("transportationDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
+  weeklyChecklistTemplateId Int?
+  weeklyChecklistTemplate   ChecklistTemplate?                  @relation("transportationWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
+  checklists                Checklist[]
+  periodicMaintenancePlans  TransportationPeriodicMaintenance[]
+  attachments               TransportationAttachment[]
+  histories                 TransportationHistory[]
+  repairs                   TransportationRepair[]
+  breakdowns                TransportationBreakdown[]
+  sparePRs                  TransportationSparePR[]
 }
 
 enum TransportationStatus {
@@ -340,22 +386,6 @@ model TransportationAssignment {
   transportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, transportationId])
-}
-
-model TransportationChecklistItem {
-  id                  Int            @id @default(autoincrement())
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-  transportationId    Int
-  transportation      Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
-  description         String
-  completedById       Int?
-  completedBy         User?          @relation(fields: [completedById], references: [id])
-  completedAt         DateTime?
-  type                String         @default("Daily")
-  currentMeterReading Int?
-  workingHour         Int?
-  measurement         String?
 }
 
 model TransportationPeriodicMaintenance {

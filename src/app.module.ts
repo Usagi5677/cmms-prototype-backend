@@ -18,6 +18,7 @@ import { MachineModule } from './resolvers/machine/machine.module';
 import { TransportationModule } from './resolvers/transportation/transportation.module';
 import { AttachmentModule } from './resolvers/attachment/attachment.module';
 import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.module';
+import { ChecklistTemplateModule } from './resolvers/checklist-template/checklist-template.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.
     AttachmentModule,
     PermissionRoleModule,
     ScheduleModule.forRoot(),
+    ChecklistTemplateModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, DateScalar],
