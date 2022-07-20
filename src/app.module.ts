@@ -19,6 +19,8 @@ import { TransportationModule } from './resolvers/transportation/transportation.
 import { AttachmentModule } from './resolvers/attachment/attachment.module';
 import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.module';
 import { ChecklistTemplateModule } from './resolvers/checklist-template/checklist-template.module';
+import { ChecklistModule } from './checklist/checklist.module';
+import { InitService } from './services/init.service';
 
 @Module({
   imports: [
@@ -72,8 +74,9 @@ import { ChecklistTemplateModule } from './resolvers/checklist-template/checklis
     PermissionRoleModule,
     ScheduleModule.forRoot(),
     ChecklistTemplateModule,
+    ChecklistModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppResolver, DateScalar],
+  providers: [AppService, AppResolver, DateScalar, InitService],
 })
 export class AppModule {}

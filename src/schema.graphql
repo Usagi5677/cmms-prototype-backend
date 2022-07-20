@@ -62,6 +62,30 @@ input ChangeChecklistTemplateInput {
   newChecklistId: Int!
 }
 
+type Checklist {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  currentMeterReading: Int
+  from: Date!
+  id: Int!
+  items: [ChecklistItem!]!
+  machine: Machine
+  to: Date!
+  transportation: Transportation
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  workingHour: Int
+}
+
+input ChecklistInput {
+  date: Date!
+  entityId: Int!
+  entityType: String!
+  type: String!
+}
+
 type ChecklistItem {
   completedAt: Date
   completedBy: User
@@ -70,7 +94,6 @@ type ChecklistItem {
   createdAt: Date!
   description: String!
   id: Int!
-  type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -84,8 +107,8 @@ type ChecklistTemplate {
   machinesDaily: [Machine!]
   machinesWeekly: [Machine!]
   name: String
-  transportationDaily: [Transportation!]
-  transportationWeekly: [Transportation!]
+  transportationsDaily: [Transportation!]
+  transportationsWeekly: [Transportation!]
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -513,6 +536,7 @@ type Mutation {
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
+  toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleMachinePMTask(complete: Boolean!, id: Int!): String!
   toggleTransportationPMTask(complete: Boolean!, id: Int!): String!
   toggleVerifyMachinePeriodicMaintenance(id: Int!, verify: Boolean!): String!
@@ -520,6 +544,8 @@ type Mutation {
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
+  updateReading(id: Int!, reading: Int!): String!
+  updateWorkingHours(id: Int!, newHrs: Int!): String!
 }
 
 type Notification {
@@ -717,6 +743,7 @@ type Query {
   breakdownMachineCount: BreakdownNotif!
   breakdownVehicleCount: BreakdownNotif!
   breakdownVesselCount: BreakdownNotif!
+  checklist(input: ChecklistInput!): Checklist
   checklistTemplate(id: Int!): ChecklistTemplate!
   checklistTemplates(
     """Paginate after opaque cursor"""

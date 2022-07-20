@@ -3,13 +3,16 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ChecklistTemplate, Machine, Transportation } from '@prisma/client';
+import { Machine, Transportation } from '@prisma/client';
+import * as moment from 'moment';
 import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { CHECKLIST_TYPES } from 'src/constants';
+import { ChecklistTemplateWithItems } from 'src/models/checklist-template-with-items.model';
+import { ChecklistWithItems } from 'src/models/checklist-with-items.model';
 import { ChangeChecklistTemplateInput } from './dto/change-checklist-template.input';
 import { ChecklistTemplateConnection } from './dto/checklist-template-connection.model';
 import { ChecklistTemplateConnectionArgs } from './dto/checklist-template.connection.args';
@@ -133,6 +136,9 @@ export class ChecklistTemplateService {
         });
       }
     }
+
+    // Update existing checklists of entity
+    await this.updateEntityChecklists(entityId, entityType, type);
   }
 
   async addItem(
@@ -170,12 +176,17 @@ export class ChecklistTemplateService {
         return;
       }
     }
-    await this.prisma.checklistTemplateItem.create({
+    const templateItem = await this.prisma.checklistTemplateItem.create({
       data: {
         checklistTemplateId: id,
         name,
       },
     });
+
+    // Update all checklists using this template
+    await this.updateChecklistOfAllEntitiesUsingTemplate(
+      templateItem.checklistTemplateId
+    );
   }
 
   async removeItem(
@@ -213,7 +224,13 @@ export class ChecklistTemplateService {
         return;
       }
     }
-    await this.prisma.checklistTemplateItem.delete({ where: { id } });
+    const templateItem = await this.prisma.checklistTemplateItem.delete({
+      where: { id },
+    });
+    // Update all checklists using this template
+    await this.updateChecklistOfAllEntitiesUsingTemplate(
+      templateItem.checklistTemplateId
+    );
   }
 
   async validateEntity(
@@ -241,11 +258,11 @@ export class ChecklistTemplateService {
     entityType,
     entityId,
     type,
-  }: EntityChecklistTemplateInput): Promise<ChecklistTemplate> {
+  }: EntityChecklistTemplateInput): Promise<ChecklistTemplateWithItems> {
     const entity = await this.validateEntity(entityType, entityId);
 
     // Validate checklist type
-    let template: ChecklistTemplate = null;
+    let template: ChecklistTemplateWithItems = null;
     if (type === 'Daily') {
       if (entity.dailyChecklistTemplateId) {
         template = await this.prisma.checklistTemplate.findFirst({
@@ -371,6 +388,101 @@ export class ChecklistTemplateService {
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
+    }
+
+    // Update existing checklists
+    await this.updateEntityChecklists(
+      entity.id,
+      entityType,
+      newChecklistTemplate.type
+    );
+  }
+
+  async updateChecklistOfAllEntitiesUsingTemplate(templateId: number) {
+    const template = await this.prisma.checklistTemplate.findFirst({
+      where: { id: templateId },
+      include: {
+        machinessDaily: true,
+        machinesWeekly: true,
+        transportationsDaily: true,
+        transportationsWeekly: true,
+      },
+    });
+    for (const machine of template.machinessDaily) {
+      await this.updateEntityChecklists(machine.id, 'Machine', 'Daily');
+    }
+    for (const machine of template.machinesWeekly) {
+      await this.updateEntityChecklists(machine.id, 'Machine', 'Weekly');
+    }
+    for (const transportation of template.transportationsDaily) {
+      await this.updateEntityChecklists(
+        transportation.id,
+        'Transportation',
+        'Daily'
+      );
+    }
+    for (const transportation of template.transportationsWeekly) {
+      await this.updateEntityChecklists(
+        transportation.id,
+        'Transportation',
+        'Weekly'
+      );
+    }
+  }
+
+  // Update all checklists (after template is changed)
+  async updateEntityChecklists(
+    entityId: number,
+    entityType: string,
+    type: string
+  ) {
+    const template = await this.entityChecklistTemplate({
+      entityType,
+      entityId,
+      type,
+    });
+    const templateItems = template.items.map((i) => i.name);
+    console.log({ templateItems });
+    const startOf = type === 'Daily' ? 'day' : 'week';
+    let checklistsToChange: ChecklistWithItems[] = [];
+    if (entityType === 'Machine') {
+      checklistsToChange = await this.prisma.checklist.findMany({
+        where: {
+          machineId: entityId,
+          from: { gte: moment().startOf(startOf).toDate() },
+          type,
+        },
+        include: { items: true },
+      });
+    } else {
+      checklistsToChange = await this.prisma.checklist.findMany({
+        where: {
+          transportationId: entityId,
+          from: { gte: moment().startOf(startOf).toDate() },
+          type,
+        },
+        include: { items: true },
+      });
+    }
+    for (const checklist of checklistsToChange) {
+      // const checklistItems = checklist.items.map((i) => i.description);
+      const completedItems = checklist.items
+        .filter((ci) => ci.completedAt !== null)
+        .map((ci) => ci.description);
+      console.log({ completedItems });
+      const additions = templateItems.filter(
+        (ti) => !completedItems.includes(ti)
+      );
+      console.log({ additions });
+      await this.prisma.checklistItem.deleteMany({
+        where: { checklistId: checklist.id, completedAt: null },
+      });
+      await this.prisma.checklistItem.createMany({
+        data: additions.map((a) => ({
+          checklistId: checklist.id,
+          description: a,
+        })),
+      });
     }
   }
 }

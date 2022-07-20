@@ -11,6 +11,6 @@ export class ChecklistTemplate extends BaseModel {
   items: ChecklistTemplateItem[];
   machinesDaily?: Machine[];
   machinesWeekly?: Machine[];
-  transportationDaily?: Transportation[];
-  transportationWeekly?: Transportation[];
+  transportationsDaily?: Transportation[];
+  transportationsWeekly?: Transportation[];
 }

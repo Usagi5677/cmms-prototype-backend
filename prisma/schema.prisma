@@ -211,8 +211,8 @@ model Checklist {
   updatedAt           DateTime        @updatedAt
   machineId           Int?
   machine             Machine?        @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  transportionId      Int?
-  transportion        Transportation? @relation(fields: [transportionId], references: [id], onDelete: Cascade)
+  transportationId    Int?
+  transportation      Transportation? @relation(fields: [transportationId], references: [id], onDelete: Cascade)
   from                DateTime
   to                  DateTime
   type                String          @default("Daily")
@@ -220,21 +220,19 @@ model Checklist {
   workingHour         Int?
   items               ChecklistItem[]
 
-  @@unique([machineId, transportionId, from, to, type])
+  @@unique([machineId, transportationId, from, to, type])
 }
 
 model ChecklistItem {
-  id                  Int       @id @default(autoincrement())
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  checklistId         Int
-  checklist           Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
-  description         String
-  completedById       Int?
-  completedBy         User?     @relation(fields: [completedById], references: [id])
-  completedAt         DateTime?
-  currentMeterReading Int?
-  workingHour         Int?
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  checklistId   Int
+  checklist     Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  description   String
+  completedById Int?
+  completedBy   User?     @relation(fields: [completedById], references: [id])
+  completedAt   DateTime?
 }
 
 model MachinePeriodicMaintenance {

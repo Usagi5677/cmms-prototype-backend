@@ -175,8 +175,8 @@ Table Checklist {
   updatedAt DateTime [not null]
   machineId Int
   machine Machine
-  transportionId Int
-  transportion Transportation
+  transportationId Int
+  transportation Transportation
   from DateTime [not null]
   to DateTime [not null]
   type String [not null, default: 'Daily']
@@ -185,7 +185,7 @@ Table Checklist {
   items ChecklistItem [not null]
 
   indexes {
-    (machineId, transportionId, from, to, type) [unique]
+    (machineId, transportationId, from, to, type) [unique]
   }
 }
 
@@ -199,8 +199,6 @@ Table ChecklistItem {
   completedById Int
   completedBy User
   completedAt DateTime
-  currentMeterReading Int
-  workingHour Int
 }
 
 Table MachinePeriodicMaintenance {
@@ -524,7 +522,7 @@ Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
 
 Ref: Checklist.machineId > Machine.id
 
-Ref: Checklist.transportionId > Transportation.id
+Ref: Checklist.transportationId > Transportation.id
 
 Ref: ChecklistItem.checklistId > Checklist.id
 

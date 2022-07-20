@@ -4,7 +4,6 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
@@ -84,6 +83,12 @@ export class MachineService {
   ) {
     try {
       const interService = currentRunning - lastService;
+      const newDailyTemplate = await this.prisma.checklistTemplate.create({
+        data: { type: 'Daily' },
+      });
+      const newWeeklyTemplate = await this.prisma.checklistTemplate.create({
+        data: { type: 'Weekly' },
+      });
       const machine = await this.prisma.machine.create({
         data: {
           createdById: user.id,
@@ -97,6 +102,8 @@ export class MachineService {
           interService,
           registeredDate,
           measurement,
+          dailyChecklistTemplateId: newDailyTemplate.id,
+          weeklyChecklistTemplateId: newWeeklyTemplate.id,
         },
       });
 
