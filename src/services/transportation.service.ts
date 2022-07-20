@@ -2901,4 +2901,75 @@ export class TransportationService {
       },
     };
   }
+
+  //** Get all transporation pm task status count*/
+  async getAllTransportationPMTaskStatusCount(user: User) {
+    try {
+      const key = `allTransportationPMTaskStatusCount`;
+      let pmTaskStatusCount = await this.redisCacheService.get(key);
+      if (!pmTaskStatusCount) {
+        pmTaskStatusCount = '';
+
+        const pending =
+          await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+            where: {
+              completedAt: null,
+            },
+          });
+        const done =
+          await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+            where: {
+              NOT: [{ completedAt: null }],
+            },
+          });
+
+        pmTaskStatusCount = {
+          pending: pending.length ?? 0,
+          done: done.length ?? 0,
+        };
+      }
+      return pmTaskStatusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async getAllTransportationPMStatusCount(user: User) {
+    try {
+      const key = `allTransportationPMStatusCount`;
+      let pmStatusCount = await this.redisCacheService.get(key);
+      if (!pmStatusCount) {
+        pmStatusCount = '';
+        const missed =
+          await this.prisma.transportationPeriodicMaintenance.findMany({
+            where: {
+              status: 'Missed',
+            },
+          });
+        const pending =
+          await this.prisma.transportationPeriodicMaintenance.findMany({
+            where: {
+              status: 'Pending',
+            },
+          });
+        const done =
+          await this.prisma.transportationPeriodicMaintenance.findMany({
+            where: {
+              status: 'Done',
+            },
+          });
+
+        pmStatusCount = {
+          missed: missed.length ?? 0,
+          pending: pending.length ?? 0,
+          done: done.length ?? 0,
+        };
+      }
+      return pmStatusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

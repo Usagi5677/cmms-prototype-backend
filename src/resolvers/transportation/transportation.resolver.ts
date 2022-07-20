@@ -45,6 +45,8 @@ import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { AllTransportationUsageHistory } from 'src/models/all-transportation-usage-history.model';
 import { PaginatedTransportationPeriodicMaintenanceTask } from 'src/models/pagination/transportation-pm-tasks-connection.model';
+import { PMTaskStatusCount } from 'src/models/PMTaskStatusCount.model';
+import { maintenanceStatusCount } from 'src/models/maintenanceStatusCount.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Transportation)
@@ -818,5 +820,21 @@ export class TransportationResolver {
       user,
       args
     );
+  }
+
+  @Query(() => PMTaskStatusCount)
+  async allTransportationPMTaskStatusCount(
+    @UserEntity() user: User
+  ): Promise<PMTaskStatusCount> {
+    return this.transportationService.getAllTransportationPMTaskStatusCount(
+      user
+    );
+  }
+
+  @Query(() => maintenanceStatusCount)
+  async allTransportationPMStatusCount(
+    @UserEntity() user: User
+  ): Promise<maintenanceStatusCount> {
+    return this.transportationService.getAllTransportationPMStatusCount(user);
   }
 }

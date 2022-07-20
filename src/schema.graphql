@@ -477,6 +477,11 @@ type Notification {
   userId: Int!
 }
 
+type PMTaskStatusCount {
+  done: Int
+  pending: Int
+}
+
 type PaginatedMachine {
   edges: [MachineEdge!]
   pageInfo: MachinePageInfo
@@ -601,7 +606,11 @@ type Profile {
 }
 
 type Query {
+  allMachinePMStatusCount: maintenanceStatusCount!
+  allMachinePMTaskStatusCount: PMTaskStatusCount!
   allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
+  allTransportationPMStatusCount: maintenanceStatusCount!
+  allTransportationPMTaskStatusCount: PMTaskStatusCount!
   allTransportationUsageHistory(from: Date!, to: Date!): [AllTransportationUsageHistory!]!
   appUsers: [User!]!
   assignedMachines(
@@ -1466,4 +1475,10 @@ type UserWithRoles {
   rcno: Int!
   roles: [UserRoles!]
   userId: String!
+}
+
+type maintenanceStatusCount {
+  done: Int
+  missed: Int
+  pending: Int
 }

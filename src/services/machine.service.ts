@@ -2843,4 +2843,71 @@ export class MachineService {
       },
     };
   }
+
+  //** Get all machine pm task status count*/
+  async getAllMachinePMTaskStatusCount(user: User) {
+    try {
+      const key = `allMachinePMTaskStatusCount`;
+      let pmTaskStatusCount = await this.redisCacheService.get(key);
+      if (!pmTaskStatusCount) {
+        pmTaskStatusCount = '';
+
+        const pending =
+          await this.prisma.machinePeriodicMaintenanceTask.findMany({
+            where: {
+              completedAt: null,
+            },
+          });
+        const done = await this.prisma.machinePeriodicMaintenanceTask.findMany({
+          where: {
+            NOT: [{ completedAt: null }],
+          },
+        });
+
+        pmTaskStatusCount = {
+          pending: pending.length ?? 0,
+          done: done.length ?? 0,
+        };
+      }
+      return pmTaskStatusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async getAllMachinePMStatusCount(user: User) {
+    try {
+      const key = `allMachinePMStatusCount`;
+      let pmStatusCount = await this.redisCacheService.get(key);
+      if (!pmStatusCount) {
+        pmStatusCount = '';
+        const missed = await this.prisma.machinePeriodicMaintenance.findMany({
+          where: {
+            status: 'Missed',
+          },
+        });
+        const pending = await this.prisma.machinePeriodicMaintenance.findMany({
+          where: {
+            status: 'Pending',
+          },
+        });
+        const done = await this.prisma.machinePeriodicMaintenance.findMany({
+          where: {
+            status: 'Done',
+          },
+        });
+
+        pmStatusCount = {
+          missed: missed.length ?? 0,
+          pending: pending.length ?? 0,
+          done: done.length ?? 0,
+        };
+      }
+      return pmStatusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

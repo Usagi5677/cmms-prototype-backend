@@ -49,6 +49,8 @@ import { BreakdownNotif } from 'src/models/breakdownNotif.model';
 import { MachineUsageHistory } from 'src/models/machine-usage-history.model';
 import { AllMachineUsageHistory } from 'src/models/all-machine-usage-history.model';
 import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
+import { PMTaskStatusCount } from 'src/models/PMTaskStatusCount.model';
+import { maintenanceStatusCount } from 'src/models/maintenanceStatusCount.model';
 
 @Resolver(() => Machine)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -729,5 +731,19 @@ export class MachineResolver {
       user,
       args
     );
+  }
+
+  @Query(() => PMTaskStatusCount)
+  async allMachinePMTaskStatusCount(
+    @UserEntity() user: User
+  ): Promise<PMTaskStatusCount> {
+    return this.machineService.getAllMachinePMTaskStatusCount(user);
+  }
+
+  @Query(() => maintenanceStatusCount)
+  async allMachinePMStatusCount(
+    @UserEntity() user: User
+  ): Promise<maintenanceStatusCount> {
+    return this.machineService.getAllMachinePMStatusCount(user);
   }
 }
