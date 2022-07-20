@@ -735,9 +735,13 @@ export class MachineResolver {
 
   @Query(() => PMTaskStatusCount)
   async allMachinePMTaskStatusCount(
-    @UserEntity() user: User
+    @UserEntity() user: User,
+    @Args('assignedToId', { nullable: true }) assignedToId?: number
   ): Promise<PMTaskStatusCount> {
-    return this.machineService.getAllMachinePMTaskStatusCount(user);
+    return this.machineService.getAllMachinePMTaskStatusCount(
+      user,
+      assignedToId
+    );
   }
 
   @Query(() => maintenanceStatusCount)

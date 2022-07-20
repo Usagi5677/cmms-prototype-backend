@@ -9,4 +9,5 @@ export class TransportationPeriodicMaintenanceConnectionArgs extends ConnectionA
   status?: PeriodicMaintenanceStatus;
   complete?: boolean;
   location?: string[];
+  assignedToId?: number;
 }

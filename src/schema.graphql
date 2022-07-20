@@ -607,10 +607,10 @@ type Profile {
 
 type Query {
   allMachinePMStatusCount: maintenanceStatusCount!
-  allMachinePMTaskStatusCount: PMTaskStatusCount!
+  allMachinePMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
   allTransportationPMStatusCount: maintenanceStatusCount!
-  allTransportationPMTaskStatusCount: PMTaskStatusCount!
+  allTransportationPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allTransportationUsageHistory(from: Date!, to: Date!): [AllTransportationUsageHistory!]!
   appUsers: [User!]!
   assignedMachines(
@@ -746,6 +746,7 @@ type Query {
   getAllMachinePeriodicMaintenance(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
@@ -764,6 +765,7 @@ type Query {
   getAllMachinePeriodicMaintenanceTask(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
@@ -802,6 +804,7 @@ type Query {
   getAllPeriodicMaintenanceOfMachine(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
@@ -820,6 +823,7 @@ type Query {
   getAllPeriodicMaintenanceOfTransportation(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
@@ -914,6 +918,7 @@ type Query {
   getAllTransportationPeriodicMaintenance(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String
@@ -932,6 +937,7 @@ type Query {
   getAllTransportationPeriodicMaintenanceTask(
     """Paginate after opaque cursor"""
     after: String
+    assignedToId: Int
 
     """Paginate before opaque cursor"""
     before: String

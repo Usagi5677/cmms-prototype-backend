@@ -2814,10 +2814,20 @@ export class TransportationService {
   ): Promise<PaginatedTransportationPeriodicMaintenanceTask> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, complete, location, status } = args;
+    const { search, complete, location, status, assignedToId } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+
+    if (assignedToId) {
+      where.AND.push({
+        periodicMaintenance: {
+          transportation: {
+            assignees: { some: { userId: assignedToId } },
+          },
+        },
+      });
+    }
 
     if (location?.length > 0) {
       where.AND.push({
@@ -2903,25 +2913,59 @@ export class TransportationService {
   }
 
   //** Get all transporation pm task status count*/
-  async getAllTransportationPMTaskStatusCount(user: User) {
+  async getAllTransportationPMTaskStatusCount(
+    user: User,
+    assignedToId?: number
+  ) {
     try {
       const key = `allTransportationPMTaskStatusCount`;
       let pmTaskStatusCount = await this.redisCacheService.get(key);
+      let pending;
+      let done;
       if (!pmTaskStatusCount) {
         pmTaskStatusCount = '';
 
-        const pending =
-          await this.prisma.transportationPeriodicMaintenanceTask.findMany({
-            where: {
-              completedAt: null,
-            },
-          });
-        const done =
-          await this.prisma.transportationPeriodicMaintenanceTask.findMany({
-            where: {
-              NOT: [{ completedAt: null }],
-            },
-          });
+        if (assignedToId) {
+          pending =
+            await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+              where: {
+                completedAt: null,
+                periodicMaintenance: {
+                  transportation: {
+                    assignees: { some: { userId: assignedToId } },
+                  },
+                },
+              },
+            });
+        } else {
+          pending =
+            await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+              where: {
+                completedAt: null,
+              },
+            });
+        }
+
+        if (assignedToId) {
+          done =
+            await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+              where: {
+                NOT: [{ completedAt: null }],
+                periodicMaintenance: {
+                  transportation: {
+                    assignees: { some: { userId: assignedToId } },
+                  },
+                },
+              },
+            });
+        } else {
+          done =
+            await this.prisma.transportationPeriodicMaintenanceTask.findMany({
+              where: {
+                NOT: [{ completedAt: null }],
+              },
+            });
+        }
 
         pmTaskStatusCount = {
           pending: pending.length ?? 0,

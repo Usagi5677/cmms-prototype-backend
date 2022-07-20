@@ -2758,10 +2758,20 @@ export class MachineService {
   ): Promise<PaginatedMachinePeriodicMaintenanceTask> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, complete, location, status } = args;
+    const { search, complete, location, status, assignedToId } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+
+    if (assignedToId) {
+      where.AND.push({
+        periodicMaintenance: {
+          machine: {
+            assignees: { some: { userId: assignedToId } },
+          },
+        },
+      });
+    }
 
     if (location?.length > 0) {
       where.AND.push({
@@ -2845,24 +2855,52 @@ export class MachineService {
   }
 
   //** Get all machine pm task status count*/
-  async getAllMachinePMTaskStatusCount(user: User) {
+  async getAllMachinePMTaskStatusCount(user: User, assignedToId?: number) {
     try {
       const key = `allMachinePMTaskStatusCount`;
       let pmTaskStatusCount = await this.redisCacheService.get(key);
+      let pending;
+      let done;
       if (!pmTaskStatusCount) {
         pmTaskStatusCount = '';
 
-        const pending =
-          await this.prisma.machinePeriodicMaintenanceTask.findMany({
+        if (assignedToId) {
+          pending = await this.prisma.machinePeriodicMaintenanceTask.findMany({
+            where: {
+              completedAt: null,
+              periodicMaintenance: {
+                machine: {
+                  assignees: { some: { userId: assignedToId } },
+                },
+              },
+            },
+          });
+        } else {
+          pending = await this.prisma.machinePeriodicMaintenanceTask.findMany({
             where: {
               completedAt: null,
             },
           });
-        const done = await this.prisma.machinePeriodicMaintenanceTask.findMany({
-          where: {
-            NOT: [{ completedAt: null }],
-          },
-        });
+        }
+
+        if (assignedToId) {
+          done = await this.prisma.machinePeriodicMaintenanceTask.findMany({
+            where: {
+              NOT: [{ completedAt: null }],
+              periodicMaintenance: {
+                machine: {
+                  assignees: { some: { userId: assignedToId } },
+                },
+              },
+            },
+          });
+        } else {
+          done = await this.prisma.machinePeriodicMaintenanceTask.findMany({
+            where: {
+              NOT: [{ completedAt: null }],
+            },
+          });
+        }
 
         pmTaskStatusCount = {
           pending: pending.length ?? 0,
@@ -2909,5 +2947,104 @@ export class MachineService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  //** Get assigned user's machine periodic maintenance tasks. Results are paginated. User cursor argument to go forward/backward. */
+  async getMyMachinePMTasksWithPagination(
+    user: User,
+    args: MachinePeriodicMaintenanceConnectionArgs
+  ): Promise<PaginatedMachinePeriodicMaintenanceTask> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, complete, location, status, assignedToId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (assignedToId) {
+      where.AND.push({
+        assignees: { some: { userId: assignedToId } },
+      });
+    }
+
+    if (location?.length > 0) {
+      where.AND.push({
+        periodicMaintenance: {
+          machine: {
+            location: {
+              in: location,
+            },
+          },
+        },
+      });
+    }
+
+    if (status) {
+      where.AND.push({
+        periodicMaintenance: {
+          status: status,
+        },
+      });
+    }
+
+    if (complete) {
+      where.AND.push({
+        NOT: [{ completedAt: null }],
+      });
+    }
+
+    if (search) {
+      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const machinePeriodicMaintenanceTask =
+      await this.prisma.machinePeriodicMaintenanceTask.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          periodicMaintenance: {
+            include: {
+              machine: {
+                include: {
+                  assignees: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+      });
+
+    const count = await this.prisma.machinePeriodicMaintenanceTask.count({
+      where,
+    });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      machinePeriodicMaintenanceTask.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
   }
 }

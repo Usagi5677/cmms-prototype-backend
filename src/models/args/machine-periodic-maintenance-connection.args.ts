@@ -9,4 +9,5 @@ export class MachinePeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   status?: PeriodicMaintenanceStatus;
   complete?: boolean;
   location?: string[];
+  assignedToId?: number;
 }

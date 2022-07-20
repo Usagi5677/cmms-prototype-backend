@@ -824,10 +824,12 @@ export class TransportationResolver {
 
   @Query(() => PMTaskStatusCount)
   async allTransportationPMTaskStatusCount(
-    @UserEntity() user: User
+    @UserEntity() user: User,
+    @Args('assignedToId', { nullable: true }) assignedToId?: number
   ): Promise<PMTaskStatusCount> {
     return this.transportationService.getAllTransportationPMTaskStatusCount(
-      user
+      user,
+      assignedToId
     );
   }
 
