@@ -692,6 +692,7 @@ type Profile {
 }
 
 type Query {
+  allMachineAndTransportStatusCount: machineAndTransportsStatusCount!
   allMachinePMStatusCount: maintenanceStatusCount!
   allMachinePMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
@@ -1592,6 +1593,15 @@ type UserWithRoles {
   rcno: Int!
   roles: [UserRoles!]
   userId: String!
+}
+
+type machineAndTransportsStatusCount {
+  machineBreakdown: Int
+  machineIdle: Int
+  machineWorking: Int
+  transportationBreakdown: Int
+  transportationIdle: Int
+  transportationWorking: Int
 }
 
 type maintenanceStatusCount {

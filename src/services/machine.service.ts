@@ -3010,4 +3010,67 @@ export class MachineService {
       },
     };
   }
+
+  //** Get all machine and transports status count*/
+  async getAllMachineAndTransportStatusCount(user: User) {
+    try {
+      const key = `allMachineAndTransportStatusCount`;
+      let statusCount = await this.redisCacheService.get(key);
+      if (!statusCount) {
+        statusCount = '';
+
+        const machineWorking = await this.prisma.machine.findMany({
+          where: {
+            status: 'Working',
+          },
+        });
+
+        const machineIdle = await this.prisma.machine.findMany({
+          where: {
+            status: 'Idle',
+          },
+        });
+
+        const machineBreakdown = await this.prisma.machine.findMany({
+          where: {
+            status: 'Breakdown',
+          },
+        });
+
+        const transportationWorking = await this.prisma.transportation.findMany(
+          {
+            where: {
+              status: 'Working',
+            },
+          }
+        );
+
+        const transportationIdle = await this.prisma.transportation.findMany({
+          where: {
+            status: 'Idle',
+          },
+        });
+
+        const transportationBreakdown =
+          await this.prisma.transportation.findMany({
+            where: {
+              status: 'Breakdown',
+            },
+          });
+
+        statusCount = {
+          machineWorking: machineWorking.length ?? 0,
+          machineIdle: machineIdle.length ?? 0,
+          machineBreakdown: machineBreakdown.length ?? 0,
+          transportationWorking: transportationWorking.length ?? 0,
+          transportationIdle: transportationIdle.length ?? 0,
+          transportationBreakdown: transportationBreakdown.length ?? 0,
+        };
+      }
+      return statusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

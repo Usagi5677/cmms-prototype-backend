@@ -51,6 +51,7 @@ import { AllMachineUsageHistory } from 'src/models/all-machine-usage-history.mod
 import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
 import { PMTaskStatusCount } from 'src/models/PMTaskStatusCount.model';
 import { maintenanceStatusCount } from 'src/models/maintenanceStatusCount.model';
+import { machineAndTransportsStatusCount } from 'src/models/machineAndTransportsStatusCount.model';
 
 @Resolver(() => Machine)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -749,5 +750,12 @@ export class MachineResolver {
     @UserEntity() user: User
   ): Promise<maintenanceStatusCount> {
     return this.machineService.getAllMachinePMStatusCount(user);
+  }
+
+  @Query(() => machineAndTransportsStatusCount)
+  async allMachineAndTransportStatusCount(
+    @UserEntity() user: User
+  ): Promise<machineAndTransportsStatusCount> {
+    return this.machineService.getAllMachineAndTransportStatusCount(user);
   }
 }
