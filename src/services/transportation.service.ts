@@ -80,7 +80,6 @@ export class TransportationService {
     registeredDate: Date
   ) {
     try {
-      const interServiceMileage = currentMileage - lastServiceMileage;
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Daily' },
       });
@@ -101,7 +100,6 @@ export class TransportationService {
           lastServiceMileage,
           transportType,
           registeredDate,
-          interServiceMileage,
           dailyChecklistTemplateId: newDailyTemplate.id,
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
         },
@@ -157,10 +155,10 @@ export class TransportationService {
     department: string,
     engine: string,
     measurement: string,
-    currentMileage: number,
     lastServiceMileage: number,
     transportType: string,
-    registeredDate: Date
+    registeredDate: Date,
+    currentMileage?: number
   ) {
     try {
       const transportation = await this.prisma.transportation.findFirst({
@@ -274,7 +272,6 @@ export class TransportationService {
         });
       }
 
-      const interServiceMileage = currentMileage - lastServiceMileage;
       await this.prisma.transportation.update({
         data: {
           machineNumber,
@@ -286,7 +283,6 @@ export class TransportationService {
           measurement,
           currentMileage,
           lastServiceMileage,
-          interServiceMileage,
           transportType,
           registeredDate,
         },
@@ -363,7 +359,17 @@ export class TransportationService {
     });
     if (!transportation)
       throw new BadRequestException('Transportation not found.');
-
+    const latestDailyChecklist = await this.prisma.checklist.findFirst({
+      where: {
+        transportationId: transportation.id,
+        type: 'Daily',
+        currentMeterReading: { not: null },
+      },
+      orderBy: { from: 'desc' },
+    });
+    if (latestDailyChecklist) {
+      transportation.currentMileage = latestDailyChecklist.currentMeterReading;
+    }
     return transportation;
   }
 
@@ -2170,13 +2176,11 @@ export class TransportationService {
         });
       }
 
-      const interServiceMileage = currentMileage - lastServiceMileage;
       await this.prisma.transportation.update({
         where: { id },
         data: {
           currentMileage,
           lastServiceMileage,
-          interServiceMileage,
         },
       });
     } catch (e) {

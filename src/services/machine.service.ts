@@ -82,7 +82,6 @@ export class MachineService {
     measurement?: string
   ) {
     try {
-      const interService = currentRunning - lastService;
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Daily' },
       });
@@ -99,7 +98,6 @@ export class MachineService {
           location,
           currentRunning,
           lastService,
-          interService,
           registeredDate,
           measurement,
           dailyChecklistTemplateId: newDailyTemplate.id,
@@ -152,11 +150,11 @@ export class MachineService {
     type: string,
     zone: string,
     location: string,
-    currentRunning: number,
     lastService: number,
     registeredDate: Date,
     user: User,
-    measurement: string
+    measurement: string,
+    currentRunning?: number
   ) {
     try {
       const machine = await this.prisma.machine.findFirst({
@@ -249,7 +247,6 @@ export class MachineService {
           link: `/machine/${id}`,
         });
       }
-      const interService = currentRunning - lastService;
       await this.prisma.machine.update({
         data: {
           machineNumber,
@@ -260,7 +257,6 @@ export class MachineService {
           currentRunning,
           lastService,
           registeredDate,
-          interService,
           measurement,
         },
         where: { id },
@@ -330,7 +326,17 @@ export class MachineService {
       },
     });
     if (!machine) throw new BadRequestException('Machine not found.');
-
+    const latestDailyChecklist = await this.prisma.checklist.findFirst({
+      where: {
+        machineId: machine.id,
+        type: 'Daily',
+        currentMeterReading: { not: null },
+      },
+      orderBy: { from: 'desc' },
+    });
+    if (latestDailyChecklist) {
+      machine.currentRunning = latestDailyChecklist.currentMeterReading;
+    }
     return machine;
   }
 
@@ -2121,12 +2127,10 @@ export class MachineService {
           link: `/machine/${id}`,
         });
       }
-      const interService = currentRunning - lastService;
       await this.prisma.machine.update({
         data: {
           currentRunning,
           lastService,
-          interService,
         },
         where: { id },
       });

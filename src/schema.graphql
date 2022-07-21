@@ -170,7 +170,6 @@ type Machine {
   deletedAt: Date
   histories: [MachineHistory!]
   id: Int!
-  interService: Int
   isDeleted: Boolean
   lastService: Int
   location: String!
@@ -500,7 +499,7 @@ type Mutation {
   deleteTransportationPeriodicMaintenance(id: Int!): String!
   deleteTransportationRepair(id: Int!): String!
   deleteTransportationSparePR(id: Int!): String!
-  editMachine(currentRunning: Int!, id: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
+  editMachine(currentRunning: Int, id: Int!, lastService: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, type: String!, zone: String!): String!
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editMachinePeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
@@ -508,7 +507,7 @@ type Mutation {
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editMachineUsage(currentRunning: Int!, id: Int!, lastService: Int!): String!
   editRole(id: Int!, name: String!): String!
-  editTransportation(currentMileage: Int!, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
+  editTransportation(currentMileage: Int, department: String!, engine: String!, id: Int!, lastServiceMileage: Int!, location: String!, machineNumber: String!, measurement: String!, model: String!, registeredDate: Date!, transportType: String!, type: String!): String!
   editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editTransportationPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
@@ -1241,7 +1240,6 @@ type Transportation {
   engine: String!
   histories: [TransportationHistory!]
   id: Int!
-  interServiceMileage: Int
   isDeleted: Boolean
   lastServiceMileage: Int
   location: String!

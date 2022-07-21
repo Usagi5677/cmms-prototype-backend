@@ -96,7 +96,6 @@ Table Machine {
   location String [not null]
   currentRunning Int
   lastService Int
-  interService Int
   status MachineStatus [not null, default: 'Working']
   statusChangedAt DateTime
   measurement String [default: 'km']
@@ -313,7 +312,6 @@ Table Transportation {
   engine String
   currentMileage Int
   lastServiceMileage Int
-  interServiceMileage Int
   measurement String [default: 'km']
   transportType String [default: 'Vehicle']
   isDeleted Boolean

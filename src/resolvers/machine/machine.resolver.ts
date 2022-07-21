@@ -117,7 +117,7 @@ export class MachineResolver {
     @Args('type') type: string,
     @Args('zone') zone: string,
     @Args('location') location: string,
-    @Args('currentRunning') currentRunning: number,
+    @Args('currentRunning', { nullable: true }) currentRunning: number,
     @Args('lastService') lastService: number,
     @Args('registeredDate') registeredDate: Date,
     @Args('measurement') measurement: string
@@ -129,11 +129,11 @@ export class MachineResolver {
       type,
       zone,
       location,
-      currentRunning,
       lastService,
       registeredDate,
       user,
-      measurement
+      measurement,
+      currentRunning
     );
     return `Machine updated.`;
   }

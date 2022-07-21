@@ -21,7 +21,6 @@ export class Machine extends BaseModel {
   location: string;
   currentRunning?: number;
   lastService?: number;
-  interService?: number;
   measurement?: string;
   isDeleted?: boolean;
   deletedAt?: Date;

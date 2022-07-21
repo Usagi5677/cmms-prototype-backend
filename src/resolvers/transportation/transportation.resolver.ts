@@ -120,7 +120,7 @@ export class TransportationResolver {
     @Args('department') department: string,
     @Args('engine') engine: string,
     @Args('measurement') measurement: string,
-    @Args('currentMileage') currentMileage: number,
+    @Args('currentMileage', { nullable: true }) currentMileage: number,
     @Args('lastServiceMileage') lastServiceMileage: number,
     @Args('transportType') transportType: string,
     @Args('registeredDate') registeredDate: Date
@@ -135,10 +135,10 @@ export class TransportationResolver {
       department,
       engine,
       measurement,
-      currentMileage,
       lastServiceMileage,
       transportType,
-      registeredDate
+      registeredDate,
+      currentMileage
     );
     return `Transportation updated.`;
   }

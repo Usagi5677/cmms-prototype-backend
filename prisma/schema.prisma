@@ -106,7 +106,6 @@ model Machine {
   location                  String
   currentRunning            Int?
   lastService               Int?
-  interService              Int?
   status                    MachineStatus                @default(Working)
   statusChangedAt           DateTime?
   measurement               String?                      @default("km")
@@ -347,7 +346,6 @@ model Transportation {
   engine                    String?
   currentMileage            Int?
   lastServiceMileage        Int?
-  interServiceMileage       Int?
   measurement               String?                             @default("km")
   transportType             String?                             @default("Vehicle")
   isDeleted                 Boolean?

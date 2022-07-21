@@ -22,7 +22,6 @@ export class Transportation extends BaseModel {
   engine: string;
   currentMileage?: number;
   lastServiceMileage?: number;
-  interServiceMileage?: number;
   measurement?: string;
   transportType?: string;
   isDeleted?: boolean;
