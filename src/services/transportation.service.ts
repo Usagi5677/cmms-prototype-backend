@@ -456,247 +456,6 @@ export class TransportationService {
     };
   }
 
-  //** Create transportation checklist item. */
-  // async createTransportationChecklistItem(
-  //   user: User,
-  //   transportationId: number,
-  //   description: string,
-  //   type: string
-  // ) {
-  //   try {
-  //     await this.prisma.transportationChecklistItem.create({
-  //       data: { transportationId, description, type },
-  //     });
-  //     await this.createTransportationHistoryInBackground({
-  //       type: 'Add Checklist',
-  //       description: `Added new checklist`,
-  //       transportationId: transportationId,
-  //       completedById: user.id,
-  //     });
-  //     const transportationUsers = await this.getTransportationUserIds(
-  //       transportationId,
-  //       user.id
-  //     );
-  //     for (let index = 0; index < transportationUsers.length; index++) {
-  //       await this.notificationService.createInBackground({
-  //         userId: transportationUsers[index],
-  //         body: `${user.fullName} (${user.rcno}) added new checklist on transportation ${transportationId}`,
-  //         link: `/transportation/${transportationId}`,
-  //       });
-  //     }
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
-  //** Edit transportation checklist item. */
-  // async editTransportationChecklistItem(
-  //   user: User,
-  //   id: number,
-  //   description: string,
-  //   type: string
-  // ) {
-  //   try {
-  //     const checklist = await this.prisma.transportationChecklistItem.findFirst(
-  //       {
-  //         where: { id },
-  //       }
-  //     );
-  //     if (checklist.description != description) {
-  //       await this.createTransportationHistoryInBackground({
-  //         type: 'Checklist Edit',
-  //         description: `Description changed from ${checklist.description} to ${description}.`,
-  //         transportationId: checklist.transportationId,
-  //         completedById: user.id,
-  //       });
-  //     }
-  //     if (checklist.type != type) {
-  //       await this.createTransportationHistoryInBackground({
-  //         type: 'Checklist Edit',
-  //         description: `Type changed from ${checklist.type} to ${type}.`,
-  //         transportationId: checklist.transportationId,
-  //         completedById: user.id,
-  //       });
-  //     }
-  //     const transportationUsers = await this.getTransportationUserIds(
-  //       checklist.transportationId,
-  //       user.id
-  //     );
-  //     for (let index = 0; index < transportationUsers.length; index++) {
-  //       await this.notificationService.createInBackground({
-  //         userId: transportationUsers[index],
-  //         body: `${user.fullName} (${user.rcno}) edited checklist (${checklist.id}) on transportation ${checklist.transportationId}`,
-  //         link: `/transportation/${checklist.transportationId}`,
-  //       });
-  //     }
-  //     await this.prisma.transportationChecklistItem.update({
-  //       where: { id },
-  //       data: { description, type },
-  //     });
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
-  //** Delete transportation checklist item. */
-  // async deleteTransportationChecklistItem(user: User, id: number) {
-  //   try {
-  //     const checklist = await this.prisma.transportationChecklistItem.findFirst(
-  //       {
-  //         where: { id },
-  //         select: {
-  //           id: true,
-  //           transportationId: true,
-  //           description: true,
-  //         },
-  //       }
-  //     );
-  //     await this.createTransportationHistoryInBackground({
-  //       type: 'Checklist Delete',
-  //       description: `Checklist (${checklist.description}) deleted.`,
-  //       transportationId: checklist.transportationId,
-  //       completedById: user.id,
-  //     });
-  //     const transportationUsers = await this.getTransportationUserIds(
-  //       checklist.transportationId,
-  //       user.id
-  //     );
-  //     for (let index = 0; index < transportationUsers.length; index++) {
-  //       await this.notificationService.createInBackground({
-  //         userId: transportationUsers[index],
-  //         body: `${user.fullName} (${user.rcno}) deleted checklist (${checklist.id}) on transportation ${checklist.transportationId}`,
-  //         link: `/transportation/${checklist.transportationId}`,
-  //       });
-  //     }
-  //     await this.prisma.transportationChecklistItem.delete({
-  //       where: { id },
-  //     });
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
-  //** Set checklist item as complete or incomplete. */
-  // async toggleTransportationChecklistItem(
-  //   user: User,
-  //   id: number[],
-  //   currentMeterReading: number,
-  //   workingHour: number,
-  //   uncheckId: number[]
-  // ) {
-  //   try {
-  //     let transportationID;
-  //     for (let index = 0; index < id.length; index++) {
-  //       const checklist =
-  //         await this.prisma.transportationChecklistItem.findFirst({
-  //           where: { id: id[index] },
-  //           select: {
-  //             id: true,
-  //             transportationId: true,
-  //             description: true,
-  //             completedById: true,
-  //             transportation: {
-  //               select: {
-  //                 transportType: true,
-  //               },
-  //             },
-  //           },
-  //         });
-  //       transportationID = checklist.transportationId;
-  //       await this.createTransportationHistoryInBackground({
-  //         type: 'Toggled',
-  //         description: `Checklist (${checklist.description}) completed.`,
-  //         transportationId: checklist.transportationId,
-  //         completedById: user.id,
-  //       });
-
-  //       const transportationUsers = await this.getTransportationUserIds(
-  //         checklist.transportationId,
-  //         user.id
-  //       );
-  //       for (let index = 0; index < transportationUsers.length; index++) {
-  //         await this.notificationService.createInBackground({
-  //           userId: transportationUsers[index],
-  //           body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on transportation ${checklist.transportationId} to completed`,
-  //           link: `/transportation/${checklist.transportationId}`,
-  //         });
-  //       }
-  //       await this.prisma.transportationChecklistItem.update({
-  //         where: { id: id[index] },
-  //         data: {
-  //           completedById: user.id,
-  //           completedAt: new Date(),
-  //           currentMeterReading,
-  //           workingHour,
-  //           measurement:
-  //             checklist.transportation.transportType === 'Vessel' ? 'hr' : 'km',
-  //         },
-  //       });
-  //     }
-
-  //     for (let index = 0; index < uncheckId.length; index++) {
-  //       const checklist =
-  //         await this.prisma.transportationChecklistItem.findFirst({
-  //           where: { id: uncheckId[index] },
-  //           select: {
-  //             id: true,
-  //             transportationId: true,
-  //             description: true,
-  //             completedById: true,
-  //             transportation: {
-  //               select: {
-  //                 transportType: true,
-  //               },
-  //             },
-  //           },
-  //         });
-
-  //       transportationID = checklist.transportationId;
-  //       await this.createTransportationHistoryInBackground({
-  //         type: 'Toggled',
-  //         description: `Checklist (${checklist.description}) unchecked.`,
-  //         transportationId: checklist.transportationId,
-  //         completedById: user.id,
-  //       });
-
-  //       const transportationUsers = await this.getTransportationUserIds(
-  //         checklist.transportationId,
-  //         user.id
-  //       );
-  //       for (let index = 0; index < transportationUsers.length; index++) {
-  //         await this.notificationService.createInBackground({
-  //           userId: transportationUsers[index],
-  //           body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on transportation ${checklist.transportationId} to unchecked.`,
-  //           link: `/transportation/${checklist.transportationId}`,
-  //         });
-  //       }
-  //       await this.prisma.transportationChecklistItem.update({
-  //         where: { id: uncheckId[index] },
-  //         data: {
-  //           completedById: null,
-  //           completedAt: null,
-  //           currentMeterReading,
-  //           workingHour,
-  //           measurement:
-  //             checklist.transportation.transportType === 'Vessel' ? 'hr' : 'km',
-  //         },
-  //       });
-  //     }
-  //     await this.prisma.transportation.update({
-  //       where: { id: transportationID },
-  //       data: {
-  //         currentMileage: currentMeterReading,
-  //       },
-  //     });
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
   //** Create transport periodic maintenance. */
   async createTransportationPeriodicMaintenance(
     user: User,
@@ -1998,19 +1757,18 @@ export class TransportationService {
         id: true,
       },
     });
-    // const transportationChecklistItem =
-    //   await this.prisma.transportationChecklistItem.findFirst({
-    //     where: {
-    //       transportationId: transportationHistory.transportationId,
-    //       NOT: [{ workingHour: null }],
-    //     },
-    //     orderBy: {
-    //       id: 'desc',
-    //     },
-    //   });
+    const transportationChecklist = await this.prisma.checklist.findFirst({
+      where: {
+        transportationId: transportation.id,
+        NOT: [{ workingHour: null }],
+      },
+      orderBy: {
+        from: 'desc',
+      },
+    });
 
     const now = moment();
-    // const workingHour = transportationChecklistItem?.workingHour;
+    const workingHour = transportationChecklist?.workingHour;
     let idleHour = 0;
     let breakdownHour = 0;
 
@@ -2048,7 +1806,7 @@ export class TransportationService {
           ? transportationHistory.transportationStatus
           : transportation.status,
         transportationType: transportation.type,
-        // workingHour: workingHour ? workingHour : 0,
+        workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,
         location: transportation.location,

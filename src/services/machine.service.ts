@@ -411,178 +411,6 @@ export class MachineService {
     };
   }
 
-  //** Create machine checklist item. */
-  // async createMachineChecklistItem(
-  //   user: User,
-  //   machineId: number,
-  //   description: string,
-  //   type: string
-  // ) {
-  //   try {
-  //     await this.prisma.machineChecklistItem.create({
-  //       data: { machineId, description, type },
-  //     });
-  //     await this.createMachineHistoryInBackground({
-  //       type: 'Add Checklist',
-  //       description: `Added new checklist`,
-  //       machineId: machineId,
-  //       completedById: user.id,
-  //     });
-  //     const machineUsers = await this.getMachineUserIds(machineId, user.id);
-  //     for (let index = 0; index < machineUsers.length; index++) {
-  //       await this.notificationService.createInBackground({
-  //         userId: machineUsers[index],
-  //         body: `${user.fullName} (${user.rcno}) added new checklist on machine ${machineId}`,
-  //         link: `/machine/${machineId}`,
-  //       });
-  //     }
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
-  //** Delete machine checklist item. */
-  // async deleteMachineChecklistItem(user: User, id: number) {
-  //   try {
-  //     const checklist = await this.prisma.machineChecklistItem.findFirst({
-  //       where: { id },
-  //       select: {
-  //         id: true,
-  //         machineId: true,
-  //         description: true,
-  //       },
-  //     });
-  //     await this.createMachineHistoryInBackground({
-  //       type: 'Checklist Delete',
-  //       description: `Checklist (${checklist.description}) deleted.`,
-  //       machineId: checklist.machineId,
-  //       completedById: user.id,
-  //     });
-  //     const machineUsers = await this.getMachineUserIds(
-  //       checklist.machineId,
-  //       user.id
-  //     );
-  //     for (let index = 0; index < machineUsers.length; index++) {
-  //       await this.notificationService.createInBackground({
-  //         userId: machineUsers[index],
-  //         body: `${user.fullName} (${user.rcno}) deleted checklist (${checklist.id}) on machine ${checklist.machineId}`,
-  //         link: `/machine/${checklist.machineId}`,
-  //       });
-  //     }
-  //     await this.prisma.machineChecklistItem.delete({
-  //       where: { id },
-  //     });
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
-  //** Set checklist item as complete or incomplete. */
-  // async toggleMachineChecklistItem(
-  //   user: User,
-  //   id: number[],
-  //   currentMeterReading: number,
-  //   workingHour: number,
-  //   uncheckId: number[]
-  // ) {
-  //   try {
-  //     //const uniqueIDs = [...new Set(id)];
-  //     let machineID;
-  //     for (let index = 0; index < id.length; index++) {
-  //       const checklist = await this.prisma.machineChecklistItem.findFirst({
-  //         where: { id: id[index] },
-  //         select: {
-  //           id: true,
-  //           machineId: true,
-  //           description: true,
-  //           completedById: true,
-  //         },
-  //       });
-  //       machineID = checklist.machineId;
-  //       await this.createMachineHistoryInBackground({
-  //         type: 'Toggled',
-  //         description: `Checklist (${checklist.description}) completed.`,
-  //         machineId: checklist.machineId,
-  //         completedById: user.id,
-  //       });
-
-  //       const machineUsers = await this.getMachineUserIds(
-  //         checklist.machineId,
-  //         user.id
-  //       );
-  //       for (let index = 0; index < machineUsers.length; index++) {
-  //         await this.notificationService.createInBackground({
-  //           userId: machineUsers[index],
-  //           body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on machine ${checklist.machineId} to completed`,
-  //           link: `/machine/${checklist.machineId}`,
-  //         });
-  //       }
-  //       await this.prisma.machineChecklistItem.update({
-  //         where: { id: id[index] },
-  //         data: {
-  //           completedById: user.id,
-  //           completedAt: new Date(),
-  //           currentMeterReading,
-  //           workingHour,
-  //         },
-  //       });
-  //     }
-
-  //     for (let index = 0; index < uncheckId.length; index++) {
-  //       const checklist = await this.prisma.machineChecklistItem.findFirst({
-  //         where: { id: uncheckId[index] },
-  //         select: {
-  //           id: true,
-  //           machineId: true,
-  //           description: true,
-  //           completedById: true,
-  //         },
-  //       });
-
-  //       machineID = checklist.machineId;
-  //       await this.createMachineHistoryInBackground({
-  //         type: 'Toggled',
-  //         description: `Checklist (${checklist.description}) unchecked.`,
-  //         machineId: checklist.machineId,
-  //         completedById: user.id,
-  //       });
-
-  //       const machineUsers = await this.getMachineUserIds(
-  //         checklist.machineId,
-  //         user.id
-  //       );
-  //       for (let index = 0; index < machineUsers.length; index++) {
-  //         await this.notificationService.createInBackground({
-  //           userId: machineUsers[index],
-  //           body: `${user.fullName} (${user.rcno}) set checklist (${checklist.id}) on machine ${checklist.machineId} to unchecked`,
-  //           link: `/machine/${checklist.machineId}`,
-  //         });
-  //       }
-  //       await this.prisma.machineChecklistItem.update({
-  //         where: { id: uncheckId[index] },
-  //         data: {
-  //           completedById: null,
-  //           completedAt: null,
-  //           currentMeterReading,
-  //           workingHour,
-  //         },
-  //       });
-  //     }
-
-  //     await this.prisma.machine.update({
-  //       where: { id: machineID },
-  //       data: {
-  //         currentRunning: currentMeterReading,
-  //       },
-  //     });
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
-
   //** Create machine periodic maintenance. */
   async createMachinePeriodicMaintenance(
     user: User,
@@ -1894,18 +1722,17 @@ export class MachineService {
         id: true,
       },
     });
-    // const machineChecklistItem =
-    //   await this.prisma.machineChecklistItem.findFirst({
-    //     where: {
-    //       machineId: machineHistory.machineId,
-    //       NOT: [{ workingHour: null }],
-    //     },
-    //     orderBy: {
-    //       id: 'desc',
-    //     },
-    //   });
+    const machineChecklist = await this.prisma.checklist.findFirst({
+      where: {
+        machineId: machine.id,
+        NOT: [{ workingHour: null }],
+      },
+      orderBy: {
+        from: 'desc',
+      },
+    });
     const now = moment();
-    // const workingHour = machineChecklistItem?.workingHour;
+    const workingHour = machineChecklist?.workingHour;
     let idleHour = 0;
     let breakdownHour = 0;
 
@@ -1946,7 +1773,7 @@ export class MachineService {
           ? machineHistory.machineStatus
           : machine.status,
         machineType: machine.type,
-        // workingHour: workingHour ? workingHour : 0,
+        workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,
         location: machine.location,

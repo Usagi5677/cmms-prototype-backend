@@ -167,69 +167,6 @@ export class MachineResolver {
     return await this.machineService.getMachineWithPagination(user, args);
   }
 
-  // @Permissions('ADD_MACHINE_CHECKLIST')
-  // @Mutation(() => String)
-  // async addMachineChecklistItem(
-  //   @UserEntity() user: User,
-  //   @Args('machineId') machineId: number,
-  //   @Args('description') description: string,
-  //   @Args('type') type: string
-  // ): Promise<String> {
-  //   await this.machineService.createMachineChecklistItem(
-  //     user,
-  //     machineId,
-  //     description,
-  //     type
-  //   );
-  //   return `Added checklist item to machine.`;
-  // }
-
-  // @Permissions('EDIT_MACHINE_CHECKLIST')
-  // @Mutation(() => String)
-  // async editMachineChecklistItem(
-  //   @UserEntity() user: User,
-  //   @Args('id') id: number,
-  //   @Args('description') description: string,
-  //   @Args('type') type: string
-  // ): Promise<String> {
-  //   await this.machineService.editMachineChecklistItem(
-  //     user,
-  //     id,
-  //     description,
-  //     type
-  //   );
-  //   return `Checklist item updated.`;
-  // }
-
-  // @Permissions('DELETE_MACHINE_CHECKLIST')
-  // @Mutation(() => String)
-  // async deleteMachineChecklistItem(
-  //   @UserEntity() user: User,
-  //   @Args('id') id: number
-  // ): Promise<String> {
-  //   await this.machineService.deleteMachineChecklistItem(user, id);
-  //   return `Checklist item deleted.`;
-  // }
-
-  // @Permissions('EDIT_MACHINE_CHECKLIST')
-  // @Mutation(() => String)
-  // async toggleMachineChecklistItem(
-  //   @UserEntity() user: User,
-  //   @Args('id', { type: () => [Int] }) id: number[],
-  //   @Args('currentMeterReading') currentMeterReading: number,
-  //   @Args('workingHour') workingHour: number,
-  //   @Args('uncheckId', { type: () => [Int] }) uncheckId: number[]
-  // ): Promise<String> {
-  //   await this.machineService.toggleMachineChecklistItem(
-  //     user,
-  //     id,
-  //     currentMeterReading,
-  //     workingHour,
-  //     uncheckId
-  //   );
-  //   return `Checklist item updated.`;
-  // }
-
   @Permissions('ADD_MACHINE_PERIODIC_MAINTENANCE')
   @Mutation(() => String)
   async addMachinePeriodicMaintenance(
