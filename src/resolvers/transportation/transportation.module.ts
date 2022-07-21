@@ -7,6 +7,7 @@ import { TransportationResolver } from './transportation.resolver';
 import { TransportationService } from 'src/services/transportation.service';
 import { BullModule } from '@nestjs/bull';
 import { TransportationConsumer } from './transportation.consumer';
+import { ChecklistTemplateModule } from '../checklist-template/checklist-template.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TransportationConsumer } from './transportation.consumer';
     BullModule.registerQueue({
       name: 'cmms-transportation-history',
     }),
+    ChecklistTemplateModule,
   ],
   providers: [
     TransportationResolver,

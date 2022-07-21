@@ -7,6 +7,7 @@ import { MachineResolver } from './machine.resolver';
 import { MachineService } from 'src/services/machine.service';
 import { BullModule } from '@nestjs/bull';
 import { MachineConsumer } from './machine.consumer';
+import { ChecklistTemplateModule } from '../checklist-template/checklist-template.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MachineConsumer } from './machine.consumer';
     BullModule.registerQueue({
       name: 'cmms-machine-history',
     }),
+    ChecklistTemplateModule,
   ],
   providers: [MachineResolver, MachineService, MachineConsumer],
   exports: [MachineService],

@@ -39,6 +39,7 @@ import { TransportationStatus } from 'src/common/enums/transportationStatus';
 import { Transportation } from 'src/models/transportation.model';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PaginatedTransportationPeriodicMaintenanceTask } from 'src/models/pagination/transportation-pm-tasks-connection.model';
+import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
 
 export interface TransportationHistoryInterface {
   transportationId: number;
@@ -61,7 +62,8 @@ export class TransportationService {
     @InjectQueue('cmms-transportation-history')
     private transportationHistoryQueue: Queue,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private readonly checklistTemplateService: ChecklistTemplateService
   ) {}
 
   //** Create transportation. */
@@ -82,9 +84,11 @@ export class TransportationService {
     try {
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Daily' },
+        include: { items: true },
       });
       const newWeeklyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Weekly' },
+        include: { items: true },
       });
       const transportation = await this.prisma.transportation.create({
         data: {
@@ -104,6 +108,18 @@ export class TransportationService {
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
         },
       });
+      await this.checklistTemplateService.updateEntityChecklists(
+        transportation.id,
+        'Transportation',
+        'Daily',
+        newDailyTemplate
+      );
+      await this.checklistTemplateService.updateEntityChecklists(
+        transportation.id,
+        'Transportation',
+        'Weekly',
+        newWeeklyTemplate
+      );
       await this.createTransportationHistoryInBackground({
         type: 'Transportation Add',
         description: `Transportation created`,

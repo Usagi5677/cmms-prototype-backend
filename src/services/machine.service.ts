@@ -42,6 +42,7 @@ import { User as UserModel } from 'src/models/user.model';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ChecklistItem } from 'src/models/checklist-item.model';
 import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
+import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -65,7 +66,8 @@ export class MachineService {
     private readonly notificationService: NotificationService,
     @InjectQueue('cmms-machine-history') private machineHistoryQueue: Queue,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private readonly checklistTemplateService: ChecklistTemplateService
   ) {}
 
   //** Create machine. */
@@ -84,9 +86,11 @@ export class MachineService {
     try {
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Daily' },
+        include: { items: true },
       });
       const newWeeklyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Weekly' },
+        include: { items: true },
       });
       const machine = await this.prisma.machine.create({
         data: {
@@ -104,7 +108,18 @@ export class MachineService {
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
         },
       });
-
+      await this.checklistTemplateService.updateEntityChecklists(
+        machine.id,
+        'Machine',
+        'Daily',
+        newDailyTemplate
+      );
+      await this.checklistTemplateService.updateEntityChecklists(
+        machine.id,
+        'Machine',
+        'Weekly',
+        newWeeklyTemplate
+      );
       await this.createMachineHistoryInBackground({
         type: 'Machine Add',
         description: `Machine created`,

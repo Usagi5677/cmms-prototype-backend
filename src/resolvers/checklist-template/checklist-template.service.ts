@@ -434,15 +434,17 @@ export class ChecklistTemplateService {
   async updateEntityChecklists(
     entityId: number,
     entityType: string,
-    type: string
+    type: string,
+    template?: ChecklistTemplateWithItems
   ) {
-    const template = await this.entityChecklistTemplate({
-      entityType,
-      entityId,
-      type,
-    });
+    if (!template) {
+      template = await this.entityChecklistTemplate({
+        entityType,
+        entityId,
+        type,
+      });
+    }
     const templateItems = template.items.map((i) => i.name);
-    console.log({ templateItems });
     const startOf = type === 'Daily' ? 'day' : 'week';
     let checklistsToChange: ChecklistWithItems[] = [];
     if (entityType === 'Machine') {
