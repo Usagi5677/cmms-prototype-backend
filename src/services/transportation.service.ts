@@ -1503,8 +1503,12 @@ export class TransportationService {
     if (transportationId) {
       where.AND.push({ transportationId });
     }
-    if (location) {
-      where.AND.push({ location });
+    if (location?.length > 0) {
+      where.AND.push({
+        location: {
+          in: location,
+        },
+      });
     }
 
     if (from && to) {

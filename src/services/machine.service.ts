@@ -1663,8 +1663,12 @@ export class MachineService {
       where.AND.push({ machineId });
     }
 
-    if (location) {
-      where.AND.push({ location });
+    if (location?.length > 0) {
+      where.AND.push({
+        location: {
+          in: location,
+        },
+      });
     }
 
     if (from && to) {

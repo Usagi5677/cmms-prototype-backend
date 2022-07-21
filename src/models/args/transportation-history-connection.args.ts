@@ -7,5 +7,5 @@ export class TransportationHistoryConnectionArgs extends ConnectionArgs {
   transportationId: number;
   from?: Date;
   to?: Date;
-  location?: string;
+  location?: string[];
 }

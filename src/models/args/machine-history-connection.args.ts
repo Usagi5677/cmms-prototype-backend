@@ -7,5 +7,5 @@ export class MachineHistoryConnectionArgs extends ConnectionArgs {
   machineId: number;
   from?: Date;
   to?: Date;
-  location?: string;
+  location?: string[];
 }
