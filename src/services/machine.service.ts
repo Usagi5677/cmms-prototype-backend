@@ -2933,7 +2933,7 @@ export class MachineService {
 
       // Reading our test file
       const file = reader.readFile(
-        'C:\\Users\\ibrahim.naish\\Desktop\\CMMS\\data\\machineDataCleaned.xlsx'
+        'src/common/importData/machineDataCleaned.xlsx'
       );
 
       // eslint-disable-next-line prefer-const
@@ -2991,7 +2991,7 @@ export class MachineService {
 
       // Reading our test file
       const file = reader.readFile(
-        'C:\\Users\\ibrahim.naish\\Desktop\\CMMS\\data\\transportsDataCleaned.xlsx'
+        'src/common/importData/transportsDataCleaned.xlsx'
       );
 
       // eslint-disable-next-line prefer-const
