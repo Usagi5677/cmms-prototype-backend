@@ -99,12 +99,12 @@ model Machine {
   updatedAt                 DateTime                     @updatedAt
   createdById               Int
   createdBy                 User                         @relation(fields: [createdById], references: [id])
-  machineNumber             String
+  machineNumber             String?
   registeredDate            DateTime?
-  model                     String
-  type                      String
-  zone                      String
-  location                  String
+  model                     String?
+  type                      String?
+  zone                      String?
+  location                  String?
   currentRunning            Int?
   lastService               Int?
   status                    MachineStatus                @default(Working)
@@ -132,6 +132,7 @@ enum MachineStatus {
   Working
   Idle
   Breakdown
+  Dispose
 }
 
 enum SparePRStatus {
@@ -348,7 +349,7 @@ model Transportation {
   updatedAt                 DateTime                            @updatedAt
   createdById               Int
   createdBy                 User                                @relation(fields: [createdById], references: [id])
-  machineNumber             String
+  machineNumber             String?
   registeredDate            DateTime?
   model                     String?
   type                      String?
@@ -361,6 +362,7 @@ model Transportation {
   lastServiceMileage        Int?
   measurement               String?                             @default("km")
   transportType             String?                             @default("Vehicle")
+  brand                     String?
   isDeleted                 Boolean?
   deletedAt                 DateTime?
   deletedById               Int?
@@ -383,6 +385,7 @@ enum TransportationStatus {
   Working
   Idle
   Breakdown
+  Dispose
 }
 
 model TransportationAssignment {

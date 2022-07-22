@@ -89,12 +89,12 @@ Table Machine {
   updatedAt DateTime [not null]
   createdById Int [not null]
   createdBy User [not null]
-  machineNumber String [not null]
+  machineNumber String
   registeredDate DateTime
-  model String [not null]
-  type String [not null]
-  zone String [not null]
-  location String [not null]
+  model String
+  type String
+  zone String
+  location String
   currentRunning Int
   lastService Int
   status MachineStatus [not null, default: 'Working']
@@ -314,7 +314,7 @@ Table Transportation {
   updatedAt DateTime [not null]
   createdById Int [not null]
   createdBy User [not null]
-  machineNumber String [not null]
+  machineNumber String
   registeredDate DateTime
   model String
   type String
@@ -327,6 +327,7 @@ Table Transportation {
   lastServiceMileage Int
   measurement String [default: 'km']
   transportType String [default: 'Vehicle']
+  brand String
   isDeleted Boolean
   deletedAt DateTime
   deletedById Int
@@ -473,6 +474,7 @@ Enum MachineStatus {
   Working
   Idle
   Breakdown
+  Dispose
 }
 
 Enum SparePRStatus {
@@ -501,6 +503,7 @@ Enum TransportationStatus {
   Working
   Idle
   Breakdown
+  Dispose
 }
 
 Ref: Notification.userId > User.id

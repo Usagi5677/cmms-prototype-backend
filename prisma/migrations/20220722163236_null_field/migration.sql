@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "Machine" ALTER COLUMN "machineNumber" DROP NOT NULL,
+ALTER COLUMN "model" DROP NOT NULL,
+ALTER COLUMN "type" DROP NOT NULL,
+ALTER COLUMN "zone" DROP NOT NULL,
+ALTER COLUMN "location" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Transportation" ALTER COLUMN "machineNumber" DROP NOT NULL;

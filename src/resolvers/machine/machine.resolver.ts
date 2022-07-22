@@ -67,15 +67,15 @@ export class MachineResolver {
   @Mutation(() => String)
   async createMachine(
     @UserEntity() user: User,
-    @Args('machineNumber') machineNumber: string,
-    @Args('model') model: string,
-    @Args('type') type: string,
-    @Args('zone') zone: string,
-    @Args('location') location: string,
-    @Args('currentRunning') currentRunning: number,
-    @Args('lastService') lastService: number,
-    @Args('registeredDate') registeredDate: Date,
-    @Args('measurement') measurement: string
+    @Args('machineNumber', { nullable: true }) machineNumber: string,
+    @Args('model', { nullable: true }) model: string,
+    @Args('type', { nullable: true }) type: string,
+    @Args('zone', { nullable: true }) zone: string,
+    @Args('location', { nullable: true }) location: string,
+    @Args('currentRunning', { nullable: true }) currentRunning: number,
+    @Args('lastService', { nullable: true }) lastService: number,
+    @Args('registeredDate', { nullable: true }) registeredDate: Date,
+    @Args('measurement', { nullable: true }) measurement: string
   ): Promise<String> {
     await this.machineService.createMachine(
       user,
@@ -111,16 +111,16 @@ export class MachineResolver {
   @Mutation(() => String)
   async editMachine(
     @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('machineNumber') machineNumber: string,
-    @Args('model') model: string,
-    @Args('type') type: string,
-    @Args('zone') zone: string,
-    @Args('location') location: string,
+    @Args('id', { nullable: true }) id: number,
+    @Args('machineNumber', { nullable: true }) machineNumber: string,
+    @Args('model', { nullable: true }) model: string,
+    @Args('type', { nullable: true }) type: string,
+    @Args('zone', { nullable: true }) zone: string,
+    @Args('location', { nullable: true }) location: string,
     @Args('currentRunning', { nullable: true }) currentRunning: number,
-    @Args('lastService') lastService: number,
-    @Args('registeredDate') registeredDate: Date,
-    @Args('measurement') measurement: string
+    @Args('lastService', { nullable: true }) lastService: number,
+    @Args('registeredDate', { nullable: true }) registeredDate: Date,
+    @Args('measurement', { nullable: true }) measurement: string
   ): Promise<String> {
     await this.machineService.editMachine(
       id,
@@ -694,5 +694,16 @@ export class MachineResolver {
     @UserEntity() user: User
   ): Promise<machineAndTransportsStatusCount> {
     return this.machineService.getAllMachineAndTransportStatusCount(user);
+  }
+
+  @Query(() => String)
+  async uploadMachineData(@UserEntity() user: User): Promise<String> {
+    this.machineService.MachineUploadData(user);
+    return `Machine Data Uploaded`;
+  }
+  @Query(() => String)
+  async uploadTransportsData(@UserEntity() user: User): Promise<String> {
+    this.machineService.TransportsUploadData(user);
+    return `Transports Data Uploaded`;
   }
 }

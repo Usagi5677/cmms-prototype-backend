@@ -61,17 +61,17 @@ export class TransportationResolver {
   @Mutation(() => String)
   async createTransportation(
     @UserEntity() user: User,
-    @Args('machineNumber') machineNumber: string,
-    @Args('model') model: string,
-    @Args('type') type: string,
-    @Args('location') location: string,
-    @Args('department') department: string,
-    @Args('engine') engine: string,
-    @Args('measurement') measurement: string,
-    @Args('currentMileage') currentMileage: number,
-    @Args('lastServiceMileage') lastServiceMileage: number,
-    @Args('transportType') transportType: string,
-    @Args('registeredDate') registeredDate: Date
+    @Args('machineNumber', { nullable: true }) machineNumber: string,
+    @Args('model', { nullable: true }) model: string,
+    @Args('type', { nullable: true }) type: string,
+    @Args('location', { nullable: true }) location: string,
+    @Args('department', { nullable: true }) department: string,
+    @Args('engine', { nullable: true }) engine: string,
+    @Args('measurement', { nullable: true }) measurement: string,
+    @Args('currentMileage', { nullable: true }) currentMileage: number,
+    @Args('lastServiceMileage', { nullable: true }) lastServiceMileage: number,
+    @Args('transportType', { nullable: true }) transportType: string,
+    @Args('registeredDate', { nullable: true }) registeredDate: Date
   ): Promise<String> {
     await this.transportationService.createTransportation(
       user,
@@ -113,17 +113,17 @@ export class TransportationResolver {
   async editTransportation(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('machineNumber') machineNumber: string,
-    @Args('model') model: string,
-    @Args('type') type: string,
-    @Args('location') location: string,
-    @Args('department') department: string,
-    @Args('engine') engine: string,
-    @Args('measurement') measurement: string,
+    @Args('machineNumber', { nullable: true }) machineNumber: string,
+    @Args('model', { nullable: true }) model: string,
+    @Args('type', { nullable: true }) type: string,
+    @Args('location', { nullable: true }) location: string,
+    @Args('department', { nullable: true }) department: string,
+    @Args('engine', { nullable: true }) engine: string,
+    @Args('measurement', { nullable: true }) measurement: string,
     @Args('currentMileage', { nullable: true }) currentMileage: number,
-    @Args('lastServiceMileage') lastServiceMileage: number,
-    @Args('transportType') transportType: string,
-    @Args('registeredDate') registeredDate: Date
+    @Args('lastServiceMileage', { nullable: true }) lastServiceMileage: number,
+    @Args('transportType', { nullable: true }) transportType: string,
+    @Args('registeredDate', { nullable: true }) registeredDate: Date
   ): Promise<String> {
     await this.transportationService.editTransportation(
       user,

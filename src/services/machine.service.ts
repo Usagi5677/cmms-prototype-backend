@@ -43,6 +43,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ChecklistItem } from 'src/models/checklist-item.model';
 import { PaginatedMachinePeriodicMaintenanceTask } from 'src/models/pagination/machine-pm-tasks-connection.model';
 import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
+import { Transportation } from 'src/models/transportation.model';
 
 export interface MachineHistoryInterface {
   machineId: number;
@@ -2918,6 +2919,132 @@ export class MachineService {
         };
       }
       return statusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Get upload all machine data to db*/
+  async MachineUploadData(user: User) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const reader = require('xlsx');
+
+      // Reading our test file
+      const file = reader.readFile(
+        'C:\\Users\\ibrahim.naish\\Desktop\\CMMS\\data\\machineDataCleaned.xlsx'
+      );
+
+      // eslint-disable-next-line prefer-const
+      let data = [];
+
+      const sheets = file.SheetNames;
+
+      for (let i = 0; i < sheets.length; i++) {
+        const temp = reader.utils.sheet_to_json(
+          file.Sheets[file.SheetNames[i]]
+        );
+        temp.forEach((res) => {
+          data.push(res);
+        });
+      }
+
+      data.map(async (machine: Machine, index: number) => {
+        let date;
+        let newDate;
+        if (data[index]?.registeredDate?.toString().length == 4) {
+          date = `1/1/${data[index]?.registeredDate}`;
+          newDate = new Date(date);
+        }
+        console.log(index + ' : ' + data[index]?.registeredDate);
+        const newDateTwo = new Date(data[index]?.registeredDate);
+        await this.prisma.machine.create({
+          data: {
+            createdById: user.id,
+            machineNumber: machine?.machineNumber?.toString(),
+            registeredDate: newDate ? newDate : newDateTwo,
+            model: machine?.model?.toString(),
+            type: machine?.type?.toString(),
+            zone: machine?.zone?.toString(),
+            location: machine?.location?.toString().trim(),
+            status: (machine?.status?.charAt(0).toUpperCase() +
+              machine?.status?.slice(1)) as MachineStatus,
+            currentRunning: machine?.currentRunning,
+            lastService: machine?.lastService,
+            measurement: machine?.measurement,
+          },
+        });
+      });
+      console.log('done');
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Get upload all transports data to db*/
+  async TransportsUploadData(user: User) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const reader = require('xlsx');
+
+      // Reading our test file
+      const file = reader.readFile(
+        'C:\\Users\\ibrahim.naish\\Desktop\\CMMS\\data\\transportsDataCleaned.xlsx'
+      );
+
+      // eslint-disable-next-line prefer-const
+      let data = [];
+
+      const sheets = file.SheetNames;
+
+      for (let i = 0; i < sheets.length; i++) {
+        const temp = reader.utils.sheet_to_json(
+          file.Sheets[file.SheetNames[i]]
+        );
+        temp.forEach((res) => {
+          data.push(res);
+        });
+      }
+
+      data.map(async (transportation: Transportation, index: number) => {
+        let date;
+        let newDate;
+        let newDateTwo;
+        if (data[index]?.registeredDate?.toString().length == 4) {
+          date = `1/1/${data[index]?.registeredDate}`;
+          newDate = new Date(date);
+        }
+        console.log(index + ' : ' + data[index]?.registeredDate);
+        if (data[index]?.registeredDate) {
+          newDateTwo = new Date(data[index]?.registeredDate);
+        } else {
+          newDateTwo = null;
+        }
+
+        //console.log(moment(newDateTwo).format('DD MMMM YYYY HH:mm:ss'));
+        await this.prisma.transportation.create({
+          data: {
+            createdById: user.id,
+            machineNumber: transportation?.machineNumber?.toString(),
+            registeredDate: newDate ? newDate : newDateTwo,
+            model: transportation?.model?.toString(),
+            type: transportation?.type?.toString(),
+            department: transportation?.department?.toString(),
+            engine: transportation?.engine?.toString(),
+            brand: transportation?.brand?.toString(),
+            location: transportation?.location?.toString().trim(),
+            status: (transportation?.status?.charAt(0).toUpperCase() +
+              transportation?.status?.slice(1)) as MachineStatus,
+            currentMileage: transportation?.currentMileage,
+            lastServiceMileage: transportation?.lastServiceMileage,
+            measurement: transportation?.measurement,
+            transportType: transportation?.transportType,
+          },
+        });
+      });
+      console.log('done');
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

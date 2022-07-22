@@ -13,17 +13,18 @@ import { User } from './user.model';
 @ObjectType()
 export class Transportation extends BaseModel {
   createdBy: User;
-  machineNumber: string;
+  machineNumber?: string;
   registeredDate?: Date;
-  model: string;
-  type: string;
-  location: string;
-  department: string;
-  engine: string;
+  model?: string;
+  type?: string;
+  location?: string;
+  department?: string;
+  engine?: string;
   currentMileage?: number;
   lastServiceMileage?: number;
   measurement?: string;
   transportType?: string;
+  brand?: string;
   isDeleted?: boolean;
   deletedAt?: Date;
   status?: TransportationStatus;
