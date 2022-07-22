@@ -44,4 +44,20 @@ export class ChecklistResolver {
     await this.checklistService.updateReading(id, reading);
     return `Checklist item updated.`;
   }
+
+  @Mutation(() => String)
+  async addChecklistComment(
+    @UserEntity() user: User,
+    @Args('checklistId') checklistId: number,
+    @Args('comment') comment: string
+  ): Promise<string> {
+    await this.checklistService.addComment(user, checklistId, comment);
+    return `Checklist comment added.`;
+  }
+
+  @Mutation(() => String)
+  async removeChecklistComment(@Args('id') id: number): Promise<string> {
+    await this.checklistService.removeComment(id);
+    return `Checklist comment removed.`;
+  }
 }

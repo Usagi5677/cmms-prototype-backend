@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from 'nestjs-prisma';
 import * as moment from 'moment';
@@ -37,6 +37,12 @@ export class ChecklistService {
             include: { completedBy: true },
             orderBy: { id: 'asc' },
           },
+          comments: {
+            include: {
+              user: true,
+            },
+            orderBy: { id: 'desc' },
+          },
         },
       });
     } else {
@@ -51,6 +57,12 @@ export class ChecklistService {
           items: {
             include: { completedBy: true },
             orderBy: { id: 'asc' },
+          },
+          comments: {
+            include: {
+              user: true,
+            },
+            orderBy: { id: 'desc' },
           },
         },
       });
@@ -260,5 +272,25 @@ export class ChecklistService {
     }
 
     this.logger.verbose('Checklist generation complete');
+  }
+
+  async addComment(user: User, checklistId: number, comment: string) {
+    const checklist = await this.prisma.checklist.findFirst({
+      where: { id: checklistId },
+    });
+    if (!checklist) {
+      throw new BadRequestException('Invalid checklist.');
+    }
+    await this.prisma.checklistComment.create({
+      data: {
+        checklistId,
+        description: comment,
+        userId: user.id,
+      },
+    });
+  }
+
+  async removeComment(id: number) {
+    await this.prisma.checklistComment.delete({ where: { id } });
   }
 }

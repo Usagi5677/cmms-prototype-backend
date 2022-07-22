@@ -1,5 +1,6 @@
 import { ObjectType } from '@nestjs/graphql';
 import { BaseModel } from './base.model';
+import { ChecklistComment } from './checklist-comment.model.ts';
 import { ChecklistItem } from './checklist-item.model';
 import { Machine } from './machine.model';
 import { Transportation } from './transportation.model';
@@ -14,4 +15,5 @@ export class Checklist extends BaseModel {
   currentMeterReading?: number;
   workingHour?: number;
   items: ChecklistItem[];
+  comments: ChecklistComment[];
 }

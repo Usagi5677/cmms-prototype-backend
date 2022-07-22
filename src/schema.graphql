@@ -63,6 +63,8 @@ input ChangeChecklistTemplateInput {
 }
 
 type Checklist {
+  comments: [ChecklistComment!]!
+
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
@@ -77,6 +79,17 @@ type Checklist {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   workingHour: Int
+}
+
+type ChecklistComment {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  description: String!
+  id: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User
 }
 
 input ChecklistInput {
@@ -469,6 +482,7 @@ type MachineUsageHistory {
 
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
+  addChecklistComment(checklistId: Int!, comment: String!): String!
   addChecklistTemplateItem(entityId: Int, entityType: String, id: Int!, name: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachinePeriodicMaintenance(machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
@@ -517,6 +531,7 @@ type Mutation {
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
+  removeChecklistComment(id: Int!): String!
   removeChecklistTemplate(id: Int!): String!
   removeChecklistTemplateItem(entityId: Int, entityType: String, id: Int!, templateId: Int): String!
   removeMachine(machineId: Int!): String!
