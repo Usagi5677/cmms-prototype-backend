@@ -127,13 +127,10 @@ export class UserService {
     let where: any = { AND: [] };
     //for now these only
     if (search) {
-      const or: any = [
-        { fullName: { contains: search, mode: 'insensitive' } },
-        { rcno: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
+      const or: any = [{ fullName: { contains: search, mode: 'insensitive' } }];
+      // If search contains all numbers, search the rcno as well
       if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+        or.push({ rcno: parseInt(search) });
       }
       where.AND.push({
         OR: or,
