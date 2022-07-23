@@ -529,6 +529,7 @@ type Mutation {
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
   editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editTransportationUsage(currentMileage: Int!, id: Int!, lastServiceMileage: Int!): String!
+  editUserLocation(id: Int!, location: String): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
@@ -1570,6 +1571,7 @@ type User {
   email: String!
   fullName: String!
   id: Int!
+  location: String
   permissions: [String!]
   rcno: Int!
   roles: [UserRoles!]
@@ -1608,6 +1610,7 @@ type UserWithRoles {
   email: String!
   fullName: String!
   id: Int!
+  location: String
   rcno: Int!
   roles: [UserRoles!]
   userId: String!

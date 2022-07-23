@@ -168,4 +168,19 @@ export class UserService {
       },
     };
   }
+
+  //** Edit user location */
+  async editUserLocation(user: User, id: number, location: string) {
+    try {
+      await this.prisma.user.update({
+        where: { id },
+        data: {
+          location,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

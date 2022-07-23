@@ -174,4 +174,21 @@ export class UserResolver {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  /**Edit user location. */
+  @Permissions('EDIT_USER_LOCATION')
+  @Mutation(() => String)
+  async editUserLocation(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('location', { nullable: true }) location: string
+  ): Promise<String> {
+    try {
+      await this.userService.editUserLocation(user, id, location);
+      return 'User location updated.';
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

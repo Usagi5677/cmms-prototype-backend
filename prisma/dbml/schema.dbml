@@ -10,6 +10,7 @@ Table User {
   rcno Int [not null]
   fullName String [not null]
   email String [not null]
+  location String
   notifications Notification [not null]
   roles UserRole [not null]
   machineCreated Machine [not null]

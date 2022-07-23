@@ -22,6 +22,7 @@ model User {
   rcno                                         Int
   fullName                                     String
   email                                        String
+  location                                     String?
   notifications                                Notification[]
   roles                                        UserRole[]
   machineCreated                               Machine[]

@@ -9,5 +9,6 @@ export class UserWithRoles {
   fullName: string;
   userId: string;
   email: string;
+  location?: string;
   roles?: UserRoles[];
 }

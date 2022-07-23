@@ -1,4 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
+import { IsOptional } from 'class-validator';
 import { RoleEnum } from 'src/common/enums/roles';
 import { BaseModel } from './base.model';
 import { Roles } from './roles.model';
@@ -10,6 +11,10 @@ export class User extends BaseModel {
   fullName: string;
   userId: string;
   email: string;
+
+  @Field({ nullable: true })
+  location: string;
+
   roles?: UserRoles[];
   permissions?: string[];
 }
