@@ -2957,8 +2957,10 @@ export class MachineService {
           date = `1/1/${data[index]?.registeredDate}`;
           newDate = new Date(date);
         }
-        console.log(index + ' : ' + data[index]?.registeredDate);
-        const newDateTwo = new Date(data[index]?.registeredDate);
+        //console.log(index + ' : ' + data[index]?.registeredDate);
+        const newDateTwo = new Date(
+          Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+        );
         await this.prisma.machine.create({
           data: {
             createdById: user.id,
@@ -3016,13 +3018,20 @@ export class MachineService {
           date = `1/1/${data[index]?.registeredDate}`;
           newDate = new Date(date);
         }
-        console.log(index + ' : ' + data[index]?.registeredDate);
+        console.log(
+          index +
+            ' : ' +
+            new Date(
+              Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+            )
+        );
         if (data[index]?.registeredDate) {
-          newDateTwo = new Date(data[index]?.registeredDate);
+          newDateTwo = new Date(
+            Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+          );
         } else {
           newDateTwo = null;
         }
-
         //console.log(moment(newDateTwo).format('DD MMMM YYYY HH:mm:ss'));
         await this.prisma.transportation.create({
           data: {
