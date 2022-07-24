@@ -7,7 +7,9 @@ export class machineAndTransportsStatusCount {
   machineWorking?: number;
   machineIdle?: number;
   machineBreakdown?: number;
+  machineDispose?: number;
   transportationWorking?: number;
   transportationIdle?: number;
   transportationBreakdown?: number;
+  transportationDispose?: number;
 }

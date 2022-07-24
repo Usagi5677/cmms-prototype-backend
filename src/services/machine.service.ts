@@ -2888,6 +2888,12 @@ export class MachineService {
           },
         });
 
+        const machineDispose = await this.prisma.machine.findMany({
+          where: {
+            status: 'Dispose',
+          },
+        });
+
         const transportationWorking = await this.prisma.transportation.findMany(
           {
             where: {
@@ -2909,13 +2915,23 @@ export class MachineService {
             },
           });
 
+        const transportationDispose = await this.prisma.transportation.findMany(
+          {
+            where: {
+              status: 'Dispose',
+            },
+          }
+        );
+
         statusCount = {
           machineWorking: machineWorking.length ?? 0,
           machineIdle: machineIdle.length ?? 0,
           machineBreakdown: machineBreakdown.length ?? 0,
+          machineDispose: machineDispose.length ?? 0,
           transportationWorking: transportationWorking.length ?? 0,
           transportationIdle: transportationIdle.length ?? 0,
           transportationBreakdown: transportationBreakdown.length ?? 0,
+          transportationDispose: transportationDispose.length ?? 0,
         };
       }
       return statusCount;

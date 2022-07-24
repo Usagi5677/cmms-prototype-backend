@@ -1618,9 +1618,11 @@ type UserWithRoles {
 
 type machineAndTransportsStatusCount {
   machineBreakdown: Int
+  machineDispose: Int
   machineIdle: Int
   machineWorking: Int
   transportationBreakdown: Int
+  transportationDispose: Int
   transportationIdle: Int
   transportationWorking: Int
 }
