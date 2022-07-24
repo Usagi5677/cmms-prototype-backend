@@ -329,7 +329,9 @@ export class ChecklistService {
     for (const checklist of checklists) {
       const summary = new ChecklistSummary();
       Object.assign(summary, checklist);
-      if (checklist.items.every((item) => item.completedAt !== null)) {
+      if (checklist.items.length === 0) {
+        summary.itemCompletion = 'empty';
+      } else if (checklist.items.every((item) => item.completedAt !== null)) {
         summary.itemCompletion = 'all';
       } else if (checklist.items.some((item) => item.completedAt !== null)) {
         summary.itemCompletion = 'some';
