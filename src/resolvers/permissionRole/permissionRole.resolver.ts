@@ -93,4 +93,25 @@ export class PermissionRoleResolver {
     });
     return roles;
   }
+
+  @Query(() => RoleModel)
+  async getRoleWithPermission(@Args('roleId') roleId: number) {
+    return await this.permissionRoleService.getRoleWithPermission(roleId);
+  }
+
+  @Mutation(() => String)
+  async togglePermission(
+    @UserEntity() user: User,
+    @Args('roleId') roleId: number,
+    @Args('permission') permission: string,
+    @Args('complete') complete: boolean
+  ): Promise<String> {
+    await this.permissionRoleService.togglePermission(
+      user,
+      roleId,
+      permission,
+      complete
+    );
+    return `Permission updated to role.`;
+  }
 }

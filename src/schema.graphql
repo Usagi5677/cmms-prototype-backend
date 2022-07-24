@@ -554,6 +554,7 @@ type Mutation {
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleMachinePMTask(complete: Boolean!, id: Int!): String!
+  togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
   toggleTransportationPMTask(complete: Boolean!, id: Int!): String!
   toggleVerifyMachinePeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyTransportationPeriodicMaintenance(id: Int!, verify: Boolean!): String!
@@ -1153,6 +1154,7 @@ type Query {
   ): PaginatedUsers!
   getMachineLatestAttachment(machineId: Int!): MachineAttachment!
   getMachineReport(from: Date!, to: Date!): [MachineReport!]!
+  getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!

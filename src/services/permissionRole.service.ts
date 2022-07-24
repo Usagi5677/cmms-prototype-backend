@@ -142,4 +142,49 @@ export class PermissionRoleService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  async getRoleWithPermission(roleId: number) {
+    try {
+      return await this.prisma.role.findFirst({
+        where: {
+          id: roleId,
+        },
+        include: {
+          permissionRoles: true,
+          createdBy: true,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpeected error occured');
+    }
+  }
+
+  async togglePermission(
+    user: User,
+    roleId: number,
+    permission: string,
+    complete: boolean
+  ) {
+    try {
+      if (complete) {
+        await this.prisma.permissionRole.create({
+          data: {
+            roleId,
+            permission,
+          },
+        });
+      } else {
+        await this.prisma.permissionRole.deleteMany({
+          where: {
+            roleId: roleId,
+            permission: permission,
+          },
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpeected error occured');
+    }
+  }
 }
