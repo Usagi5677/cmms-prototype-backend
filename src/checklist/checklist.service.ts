@@ -6,6 +6,8 @@ import { ChecklistTemplateService } from 'src/resolvers/checklist-template/check
 import { ChecklistInput } from './dto/checklist.input';
 import { Checklist } from '@prisma/client';
 import { User } from 'src/models/user.model';
+import { ChecklistSummaryInput } from './dto/checklist-summary.input';
+import { ChecklistSummary } from './dto/checklist-summary';
 
 @Injectable()
 export class ChecklistService {
@@ -292,5 +294,51 @@ export class ChecklistService {
 
   async removeComment(id: number) {
     await this.prisma.checklistComment.delete({ where: { id } });
+  }
+
+  async checklistSummary({
+    entityId,
+    entityType,
+    type,
+    from,
+    to,
+  }: ChecklistSummaryInput): Promise<ChecklistSummary[]> {
+    await this.checklistTemplateService.validateEntity(entityType, entityId);
+    if (type === 'Daily') {
+      from = moment(from).startOf('day').toDate();
+      to = moment(to).endOf('day').toDate();
+    } else {
+      from = moment(from).startOf('week').toDate();
+      to = moment(to).endOf('week').toDate();
+    }
+    let where: any = {
+      type,
+      from: { gte: from },
+      to: { lte: to },
+    };
+    if (entityType === 'Transportation') {
+      where.transportationId = entityId;
+    } else {
+      where.machineId = entityId;
+    }
+    const checklists = await this.prisma.checklist.findMany({
+      where,
+      include: { items: true, comments: true },
+    });
+    const summaries: ChecklistSummary[] = [];
+    for (const checklist of checklists) {
+      const summary = new ChecklistSummary();
+      Object.assign(summary, checklist);
+      if (checklist.items.every((item) => item.completedAt !== null)) {
+        summary.itemCompletion = 'all';
+      } else if (checklist.items.some((item) => item.completedAt !== null)) {
+        summary.itemCompletion = 'some';
+      } else {
+        summary.itemCompletion = 'none';
+      }
+      summary.hasComments = checklist.comments.length > 0 ? true : false;
+      summaries.push(summary);
+    }
+    return summaries;
   }
 }
