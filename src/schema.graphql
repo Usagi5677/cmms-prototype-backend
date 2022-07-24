@@ -112,6 +112,35 @@ type ChecklistItem {
   updatedAt: Date!
 }
 
+type ChecklistSummary {
+  comments: [ChecklistComment!]!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  currentMeterReading: Int
+  from: Date!
+  hasComments: Boolean!
+  id: Int!
+  itemCompletion: String!
+  items: [ChecklistItem!]!
+  machine: Machine
+  to: Date!
+  transportation: Transportation
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  workingHour: Int
+}
+
+input ChecklistSummaryInput {
+  entityId: Int!
+  entityType: String!
+  from: Date!
+  to: Date!
+  type: String!
+}
+
 type ChecklistTemplate {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -762,6 +791,7 @@ type Query {
   breakdownVehicleCount: BreakdownNotif!
   breakdownVesselCount: BreakdownNotif!
   checklist(input: ChecklistInput!): Checklist
+  checklistSummary(input: ChecklistSummaryInput!): [ChecklistSummary!]!
   checklistTemplate(id: Int!): ChecklistTemplate!
   checklistTemplates(
     """Paginate after opaque cursor"""

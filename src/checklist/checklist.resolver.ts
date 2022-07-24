@@ -6,6 +6,8 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { User } from 'src/models/user.model';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
+import { ChecklistSummary } from './dto/checklist-summary';
+import { ChecklistSummaryInput } from './dto/checklist-summary.input';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Checklist)
@@ -59,5 +61,10 @@ export class ChecklistResolver {
   async removeChecklistComment(@Args('id') id: number): Promise<string> {
     await this.checklistService.removeComment(id);
     return `Checklist comment removed.`;
+  }
+
+  @Query(() => [ChecklistSummary], { name: 'checklistSummary' })
+  checklistSummary(@Args('input') input: ChecklistSummaryInput) {
+    return this.checklistService.checklistSummary(input);
   }
 }
