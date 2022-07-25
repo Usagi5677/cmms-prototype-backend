@@ -12,4 +12,5 @@ export class TransportationConnectionArgs extends ConnectionArgs {
   transportType?: string;
   status?: TransportationStatus;
   location?: string[];
+  department?: string[];
 }

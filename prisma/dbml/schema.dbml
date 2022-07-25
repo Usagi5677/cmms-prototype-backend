@@ -319,7 +319,7 @@ Table Transportation {
   registeredDate DateTime
   model String
   type String
-  location String [not null]
+  location String
   status TransportationStatus [not null, default: 'Working']
   statusChangedAt DateTime
   department String

@@ -403,6 +403,7 @@ export class TransportationService {
       transportType,
       status,
       location,
+      department,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -426,10 +427,18 @@ export class TransportationService {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (location?.length > 0) {
       where.AND.push({
         location: {
           in: location,
+        },
+      });
+    }
+
+    if (department?.length > 0) {
+      where.AND.push({
+        department: {
+          in: department,
         },
       });
     }

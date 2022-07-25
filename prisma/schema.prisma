@@ -354,7 +354,7 @@ model Transportation {
   registeredDate            DateTime?
   model                     String?
   type                      String?
-  location                  String
+  location                  String?
   status                    TransportationStatus                @default(Working)
   statusChangedAt           DateTime?
   department                String?
