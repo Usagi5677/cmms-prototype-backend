@@ -773,4 +773,19 @@ export class TransportationResolver {
   ): Promise<maintenanceStatusCount> {
     return this.transportationService.getAllTransportationPMStatusCount(user);
   }
+
+  @Permissions('EDIT_TRANSPORTATION_LOCATION')
+  @Mutation(() => String)
+  async editTransportationLocation(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('location') location: string
+  ): Promise<String> {
+    await this.transportationService.editTransportationLocation(
+      user,
+      id,
+      location
+    );
+    return `Location updated.`;
+  }
 }

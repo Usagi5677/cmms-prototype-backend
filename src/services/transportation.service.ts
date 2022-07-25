@@ -2810,4 +2810,48 @@ export class TransportationService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  //** Edit transportation location */
+  async editTransportationLocation(user: User, id: number, location: string) {
+    try {
+      const transportation = await this.prisma.transportation.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          location: true,
+        },
+      });
+
+      if (transportation.location != location) {
+        const transportationUsers = await this.getTransportationUserIds(
+          id,
+          user.id
+        );
+        for (let index = 0; index < transportationUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: transportationUsers[index],
+            body: `${user.fullName} (${user.rcno}) changed location from ${transportation.location} to ${location}.`,
+            link: `/transportation/${id}`,
+          });
+        }
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Location changed from ${transportation.location} to ${location}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+
+        await this.prisma.transportation.update({
+          where: { id },
+          data: {
+            location,
+          },
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

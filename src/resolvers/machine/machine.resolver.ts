@@ -706,4 +706,15 @@ export class MachineResolver {
     this.machineService.TransportsUploadData(user);
     return `Transports Data Uploaded`;
   }
+
+  @Permissions('EDIT_MACHINE_LOCATION')
+  @Mutation(() => String)
+  async editMachineLocation(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('location') location: string
+  ): Promise<String> {
+    await this.machineService.editMachineLocation(user, id, location);
+    return `Location updated.`;
+  }
 }

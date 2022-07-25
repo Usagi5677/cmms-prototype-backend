@@ -3075,4 +3075,45 @@ export class MachineService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  //** Edit machine location */
+  async editMachineLocation(user: User, id: number, location: string) {
+    try {
+      const machine = await this.prisma.machine.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          location: true,
+        },
+      });
+
+      if (machine.location != location) {
+        const machineUsers = await this.getMachineUserIds(id, user.id);
+        for (let index = 0; index < machineUsers.length; index++) {
+          await this.notificationService.createInBackground({
+            userId: machineUsers[index],
+            body: `${user.fullName} (${user.rcno}) changed location from ${machine.location} to ${location}.`,
+            link: `/machine/${id}`,
+          });
+        }
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Location changed from ${machine.location} to ${location}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+
+        await this.prisma.machine.update({
+          where: { id },
+          data: {
+            location,
+          },
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

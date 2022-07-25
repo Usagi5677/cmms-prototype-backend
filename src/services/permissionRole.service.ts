@@ -174,6 +174,7 @@ export class PermissionRoleService {
             permission,
           },
         });
+        await this.redisCacheService.del(`permissions-${user.id}`);
       } else {
         await this.prisma.permissionRole.deleteMany({
           where: {
@@ -181,6 +182,7 @@ export class PermissionRoleService {
             permission: permission,
           },
         });
+        await this.redisCacheService.del(`permissions-${user.id}`);
       }
     } catch (e) {
       console.log(e);

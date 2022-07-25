@@ -546,6 +546,7 @@ type Mutation {
   editMachine(currentRunning: Int, id: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, type: String, zone: String): String!
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
+  editMachineLocation(id: Int!, location: String!): String!
   editMachinePeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editMachineRepair(description: String!, id: Int!, title: String!): String!
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
@@ -554,6 +555,7 @@ type Mutation {
   editTransportation(currentMileage: Int, department: String, engine: String, id: Int!, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, type: String): String!
   editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
+  editTransportationLocation(id: Int!, location: String!): String!
   editTransportationPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   editTransportationRepair(description: String!, id: Int!, title: String!): String!
   editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
