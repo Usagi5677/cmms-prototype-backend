@@ -788,4 +788,15 @@ export class TransportationResolver {
     );
     return `Location updated.`;
   }
+
+  @Query(() => PaginatedTransportation)
+  async getAllAssignedTransportation(
+    @UserEntity() user: User,
+    @Args() args: TransportationConnectionArgs
+  ): Promise<PaginatedTransportation> {
+    return await this.transportationService.getTransportationWithPagination(
+      user,
+      args
+    );
+  }
 }

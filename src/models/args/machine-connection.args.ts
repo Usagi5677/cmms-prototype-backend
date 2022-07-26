@@ -11,4 +11,5 @@ export class MachineConnectionArgs extends ConnectionArgs {
   createdByUserId?: string;
   status?: MachineStatus;
   location?: string[];
+  isAssigned?: boolean;
 }

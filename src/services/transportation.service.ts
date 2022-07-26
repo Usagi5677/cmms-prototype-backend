@@ -404,6 +404,7 @@ export class TransportationService {
       status,
       location,
       department,
+      isAssigned,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -456,6 +457,13 @@ export class TransportationService {
         OR: or,
       });
     }
+
+    if (isAssigned) {
+      where.AND.push({
+        assignees: { some: {} },
+      });
+    }
+
     const transportation = await this.prisma.transportation.findMany({
       skip: offset,
       take: limitPlusOne,
@@ -464,6 +472,11 @@ export class TransportationService {
         createdBy: true,
         sparePRs: { orderBy: { id: 'desc' } },
         breakdowns: { orderBy: { id: 'desc' } },
+        assignees: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 

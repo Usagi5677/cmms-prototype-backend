@@ -13,4 +13,5 @@ export class TransportationConnectionArgs extends ConnectionArgs {
   status?: TransportationStatus;
   location?: string[];
   department?: string[];
+  isAssigned?: boolean;
 }

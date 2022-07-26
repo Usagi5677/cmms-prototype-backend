@@ -363,7 +363,8 @@ export class MachineService {
   ): Promise<PaginatedMachine> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, status, location } = args;
+    const { createdById, search, assignedToId, status, location, isAssigned } =
+      args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -402,6 +403,13 @@ export class MachineService {
         OR: or,
       });
     }
+
+    if (isAssigned) {
+      where.AND.push({
+        assignees: { some: {} },
+      });
+    }
+
     const machine = await this.prisma.machine.findMany({
       skip: offset,
       take: limitPlusOne,
@@ -410,6 +418,11 @@ export class MachineService {
         createdBy: true,
         sparePRs: { orderBy: { id: 'desc' } },
         breakdowns: { orderBy: { id: 'desc' } },
+        assignees: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
@@ -2762,166 +2775,117 @@ export class MachineService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
-
-  //** Get assigned user's machine periodic maintenance tasks. Results are paginated. User cursor argument to go forward/backward. */
-  async getMyMachinePMTasksWithPagination(
-    user: User,
-    args: MachinePeriodicMaintenanceConnectionArgs
-  ): Promise<PaginatedMachinePeriodicMaintenanceTask> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, complete, location, status, assignedToId } = args;
-
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-
-    if (assignedToId) {
-      where.AND.push({
-        assignees: { some: { userId: assignedToId } },
-      });
-    }
-
-    if (location?.length > 0) {
-      where.AND.push({
-        periodicMaintenance: {
-          machine: {
-            location: {
-              in: location,
-            },
-          },
-        },
-      });
-    }
-
-    if (status) {
-      where.AND.push({
-        periodicMaintenance: {
-          status: status,
-        },
-      });
-    }
-
-    if (complete) {
-      where.AND.push({
-        NOT: [{ completedAt: null }],
-      });
-    }
-
-    if (search) {
-      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const machinePeriodicMaintenanceTask =
-      await this.prisma.machinePeriodicMaintenanceTask.findMany({
-        skip: offset,
-        take: limitPlusOne,
-        where,
-        include: {
-          periodicMaintenance: {
-            include: {
-              machine: {
-                include: {
-                  assignees: {
-                    include: {
-                      user: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        orderBy: { id: 'desc' },
-      });
-
-    const count = await this.prisma.machinePeriodicMaintenanceTask.count({
-      where,
-    });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      machinePeriodicMaintenanceTask.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
-  }
-
   //** Get all machine and transports status count*/
-  async getAllMachineAndTransportStatusCount(user: User) {
+  async getAllMachineAndTransportStatusCount(user: User, isAssigned?: boolean) {
     try {
       const key = `allMachineAndTransportStatusCount`;
       let statusCount = await this.redisCacheService.get(key);
       if (!statusCount) {
         statusCount = '';
 
-        const machineWorking = await this.prisma.machine.findMany({
-          where: {
-            status: 'Working',
-          },
-        });
+        const machineWorking = isAssigned
+          ? await this.prisma.machine.findMany({
+              where: {
+                status: 'Working',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.machine.findMany({
+              where: {
+                status: 'Working',
+              },
+            });
 
-        const machineIdle = await this.prisma.machine.findMany({
-          where: {
-            status: 'Idle',
-          },
-        });
+        const machineIdle = isAssigned
+          ? await this.prisma.machine.findMany({
+              where: {
+                status: 'Idle',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.machine.findMany({
+              where: {
+                status: 'Idle',
+              },
+            });
 
-        const machineBreakdown = await this.prisma.machine.findMany({
-          where: {
-            status: 'Breakdown',
-          },
-        });
+        const machineBreakdown = isAssigned
+          ? await this.prisma.machine.findMany({
+              where: {
+                status: 'Breakdown',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.machine.findMany({
+              where: {
+                status: 'Breakdown',
+              },
+            });
 
-        const machineDispose = await this.prisma.machine.findMany({
-          where: {
-            status: 'Dispose',
-          },
-        });
+        const machineDispose = isAssigned
+          ? await this.prisma.machine.findMany({
+              where: {
+                status: 'Dispose',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.machine.findMany({
+              where: {
+                status: 'Dispose',
+              },
+            });
 
-        const transportationWorking = await this.prisma.transportation.findMany(
-          {
-            where: {
-              status: 'Working',
-            },
-          }
-        );
+        const transportationWorking = isAssigned
+          ? await this.prisma.transportation.findMany({
+              where: {
+                status: 'Working',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.transportation.findMany({
+              where: {
+                status: 'Working',
+              },
+            });
 
-        const transportationIdle = await this.prisma.transportation.findMany({
-          where: {
-            status: 'Idle',
-          },
-        });
+        const transportationIdle = isAssigned
+          ? await this.prisma.transportation.findMany({
+              where: {
+                status: 'Idle',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.transportation.findMany({
+              where: {
+                status: 'Idle',
+              },
+            });
 
-        const transportationBreakdown =
-          await this.prisma.transportation.findMany({
-            where: {
-              status: 'Breakdown',
-            },
-          });
+        const transportationBreakdown = isAssigned
+          ? await this.prisma.transportation.findMany({
+              where: {
+                status: 'Breakdown',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.transportation.findMany({
+              where: {
+                status: 'Breakdown',
+              },
+            });
 
-        const transportationDispose = await this.prisma.transportation.findMany(
-          {
-            where: {
-              status: 'Dispose',
-            },
-          }
-        );
+        const transportationDispose = isAssigned
+          ? await this.prisma.transportation.findMany({
+              where: {
+                status: 'Dispose',
+                assignees: { some: {} },
+              },
+            })
+          : await this.prisma.transportation.findMany({
+              where: {
+                status: 'Dispose',
+              },
+            });
 
         statusCount = {
           machineWorking: machineWorking.length ?? 0,

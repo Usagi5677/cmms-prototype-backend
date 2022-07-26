@@ -740,7 +740,7 @@ type Profile {
 }
 
 type Query {
-  allMachineAndTransportStatusCount: machineAndTransportsStatusCount!
+  allMachineAndTransportStatusCount(isAssigned: Boolean): machineAndTransportsStatusCount!
   allMachinePMStatusCount: maintenanceStatusCount!
   allMachinePMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
@@ -760,6 +760,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int
@@ -781,6 +782,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int
@@ -812,6 +814,50 @@ type Query {
     type: String
   ): ChecklistTemplateConnection!
   entityChecklistTemplate(input: EntityChecklistTemplateInput!): ChecklistTemplate!
+  getAllAssignedMachine(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+
+    """Paginate first"""
+    first: Int
+    isAssigned: Boolean
+
+    """Paginate last"""
+    last: Int
+    location: [String!]
+    search: String
+    self: Boolean
+    status: MachineStatus
+  ): PaginatedMachine!
+  getAllAssignedTransportation(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    createdById: Int
+    createdByUserId: String
+    department: [String!]
+
+    """Paginate first"""
+    first: Int
+    isAssigned: Boolean
+
+    """Paginate last"""
+    last: Int
+    location: [String!]
+    search: String
+    self: Boolean
+    status: TransportationStatus
+    transportType: String
+  ): PaginatedTransportation!
   getAllBreakdownOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -890,6 +936,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int
@@ -948,6 +995,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int
@@ -1121,6 +1169,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int
@@ -1143,6 +1192,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int
@@ -1165,6 +1215,7 @@ type Query {
 
     """Paginate first"""
     first: Int
+    isAssigned: Boolean
 
     """Paginate last"""
     last: Int

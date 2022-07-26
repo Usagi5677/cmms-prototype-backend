@@ -691,9 +691,13 @@ export class MachineResolver {
 
   @Query(() => machineAndTransportsStatusCount)
   async allMachineAndTransportStatusCount(
-    @UserEntity() user: User
+    @UserEntity() user: User,
+    @Args('isAssigned', { nullable: true }) isAssigned?: boolean
   ): Promise<machineAndTransportsStatusCount> {
-    return this.machineService.getAllMachineAndTransportStatusCount(user);
+    return this.machineService.getAllMachineAndTransportStatusCount(
+      user,
+      isAssigned
+    );
   }
 
   @Query(() => String)
@@ -716,5 +720,13 @@ export class MachineResolver {
   ): Promise<String> {
     await this.machineService.editMachineLocation(user, id, location);
     return `Location updated.`;
+  }
+
+  @Query(() => PaginatedMachine)
+  async getAllAssignedMachine(
+    @UserEntity() user: User,
+    @Args() args: MachineConnectionArgs
+  ): Promise<PaginatedMachine> {
+    return await this.machineService.getMachineWithPagination(user, args);
   }
 }
