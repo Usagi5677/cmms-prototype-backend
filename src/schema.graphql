@@ -194,6 +194,15 @@ input CreateChecklistTemplateInput {
 """Date custom scalar type"""
 scalar Date
 
+type Entity {
+  entityId: Int!
+  entityNo: String!
+  entityType: String!
+  machine: Machine
+  transportation: Transportation
+  transportationType: String
+}
+
 input EntityChecklistTemplateInput {
   entityId: Int!
   entityType: String!
@@ -1271,6 +1280,7 @@ type Query {
   redisKeys: [String!]!
   sayHello: String!
   searchAPSUsers(query: String!): [User!]!
+  searchEntity(limit: Int, query: String!): [Entity!]!
   singleMachineUsageHistory(from: Date!, machineId: Int!, to: Date!): [MachineUsageHistory!]!
   singleTransportationUsageHistory(from: Date!, to: Date!, transportationId: Int!): [TransportationUsageHistory!]!
   transportationAttachment(id: Int!): TransportationAttachment!
@@ -1342,7 +1352,7 @@ type Transportation {
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  createdBy: User!
+  createdBy: User
   currentMileage: Int
   deletedAt: Date
   department: String

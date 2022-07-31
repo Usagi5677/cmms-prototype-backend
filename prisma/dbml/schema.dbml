@@ -155,7 +155,7 @@ Table ChecklistTemplate {
   name String
   items ChecklistTemplateItem [not null]
   type String [not null, default: 'Daily']
-  machinessDaily Machine [not null]
+  machinesDaily Machine [not null]
   machinesWeekly Machine [not null]
   transportationsDaily Transportation [not null]
   transportationsWeekly Transportation [not null]

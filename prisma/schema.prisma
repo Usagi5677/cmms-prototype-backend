@@ -192,7 +192,7 @@ model ChecklistTemplate {
   name                  String?
   items                 ChecklistTemplateItem[]
   type                  String                  @default("Daily")
-  machinessDaily        Machine[]               @relation("machineDaily")
+  machinesDaily         Machine[]               @relation("machineDaily")
   machinesWeekly        Machine[]               @relation("machineWeekly")
   transportationsDaily  Transportation[]        @relation("transportationDaily")
   transportationsWeekly Transportation[]        @relation("transportationWeekly")

@@ -12,7 +12,7 @@ import { User } from './user.model';
 
 @ObjectType()
 export class Transportation extends BaseModel {
-  createdBy: User;
+  createdBy?: User;
   machineNumber?: string;
   registeredDate?: Date;
   model?: string;

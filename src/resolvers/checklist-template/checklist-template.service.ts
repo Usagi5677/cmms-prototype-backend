@@ -83,7 +83,7 @@ export class ChecklistTemplateService {
       where: { id },
       include: {
         items: true,
-        machinessDaily: true,
+        machinesDaily: true,
         machinesWeekly: true,
         transportationsDaily: true,
         transportationsWeekly: true,
@@ -402,13 +402,13 @@ export class ChecklistTemplateService {
     const template = await this.prisma.checklistTemplate.findFirst({
       where: { id: templateId },
       include: {
-        machinessDaily: true,
+        machinesDaily: true,
         machinesWeekly: true,
         transportationsDaily: true,
         transportationsWeekly: true,
       },
     });
-    for (const machine of template.machinessDaily) {
+    for (const machine of template.machinesDaily) {
       await this.updateEntityChecklists(machine.id, 'Machine', 'Daily');
     }
     for (const machine of template.machinesWeekly) {

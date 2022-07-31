@@ -21,6 +21,7 @@ import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.
 import { ChecklistTemplateModule } from './resolvers/checklist-template/checklist-template.module';
 import { ChecklistModule } from './checklist/checklist.module';
 import { InitService } from './services/init.service';
+import { EntityModule } from './entity/entity.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { InitService } from './services/init.service';
     ScheduleModule.forRoot(),
     ChecklistTemplateModule,
     ChecklistModule,
+    EntityModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, DateScalar, InitService],
