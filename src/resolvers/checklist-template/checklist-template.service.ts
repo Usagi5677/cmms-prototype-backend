@@ -471,11 +471,9 @@ export class ChecklistTemplateService {
       const completedItems = checklist.items
         .filter((ci) => ci.completedAt !== null)
         .map((ci) => ci.description);
-      console.log({ completedItems });
       const additions = templateItems.filter(
         (ti) => !completedItems.includes(ti)
       );
-      console.log({ additions });
       await this.prisma.checklistItem.deleteMany({
         where: { checklistId: checklist.id, completedAt: null },
       });
