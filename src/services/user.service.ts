@@ -46,36 +46,33 @@ export class UserService {
 
   //** Get permissions of user roles. First checks cache. If not in cache, gets from db and adds to cache */
   async getUserRolesPermissionsList(id: number): Promise<string[]> {
-    let permissions = await this.redisCacheService.get(`permissions-${id}`);
-    if (!permissions) {
-      const userRoles = await this.prisma.userRole.findMany({
-        where: { userId: id },
-      });
-      const rolesPermissions = await this.prisma.permissionRole.findMany({
-        where: { roleId: { in: userRoles.map((r) => r.roleId) } },
-      });
-      //console.log(rolesPermissions);
-      //permissions = await this.prisma.permission.findMany({
-      //  where: { id: { in: rolesPermissions.map((r) => r.permissionId) } },
-      //});
-      permissions = rolesPermissions.map((p) => p.permission);
-      await this.redisCacheService.setForMonth(
-        `permissions-${id}`,
-        permissions
-      );
+    let permissions = [];
+    // let permissions = await this.redisCacheService.get(`permissions-${id}`);
+    const userRoleIds = await this.getUserRolesList(id);
+    for (const roleId of userRoleIds) {
+      const key = `permissions-${roleId}`;
+      let rolePermissions = await this.redisCacheService.get(key);
+      if (!rolePermissions) {
+        rolePermissions = await this.prisma.permissionRole.findMany({
+          where: { roleId },
+        });
+        await this.redisCacheService.setForMonth(key, rolePermissions);
+      }
+      permissions = [...permissions, ...rolePermissions];
     }
     return permissions;
   }
 
   //** Get roles of user. First checks cache. If not in cache, gets from db and adds to cache */
-  async getUserRolesList(id: number): Promise<Roles[]> {
-    let roles = await this.redisCacheService.get(`roles-${id}`);
+  async getUserRolesList(id: number): Promise<number[]> {
+    const key = `roles-${id}`;
+    let roles = await this.redisCacheService.get(key);
     if (!roles) {
       const userRoles = await this.prisma.userRole.findMany({
         where: { userId: id },
       });
       roles = userRoles.map((r) => r.roleId);
-      await this.redisCacheService.setForMonth(`roles-${id}`, roles);
+      await this.redisCacheService.setForMonth(key, roles);
     }
     return roles;
   }

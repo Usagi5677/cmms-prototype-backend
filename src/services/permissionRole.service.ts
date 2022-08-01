@@ -18,8 +18,7 @@ import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import { ConfigService } from '@nestjs/config';
 import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-connection.args';
 import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-connection.model';
-import { PermissionRole } from 'src/models/permission-role.model';
-import { PermissionEnum } from 'src/common/enums/permission';
+import { permissions as PERMISSIONS } from 'src/constants';
 
 @Injectable()
 export class PermissionRoleService {
@@ -125,18 +124,21 @@ export class PermissionRoleService {
   }
 
   //** assign permission. */
-  async assignPermission(user: User, roleId: number, permissions: string[]) {
+  async assignPermission(roleId: number, permissions: string[]) {
+    for (const permission of permissions) {
+      if (!PERMISSIONS.includes(permission)) {
+        throw new BadRequestException(`Invalid permission: ${permission}`);
+      }
+    }
+
     try {
-      await this.prisma.permissionRole.deleteMany({
-        where: { roleId },
-      });
       await this.prisma.permissionRole.createMany({
         data: permissions.map((permission) => ({
           roleId,
           permission: permission,
         })),
       });
-      await this.redisCacheService.del(`permissions-${user.id}`);
+      await this.redisCacheService.del(`permissions-${roleId}`);
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -161,7 +163,6 @@ export class PermissionRoleService {
   }
 
   async togglePermission(
-    user: User,
     roleId: number,
     permission: string,
     complete: boolean
@@ -174,7 +175,7 @@ export class PermissionRoleService {
             permission,
           },
         });
-        await this.redisCacheService.del(`permissions-${user.id}`);
+        await this.redisCacheService.del(`permissions-${roleId}`);
       } else {
         await this.prisma.permissionRole.deleteMany({
           where: {
@@ -182,7 +183,7 @@ export class PermissionRoleService {
             permission: permission,
           },
         });
-        await this.redisCacheService.del(`permissions-${user.id}`);
+        await this.redisCacheService.del(`permissions-${roleId}`);
       }
     } catch (e) {
       console.log(e);

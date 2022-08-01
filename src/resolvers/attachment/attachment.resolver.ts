@@ -3,7 +3,6 @@ import { Args, Query, Resolver } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { MachineAttachmentConnectionArgs } from 'src/models/args/machine-attachment-connection.args';
 import { TransportationAttachmentConnectionArgs } from 'src/models/args/transportation-attachment-connection.args';
 import { MachineAttachment } from 'src/models/machine-attachment.model';
@@ -14,7 +13,7 @@ import { User } from 'src/models/user.model';
 import { AttachmentService } from 'src/services/attachment.service';
 
 @Resolver(() => MachineAttachment)
-@UseGuards(GqlAuthGuard, RolesGuard)
+@UseGuards(GqlAuthGuard)
 export class AttachmentResolver {
   constructor(
     private readonly attachmentService: AttachmentService,

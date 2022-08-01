@@ -1,20 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import {
-  InternalServerErrorException,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  Args,
-  Int,
-  Mutation,
-  Query,
-  Resolver,
-  Subscription,
-} from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../guards/gql-auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { User } from 'src/models/user.model';
 import { UserService } from 'src/services/user.service';
@@ -23,8 +10,6 @@ import { PermissionRole } from 'src/models/permission-role.model';
 import { PermissionRoleService } from 'src/services/permissionRole.service';
 import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-connection.model';
 import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-connection.args';
-import { PermissionEnum } from 'src/common/enums/permission';
-import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Roles as RoleModel } from 'src/models/roles.model';
 
@@ -33,7 +18,6 @@ import { Roles as RoleModel } from 'src/models/roles.model';
 export class PermissionRoleResolver {
   constructor(
     private permissionRoleService: PermissionRoleService,
-    private userService: UserService,
     private prisma: PrismaService
   ) {}
 
@@ -74,15 +58,10 @@ export class PermissionRoleResolver {
 
   @Mutation(() => String)
   async assignPermission(
-    @UserEntity() user: User,
     @Args('roleId') roleId: number,
     @Args('permissions', { type: () => [String] }) permissions: string[]
   ): Promise<String> {
-    await this.permissionRoleService.assignPermission(
-      user,
-      roleId,
-      permissions
-    );
+    await this.permissionRoleService.assignPermission(roleId, permissions);
     return `Assigned permission.`;
   }
 
@@ -101,13 +80,11 @@ export class PermissionRoleResolver {
 
   @Mutation(() => String)
   async togglePermission(
-    @UserEntity() user: User,
     @Args('roleId') roleId: number,
     @Args('permission') permission: string,
     @Args('complete') complete: boolean
   ): Promise<String> {
     await this.permissionRoleService.togglePermission(
-      user,
       roleId,
       permission,
       complete
