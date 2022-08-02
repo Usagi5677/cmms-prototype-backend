@@ -609,7 +609,7 @@ type Mutation {
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateReading(id: Int!, reading: Int!): String!
-  updateType(updateTypeInput: UpdateTypeInput!): Type!
+  updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
 }
 

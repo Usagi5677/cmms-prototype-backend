@@ -28,9 +28,10 @@ export class TypeResolver {
     return this.typeService.findAll(args);
   }
 
-  @Mutation(() => Type)
+  @Mutation(() => String)
   async updateType(@Args('updateTypeInput') input: UpdateTypeInput) {
     await this.typeService.update(input);
+    return 'Successfully updated type.';
   }
 
   @Mutation(() => String)
