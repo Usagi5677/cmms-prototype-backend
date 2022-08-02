@@ -22,6 +22,7 @@ import { ChecklistTemplateModule } from './resolvers/checklist-template/checklis
 import { ChecklistModule } from './checklist/checklist.module';
 import { InitService } from './services/init.service';
 import { EntityModule } from './entity/entity.module';
+import { TypeModule } from './type/type.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { EntityModule } from './entity/entity.module';
     ChecklistTemplateModule,
     ChecklistModule,
     EntityModule,
+    TypeModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, DateScalar, InitService],

@@ -4,7 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { User, Prisma } from '@prisma/client';
+import { User, Prisma, PermissionRole } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 //import { UserGroupConnectionArgs } from 'src/models/args/user-group-connection.args';
 import {
@@ -51,11 +51,12 @@ export class UserService {
     const userRoleIds = await this.getUserRolesList(id);
     for (const roleId of userRoleIds) {
       const key = `permissions-${roleId}`;
-      let rolePermissions = await this.redisCacheService.get(key);
+      let rolePermissions: string[] = await this.redisCacheService.get(key);
       if (!rolePermissions) {
-        rolePermissions = await this.prisma.permissionRole.findMany({
+        const rp = await this.prisma.permissionRole.findMany({
           where: { roleId },
         });
+        rolePermissions = rp.map((r) => r.permission);
         await this.redisCacheService.setForMonth(key, rolePermissions);
       }
       permissions = [...permissions, ...rolePermissions];

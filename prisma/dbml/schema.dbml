@@ -84,6 +84,15 @@ Table PermissionRole {
   role Role [not null]
 }
 
+Table Type {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityType String [not null]
+  name String [not null]
+  active Boolean [not null, default: true]
+}
+
 Table Machine {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
@@ -93,6 +102,7 @@ Table Machine {
   machineNumber String
   registeredDate DateTime
   model String
+  typeId Int
   type String
   zone String
   location String
@@ -318,6 +328,7 @@ Table Transportation {
   machineNumber String
   registeredDate DateTime
   model String
+  typeId Int
   type String
   location String
   status TransportationStatus [not null, default: 'Working']

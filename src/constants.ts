@@ -66,6 +66,8 @@ export const permissions = [
   'VIEW_ROLES',
   'VIEW_MACHINERY_REPORT',
   'VIEW_TRANSPORTATION_REPORT',
+  'MODIFY_TYPES',
+  'VIEW_TYPES',
 ];
 
 export const CHECKLIST_TYPES = ['Daily', 'Weekly'];

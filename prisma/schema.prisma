@@ -94,6 +94,15 @@ model PermissionRole {
   role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 }
 
+model Type {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  entityType String
+  name       String
+  active     Boolean  @default(true)
+}
+
 model Machine {
   id                        Int                          @id @default(autoincrement())
   createdAt                 DateTime                     @default(now())
@@ -103,6 +112,7 @@ model Machine {
   machineNumber             String?
   registeredDate            DateTime?
   model                     String?
+  typeId                    Int?
   type                      String?
   zone                      String?
   location                  String?
@@ -353,6 +363,7 @@ model Transportation {
   machineNumber             String?
   registeredDate            DateTime?
   model                     String?
+  typeId                    Int?
   type                      String?
   location                  String?
   status                    TransportationStatus                @default(Working)

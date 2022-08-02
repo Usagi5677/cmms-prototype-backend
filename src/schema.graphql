@@ -191,6 +191,11 @@ input CreateChecklistTemplateInput {
   type: String!
 }
 
+input CreateTypeInput {
+  entityType: String!
+  name: String!
+}
+
 """Date custom scalar type"""
 scalar Date
 
@@ -542,6 +547,7 @@ type Mutation {
   createMachinePeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createTransportation(currentMileage: Int, department: String, engine: String, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, type: String): String!
   createTransportationPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
+  createType(createTypeInput: CreateTypeInput!): String!
   deleteMachineBreakdown(id: Int!): String!
   deleteMachinePMTask(id: Int!): String!
   deleteMachinePeriodicMaintenance(id: Int!): String!
@@ -581,6 +587,7 @@ type Mutation {
   removeRole(id: Int!): String!
   removeTransportation(transportationId: Int!): String!
   removeTransportationAttachment(id: Int!): String!
+  removeType(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
@@ -602,6 +609,7 @@ type Mutation {
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateReading(id: Int!, reading: Int!): String!
+  updateType(updateTypeInput: UpdateTypeInput!): Type!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
 }
 
@@ -708,6 +716,11 @@ type PaginatedTransportationRepair {
 type PaginatedTransportationSparePR {
   edges: [TransportationSparePREdge!]
   pageInfo: TransportationSparePRPageInfo
+}
+
+type PaginatedType {
+  edges: [TypeEdge!]
+  pageInfo: TypePageInfo
 }
 
 type PaginatedUsers {
@@ -1299,6 +1312,21 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationAttachment!
+  types(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    entityType: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    name: String
+  ): PaginatedType!
   uploadMachineData: String!
   uploadTransportsData: String!
 }
@@ -1657,11 +1685,41 @@ type TransportationUsageHistory {
   workingHour: Float
 }
 
+type Type {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  entityType: String!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type TypeEdge {
+  cursor: String
+  node: Type
+}
+
+type TypePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 input UpdateChecklistTemplateInput {
   id: Int!
   items: [String!]
   name: String
   type: String
+}
+
+input UpdateTypeInput {
+  entityType: String
+  id: Int!
+  name: String
 }
 
 type User {
