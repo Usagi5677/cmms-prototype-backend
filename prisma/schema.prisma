@@ -95,12 +95,14 @@ model PermissionRole {
 }
 
 model Type {
-  id         Int      @id @default(autoincrement())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  entityType String
-  name       String
-  active     Boolean  @default(true)
+  id              Int              @id @default(autoincrement())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  entityType      String
+  name            String
+  active          Boolean          @default(true)
+  machines        Machine[]
+  transportations Transportation[]
 }
 
 model Machine {
@@ -113,7 +115,7 @@ model Machine {
   registeredDate            DateTime?
   model                     String?
   typeId                    Int?
-  type                      String?
+  type                      Type?                        @relation(fields: [typeId], references: [id])
   zone                      String?
   location                  String?
   currentRunning            Int?
@@ -364,7 +366,7 @@ model Transportation {
   registeredDate            DateTime?
   model                     String?
   typeId                    Int?
-  type                      String?
+  type                      Type?                               @relation(fields: [typeId], references: [id])
   location                  String?
   status                    TransportationStatus                @default(Working)
   statusChangedAt           DateTime?

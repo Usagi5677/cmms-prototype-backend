@@ -9,6 +9,7 @@ import { MachineSparePR } from './machine-sparePR.model';
 import { MachinePeriodicMaintenance } from './machine-periodic-maintenance.model';
 import { User } from './user.model';
 import { MachineAssign } from './machine-assign.model';
+import { Type } from 'src/type/entities/type.entity';
 
 @ObjectType()
 export class Machine extends BaseModel {
@@ -16,7 +17,7 @@ export class Machine extends BaseModel {
   machineNumber?: string;
   registeredDate?: Date;
   model?: string;
-  type?: string;
+  type?: Type;
   zone?: string;
   location?: string;
   currentRunning?: number;

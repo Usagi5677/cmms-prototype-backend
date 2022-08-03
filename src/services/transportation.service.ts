@@ -71,7 +71,7 @@ export class TransportationService {
     user: User,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     location: string,
     department: string,
     engine: string,
@@ -95,7 +95,7 @@ export class TransportationService {
           createdById: user.id,
           machineNumber,
           model,
-          type,
+          typeId,
           location,
           department,
           engine,
@@ -166,7 +166,7 @@ export class TransportationService {
     id: number,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     location: string,
     department: string,
     engine: string,
@@ -176,10 +176,26 @@ export class TransportationService {
     registeredDate: Date,
     currentMileage?: number
   ) {
-    try {
-      const transportation = await this.prisma.transportation.findFirst({
-        where: { id },
+    const transportation = await this.prisma.transportation.findFirst({
+      where: { id },
+      include: { type: typeId ? true : false },
+    });
+    if (transportation.typeId != typeId) {
+      const newType = await this.prisma.type.findFirst({
+        where: { id: typeId },
       });
+      if (newType) {
+        await this.createTransportationHistoryInBackground({
+          type: 'Transportation Edit',
+          description: `Type changed ${
+            transportation.type ? `from ${transportation.type.name} to` : ''
+          } ${newType.name}.`,
+          transportationId: id,
+          completedById: user.id,
+        });
+      }
+    }
+    try {
       if (transportation.machineNumber != machineNumber) {
         await this.createTransportationHistoryInBackground({
           type: 'Transportation Edit',
@@ -196,14 +212,7 @@ export class TransportationService {
           completedById: user.id,
         });
       }
-      if (transportation.type != type) {
-        await this.createTransportationHistoryInBackground({
-          type: 'Transportation Edit',
-          description: `Type changed from ${transportation.type} to ${type}.`,
-          transportationId: id,
-          completedById: user.id,
-        });
-      }
+
       if (transportation.department != department) {
         await this.createTransportationHistoryInBackground({
           type: 'Transportation Edit',
@@ -292,7 +301,7 @@ export class TransportationService {
         data: {
           machineNumber,
           model,
-          type,
+          typeId,
           location,
           department,
           engine,
@@ -359,6 +368,7 @@ export class TransportationService {
     const transportation = await this.prisma.transportation.findFirst({
       where: { id: transportationId },
       include: {
+        type: true,
         createdBy: true,
         dailyChecklistTemplate: {
           include: {
@@ -1798,12 +1808,7 @@ export class TransportationService {
   ) {
     const transportation = await this.prisma.transportation.findFirst({
       where: { id: transportationHistory.transportationId },
-      select: {
-        status: true,
-        type: true,
-        location: true,
-        id: true,
-      },
+      include: { type: true },
     });
     const transportationChecklist = await this.prisma.checklist.findFirst({
       where: {
@@ -1853,7 +1858,7 @@ export class TransportationService {
         transportationStatus: transportationHistory.transportationStatus
           ? transportationHistory.transportationStatus
           : transportation.status,
-        transportationType: transportation.type,
+        transportationType: transportation.type.name,
         workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,

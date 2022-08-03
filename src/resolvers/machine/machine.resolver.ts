@@ -66,7 +66,7 @@ export class MachineResolver {
     @UserEntity() user: User,
     @Args('machineNumber', { nullable: true }) machineNumber: string,
     @Args('model', { nullable: true }) model: string,
-    @Args('type', { nullable: true }) type: string,
+    @Args('typeId', { nullable: true }) typeId: number,
     @Args('zone', { nullable: true }) zone: string,
     @Args('location', { nullable: true }) location: string,
     @Args('currentRunning', { nullable: true }) currentRunning: number,
@@ -78,7 +78,7 @@ export class MachineResolver {
       user,
       machineNumber,
       model,
-      type,
+      typeId,
       zone,
       location,
       currentRunning,
@@ -111,7 +111,7 @@ export class MachineResolver {
     @Args('id', { nullable: true }) id: number,
     @Args('machineNumber', { nullable: true }) machineNumber: string,
     @Args('model', { nullable: true }) model: string,
-    @Args('type', { nullable: true }) type: string,
+    @Args('typeId', { nullable: true }) typeId: number,
     @Args('zone', { nullable: true }) zone: string,
     @Args('location', { nullable: true }) location: string,
     @Args('currentRunning', { nullable: true }) currentRunning: number,
@@ -123,7 +123,7 @@ export class MachineResolver {
       id,
       machineNumber,
       model,
-      type,
+      typeId,
       zone,
       location,
       lastService,
@@ -697,16 +697,16 @@ export class MachineResolver {
     );
   }
 
-  @Query(() => String)
-  async uploadMachineData(@UserEntity() user: User): Promise<String> {
-    this.machineService.MachineUploadData(user);
-    return `Machine Data Uploaded`;
-  }
-  @Query(() => String)
-  async uploadTransportsData(@UserEntity() user: User): Promise<String> {
-    this.machineService.TransportsUploadData(user);
-    return `Transports Data Uploaded`;
-  }
+  // @Query(() => String)
+  // async uploadMachineData(@UserEntity() user: User): Promise<String> {
+  //   this.machineService.MachineUploadData(user);
+  //   return `Machine Data Uploaded`;
+  // }
+  // @Query(() => String)
+  // async uploadTransportsData(@UserEntity() user: User): Promise<String> {
+  //   this.machineService.TransportsUploadData(user);
+  //   return `Transports Data Uploaded`;
+  // }
 
   @Permissions('EDIT_MACHINE_LOCATION')
   @Mutation(() => String)

@@ -1,5 +1,6 @@
 import { ObjectType } from '@nestjs/graphql';
 import { TransportationStatus } from 'src/common/enums/transportationStatus';
+import { Type } from 'src/type/entities/type.entity';
 import { BaseModel } from './base.model';
 import { ChecklistItem } from './checklist-item.model';
 import { TransportationAssign } from './transportation-assign.model';
@@ -16,7 +17,7 @@ export class Transportation extends BaseModel {
   machineNumber?: string;
   registeredDate?: Date;
   model?: string;
-  type?: string;
+  type?: Type;
   location?: string;
   department?: string;
   engine?: string;

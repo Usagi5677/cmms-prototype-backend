@@ -238,7 +238,7 @@ type Machine {
   sparePRs: [MachineSparePR!]
   status: MachineStatus
   statusChangedAt: Date
-  type: String
+  type: Type
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -543,9 +543,9 @@ type Mutation {
   assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
-  createMachine(currentRunning: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, type: String, zone: String): String!
+  createMachine(currentRunning: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   createMachinePeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
-  createTransportation(currentMileage: Int, department: String, engine: String, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, type: String): String!
+  createTransportation(currentMileage: Int, department: String, engine: String, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, typeId: Int): String!
   createTransportationPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createType(createTypeInput: CreateTypeInput!): String!
   deleteMachineBreakdown(id: Int!): String!
@@ -558,7 +558,7 @@ type Mutation {
   deleteTransportationPeriodicMaintenance(id: Int!): String!
   deleteTransportationRepair(id: Int!): String!
   deleteTransportationSparePR(id: Int!): String!
-  editMachine(currentRunning: Int, id: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, type: String, zone: String): String!
+  editMachine(currentRunning: Int, id: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   editMachineAttachment(description: String!, id: Int!): String!
   editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editMachineLocation(id: Int!, location: String!): String!
@@ -567,7 +567,7 @@ type Mutation {
   editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editMachineUsage(currentRunning: Int!, id: Int!, lastService: Int!): String!
   editRole(id: Int!, name: String!): String!
-  editTransportation(currentMileage: Int, department: String, engine: String, id: Int!, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, type: String): String!
+  editTransportation(currentMileage: Int, department: String, engine: String, id: Int!, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, typeId: Int): String!
   editTransportationAttachment(description: String!, id: Int!): String!
   editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editTransportationLocation(id: Int!, location: String!): String!
@@ -1327,8 +1327,6 @@ type Query {
     last: Int
     name: String
   ): PaginatedType!
-  uploadMachineData: String!
-  uploadTransportsData: String!
 }
 
 """Repair statuses."""
@@ -1400,7 +1398,7 @@ type Transportation {
   status: TransportationStatus
   statusChangedAt: Date
   transportType: String
-  type: String
+  type: Type
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!

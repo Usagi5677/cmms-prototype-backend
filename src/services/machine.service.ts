@@ -76,7 +76,7 @@ export class MachineService {
     user: User,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     zone: string,
     location: string,
     currentRunning: number,
@@ -98,7 +98,7 @@ export class MachineService {
           createdById: user.id,
           machineNumber,
           model,
-          type,
+          typeId,
           zone,
           location,
           currentRunning,
@@ -163,7 +163,7 @@ export class MachineService {
     id: number,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     zone: string,
     location: string,
     lastService: number,
@@ -172,10 +172,24 @@ export class MachineService {
     measurement: string,
     currentRunning?: number
   ) {
-    try {
-      const machine = await this.prisma.machine.findFirst({
-        where: { id },
+    const machine = await this.prisma.machine.findFirst({
+      where: { id },
+      include: { type: typeId ? true : false },
+    });
+    if (machine.typeId != typeId) {
+      const newType = await this.prisma.type.findFirst({
+        where: { id: typeId },
       });
+      if (newType) {
+        await this.createMachineHistoryInBackground({
+          type: 'Machine Edit',
+          description: `Type changed from ${machine.type.name} to ${newType.name}.`,
+          machineId: id,
+          completedById: user.id,
+        });
+      }
+    }
+    try {
       if (machine.machineNumber != machineNumber) {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
@@ -188,14 +202,6 @@ export class MachineService {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
           description: `Model changed from ${machine.model} to ${model}.`,
-          machineId: id,
-          completedById: user.id,
-        });
-      }
-      if (machine.type != type) {
-        await this.createMachineHistoryInBackground({
-          type: 'Machine Edit',
-          description: `Type changed from ${machine.type} to ${type}.`,
           machineId: id,
           completedById: user.id,
         });
@@ -267,7 +273,7 @@ export class MachineService {
         data: {
           machineNumber,
           model,
-          type,
+          typeId,
           zone,
           location,
           currentRunning,
@@ -327,6 +333,7 @@ export class MachineService {
     const machine = await this.prisma.machine.findFirst({
       where: { id: machineId },
       include: {
+        type: true,
         createdBy: true,
         dailyChecklistTemplate: {
           include: {
@@ -1754,12 +1761,7 @@ export class MachineService {
   async createMachineHistory(machineHistory: MachineHistoryInterface) {
     const machine = await this.prisma.machine.findFirst({
       where: { id: machineHistory.machineId },
-      select: {
-        status: true,
-        type: true,
-        location: true,
-        id: true,
-      },
+      include: { type: true },
     });
     const machineChecklist = await this.prisma.checklist.findFirst({
       where: {
@@ -1811,7 +1813,7 @@ export class MachineService {
         machineStatus: machineHistory.machineStatus
           ? machineHistory.machineStatus
           : machine.status,
-        machineType: machine.type,
+        machineType: machine.type.name,
         workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,
@@ -2905,140 +2907,140 @@ export class MachineService {
     }
   }
 
-  //** Get upload all machine data to db*/
-  async MachineUploadData(user: User) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const reader = require('xlsx');
+  // //** Get upload all machine data to db*/
+  // async MachineUploadData(user: User) {
+  //   try {
+  //     // eslint-disable-next-line @typescript-eslint/no-var-requires
+  //     const reader = require('xlsx');
 
-      // Reading our test file
-      const file = reader.readFile(
-        'src/common/importData/machineDataCleaned.xlsx'
-      );
+  //     // Reading our test file
+  //     const file = reader.readFile(
+  //       'src/common/importData/machineDataCleaned.xlsx'
+  //     );
 
-      // eslint-disable-next-line prefer-const
-      let data = [];
+  //     // eslint-disable-next-line prefer-const
+  //     let data = [];
 
-      const sheets = file.SheetNames;
+  //     const sheets = file.SheetNames;
 
-      for (let i = 0; i < sheets.length; i++) {
-        const temp = reader.utils.sheet_to_json(
-          file.Sheets[file.SheetNames[i]]
-        );
-        temp.forEach((res) => {
-          data.push(res);
-        });
-      }
+  //     for (let i = 0; i < sheets.length; i++) {
+  //       const temp = reader.utils.sheet_to_json(
+  //         file.Sheets[file.SheetNames[i]]
+  //       );
+  //       temp.forEach((res) => {
+  //         data.push(res);
+  //       });
+  //     }
 
-      data.map(async (machine: Machine, index: number) => {
-        let date;
-        let newDate;
-        if (data[index]?.registeredDate?.toString().length == 4) {
-          date = `1/1/${data[index]?.registeredDate}`;
-          newDate = new Date(date);
-        }
-        //console.log(index + ' : ' + data[index]?.registeredDate);
-        const newDateTwo = new Date(
-          Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
-        );
-        await this.prisma.machine.create({
-          data: {
-            createdById: user.id,
-            machineNumber: machine?.machineNumber?.toString(),
-            registeredDate: newDate ? newDate : newDateTwo,
-            model: machine?.model?.toString(),
-            type: machine?.type?.toString(),
-            zone: machine?.zone?.toString(),
-            location: machine?.location?.toString().trim(),
-            status: (machine?.status?.charAt(0).toUpperCase() +
-              machine?.status?.slice(1)) as MachineStatus,
-            currentRunning: machine?.currentRunning,
-            lastService: machine?.lastService,
-            measurement: machine?.measurement,
-          },
-        });
-      });
-      console.log('done');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
+  //     data.map(async (machine: Machine, index: number) => {
+  //       let date;
+  //       let newDate;
+  //       if (data[index]?.registeredDate?.toString().length == 4) {
+  //         date = `1/1/${data[index]?.registeredDate}`;
+  //         newDate = new Date(date);
+  //       }
+  //       //console.log(index + ' : ' + data[index]?.registeredDate);
+  //       const newDateTwo = new Date(
+  //         Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+  //       );
+  //       await this.prisma.machine.create({
+  //         data: {
+  //           createdById: user.id,
+  //           machineNumber: machine?.machineNumber?.toString(),
+  //           registeredDate: newDate ? newDate : newDateTwo,
+  //           model: machine?.model?.toString(),
+  //           type: machine?.type?.toString(),
+  //           zone: machine?.zone?.toString(),
+  //           location: machine?.location?.toString().trim(),
+  //           status: (machine?.status?.charAt(0).toUpperCase() +
+  //             machine?.status?.slice(1)) as MachineStatus,
+  //           currentRunning: machine?.currentRunning,
+  //           lastService: machine?.lastService,
+  //           measurement: machine?.measurement,
+  //         },
+  //       });
+  //     });
+  //     console.log('done');
+  //   } catch (e) {
+  //     console.log(e);
+  //     throw new InternalServerErrorException('Unexpected error occured.');
+  //   }
+  // }
 
-  //** Get upload all transports data to db*/
-  async TransportsUploadData(user: User) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const reader = require('xlsx');
+  // //** Get upload all transports data to db*/
+  // async TransportsUploadData(user: User) {
+  //   try {
+  //     // eslint-disable-next-line @typescript-eslint/no-var-requires
+  //     const reader = require('xlsx');
 
-      // Reading our test file
-      const file = reader.readFile(
-        'src/common/importData/transportsDataCleaned.xlsx'
-      );
+  //     // Reading our test file
+  //     const file = reader.readFile(
+  //       'src/common/importData/transportsDataCleaned.xlsx'
+  //     );
 
-      // eslint-disable-next-line prefer-const
-      let data = [];
+  //     // eslint-disable-next-line prefer-const
+  //     let data = [];
 
-      const sheets = file.SheetNames;
+  //     const sheets = file.SheetNames;
 
-      for (let i = 0; i < sheets.length; i++) {
-        const temp = reader.utils.sheet_to_json(
-          file.Sheets[file.SheetNames[i]]
-        );
-        temp.forEach((res) => {
-          data.push(res);
-        });
-      }
+  //     for (let i = 0; i < sheets.length; i++) {
+  //       const temp = reader.utils.sheet_to_json(
+  //         file.Sheets[file.SheetNames[i]]
+  //       );
+  //       temp.forEach((res) => {
+  //         data.push(res);
+  //       });
+  //     }
 
-      data.map(async (transportation: Transportation, index: number) => {
-        let date;
-        let newDate;
-        let newDateTwo;
-        if (data[index]?.registeredDate?.toString().length == 4) {
-          date = `1/1/${data[index]?.registeredDate}`;
-          newDate = new Date(date);
-        }
-        console.log(
-          index +
-            ' : ' +
-            new Date(
-              Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
-            )
-        );
-        if (data[index]?.registeredDate) {
-          newDateTwo = new Date(
-            Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
-          );
-        } else {
-          newDateTwo = null;
-        }
-        //console.log(moment(newDateTwo).format('DD MMMM YYYY HH:mm:ss'));
-        await this.prisma.transportation.create({
-          data: {
-            createdById: user.id,
-            machineNumber: transportation?.machineNumber?.toString(),
-            registeredDate: newDate ? newDate : newDateTwo,
-            model: transportation?.model?.toString(),
-            type: transportation?.type?.toString(),
-            department: transportation?.department?.toString(),
-            engine: transportation?.engine?.toString(),
-            brand: transportation?.brand?.toString(),
-            location: transportation?.location?.toString().trim(),
-            status: (transportation?.status?.charAt(0).toUpperCase() +
-              transportation?.status?.slice(1)) as MachineStatus,
-            currentMileage: transportation?.currentMileage,
-            lastServiceMileage: transportation?.lastServiceMileage,
-            measurement: transportation?.measurement,
-            transportType: transportation?.transportType,
-          },
-        });
-      });
-      console.log('done');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
+  //     data.map(async (transportation: Transportation, index: number) => {
+  //       let date;
+  //       let newDate;
+  //       let newDateTwo;
+  //       if (data[index]?.registeredDate?.toString().length == 4) {
+  //         date = `1/1/${data[index]?.registeredDate}`;
+  //         newDate = new Date(date);
+  //       }
+  //       console.log(
+  //         index +
+  //           ' : ' +
+  //           new Date(
+  //             Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+  //           )
+  //       );
+  //       if (data[index]?.registeredDate) {
+  //         newDateTwo = new Date(
+  //           Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+  //         );
+  //       } else {
+  //         newDateTwo = null;
+  //       }
+  //       //console.log(moment(newDateTwo).format('DD MMMM YYYY HH:mm:ss'));
+  //       await this.prisma.transportation.create({
+  //         data: {
+  //           createdById: user.id,
+  //           machineNumber: transportation?.machineNumber?.toString(),
+  //           registeredDate: newDate ? newDate : newDateTwo,
+  //           model: transportation?.model?.toString(),
+  //           type: transportation?.type?.toString(),
+  //           department: transportation?.department?.toString(),
+  //           engine: transportation?.engine?.toString(),
+  //           brand: transportation?.brand?.toString(),
+  //           location: transportation?.location?.toString().trim(),
+  //           status: (transportation?.status?.charAt(0).toUpperCase() +
+  //             transportation?.status?.slice(1)) as MachineStatus,
+  //           currentMileage: transportation?.currentMileage,
+  //           lastServiceMileage: transportation?.lastServiceMileage,
+  //           measurement: transportation?.measurement,
+  //           transportType: transportation?.transportType,
+  //         },
+  //       });
+  //     });
+  //     console.log('done');
+  //   } catch (e) {
+  //     console.log(e);
+  //     throw new InternalServerErrorException('Unexpected error occured.');
+  //   }
+  // }
 
   //** Edit machine location */
   async editMachineLocation(user: User, id: number, location: string) {
