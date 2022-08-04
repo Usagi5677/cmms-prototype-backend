@@ -72,8 +72,29 @@ export class ChecklistService {
     return checklist;
   }
 
+  // Check if old checklist and throw error
+  async checkIfOldChecklist(checklistId: number, to?: Date) {
+    if (!to) {
+      to = (
+        await this.prisma.checklist.findFirst({
+          where: { id: checklistId },
+          select: { to: true },
+        })
+      ).to;
+    }
+    const now = moment();
+    if (moment(to).isBefore(now, 'second')) {
+      throw new BadRequestException('Cannot update older checklists.');
+    }
+  }
+
   //** Set checklist item as complete or incomplete. */
   async toggleChecklistItem(user: User, id: number, complete: boolean) {
+    const item = await this.prisma.checklistItem.findFirst({
+      where: { id },
+      select: { checklistId: true },
+    });
+    await this.checkIfOldChecklist(item.checklistId);
     await this.prisma.checklistItem.update({
       where: { id },
       data: complete
@@ -83,6 +104,7 @@ export class ChecklistService {
   }
 
   async updateWorkingHours(id: number, newHrs: number) {
+    await this.checkIfOldChecklist(id);
     await this.prisma.checklist.update({
       where: { id },
       data: { workingHour: newHrs },
@@ -90,6 +112,7 @@ export class ChecklistService {
   }
 
   async updateReading(id: number, reading: number) {
+    await this.checkIfOldChecklist(id);
     await this.prisma.checklist.update({
       where: { id },
       data: { currentMeterReading: reading },
