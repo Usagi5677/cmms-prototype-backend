@@ -38,6 +38,17 @@ Table User {
   transportationPeriodicMaintenanceTasks TransportationPeriodicMaintenanceTask [not null]
   machinePeriodicMaintenances MachinePeriodicMaintenance [not null]
   transportationPeriodicMaintenances TransportationPeriodicMaintenance [not null]
+  entityCreated Entity [not null]
+  entityDeleted Entity [not null]
+  entityAssignment EntityAssignment [not null]
+  entityPeriodicMaintenances EntityPeriodicMaintenance [not null]
+  entityAttachment EntityAttachment [not null]
+  entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
+  entityHistory EntityHistory [not null]
+  entityRepair EntityRepair [not null]
+  entityBreakdown EntityBreakdown [not null]
+  entitySparePR EntitySparePR [not null]
+  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
 }
 
 Table Notification {
@@ -91,6 +102,7 @@ Table Type {
   entityType String [not null]
   name String [not null]
   active Boolean [not null, default: true]
+  Entity Entity [not null]
 }
 
 Table Machine {
@@ -169,6 +181,8 @@ Table ChecklistTemplate {
   machinesWeekly Machine [not null]
   transportationsDaily Transportation [not null]
   transportationsWeekly Transportation [not null]
+  entitiesDaily Entity [not null]
+  entitiesWeekly Entity [not null]
 }
 
 Table ChecklistTemplateItem {
@@ -195,9 +209,11 @@ Table Checklist {
   workingHour Int
   items ChecklistItem [not null]
   comments ChecklistComment [not null]
+  entity Entity
+  entityId Int
 
   indexes {
-    (machineId, transportationId, from, to, type) [unique]
+    (machineId, transportationId, entityId, from, to, type) [unique]
   }
 }
 
@@ -482,6 +498,171 @@ Table TransportationSparePR {
   status SparePRStatus [not null, default: 'Pending']
 }
 
+Table Entity {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  createdById Int [not null]
+  createdBy User [not null]
+  machineNumber String
+  registeredDate DateTime
+  model String
+  typeId Int
+  type Type
+  zone String
+  location String
+  currentRunning Int
+  lastService Int
+  department String
+  engine String
+  currentMileage Int
+  lastServiceMileage Int
+  brand String
+  status EntityStatus [not null, default: 'Working']
+  statusChangedAt DateTime
+  measurement String [default: 'km']
+  isDeleted Boolean
+  deletedAt DateTime
+  deletedById Int
+  deletedBy User
+  dailyChecklistTemplateId Int
+  dailyChecklistTemplate ChecklistTemplate
+  weeklyChecklistTemplateId Int
+  weeklyChecklistTemplate ChecklistTemplate
+  checklists Checklist [not null]
+  assignees EntityAssignment [not null]
+  periodicMaintenancePlans EntityPeriodicMaintenance [not null]
+  histories EntityHistory [not null]
+  attachments EntityAttachment [not null]
+  repairs EntityRepair [not null]
+  breakdowns EntityBreakdown [not null]
+  sparePRs EntitySparePR [not null]
+}
+
+Table EntityAssignment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+
+  indexes {
+    (userId, entityId) [unique]
+  }
+}
+
+Table EntityPeriodicMaintenance {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+  title String [not null]
+  measurement String
+  value Int
+  startDate DateTime
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status PeriodicMaintenanceStatus [not null, default: 'Pending']
+  verifiedById Int
+  verifiedBy User
+  verifiedAt DateTime
+  entityPeriodicMaintenanceTask EntityPeriodicMaintenanceTask [not null]
+}
+
+Table EntityAttachment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+  description String [not null]
+  mimeType String
+  originalName String
+  sharepointFileName String
+  mode String [not null, default: 'Public']
+}
+
+Table EntityPeriodicMaintenanceTask {
+  id Int [pk, increment]
+  periodicMaintenanceId Int [not null]
+  periodicMaintenance EntityPeriodicMaintenance [not null]
+  parentTaskId Int
+  name String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  parentTask EntityPeriodicMaintenanceTask
+  subTasks EntityPeriodicMaintenanceTask [not null]
+}
+
+Table EntityHistory {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+  completedById Int
+  completedBy User
+  type String [not null]
+  description String [not null]
+  entityStatus EntityStatus
+  entityType String
+  workingHour Float
+  idleHour Float
+  breakdownHour Float
+  location String
+}
+
+Table EntityRepair {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status RepairStatus [not null, default: 'Pending']
+}
+
+Table EntityBreakdown {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  estimatedDateOfRepair DateTime
+  status BreakdownStatus [not null, default: 'Breakdown']
+}
+
+Table EntitySparePR {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  entity Entity [not null]
+  requestedDate DateTime [not null]
+  title String [not null]
+  description String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  status SparePRStatus [not null, default: 'Pending']
+}
+
 Enum MachineStatus {
   Working
   Idle
@@ -512,6 +693,13 @@ Enum PeriodicMaintenanceStatus {
 }
 
 Enum TransportationStatus {
+  Working
+  Idle
+  Breakdown
+  Dispose
+}
+
+Enum EntityStatus {
   Working
   Idle
   Breakdown
@@ -549,6 +737,8 @@ Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
 Ref: Checklist.machineId > Machine.id
 
 Ref: Checklist.transportationId > Transportation.id
+
+Ref: Checklist.entityId > Entity.id
 
 Ref: ChecklistItem.checklistId > Checklist.id
 
@@ -629,3 +819,49 @@ Ref: TransportationBreakdown.completedById > User.id
 Ref: TransportationSparePR.transportationId > Transportation.id
 
 Ref: TransportationSparePR.completedById > User.id
+
+Ref: Entity.createdById > User.id
+
+Ref: Entity.typeId > Type.id
+
+Ref: Entity.deletedById > User.id
+
+Ref: Entity.dailyChecklistTemplateId > ChecklistTemplate.id
+
+Ref: Entity.weeklyChecklistTemplateId > ChecklistTemplate.id
+
+Ref: EntityAssignment.userId > User.id
+
+Ref: EntityAssignment.entityId > Entity.id
+
+Ref: EntityPeriodicMaintenance.entityId > Entity.id
+
+Ref: EntityPeriodicMaintenance.completedById > User.id
+
+Ref: EntityPeriodicMaintenance.verifiedById > User.id
+
+Ref: EntityAttachment.userId > User.id
+
+Ref: EntityAttachment.entityId > Entity.id
+
+Ref: EntityPeriodicMaintenanceTask.periodicMaintenanceId > EntityPeriodicMaintenance.id
+
+Ref: EntityPeriodicMaintenanceTask.completedById > User.id
+
+Ref: EntityPeriodicMaintenanceTask.parentTaskId - EntityPeriodicMaintenanceTask.id
+
+Ref: EntityHistory.entityId > Entity.id
+
+Ref: EntityHistory.completedById > User.id
+
+Ref: EntityRepair.entityId > Entity.id
+
+Ref: EntityRepair.completedById > User.id
+
+Ref: EntityBreakdown.entityId > Entity.id
+
+Ref: EntityBreakdown.completedById > User.id
+
+Ref: EntitySparePR.entityId > Entity.id
+
+Ref: EntitySparePR.completedById > User.id

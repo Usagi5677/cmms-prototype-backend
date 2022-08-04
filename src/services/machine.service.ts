@@ -505,7 +505,6 @@ export class MachineService {
     measurement: string,
     value: number,
     startDate: Date,
-    tasks: string[]
   ) {
     try {
       const periodicMaintenance =
@@ -574,12 +573,6 @@ export class MachineService {
           value,
           startDate,
         },
-      });
-      await this.prisma.machinePeriodicMaintenanceTask.createMany({
-        data: tasks.map((task) => ({
-          periodicMaintenanceId: periodicMaintenance.id,
-          name: task,
-        })),
       });
     } catch (e) {
       console.log(e);

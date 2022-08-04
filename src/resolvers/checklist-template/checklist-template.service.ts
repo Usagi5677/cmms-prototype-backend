@@ -3,7 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Machine, Transportation } from '@prisma/client';
+import { Entity, Machine, Transportation } from '@prisma/client';
 import * as moment from 'moment';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -236,15 +236,15 @@ export class ChecklistTemplateService {
   async validateEntity(
     entityType: string,
     entityId: number
-  ): Promise<Machine | Transportation> {
-    let entity: null | Transportation | Machine = null;
+  ): Promise<Machine | Transportation | Entity> {
+    let entity: null | Transportation | Machine | Entity = null;
     // Validate entity type
     if (entityType === 'Transportation') {
-      entity = await this.prisma.transportation.findFirst({
+      entity = await this.prisma.entity.findFirst({
         where: { id: entityId },
       });
     } else if (entityType === 'Machine') {
-      entity = await this.prisma.machine.findFirst({ where: { id: entityId } });
+      entity = await this.prisma.entity.findFirst({ where: { id: entityId } });
     } else {
       throw new BadRequestException('Invalid entity type.');
     }
@@ -289,24 +289,24 @@ export class ChecklistTemplateService {
       });
       if (entityType === 'Transportation') {
         if (type === 'Daily') {
-          await this.prisma.transportation.update({
+          await this.prisma.entity.update({
             where: { id: entityId },
             data: { dailyChecklistTemplateId: template.id },
           });
         } else {
-          await this.prisma.transportation.update({
+          await this.prisma.entity.update({
             where: { id: entityId },
             data: { weeklyChecklistTemplateId: template.id },
           });
         }
       } else {
         if (type === 'Daily') {
-          await this.prisma.machine.update({
+          await this.prisma.entity.update({
             where: { id: entityId },
             data: { dailyChecklistTemplateId: template.id },
           });
         } else {
-          await this.prisma.machine.update({
+          await this.prisma.entity.update({
             where: { id: entityId },
             data: { weeklyChecklistTemplateId: template.id },
           });
@@ -337,14 +337,14 @@ export class ChecklistTemplateService {
       currentTemplateId = entity.dailyChecklistTemplateId;
       if (entityType === 'Transportation') {
         transactions.push(
-          this.prisma.transportation.update({
+          this.prisma.entity.update({
             where: { id: entityId },
             data: { dailyChecklistTemplateId: newChecklistId },
           })
         );
       } else {
         transactions.push(
-          this.prisma.machine.update({
+          this.prisma.entity.update({
             where: { id: entityId },
             data: { dailyChecklistTemplateId: newChecklistId },
           })
@@ -354,14 +354,14 @@ export class ChecklistTemplateService {
       currentTemplateId = entity.weeklyChecklistTemplateId;
       if (entityType === 'Transportation') {
         transactions.push(
-          this.prisma.transportation.update({
+          this.prisma.entity.update({
             where: { id: entityId },
             data: { weeklyChecklistTemplateId: newChecklistId },
           })
         );
       } else {
         transactions.push(
-          this.prisma.machine.update({
+          this.prisma.entity.update({
             where: { id: entityId },
             data: { weeklyChecklistTemplateId: newChecklistId },
           })
@@ -406,22 +406,24 @@ export class ChecklistTemplateService {
         machinesWeekly: true,
         transportationsDaily: true,
         transportationsWeekly: true,
+        entitiesDaily: true,
+        entitiesWeekly: true,
       },
     });
-    for (const machine of template.machinesDaily) {
+    for (const machine of template.entitiesDaily) {
       await this.updateEntityChecklists(machine.id, 'Machine', 'Daily');
     }
-    for (const machine of template.machinesWeekly) {
+    for (const machine of template.entitiesWeekly) {
       await this.updateEntityChecklists(machine.id, 'Machine', 'Weekly');
     }
-    for (const transportation of template.transportationsDaily) {
+    for (const transportation of template.entitiesDaily) {
       await this.updateEntityChecklists(
         transportation.id,
         'Transportation',
         'Daily'
       );
     }
-    for (const transportation of template.transportationsWeekly) {
+    for (const transportation of template.entitiesWeekly) {
       await this.updateEntityChecklists(
         transportation.id,
         'Transportation',
@@ -450,7 +452,7 @@ export class ChecklistTemplateService {
     if (entityType === 'Machine') {
       checklistsToChange = await this.prisma.checklist.findMany({
         where: {
-          machineId: entityId,
+          entityId,
           from: { gte: moment().startOf(startOf).toDate() },
           type,
         },
@@ -459,7 +461,7 @@ export class ChecklistTemplateService {
     } else {
       checklistsToChange = await this.prisma.checklist.findMany({
         where: {
-          transportationId: entityId,
+          entityId,
           from: { gte: moment().startOf(startOf).toDate() },
           type,
         },

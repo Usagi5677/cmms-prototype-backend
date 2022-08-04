@@ -13,6 +13,9 @@ import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
+import { EntityAttachmentConnectionArgs } from 'src/entity/dto/args/entity-attachment-connection.args';
+import { EntityAttachment } from 'src/entity/dto/models/entity-attachment.model';
+import { PaginatedEntityAttachment } from 'src/entity/dto/paginations/entity-attachment-connection.model';
 import { MachineAttachmentConnectionArgs } from 'src/models/args/machine-attachment-connection.args';
 import { TransportationAttachmentConnectionArgs } from 'src/models/args/transportation-attachment-connection.args';
 import { MachineAttachment } from 'src/models/machine-attachment.model';
@@ -345,5 +348,74 @@ export class AttachmentService {
       });
 
     return transportationAttachment;
+  }
+
+  async getEntityLatestAttachment(entityId: number): Promise<EntityAttachment> {
+    const entityAttachment = await this.prisma.entityAttachment.findFirst({
+      where: {
+        entityId,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    });
+
+    return entityAttachment;
+  }
+
+  async getEntityAttachmentWithPagination(
+    user: User,
+    args: EntityAttachmentConnectionArgs
+  ): Promise<PaginatedEntityAttachment> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, entityId } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    if (entityId) {
+      where.AND.push({ entityId });
+    }
+    //for now these only
+    if (search) {
+      const or: any = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the transportation ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    const entityAttachment = await this.prisma.entityAttachment.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: { user: true },
+      orderBy: { id: 'desc' },
+    });
+
+    const count = await this.prisma.entityAttachment.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      entityAttachment.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
   }
 }

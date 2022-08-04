@@ -225,9 +225,7 @@ export class TransportationResolver {
     @Args('title') title: string,
     @Args('measurement') measurement: string,
     @Args('value') value: number,
-    @Args('startDate') startDate: Date,
-    @Args('tasks', { nullable: true, type: () => [String] })
-    tasks: string[]
+    @Args('startDate') startDate: Date
   ): Promise<String> {
     await this.transportationService.editTransportationPeriodicMaintenance(
       user,
@@ -235,8 +233,7 @@ export class TransportationResolver {
       title,
       measurement,
       value,
-      startDate,
-      tasks
+      startDate
     );
     return `Periodic maintenance updated.`;
   }

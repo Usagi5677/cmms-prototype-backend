@@ -8,6 +8,7 @@ import { UserModule } from '../user/user.module';
 import { MachineModule } from '../machine/machine.module';
 import { AttachmentResolver } from './attachment.resolver';
 import { TransportationModule } from '../transportation/transportation.module';
+import { EntityModule } from 'src/entity/entity.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TransportationModule } from '../transportation/transportation.module';
     UserModule,
     MachineModule,
     TransportationModule,
+    EntityModule,
   ],
   controllers: [AttachmentController],
   providers: [AttachmentService, AttachmentResolver],

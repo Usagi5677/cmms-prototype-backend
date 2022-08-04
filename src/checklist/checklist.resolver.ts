@@ -67,4 +67,10 @@ export class ChecklistResolver {
   checklistSummary(@Args('input') input: ChecklistSummaryInput) {
     return this.checklistService.checklistSummary(input);
   }
+
+  @Query(() => String)
+  async testGenerateChecklist(): Promise<string> {
+    await this.checklistService.generateChecklistsCron();
+    return `Checklist generated.`;
+  }
 }
