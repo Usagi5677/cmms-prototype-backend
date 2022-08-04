@@ -103,6 +103,8 @@ Table Type {
   name String [not null]
   active Boolean [not null, default: true]
   Entity Entity [not null]
+  Machine Machine [not null]
+  Transportation Transportation [not null]
 }
 
 Table Machine {
@@ -115,7 +117,7 @@ Table Machine {
   registeredDate DateTime
   model String
   typeId Int
-  type String
+  type Type
   zone String
   location String
   currentRunning Int
@@ -345,7 +347,7 @@ Table Transportation {
   registeredDate DateTime
   model String
   typeId Int
-  type String
+  type Type
   location String
   status TransportationStatus [not null, default: 'Working']
   statusChangedAt DateTime
@@ -718,6 +720,8 @@ Ref: PermissionRole.roleId > Role.id
 
 Ref: Machine.createdById > User.id
 
+Ref: Machine.typeId > Type.id
+
 Ref: Machine.deletedById > User.id
 
 Ref: Machine.dailyChecklistTemplateId > ChecklistTemplate.id
@@ -777,6 +781,8 @@ Ref: MachineSparePR.machineId > Machine.id
 Ref: MachineSparePR.completedById > User.id
 
 Ref: Transportation.createdById > User.id
+
+Ref: Transportation.typeId > Type.id
 
 Ref: Transportation.deletedById > User.id
 

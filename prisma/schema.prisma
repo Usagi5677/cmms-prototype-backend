@@ -106,13 +106,15 @@ model PermissionRole {
 }
 
 model Type {
-  id         Int      @id @default(autoincrement())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  entityType String
-  name       String
-  active     Boolean  @default(true)
-  Entity     Entity[]
+  id             Int              @id @default(autoincrement())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  entityType     String
+  name           String
+  active         Boolean          @default(true)
+  Entity         Entity[]
+  Machine        Machine[]
+  Transportation Transportation[]
 }
 
 model Machine {
@@ -125,7 +127,7 @@ model Machine {
   registeredDate            DateTime?
   model                     String?
   typeId                    Int?
-  type                      String?
+  type                      Type?                        @relation(fields: [typeId], references: [id])
   zone                      String?
   location                  String?
   currentRunning            Int?
@@ -380,7 +382,7 @@ model Transportation {
   registeredDate            DateTime?
   model                     String?
   typeId                    Int?
-  type                      String?
+  type                      Type?                               @relation(fields: [typeId], references: [id])
   location                  String?
   status                    TransportationStatus                @default(Working)
   statusChangedAt           DateTime?
@@ -548,7 +550,7 @@ model Entity {
   registeredDate            DateTime?
   model                     String?
   typeId                    Int?
-  type                      Type?                        @relation(fields: [typeId], references: [id])
+  type                      Type?                       @relation(fields: [typeId], references: [id])
   zone                      String?
   location                  String?
   currentRunning            Int?
@@ -558,7 +560,7 @@ model Entity {
   currentMileage            Int?
   lastServiceMileage        Int?
   brand                     String?
-  status                    EntityStatus               @default(Working)
+  status                    EntityStatus                @default(Working)
   statusChangedAt           DateTime?
   measurement               String?                     @default("km")
   isDeleted                 Boolean?

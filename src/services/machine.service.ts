@@ -76,7 +76,7 @@ export class MachineService {
     user: User,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     zone: string,
     location: string,
     currentRunning: number,
@@ -98,7 +98,7 @@ export class MachineService {
           createdById: user.id,
           machineNumber,
           model,
-          type,
+          typeId,
           zone,
           location,
           currentRunning,
@@ -163,7 +163,7 @@ export class MachineService {
     id: number,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     zone: string,
     location: string,
     lastService: number,
@@ -267,7 +267,7 @@ export class MachineService {
         data: {
           machineNumber,
           model,
-          type,
+          typeId,
           zone,
           location,
           currentRunning,
@@ -504,7 +504,7 @@ export class MachineService {
     title: string,
     measurement: string,
     value: number,
-    startDate: Date,
+    startDate: Date
   ) {
     try {
       const periodicMaintenance =
@@ -1747,12 +1747,7 @@ export class MachineService {
   async createMachineHistory(machineHistory: MachineHistoryInterface) {
     const machine = await this.prisma.machine.findFirst({
       where: { id: machineHistory.machineId },
-      select: {
-        status: true,
-        type: true,
-        location: true,
-        id: true,
-      },
+      include: { type: true },
     });
     const machineChecklist = await this.prisma.checklist.findFirst({
       where: {
@@ -1804,7 +1799,7 @@ export class MachineService {
         machineStatus: machineHistory.machineStatus
           ? machineHistory.machineStatus
           : machine.status,
-        machineType: machine.type,
+        machineType: machine.type.name,
         workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,

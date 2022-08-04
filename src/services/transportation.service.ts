@@ -71,7 +71,7 @@ export class TransportationService {
     user: User,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     location: string,
     department: string,
     engine: string,
@@ -95,7 +95,7 @@ export class TransportationService {
           createdById: user.id,
           machineNumber,
           model,
-          type,
+          typeId,
           location,
           department,
           engine,
@@ -166,7 +166,7 @@ export class TransportationService {
     id: number,
     machineNumber: string,
     model: string,
-    type: string,
+    typeId: number,
     location: string,
     department: string,
     engine: string,
@@ -292,7 +292,7 @@ export class TransportationService {
         data: {
           machineNumber,
           model,
-          type,
+          typeId,
           location,
           department,
           engine,
@@ -1791,12 +1791,7 @@ export class TransportationService {
   ) {
     const transportation = await this.prisma.transportation.findFirst({
       where: { id: transportationHistory.transportationId },
-      select: {
-        status: true,
-        type: true,
-        location: true,
-        id: true,
-      },
+      include: { type: true },
     });
     const transportationChecklist = await this.prisma.checklist.findFirst({
       where: {
@@ -1846,7 +1841,7 @@ export class TransportationService {
         transportationStatus: transportationHistory.transportationStatus
           ? transportationHistory.transportationStatus
           : transportation.status,
-        transportationType: transportation.type,
+        transportationType: transportation.type?.name,
         workingHour: workingHour ? workingHour : 0,
         idleHour: idleHour,
         breakdownHour: breakdownHour,

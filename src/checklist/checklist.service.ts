@@ -72,6 +72,22 @@ export class ChecklistService {
     return checklist;
   }
 
+  // Check if old checklist and throw error
+  async checkIfOldChecklist(checklistId: number, to?: Date) {
+    if (!to) {
+      to = (
+        await this.prisma.checklist.findFirst({
+          where: { id: checklistId },
+          select: { to: true },
+        })
+      ).to;
+    }
+    const now = moment();
+    if (moment(to).isBefore(now, 'second')) {
+      throw new BadRequestException('Cannot update older checklists.');
+    }
+  }
+
   //** Set checklist item as complete or incomplete. */
   async toggleChecklistItem(user: User, id: number, complete: boolean) {
     await this.prisma.checklistItem.update({
