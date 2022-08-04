@@ -192,14 +192,6 @@ export class MachineService {
           completedById: user.id,
         });
       }
-      if (machine.type != type) {
-        await this.createMachineHistoryInBackground({
-          type: 'Machine Edit',
-          description: `Type changed from ${machine.type} to ${type}.`,
-          machineId: id,
-          completedById: user.id,
-        });
-      }
       if (machine.zone != zone) {
         await this.createMachineHistoryInBackground({
           type: 'Machine Edit',
@@ -2935,7 +2927,7 @@ export class MachineService {
             machineNumber: machine?.machineNumber?.toString(),
             registeredDate: newDate ? newDate : newDateTwo,
             model: machine?.model?.toString(),
-            type: machine?.type?.toString(),
+            //type: machine?.type?.toString(),
             zone: machine?.zone?.toString(),
             location: machine?.location?.toString().trim(),
             status: (machine?.status?.charAt(0).toUpperCase() +
@@ -3007,7 +2999,7 @@ export class MachineService {
             machineNumber: transportation?.machineNumber?.toString(),
             registeredDate: newDate ? newDate : newDateTwo,
             model: transportation?.model?.toString(),
-            type: transportation?.type?.toString(),
+            //type: transportation?.type?.toString(),
             department: transportation?.department?.toString(),
             engine: transportation?.engine?.toString(),
             brand: transportation?.brand?.toString(),

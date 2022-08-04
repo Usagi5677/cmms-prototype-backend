@@ -196,14 +196,6 @@ export class TransportationService {
           completedById: user.id,
         });
       }
-      if (transportation.type != type) {
-        await this.createTransportationHistoryInBackground({
-          type: 'Transportation Edit',
-          description: `Type changed from ${transportation.type} to ${type}.`,
-          transportationId: id,
-          completedById: user.id,
-        });
-      }
       if (transportation.department != department) {
         await this.createTransportationHistoryInBackground({
           type: 'Transportation Edit',
