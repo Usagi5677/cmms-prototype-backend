@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
@@ -14,6 +14,12 @@ export class TypeService {
   constructor(private prisma: PrismaService) {}
 
   async create({ entityType, name }: CreateTypeInput) {
+    const existing = await this.prisma.type.findFirst({
+      where: { name, entityType, active: true },
+    });
+    if (existing) {
+      throw new BadRequestException('This type already exists.');
+    }
     await this.prisma.type.create({ data: { entityType, name } });
   }
 
