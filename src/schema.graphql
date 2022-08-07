@@ -123,6 +123,7 @@ type ChecklistItem {
   createdAt: Date!
   description: String!
   id: Int!
+  issues: [ChecklistComment!]!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -136,6 +137,7 @@ type ChecklistSummary {
   currentMeterReading: Int
   from: Date!
   hasComments: Boolean!
+  hasIssues: Boolean!
   id: Int!
   itemCompletion: String!
   items: [ChecklistItem!]!
@@ -832,6 +834,7 @@ type MachineUsageHistory {
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addChecklistComment(checklistId: Int!, comment: String!): String!
+  addChecklistIssue(checklistId: Int!, comment: String!, itemId: Int!): String!
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
   addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!

@@ -44,10 +44,11 @@ export class ChecklistService {
       },
       include: {
         items: {
-          include: { completedBy: true },
+          include: { completedBy: true, issues: { include: { user: true } } },
           orderBy: { id: 'asc' },
         },
         comments: {
+          where: { type: 'Comment' },
           include: {
             user: true,
           },
@@ -216,6 +217,24 @@ export class ChecklistService {
     });
   }
 
+  async addIssue(user: User, checklistId: number, itemId, comment: string) {
+    const checklist = await this.prisma.checklist.findFirst({
+      where: { id: checklistId },
+    });
+    if (!checklist) {
+      throw new BadRequestException('Invalid checklist.');
+    }
+    await this.prisma.checklistComment.create({
+      data: {
+        checklistId,
+        itemId,
+        type: 'Issue',
+        description: comment,
+        userId: user.id,
+      },
+    });
+  }
+
   async removeComment(id: number) {
     await this.prisma.checklistComment.delete({ where: { id } });
   }
@@ -257,7 +276,14 @@ export class ChecklistService {
       } else {
         summary.itemCompletion = 'none';
       }
-      summary.hasComments = checklist.comments.length > 0 ? true : false;
+      summary.hasComments =
+        checklist.comments.filter((c) => c.type === 'Comment').length > 0
+          ? true
+          : false;
+      summary.hasIssues =
+        checklist.comments.filter((c) => c.type === 'Issue').length > 0
+          ? true
+          : false;
       summaries.push(summary);
     }
     return summaries;

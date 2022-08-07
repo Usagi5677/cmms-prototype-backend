@@ -7,4 +7,6 @@ export class ChecklistSummary extends Checklist {
   itemCompletion: string;
   @Field()
   hasComments: boolean;
+  @Field()
+  hasIssues: boolean;
 }

@@ -58,6 +58,17 @@ export class ChecklistResolver {
   }
 
   @Mutation(() => String)
+  async addChecklistIssue(
+    @UserEntity() user: User,
+    @Args('checklistId') checklistId: number,
+    @Args('itemId') itemId: number,
+    @Args('comment') comment: string
+  ): Promise<string> {
+    await this.checklistService.addIssue(user, checklistId, itemId, comment);
+    return `Checklist issue added.`;
+  }
+
+  @Mutation(() => String)
   async removeChecklistComment(@Args('id') id: number): Promise<string> {
     await this.checklistService.removeComment(id);
     return `Checklist comment removed.`;

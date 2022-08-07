@@ -255,26 +255,30 @@ model Checklist {
 }
 
 model ChecklistItem {
-  id            Int       @id @default(autoincrement())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id            Int                @id @default(autoincrement())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   checklistId   Int
-  checklist     Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  checklist     Checklist          @relation(fields: [checklistId], references: [id], onDelete: Cascade)
   description   String
   completedById Int?
-  completedBy   User?     @relation(fields: [completedById], references: [id])
+  completedBy   User?              @relation(fields: [completedById], references: [id])
   completedAt   DateTime?
+  issues        ChecklistComment[]
 }
 
 model ChecklistComment {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id          Int            @id @default(autoincrement())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   checklistId Int
-  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  checklist   Checklist      @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  type        String         @default("Comment")
+  itemId      Int?
+  item        ChecklistItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
   description String
   userId      Int?
-  user        User?     @relation(fields: [userId], references: [id])
+  user        User?          @relation(fields: [userId], references: [id])
 }
 
 model MachinePeriodicMaintenance {

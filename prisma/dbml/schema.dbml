@@ -229,6 +229,7 @@ Table ChecklistItem {
   completedById Int
   completedBy User
   completedAt DateTime
+  issues ChecklistComment [not null]
 }
 
 Table ChecklistComment {
@@ -237,6 +238,9 @@ Table ChecklistComment {
   updatedAt DateTime [not null]
   checklistId Int [not null]
   checklist Checklist [not null]
+  type String [not null, default: 'Comment']
+  itemId Int
+  item ChecklistItem
   description String [not null]
   userId Int
   user User
@@ -749,6 +753,8 @@ Ref: ChecklistItem.checklistId > Checklist.id
 Ref: ChecklistItem.completedById > User.id
 
 Ref: ChecklistComment.checklistId > Checklist.id
+
+Ref: ChecklistComment.itemId > ChecklistItem.id
 
 Ref: ChecklistComment.userId > User.id
 
