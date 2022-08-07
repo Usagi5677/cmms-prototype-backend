@@ -16,7 +16,6 @@ import { ChecklistTemplateService } from 'src/resolvers/checklist-template/check
 import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';
-import { Entity } from './entities/entity.entity';
 import * as moment from 'moment';
 import { EntityStatus } from 'src/common/enums/entityStatus';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -42,7 +41,7 @@ import { Prisma } from '@prisma/client';
 import { EntityPeriodicMaintenanceConnectionArgs } from './dto/args/entity-periodic-maintenance-connection.args';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
 import { PaginatedEntityPeriodicMaintenanceTask } from './dto/paginations/entity-pm-tasks-connection.model';
-import { EntityModel } from './dto/models/entityModel.model';
+import { Entity } from './dto/models/entity.model';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -79,36 +78,12 @@ export class EntityService {
     return entity;
   }
 
-  async search(query: string, limit?: number): Promise<Entity[]> {
+  async search(query: string, limit?: number) {
     if (!limit) limit = 10;
-    const entities: Entity[] = [];
-    const machines = await this.prisma.machine.findMany({
+    const entities = await this.prisma.entity.findMany({
       where: { machineNumber: { contains: query, mode: 'insensitive' } },
-      take: Math.round(limit / 2),
+      take: limit,
     });
-    const transports = await this.prisma.transportation.findMany({
-      where: {
-        machineNumber: { contains: query, mode: 'insensitive' },
-      },
-      take: Math.round(limit / 2),
-    });
-    for (const machine of machines) {
-      entities.push({
-        entityId: machine.id,
-        entityType: 'Machine',
-        entityNo: machine.machineNumber,
-        machine: machine,
-      });
-    }
-    for (const transport of transports) {
-      entities.push({
-        entityId: transport.id,
-        entityType: 'Transportation',
-        entityNo: transport.machineNumber,
-        transportation: transport,
-        transportationType: transport.transportType,
-      });
-    }
     return entities;
   }
 
@@ -2933,7 +2908,7 @@ export class EntityService {
         });
       }
 
-      data.map(async (machine: EntityModel, index: number) => {
+      data.map(async (machine: Entity, index: number) => {
         let date;
         let newDate;
         if (data[index]?.registeredDate?.toString().length == 4) {

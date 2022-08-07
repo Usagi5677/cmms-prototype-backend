@@ -3,7 +3,7 @@ import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceS
 import { BaseModel } from 'src/models/base.model';
 import { User } from 'src/models/user.model';
 import { EntityPMTask } from './entity-PM-task.model';
-import { EntityModel } from './entityModel.model';
+import { Entity } from './entity.model';
 
 @ObjectType()
 export class EntityPeriodicMaintenance extends BaseModel {
@@ -18,5 +18,5 @@ export class EntityPeriodicMaintenance extends BaseModel {
   entityPeriodicMaintenanceTask?: EntityPMTask[];
   verifiedBy?: User;
   verifiedAt?: Date;
-  entity: EntityModel;
+  entity: Entity;
 }

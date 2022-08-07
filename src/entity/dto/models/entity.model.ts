@@ -12,7 +12,7 @@ import { EntityRepair } from './entity-repair.model';
 import { EntitySparePR } from './entity-sparePR.model';
 
 @ObjectType()
-export class EntityModel extends BaseModel {
+export class Entity extends BaseModel {
   createdBy?: User;
   type?: Type;
   machineNumber?: string;

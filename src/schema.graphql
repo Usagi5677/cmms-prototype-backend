@@ -216,12 +216,39 @@ input CreateTypeInput {
 scalar Date
 
 type Entity {
-  entityId: Int!
-  entityNo: String!
-  entityType: String!
-  machine: Machine
-  transportation: Transportation
-  transportationType: String
+  assignees: [EntityAssign!]
+  brand: String
+  breakdowns: [EntityBreakdown!]
+  checklistItems: [ChecklistItem!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User
+  currentMileage: Int
+  currentRunning: Int
+  deletedAt: Date
+  department: String
+  engine: String
+  histories: [EntityHistory!]
+  id: Int!
+  isDeleted: Boolean
+  lastService: Int
+  lastServiceMileage: Int
+  location: String
+  machineNumber: String
+  measurement: String
+  model: String
+  periodicMaintenancePlans: [EntityPeriodicMaintenance!]
+  registeredDate: Date
+  repairs: [EntityRepair!]
+  sparePRs: [EntitySparePR!]
+  status: EntityStatus
+  statusChangedAt: Date
+  type: Type
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  zone: String
 }
 
 type EntityAssign {
@@ -301,6 +328,11 @@ input EntityChecklistTemplateInput {
   type: String!
 }
 
+type EntityEdge {
+  cursor: String
+  node: Entity
+}
+
 type EntityHistory {
   breakdownHour: Float
   completedBy: User
@@ -328,55 +360,6 @@ type EntityHistoryEdge {
 }
 
 type EntityHistoryPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type EntityModel {
-  assignees: [EntityAssign!]
-  brand: String
-  breakdowns: [EntityBreakdown!]
-  checklistItems: [ChecklistItem!]
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  createdBy: User
-  currentMileage: Int
-  currentRunning: Int
-  deletedAt: Date
-  department: String
-  engine: String
-  histories: [EntityHistory!]
-  id: Int!
-  isDeleted: Boolean
-  lastService: Int
-  lastServiceMileage: Int
-  location: String
-  machineNumber: String
-  measurement: String
-  model: String
-  periodicMaintenancePlans: [EntityPeriodicMaintenance!]
-  registeredDate: Date
-  repairs: [EntityRepair!]
-  sparePRs: [EntitySparePR!]
-  status: EntityStatus
-  statusChangedAt: Date
-  type: Type
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  zone: String
-}
-
-type EntityModelEdge {
-  cursor: String
-  node: EntityModel
-}
-
-type EntityModelPageInfo {
   count: Int!
   endCursor: String
   hasNextPage: Boolean!
@@ -415,13 +398,21 @@ type EntityPMTaskPageInfo {
   startCursor: String
 }
 
+type EntityPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type EntityPeriodicMaintenance {
   completedAt: Date
   completedBy: User
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  entity: EntityModel!
+  entity: Entity!
   entityId: Int!
   entityPeriodicMaintenanceTask: [EntityPMTask!]
   id: Int!
@@ -980,8 +971,8 @@ type PMTaskStatusCount {
 }
 
 type PaginatedEntity {
-  edges: [EntityModelEdge!]
-  pageInfo: EntityModelPageInfo
+  edges: [EntityEdge!]
+  pageInfo: EntityPageInfo
 }
 
 type PaginatedEntityAttachment {
@@ -1885,7 +1876,7 @@ type Query {
   getMachineReport(from: Date!, to: Date!): [MachineReport!]!
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
-  getSingleEntity(entityId: Int!): EntityModel!
+  getSingleEntity(entityId: Int!): Entity!
   getSingleMachine(machineId: Int!): Machine!
   getSingleTransportation(transportationId: Int!): Transportation!
   getTransportationLatestAttachment(transportationId: Int!): TransportationAttachment!

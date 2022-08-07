@@ -33,11 +33,10 @@ import { PaginatedEntityPeriodicMaintenanceTask } from './dto/paginations/entity
 import { PMTaskStatusCount } from 'src/models/PMTaskStatusCount.model';
 import { maintenanceStatusCount } from 'src/models/maintenanceStatusCount.model';
 import { entityStatusCount } from './dto/models/entityStatusCount.model';
-import { EntityModel } from './dto/models/entityModel.model';
-import { Entity } from './entities/entity.entity';
+import { Entity } from './dto/models/entity.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
-@Resolver(() => EntityModel)
+@Resolver(() => Entity)
 export class EntityResolver {
   constructor(
     private readonly entityService: EntityService,
@@ -160,7 +159,7 @@ export class EntityResolver {
   }
 
   @Permissions('VIEW_ENTITY')
-  @Query(() => EntityModel)
+  @Query(() => Entity)
   async getSingleEntity(
     @UserEntity() user: User,
     @Args('entityId') entityId: number
