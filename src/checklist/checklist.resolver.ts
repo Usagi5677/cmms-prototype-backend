@@ -35,7 +35,7 @@ export class ChecklistResolver {
     @Args('newHrs') newHrs: number
   ): Promise<string> {
     await this.checklistService.updateWorkingHours(id, newHrs);
-    return `Checklist item updated.`;
+    return `Checklist updated.`;
   }
 
   @Mutation(() => String)
@@ -44,7 +44,7 @@ export class ChecklistResolver {
     @Args('reading') reading: number
   ): Promise<string> {
     await this.checklistService.updateReading(id, reading);
-    return `Checklist item updated.`;
+    return `Checklist updated.`;
   }
 
   @Mutation(() => String)
@@ -66,11 +66,5 @@ export class ChecklistResolver {
   @Query(() => [ChecklistSummary], { name: 'checklistSummary' })
   checklistSummary(@Args('input') input: ChecklistSummaryInput) {
     return this.checklistService.checklistSummary(input);
-  }
-
-  @Query(() => String)
-  async testGenerateChecklist(): Promise<string> {
-    await this.checklistService.generateChecklistsCron();
-    return `Checklist generated.`;
   }
 }
