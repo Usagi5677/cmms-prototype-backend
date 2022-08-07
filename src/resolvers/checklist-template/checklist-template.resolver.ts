@@ -1,4 +1,6 @@
+import { UseGuards } from '@nestjs/common';
 import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
 import { ChecklistTemplate } from 'src/models/checklist-template.model';
 import { ChecklistTemplateService } from './checklist-template.service';
 import { ChangeChecklistTemplateInput } from './dto/change-checklist-template.input';
@@ -8,6 +10,7 @@ import { CreateChecklistTemplateInput } from './dto/create-checklist-template.in
 import { EntityChecklistTemplateInput } from './dto/entity-checklist-template.input';
 import { UpdateChecklistTemplateInput } from './dto/update-checklist-template.input';
 
+@UseGuards(GqlAuthGuard)
 @Resolver(() => ChecklistTemplate)
 export class ChecklistTemplateResolver {
   constructor(
@@ -83,5 +86,11 @@ export class ChecklistTemplateResolver {
   ) {
     await this.checklistTemplateService.changeChecklistTemplate(input);
     return 'Successfully changed checklist template.';
+  }
+
+  @Mutation(() => String, { name: 'updateAllEntityChecklists' })
+  async updateAllEntityChecklists() {
+    await this.checklistTemplateService.updateAllEntityChecklists();
+    return 'Successfully updated all entity checklists.';
   }
 }

@@ -941,6 +941,7 @@ type Mutation {
   unassignUserFromEntity(entityId: Int!, userId: Int!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
+  updateAllEntityChecklists: String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateReading(id: Int!, reading: Int!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!

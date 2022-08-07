@@ -380,4 +380,14 @@ export class ChecklistTemplateService {
       });
     }
   }
+
+  async updateAllEntityChecklists() {
+    const allEntities = await this.prisma.entity.findMany({
+      where: { status: 'Working' },
+    });
+    for (const entity of allEntities) {
+      await this.updateEntityChecklists(entity.id, 'Daily');
+      await this.updateEntityChecklists(entity.id, 'Weekly');
+    }
+  }
 }
