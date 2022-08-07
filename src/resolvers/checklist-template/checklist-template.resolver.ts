@@ -52,10 +52,9 @@ export class ChecklistTemplateResolver {
   async addChecklistTemplateItem(
     @Args('id', { type: () => Int }) id: number,
     @Args('name') name: string,
-    @Args('entityType', { nullable: true }) entityType?: string,
     @Args('entityId', { nullable: true }) entityId?: number
   ) {
-    await this.checklistTemplateService.addItem(id, name, entityType, entityId);
+    await this.checklistTemplateService.addItem(id, name, entityId);
     return 'Successfully added item to checklist template.';
   }
 
@@ -63,15 +62,9 @@ export class ChecklistTemplateResolver {
   async removeChecklistTemplateItem(
     @Args('id', { type: () => Int }) id: number,
     @Args('templateId', { nullable: true }) templateId?: number,
-    @Args('entityType', { nullable: true }) entityType?: string,
     @Args('entityId', { nullable: true }) entityId?: number
   ) {
-    await this.checklistTemplateService.removeItem(
-      id,
-      templateId,
-      entityType,
-      entityId
-    );
+    await this.checklistTemplateService.removeItem(id, templateId, entityId);
     return 'Successfully removed item from checklist template.';
   }
 

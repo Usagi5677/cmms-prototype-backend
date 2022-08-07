@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bull';
 import {
   BadRequestException,
+  forwardRef,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -66,8 +67,17 @@ export class EntityService {
     private entityHistoryQueue: Queue,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
     private configService: ConfigService,
+    @Inject(forwardRef(() => ChecklistTemplateService))
     private readonly checklistTemplateService: ChecklistTemplateService
   ) {}
+
+  async findOne(id: number) {
+    const entity = await this.prisma.entity.findFirst({ where: { id } });
+    if (!entity) {
+      throw new BadRequestException('Entity not found.');
+    }
+    return entity;
+  }
 
   async search(query: string, limit?: number): Promise<Entity[]> {
     if (!limit) limit = 10;
@@ -153,13 +163,11 @@ export class EntityService {
       });
       await this.checklistTemplateService.updateEntityChecklists(
         entity.id,
-        'Entity',
         'Daily',
         newDailyTemplate
       );
       await this.checklistTemplateService.updateEntityChecklists(
         entity.id,
-        'Entity',
         'Weekly',
         newWeeklyTemplate
       );

@@ -113,7 +113,6 @@ type ChecklistComment {
 input ChecklistInput {
   date: Date!
   entityId: Int!
-  entityType: String!
   type: String!
 }
 
@@ -153,7 +152,6 @@ type ChecklistSummary {
 
 input ChecklistSummaryInput {
   entityId: Int!
-  entityType: String!
   from: Date!
   to: Date!
   type: String!
@@ -300,7 +298,6 @@ type EntityBreakdownPageInfo {
 
 input EntityChecklistTemplateInput {
   entityId: Int!
-  entityType: String!
   type: String!
 }
 
@@ -847,7 +844,7 @@ type MachineUsageHistory {
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addChecklistComment(checklistId: Int!, comment: String!): String!
-  addChecklistTemplateItem(entityId: Int, entityType: String, id: Int!, name: String!): String!
+  addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
   addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   addEntityRepair(description: String!, entityId: Int!, title: String!): String!
@@ -920,7 +917,7 @@ type Mutation {
   readNotification(notificationId: Int!): String!
   removeChecklistComment(id: Int!): String!
   removeChecklistTemplate(id: Int!): String!
-  removeChecklistTemplateItem(entityId: Int, entityType: String, id: Int!, templateId: Int): String!
+  removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
   removeEntity(entityId: Int!): String!
   removeEntityAttachment(id: Int!): String!
   removeMachine(machineId: Int!): String!
@@ -1921,7 +1918,6 @@ type Query {
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
   singleMachineUsageHistory(from: Date!, machineId: Int!, to: Date!): [MachineUsageHistory!]!
   singleTransportationUsageHistory(from: Date!, to: Date!, transportationId: Int!): [TransportationUsageHistory!]!
-  testGenerateChecklist: String!
   transportationAttachment(id: Int!): TransportationAttachment!
   transportationAttachments(
     """Paginate after opaque cursor"""

@@ -82,14 +82,6 @@ export class TransportationService {
     registeredDate: Date
   ) {
     try {
-      const newDailyTemplate = await this.prisma.checklistTemplate.create({
-        data: { type: 'Daily' },
-        include: { items: true },
-      });
-      const newWeeklyTemplate = await this.prisma.checklistTemplate.create({
-        data: { type: 'Weekly' },
-        include: { items: true },
-      });
       const transportation = await this.prisma.transportation.create({
         data: {
           createdById: user.id,
@@ -104,22 +96,8 @@ export class TransportationService {
           lastServiceMileage,
           transportType,
           registeredDate,
-          dailyChecklistTemplateId: newDailyTemplate.id,
-          weeklyChecklistTemplateId: newWeeklyTemplate.id,
         },
       });
-      await this.checklistTemplateService.updateEntityChecklists(
-        transportation.id,
-        'Transportation',
-        'Daily',
-        newDailyTemplate
-      );
-      await this.checklistTemplateService.updateEntityChecklists(
-        transportation.id,
-        'Transportation',
-        'Weekly',
-        newWeeklyTemplate
-      );
       await this.createTransportationHistoryInBackground({
         type: 'Transportation Add',
         description: `Transportation created`,

@@ -85,14 +85,6 @@ export class MachineService {
     measurement?: string
   ) {
     try {
-      const newDailyTemplate = await this.prisma.checklistTemplate.create({
-        data: { type: 'Daily' },
-        include: { items: true },
-      });
-      const newWeeklyTemplate = await this.prisma.checklistTemplate.create({
-        data: { type: 'Weekly' },
-        include: { items: true },
-      });
       const machine = await this.prisma.machine.create({
         data: {
           createdById: user.id,
@@ -105,22 +97,8 @@ export class MachineService {
           lastService,
           registeredDate,
           measurement,
-          dailyChecklistTemplateId: newDailyTemplate.id,
-          weeklyChecklistTemplateId: newWeeklyTemplate.id,
         },
       });
-      await this.checklistTemplateService.updateEntityChecklists(
-        machine.id,
-        'Machine',
-        'Daily',
-        newDailyTemplate
-      );
-      await this.checklistTemplateService.updateEntityChecklists(
-        machine.id,
-        'Machine',
-        'Weekly',
-        newWeeklyTemplate
-      );
       await this.createMachineHistoryInBackground({
         type: 'Machine Add',
         description: `Machine created`,

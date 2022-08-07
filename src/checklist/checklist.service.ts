@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from 'nestjs-prisma';
 import * as moment from 'moment';
@@ -8,17 +14,20 @@ import { Checklist } from '@prisma/client';
 import { User } from 'src/models/user.model';
 import { ChecklistSummaryInput } from './dto/checklist-summary.input';
 import { ChecklistSummary } from './dto/checklist-summary';
+import { EntityService } from 'src/entity/entity.service';
 
 @Injectable()
 export class ChecklistService {
   private readonly logger = new Logger(ChecklistService.name);
   constructor(
     private prisma: PrismaService,
-    private checklistTemplateService: ChecklistTemplateService
+    private checklistTemplateService: ChecklistTemplateService,
+    @Inject(forwardRef(() => EntityService))
+    private entityService: EntityService
   ) {}
 
-  async findOne({ entityId, entityType, type, date }: ChecklistInput) {
-    await this.checklistTemplateService.validateEntity(entityType, entityId);
+  async findOne({ entityId, type, date }: ChecklistInput) {
+    await this.entityService.findOne(entityId);
     let checklist: null | Checklist = null;
     let from = moment(date).startOf('day').toDate();
     let to = moment(date).endOf('day').toDate();
@@ -26,49 +35,26 @@ export class ChecklistService {
       from = moment(date).startOf('week').toDate();
       to = moment(date).endOf('week').toDate();
     }
-    if (entityType === 'Transportation') {
-      checklist = await this.prisma.checklist.findFirst({
-        where: {
-          entityId,
-          from,
-          to,
-          type,
+    checklist = await this.prisma.checklist.findFirst({
+      where: {
+        entityId,
+        from,
+        to,
+        type,
+      },
+      include: {
+        items: {
+          include: { completedBy: true },
+          orderBy: { id: 'asc' },
         },
-        include: {
-          items: {
-            include: { completedBy: true },
-            orderBy: { id: 'asc' },
+        comments: {
+          include: {
+            user: true,
           },
-          comments: {
-            include: {
-              user: true,
-            },
-            orderBy: { id: 'desc' },
-          },
+          orderBy: { id: 'desc' },
         },
-      });
-    } else {
-      checklist = await this.prisma.checklist.findFirst({
-        where: {
-          entityId,
-          from,
-          to,
-          type,
-        },
-        include: {
-          items: {
-            include: { completedBy: true },
-            orderBy: { id: 'asc' },
-          },
-          comments: {
-            include: {
-              user: true,
-            },
-            orderBy: { id: 'desc' },
-          },
-        },
-      });
-    }
+      },
+    });
     return checklist;
   }
 
@@ -121,17 +107,7 @@ export class ChecklistService {
   }
 
   async generateChecklists() {
-    // Get Ids of all machines and transport that are working
-    const machines = await this.prisma.machine.findMany({
-      where: { status: 'Working' },
-      select: { id: true },
-    });
-    const machineIds = machines.map((m) => m.id);
-    const transportations = await this.prisma.transportation.findMany({
-      where: { status: 'Working' },
-      select: { id: true },
-    });
-    const transportIds = transportations.map((m) => m.id);
+    // Get ids of all entities that are working
     const entities = await this.prisma.entity.findMany({
       where: { status: 'Working' },
       select: { id: true },
@@ -149,75 +125,9 @@ export class ChecklistService {
         from: todayStart.toDate(),
         to: todayEnd.toDate(),
       },
+      select: { entityId: true },
     });
-    const todayChecklistMachineIds: number[] = [];
-    const todayChecklistTransportationIds: number[] = [];
-    const todayChecklistEntityIds: number[] = [];
-    todayChecklists.forEach((checklist) => {
-      if (checklist.machineId) {
-        todayChecklistMachineIds.push(checklist.machineId);
-      } else if (checklist.transportationId) {
-        todayChecklistTransportationIds.push(checklist.transportationId);
-      } else if (checklist.entityId) {
-        todayChecklistEntityIds.push(checklist.entityId);
-      }
-    });
-
-    // Create daily checklists for machines
-    const notGeneratedDailyMachineIds = machineIds.filter(
-      (id) => !todayChecklistMachineIds.includes(id)
-    );
-    for (const machineId of notGeneratedDailyMachineIds) {
-      const dailyTemplate =
-        await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Machine',
-          entityId: machineId,
-          type: 'Daily',
-        });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Daily',
-          machineId,
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          items: {
-            createMany: {
-              data: dailyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
-          },
-        },
-      });
-    }
-
-    // Create daily checklists for transportation
-    const notGeneratedDailyTransportationIds = transportIds.filter(
-      (id) => !todayChecklistTransportationIds.includes(id)
-    );
-    for (const transportationId of notGeneratedDailyTransportationIds) {
-      const dailyTemplate =
-        await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Transportation',
-          entityId: transportationId,
-          type: 'Daily',
-        });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Daily',
-          transportationId,
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          items: {
-            createMany: {
-              data: dailyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
-          },
-        },
-      });
-    }
+    const todayChecklistEntityIds = todayChecklists.map((c) => c.entityId);
 
     // Create daily checklists for entity
     const notGeneratedDailyEntityIds = entityIds.filter(
@@ -226,8 +136,7 @@ export class ChecklistService {
     for (const entityId of notGeneratedDailyEntityIds) {
       const dailyTemplate =
         await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Machine',
-          entityId: entityId,
+          entityId,
           type: 'Daily',
         });
       await this.prisma.checklist.create({
@@ -239,27 +148,6 @@ export class ChecklistService {
           items: {
             createMany: {
               data: dailyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
-          },
-        },
-      });
-      const dailyTemplateTwo =
-        await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Transportation',
-          entityId,
-          type: 'Daily',
-        });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Daily',
-          entityId,
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          items: {
-            createMany: {
-              data: dailyTemplateTwo.items.map((item) => ({
                 description: item.name,
               })),
             },
@@ -279,84 +167,17 @@ export class ChecklistService {
         from: weekStart.toDate(),
         to: weekEnd.toDate(),
       },
+      select: { entityId: true },
     });
-    const thisWeekChecklistMachineIds: number[] = [];
-    const thisWeekTransportationIds: number[] = [];
-    const thisWeekEntityIds: number[] = [];
-    thisWeekChecklists.forEach((checklist) => {
-      if (checklist.machineId) {
-        thisWeekChecklistMachineIds.push(checklist.machineId);
-      } else if (checklist.transportationId) {
-        thisWeekTransportationIds.push(checklist.transportationId);
-      } else if (checklist.entityId) {
-        thisWeekEntityIds.push(checklist.entityId);
-      }
-    });
+    const thisWeekEntityIds = thisWeekChecklists.map((c) => c.entityId);
 
-    // Create weekly checklists for machines
-    const notGeneratedWeeklyMachineIds = machineIds.filter(
-      (id) => !thisWeekChecklistMachineIds.includes(id)
-    );
-    for (const machineId of notGeneratedWeeklyMachineIds) {
-      const weeklyTemplate =
-        await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Machine',
-          entityId: machineId,
-          type: 'Weekly',
-        });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Weekly',
-          machineId,
-          from: weekStart.toDate(),
-          to: weekEnd.toDate(),
-          items: {
-            createMany: {
-              data: weeklyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
-          },
-        },
-      });
-    }
-
-    // Create weekly checklists for transportation
-    const notGeneratedWeeklyTransportationIds = transportIds.filter(
-      (id) => !thisWeekTransportationIds.includes(id)
-    );
-    for (const transportationId of notGeneratedWeeklyTransportationIds) {
-      const weeklyTemplate =
-        await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Transportation',
-          entityId: transportationId,
-          type: 'Weekly',
-        });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Weekly',
-          transportationId,
-          from: weekStart.toDate(),
-          to: weekEnd.toDate(),
-          items: {
-            createMany: {
-              data: weeklyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
-          },
-        },
-      });
-    }
-
-    // Create weekly checklists for entity
+    // Create weekly checklists for entities
     const notGeneratedWeeklyEntityIds = entityIds.filter(
       (id) => !thisWeekEntityIds.includes(id)
     );
     for (const entityId of notGeneratedWeeklyEntityIds) {
       const weeklyTemplate =
         await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Machine',
           entityId,
           type: 'Weekly',
         });
@@ -369,27 +190,6 @@ export class ChecklistService {
           items: {
             createMany: {
               data: weeklyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
-          },
-        },
-      });
-      const weeklyTemplateTwo =
-        await this.checklistTemplateService.entityChecklistTemplate({
-          entityType: 'Transportation',
-          entityId,
-          type: 'Weekly',
-        });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Weekly',
-          entityId,
-          from: weekStart.toDate(),
-          to: weekEnd.toDate(),
-          items: {
-            createMany: {
-              data: weeklyTemplateTwo.items.map((item) => ({
                 description: item.name,
               })),
             },
@@ -422,12 +222,11 @@ export class ChecklistService {
 
   async checklistSummary({
     entityId,
-    entityType,
     type,
     from,
     to,
   }: ChecklistSummaryInput): Promise<ChecklistSummary[]> {
-    await this.checklistTemplateService.validateEntity(entityType, entityId);
+    await this.entityService.findOne(entityId);
     if (type === 'Daily') {
       from = moment(from).startOf('day').toDate();
       to = moment(to).endOf('day').toDate();
@@ -436,15 +235,11 @@ export class ChecklistService {
       to = moment(to).endOf('week').toDate();
     }
     let where: any = {
+      entityId,
       type,
       from: { gte: from },
       to: { lte: to },
     };
-    if (entityType === 'Transportation') {
-      where.entityId = entityId;
-    } else {
-      where.entityId = entityId;
-    }
     const checklists = await this.prisma.checklist.findMany({
       where,
       include: { items: true, comments: true },
