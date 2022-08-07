@@ -941,6 +941,10 @@ type Mutation {
   unassignUserFromEntity(entityId: Int!, userId: Int!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
+
+  """
+  Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.
+  """
   updateAllEntityChecklists: String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateReading(id: Int!, reading: Int!): String!

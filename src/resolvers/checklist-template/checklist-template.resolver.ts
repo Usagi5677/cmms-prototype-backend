@@ -88,7 +88,11 @@ export class ChecklistTemplateResolver {
     return 'Successfully changed checklist template.';
   }
 
-  @Mutation(() => String, { name: 'updateAllEntityChecklists' })
+  @Mutation(() => String, {
+    name: 'updateAllEntityChecklists',
+    description:
+      'Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.',
+  })
   async updateAllEntityChecklists() {
     await this.checklistTemplateService.updateAllEntityChecklists();
     return 'Successfully updated all entity checklists.';
