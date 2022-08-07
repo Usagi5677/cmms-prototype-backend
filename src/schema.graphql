@@ -76,7 +76,6 @@ enum BreakdownStatus {
 
 input ChangeChecklistTemplateInput {
   entityId: Int!
-  entityType: String!
   newChecklistId: Int!
 }
 
@@ -160,13 +159,11 @@ input ChecklistSummaryInput {
 type ChecklistTemplate {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
+  entitiesDaily: [Entity!]
+  entitiesWeekly: [Entity!]
   id: Int!
   items: [ChecklistTemplateItem!]!
-  machinesDaily: [Machine!]
-  machinesWeekly: [Machine!]
   name: String
-  transportationsDaily: [Transportation!]
-  transportationsWeekly: [Transportation!]
   type: String!
 
   """Identifies the date and time when the object was last updated."""

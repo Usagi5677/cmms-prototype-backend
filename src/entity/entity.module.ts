@@ -17,7 +17,6 @@ import { EntityConsumer } from './entity.consumer';
       name: 'cmms-entity-history',
     }),
     ChecklistTemplateModule,
-    // forwardRef(() => ChecklistTemplateModule),
   ],
   providers: [EntityResolver, EntityService, EntityConsumer],
   exports: [EntityService],
