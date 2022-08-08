@@ -88,14 +88,14 @@ export class ChecklistService {
   async updateWorkingHours(id: number, newHrs: number) {
     await this.prisma.checklist.update({
       where: { id },
-      data: { workingHour: newHrs },
+      data: { workingHour: newHrs, currentMeterReading: null },
     });
   }
 
   async updateReading(id: number, reading: number) {
     await this.prisma.checklist.update({
       where: { id },
-      data: { currentMeterReading: reading },
+      data: { currentMeterReading: reading, workingHour: null },
     });
   }
 

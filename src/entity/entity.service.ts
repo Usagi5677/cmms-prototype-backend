@@ -389,6 +389,39 @@ export class EntityService {
     }
   }
 
+  async getLatestReading(entity: any): Promise<number> {
+    let reading = 0;
+    const latestDailyChecklistWithReading =
+      await this.prisma.checklist.findFirst({
+        where: {
+          entityId: entity.id,
+          type: 'Daily',
+          currentMeterReading: { not: null },
+        },
+        orderBy: { from: 'desc' },
+      });
+    // First get the latest checklist which has meter reading added
+    if (latestDailyChecklistWithReading) {
+      reading = latestDailyChecklistWithReading.currentMeterReading;
+    }
+    // Then get all the checklists since then which have daily readings added
+    const checklistsSince = await this.prisma.checklist.findMany({
+      where: {
+        entityId: entity.id,
+        type: 'Daily',
+        from: latestDailyChecklistWithReading
+          ? { gt: latestDailyChecklistWithReading.from }
+          : undefined,
+        workingHour: { not: null },
+      },
+      select: { workingHour: true },
+    });
+    checklistsSince.forEach((c) => {
+      reading += c.workingHour;
+    });
+    return reading;
+  }
+
   // Get entity details
   async getSingleEntity(user: User, entityId: number) {
     const entity = await this.prisma.entity.findFirst({
@@ -410,18 +443,9 @@ export class EntityService {
       },
     });
     if (!entity) throw new BadRequestException('Entity not found.');
-    const latestDailyChecklist = await this.prisma.checklist.findFirst({
-      where: {
-        entityId: entity.id,
-        type: 'Daily',
-        currentMeterReading: { not: null },
-      },
-      orderBy: { from: 'desc' },
-    });
-    if (latestDailyChecklist) {
-      entity.currentMileage = latestDailyChecklist.currentMeterReading;
-      entity.currentRunning = latestDailyChecklist.currentMeterReading;
-    }
+    const reading = await this.getLatestReading(entity);
+    entity.currentMileage = reading;
+    entity.currentRunning = reading;
     return entity;
   }
 
@@ -1778,18 +1802,8 @@ export class EntityService {
         id: true,
       },
     });
-    const entityChecklist = await this.prisma.checklist.findFirst({
-      where: {
-        entityId: entity.id,
-        NOT: [{ workingHour: null }],
-      },
-      orderBy: {
-        from: 'desc',
-      },
-    });
 
     const now = moment();
-    const workingHour = entityChecklist?.workingHour;
     let idleHour = 0;
     let breakdownHour = 0;
 
@@ -1827,7 +1841,7 @@ export class EntityService {
           ? entityHistory.entityStatus
           : entity.status,
         entityType: entityHistory.entityType,
-        workingHour: workingHour ? workingHour : 0,
+        workingHour: await this.getLatestReading(entity),
         idleHour: idleHour,
         breakdownHour: breakdownHour,
         location: entity.location,
