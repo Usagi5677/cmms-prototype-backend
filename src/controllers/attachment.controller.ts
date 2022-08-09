@@ -25,6 +25,7 @@ import { CreateTransportationAttachmentInput } from 'src/resolvers/attachment/dt
 import { TransportationService } from 'src/services/transportation.service';
 import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
 import { EntityService } from 'src/entity/entity.service';
+import { IMAGE_CACHE_DURATION } from 'src/constants';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -210,9 +211,15 @@ export class AttachmentController {
   async uploadEntityAttachment(
     @Req() req,
     @UploadedFile() attachment: Express.Multer.File,
-    @Body() { entityId, description, isPublic }: CreateEntityAttachmentInput
+    @Body() { entityId, description, checklistId }: CreateEntityAttachmentInput
   ) {
     const user = req.user;
+
+    // Only allow images to be uploaded to checklists
+    if (checklistId && attachment.mimetype.substring(0, 6) !== 'image/') {
+      console.log(attachment.mimetype.substring(0, 6));
+      throw new BadRequestException('Not an image file.');
+    }
 
     // Max allowed file size in bytes.
     const maxFileSize = 2 * 1000000;
@@ -234,6 +241,7 @@ export class AttachmentController {
           originalName: attachment.originalname,
           mimeType: attachment.mimetype,
           sharepointFileName,
+          checklistId: parseInt(checklistId),
         },
       });
       //add to history
@@ -280,6 +288,7 @@ export class AttachmentController {
         attachment.originalName ?? attachment.sharepointFileName
       }`,
       'Content-Type': attachment.mimeType ?? null,
+      'Cache-Control': `max-age=${IMAGE_CACHE_DURATION}, public`,
     });
     res.end(fileData);
   }

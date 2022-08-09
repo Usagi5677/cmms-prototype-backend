@@ -215,6 +215,7 @@ Table Checklist {
   workingHour Int
   items ChecklistItem [not null]
   comments ChecklistComment [not null]
+  attachments EntityAttachment [not null]
   entity Entity
   entityId Int
 
@@ -591,6 +592,8 @@ Table EntityAttachment {
   user User [not null]
   entityId Int [not null]
   entity Entity [not null]
+  checklistId Int
+  checklist Checklist
   description String [not null]
   mimeType String
   originalName String
@@ -870,6 +873,8 @@ Ref: EntityPeriodicMaintenance.verifiedById > User.id
 Ref: EntityAttachment.userId > User.id
 
 Ref: EntityAttachment.entityId > Entity.id
+
+Ref: EntityAttachment.checklistId > Checklist.id
 
 Ref: EntityPeriodicMaintenanceTask.periodicMaintenanceId > EntityPeriodicMaintenance.id
 
