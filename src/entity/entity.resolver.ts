@@ -747,4 +747,17 @@ export class EntityResolver {
     );
     return `Repair request approval updated.`;
   }
+  @Mutation(() => String)
+  async toggleCompleteEntityRepairRequest(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.entityService.toggleCompleteEntityRepairRequest(
+      user,
+      id,
+      complete
+    );
+    return `Repair request completion updated.`;
+  }
 }

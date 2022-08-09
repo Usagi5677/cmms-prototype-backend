@@ -460,6 +460,9 @@ type EntityRepairRequest {
   projectManagerId: Int
   projectName: String
   reason: String
+  repairedAt: Date
+  repairedBy: User
+  repairedById: Int
   requestedBy: User
   supervisor: User
   supervisorId: Int
@@ -946,6 +949,7 @@ type Mutation {
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
+  toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   toggleMachinePMTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!

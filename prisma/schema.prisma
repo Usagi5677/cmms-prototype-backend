@@ -60,11 +60,12 @@ model User {
   entityBreakdown                              EntityBreakdown[]
   entitySparePR                                EntitySparePR[]
   entityPeriodicMaintenanceCompletions         EntityPeriodicMaintenance[]             @relation(name: "entityVerifiedBy")
-  entityRepairOperator                         EntityRepairRequest[]                   @relation(name: "operator")
-  entityRepairSupervisor                       EntityRepairRequest[]                   @relation(name: "supervisor")
-  entityRepairProjectManager                   EntityRepairRequest[]                   @relation(name: "projectManager")
-  entityRepairRequestedBy                      EntityRepairRequest[]                   @relation(name: "requestedBy")
-  entityRepairApprovedBy                       EntityRepairRequest[]                   @relation(name: "approvedBy")
+  entityRepairRequestOperator                  EntityRepairRequest[]                   @relation(name: "operator")
+  entityRepairRequestSupervisor                EntityRepairRequest[]                   @relation(name: "supervisor")
+  entityRepairRequestProjectManager            EntityRepairRequest[]                   @relation(name: "projectManager")
+  entityRepairRequestRequestedBy               EntityRepairRequest[]                   @relation(name: "requestedBy")
+  entityRepairRequestApprovedBy                EntityRepairRequest[]                   @relation(name: "approvedBy")
+  entityRepairRequestRepairedBy                EntityRepairRequest[]                   @relation(name: "repairedBy")
 }
 
 model Notification {
@@ -690,6 +691,9 @@ model EntityRepairRequest {
   additionalInfo   String?
   attendInfo       String?
   operatorId       Int?
+  repairedById     Int?
+  repairedBy       User?     @relation("repairedBy", fields: [repairedById], references: [id])
+  repairedAt       DateTime?
   operator         User?     @relation("operator", fields: [operatorId], references: [id])
   supervisorId     Int?
   supervisor       User?     @relation("supervisor", fields: [supervisorId], references: [id])

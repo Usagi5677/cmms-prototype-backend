@@ -16,10 +16,13 @@ export class EntityRepairRequest extends BaseModel {
   supervisorId?: number;
   projectManagerId?: number;
   approverId?: number;
+  repairedById?: number;
   operator?: User;
   supervisor?: User;
   projectManager?: User;
   requestedBy?: User;
   approvedBy?: User;
+  repairedBy?: User;
   approvedAt?: Date;
+  repairedAt?: Date;
 }

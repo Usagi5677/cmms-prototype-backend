@@ -1460,6 +1460,7 @@ export class EntityService {
         projectManager: true,
         approvedBy: true,
         operator: true,
+        repairedBy: true,
       },
     });
 
@@ -2433,7 +2434,9 @@ export class EntityService {
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
-          body: `${user.fullName} (${user.rcno}) verified periodic maintenance (${id}) on entity ${checklist.entityId}`,
+          body: `${user.fullName} (${user.rcno}) ${
+            verify ? 'verified' : 'unverified'
+          } periodic maintenance (${id}) on entity ${checklist.entityId}`,
           link: `/entity/${checklist.entityId}`,
         });
       }
@@ -3136,7 +3139,9 @@ export class EntityService {
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
-          body: `${user.fullName} (${user.rcno}) approved repair request (${id}) on entity ${repairRequest.entityId}`,
+          body: `${user.fullName} (${user.rcno})${
+            approve ? 'approved' : 'unapproved'
+          } repair request (${id}) on entity ${repairRequest.entityId}`,
           link: `/entity/${repairRequest.entityId}`,
         });
       }
@@ -3145,6 +3150,51 @@ export class EntityService {
         description: approve
           ? `Repair request (${id}) has been approved.`
           : `Repair request (${id}) has been unapproved.`,
+        entityId: repairRequest.entityId,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set repair request as completed or not. */
+  async toggleCompleteEntityRepairRequest(
+    user: User,
+    id: number,
+    complete: boolean
+  ) {
+    try {
+      const repairRequest = await this.prisma.entityRepairRequest.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          entityId: true,
+        },
+      });
+      await this.prisma.entityRepairRequest.update({
+        where: { id },
+        data: complete
+          ? { repairedById: user.id, repairedAt: new Date() }
+          : { repairedById: null, repairedAt: null },
+      });
+
+      const users = await this.getUserIds(repairRequest.entityId, user.id);
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) ${
+            complete ? 'completed' : 'uncompleted'
+          } repair request (${id}) on entity ${repairRequest.entityId}`,
+          link: `/entity/${repairRequest.entityId}`,
+        });
+      }
+      await this.createEntityHistoryInBackground({
+        type: 'Repair request approval',
+        description: complete
+          ? `Repair request (${id}) has been completed.`
+          : `Repair request (${id}) has been uncompleted.`,
         entityId: repairRequest.entityId,
       });
     } catch (e) {

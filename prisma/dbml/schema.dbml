@@ -48,11 +48,12 @@ Table User {
   entityBreakdown EntityBreakdown [not null]
   entitySparePR EntitySparePR [not null]
   entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
-  entityRepairOperator EntityRepairRequest [not null]
-  entityRepairSupervisor EntityRepairRequest [not null]
-  entityRepairProjectManager EntityRepairRequest [not null]
-  entityRepairRequestedBy EntityRepairRequest [not null]
-  entityRepairApprovedBy EntityRepairRequest [not null]
+  entityRepairRequestOperator EntityRepairRequest [not null]
+  entityRepairRequestSupervisor EntityRepairRequest [not null]
+  entityRepairRequestProjectManager EntityRepairRequest [not null]
+  entityRepairRequestRequestedBy EntityRepairRequest [not null]
+  entityRepairRequestApprovedBy EntityRepairRequest [not null]
+  entityRepairRequestRepairedBy EntityRepairRequest [not null]
 }
 
 Table Notification {
@@ -645,6 +646,9 @@ Table EntityRepairRequest {
   additionalInfo String
   attendInfo String
   operatorId Int
+  repairedById Int
+  repairedBy User
+  repairedAt DateTime
   operator User
   supervisorId Int
   supervisor User
@@ -887,6 +891,8 @@ Ref: EntityHistory.entityId > Entity.id
 Ref: EntityHistory.completedById > User.id
 
 Ref: EntityRepairRequest.entityId > Entity.id
+
+Ref: EntityRepairRequest.repairedById > User.id
 
 Ref: EntityRepairRequest.operatorId > User.id
 
