@@ -8,7 +8,7 @@ import { EntityAssign } from './entity-assign.model';
 import { EntityBreakdown } from './entity-breakdown.model';
 import { EntityHistory } from './entity-history.model';
 import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
-import { EntityRepair } from './entity-repair.model';
+import { EntityRepairRequest } from './entity-repair-request.model';
 import { EntitySparePR } from './entity-sparePR.model';
 
 @ObjectType()
@@ -35,7 +35,7 @@ export class Entity extends BaseModel {
   assignees?: EntityAssign[];
   checklistItems?: ChecklistItem[];
   periodicMaintenancePlans?: EntityPeriodicMaintenance[];
-  repairs?: EntityRepair[];
+  repairs?: EntityRepairRequest[];
   breakdowns?: EntityBreakdown[];
   sparePRs?: EntitySparePR[];
   histories?: EntityHistory[];

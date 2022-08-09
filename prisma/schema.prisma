@@ -57,10 +57,14 @@ model User {
   entityAttachment                             EntityAttachment[]
   entityPeriodicMaintenanceTasks               EntityPeriodicMaintenanceTask[]
   entityHistory                                EntityHistory[]
-  entityRepair                                 EntityRepair[]
   entityBreakdown                              EntityBreakdown[]
   entitySparePR                                EntitySparePR[]
   entityPeriodicMaintenanceCompletions         EntityPeriodicMaintenance[]             @relation(name: "entityVerifiedBy")
+  entityRepairOperator                         EntityRepairRequest[]                   @relation(name: "operator")
+  entityRepairSupervisor                       EntityRepairRequest[]                   @relation(name: "supervisor")
+  entityRepairProjectManager                   EntityRepairRequest[]                   @relation(name: "projectManager")
+  entityRepairRequestedBy                      EntityRepairRequest[]                   @relation(name: "requestedBy")
+  entityRepairApprovedBy                       EntityRepairRequest[]                   @relation(name: "approvedBy")
 }
 
 model Notification {
@@ -580,7 +584,7 @@ model Entity {
   periodicMaintenancePlans  EntityPeriodicMaintenance[]
   histories                 EntityHistory[]
   attachments               EntityAttachment[]
-  repairs                   EntityRepair[]
+  repairs                   EntityRepairRequest[]
   breakdowns                EntityBreakdown[]
   sparePRs                  EntitySparePR[]
 }
@@ -670,18 +674,29 @@ model EntityHistory {
   location      String?
 }
 
-model EntityRepair {
-  id            Int          @id @default(autoincrement())
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  entityId      Int
-  entity        Entity       @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title         String
-  description   String
-  completedById Int?
-  completedBy   User?        @relation(fields: [completedById], references: [id])
-  completedAt   DateTime?
-  status        RepairStatus @default(Pending)
+model EntityRepairRequest {
+  id               Int       @id @default(autoincrement())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  entityId         Int
+  entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  internal         Boolean   @default(true)
+  projectName      String?
+  location         String?
+  reason           String?
+  additionalInfo   String?
+  attendInfo       String?
+  operatorId       Int?
+  operator         User?     @relation("operator", fields: [operatorId], references: [id])
+  supervisorId     Int?
+  supervisor       User?     @relation("supervisor", fields: [supervisorId], references: [id])
+  projectManagerId Int?
+  projectManager   User?     @relation("projectManager", fields: [projectManagerId], references: [id])
+  requestorId      Int?
+  requestedBy      User?     @relation("requestedBy", fields: [requestorId], references: [id])
+  approverId       Int?
+  approvedBy       User?     @relation("approvedBy", fields: [approverId], references: [id])
+  approvedAt       DateTime?
 }
 
 model EntityBreakdown {

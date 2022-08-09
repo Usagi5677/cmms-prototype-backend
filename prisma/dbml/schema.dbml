@@ -45,10 +45,14 @@ Table User {
   entityAttachment EntityAttachment [not null]
   entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
   entityHistory EntityHistory [not null]
-  entityRepair EntityRepair [not null]
   entityBreakdown EntityBreakdown [not null]
   entitySparePR EntitySparePR [not null]
   entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
+  entityRepairOperator EntityRepairRequest [not null]
+  entityRepairSupervisor EntityRepairRequest [not null]
+  entityRepairProjectManager EntityRepairRequest [not null]
+  entityRepairRequestedBy EntityRepairRequest [not null]
+  entityRepairApprovedBy EntityRepairRequest [not null]
 }
 
 Table Notification {
@@ -540,7 +544,7 @@ Table Entity {
   periodicMaintenancePlans EntityPeriodicMaintenance [not null]
   histories EntityHistory [not null]
   attachments EntityAttachment [not null]
-  repairs EntityRepair [not null]
+  repairs EntityRepairRequest [not null]
   breakdowns EntityBreakdown [not null]
   sparePRs EntitySparePR [not null]
 }
@@ -625,18 +629,29 @@ Table EntityHistory {
   location String
 }
 
-Table EntityRepair {
+Table EntityRepairRequest {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   entityId Int [not null]
   entity Entity [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status RepairStatus [not null, default: 'Pending']
+  internal Boolean [not null, default: true]
+  projectName String
+  location String
+  reason String
+  additionalInfo String
+  attendInfo String
+  operatorId Int
+  operator User
+  supervisorId Int
+  supervisor User
+  projectManagerId Int
+  projectManager User
+  requestorId Int
+  requestedBy User
+  approverId Int
+  approvedBy User
+  approvedAt DateTime
 }
 
 Table EntityBreakdown {
@@ -866,9 +881,17 @@ Ref: EntityHistory.entityId > Entity.id
 
 Ref: EntityHistory.completedById > User.id
 
-Ref: EntityRepair.entityId > Entity.id
+Ref: EntityRepairRequest.entityId > Entity.id
 
-Ref: EntityRepair.completedById > User.id
+Ref: EntityRepairRequest.operatorId > User.id
+
+Ref: EntityRepairRequest.supervisorId > User.id
+
+Ref: EntityRepairRequest.projectManagerId > User.id
+
+Ref: EntityRepairRequest.requestorId > User.id
+
+Ref: EntityRepairRequest.approverId > User.id
 
 Ref: EntityBreakdown.entityId > Entity.id
 

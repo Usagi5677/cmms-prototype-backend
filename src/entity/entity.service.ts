@@ -360,10 +360,6 @@ export class EntityService {
           where: { entityId },
           data: { status: 'Done' },
         });
-        await this.prisma.entityRepair.updateMany({
-          where: { entityId },
-          data: { status: 'Done' },
-        });
       }
       await this.prisma.entity.update({
         where: { id: entityId },
@@ -775,24 +771,39 @@ export class EntityService {
     }
   }
 
-  //** Create entity repair. */
-  async createEntityRepair(
+  //** Create entity repair request. */
+  async createEntityRepairRequest(
     user: User,
     entityId: number,
-    title: string,
-    description: string
+    internal: boolean,
+    projectName: string,
+    location: string,
+    reason: string,
+    additionalInfo: string,
+    attendInfo: string,
+    operatorId: number,
+    supervisorId: number,
+    projectManagerId: number
   ) {
     try {
-      const repair = await this.prisma.entityRepair.create({
+      const repair = await this.prisma.entityRepairRequest.create({
         data: {
           entityId,
-          title,
-          description,
+          internal,
+          projectName,
+          location,
+          reason,
+          additionalInfo,
+          attendInfo,
+          operatorId,
+          supervisorId,
+          projectManagerId,
+          requestorId: user.id,
         },
       });
       await this.createEntityHistoryInBackground({
-        type: 'Add Repair',
-        description: `Added repair (${repair.id})`,
+        type: 'Repair Request',
+        description: `Repair request (${repair.id})`,
         entityId: entityId,
         completedById: user.id,
       });
@@ -800,7 +811,7 @@ export class EntityService {
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
-          body: `${user.fullName} (${user.rcno}) added new repair on entity ${entityId}`,
+          body: `${user.fullName} (${user.rcno}) added new repair request on entity ${entityId}`,
           link: `/entity/${entityId}`,
         });
       }
@@ -810,35 +821,120 @@ export class EntityService {
     }
   }
 
-  //** Edit entity repair. */
-  async editEntityRepair(
+  //** Edit entity repair request */
+  async editEntityRepairRequest(
     user: User,
     id: number,
-    title: string,
-    description: string
+    internal: boolean,
+    projectName: string,
+    location: string,
+    reason: string,
+    additionalInfo: string,
+    attendInfo: string,
+    operatorId: number,
+    supervisorId: number,
+    projectManagerId: number
   ) {
     try {
-      const repair = await this.prisma.entityRepair.findFirst({
+      const repair = await this.prisma.entityRepairRequest.findFirst({
         where: { id },
-        select: {
-          id: true,
-          entityId: true,
-          title: true,
-          description: true,
+        include: {
+          operator: true,
+          supervisor: true,
+          projectManager: true,
         },
       });
-      if (repair.title != title) {
+      if (repair.internal != internal) {
         await this.createEntityHistoryInBackground({
-          type: 'Repair Edit',
-          description: `(${id}) Title changed from ${repair.title} to ${title}.`,
+          type: 'Repair Request Edit',
+          description: `(${id}) Type changed from ${
+            repair.internal ? 'Internal' : 'External'
+          } to ${internal ? 'Internal' : 'External'}.`,
           entityId: repair.entityId,
           completedById: user.id,
         });
       }
-      if (repair.description != description) {
+      if (repair.projectName != projectName) {
         await this.createEntityHistoryInBackground({
-          type: 'Repair Edit',
-          description: `(${id}) Description changed from ${repair.description} to ${description}.`,
+          type: 'Repair Request Edit',
+          description: `(${id}) Project name changed from ${repair.projectName} to ${projectName}.`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.location != location) {
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Description changed from ${repair.location} to ${location}.`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.reason != reason) {
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Reason changed from ${repair.reason} to ${reason}.`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.additionalInfo != additionalInfo) {
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Additional Info changed from ${repair.additionalInfo} to ${additionalInfo}.`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.additionalInfo != additionalInfo) {
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Attend Info changed from ${repair.additionalInfo} to ${attendInfo}.`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.operatorId != operatorId) {
+        const user2 = await this.prisma.user.findFirst({
+          where: { id: operatorId },
+          select: {
+            fullName: true,
+            rcno: true,
+          },
+        });
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Operator changed from ${repair.operator?.fullName} (${repair.operator?.rcno}) to ${user2?.fullName} (${user2?.rcno}).`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.supervisorId != supervisorId) {
+        const user2 = await this.prisma.user.findFirst({
+          where: { id: supervisorId },
+          select: {
+            fullName: true,
+            rcno: true,
+          },
+        });
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Supervisor changed from ${repair.supervisor?.fullName} (${repair.supervisor?.rcno}) to ${user2?.fullName} (${user2?.rcno}).`,
+          entityId: repair.entityId,
+          completedById: user.id,
+        });
+      }
+      if (repair.projectManagerId != projectManagerId) {
+        const user2 = await this.prisma.user.findFirst({
+          where: { id: projectManagerId },
+          select: {
+            fullName: true,
+            rcno: true,
+          },
+        });
+        await this.createEntityHistoryInBackground({
+          type: 'Repair Request Edit',
+          description: `(${id}) Project Manager changed from ${repair.projectManager?.fullName} (${repair.projectManager?.rcno}) to ${user2?.fullName} (${user2?.rcno}).`,
           entityId: repair.entityId,
           completedById: user.id,
         });
@@ -851,9 +947,19 @@ export class EntityService {
           link: `/entity/${repair.entityId}`,
         });
       }
-      await this.prisma.entityRepair.update({
+      await this.prisma.entityRepairRequest.update({
         where: { id },
-        data: { title, description },
+        data: {
+          internal,
+          projectName,
+          location,
+          reason,
+          additionalInfo,
+          attendInfo,
+          operatorId,
+          supervisorId,
+          projectManagerId,
+        },
       });
     } catch (e) {
       console.log(e);
@@ -861,20 +967,20 @@ export class EntityService {
     }
   }
 
-  //** Delete entity repair. */
-  async deleteEntityRepair(user: User, id: number) {
+  //** Delete entity repair request. */
+  async deleteEntityRepairRequest(user: User, id: number) {
     try {
-      const repair = await this.prisma.entityRepair.findFirst({
+      const repair = await this.prisma.entityRepairRequest.findFirst({
         where: { id },
         select: {
           id: true,
           entityId: true,
-          title: true,
+          projectName: true,
         },
       });
       await this.createEntityHistoryInBackground({
         type: 'Repair Delete',
-        description: `(${id}) Repair (${repair.title}) deleted.`,
+        description: `(${id}) Repair Request (Project Name: ${repair.projectName}) deleted.`,
         entityId: repair.entityId,
         completedById: user.id,
       });
@@ -886,55 +992,8 @@ export class EntityService {
           link: `/entity/${repair.entityId}`,
         });
       }
-      await this.prisma.entityRepair.delete({
+      await this.prisma.entityRepairRequest.delete({
         where: { id },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Set entity repair status. */
-  async setEntityRepairStatus(user: User, id: number, status: RepairStatus) {
-    try {
-      let completedFlag = false;
-      const repair = await this.prisma.entityRepair.findFirst({
-        where: { id },
-        select: {
-          entityId: true,
-        },
-      });
-      if (status == 'Done') {
-        completedFlag = true;
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Status',
-          description: `(${id}) Set status to ${status}.`,
-          entityId: repair.entityId,
-          completedById: user.id,
-        });
-      }
-      if (status == 'Pending') {
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Status',
-          description: `(${id}) Set status to ${status}.`,
-          entityId: repair.entityId,
-          completedById: user.id,
-        });
-      }
-      const users = await this.getUserIds(repair.entityId, user.id);
-      for (let index = 0; index < users.length; index++) {
-        await this.notificationService.createInBackground({
-          userId: users[index],
-          body: `${user.fullName} (${user.rcno}) set repair status to (${status}) on entity ${repair.entityId}`,
-          link: `/entity/${repair.entityId}`,
-        });
-      }
-      await this.prisma.entityRepair.update({
-        where: { id },
-        data: completedFlag
-          ? { completedById: user.id, completedAt: new Date(), status }
-          : { completedById: null, completedAt: null, status },
       });
     } catch (e) {
       console.log(e);
@@ -1339,8 +1398,8 @@ export class EntityService {
     }
   }
 
-  //** Get entityRepair. Results are paginated. User cursor argument to go forward/backward. */
-  async getEntityRepairWithPagination(
+  //** Get entity Repair Request. Results are paginated. User cursor argument to go forward/backward. */
+  async getEntityRepairRequestWithPagination(
     user: User,
     args: EntityRepairConnectionArgs
   ): Promise<PaginatedEntityRepair> {
@@ -1356,8 +1415,7 @@ export class EntityService {
     //for now these only
     if (search) {
       const or: any = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { projectName: { contains: search, mode: 'insensitive' } },
       ];
       // If search contains all numbers, search the machine ids as well
       if (/^(0|[1-9]\d*)$/.test(search)) {
@@ -1367,14 +1425,21 @@ export class EntityService {
         OR: or,
       });
     }
-    const repair = await this.prisma.entityRepair.findMany({
+    const repair = await this.prisma.entityRepairRequest.findMany({
       skip: offset,
       take: limitPlusOne,
       where,
       orderBy: { id: 'desc' },
+      include: {
+        requestedBy: true,
+        supervisor: true,
+        projectManager: true,
+        approvedBy: true,
+        operator: true,
+      },
     });
 
-    const count = await this.prisma.entityRepair.count({ where });
+    const count = await this.prisma.entityRepairRequest.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       repair.slice(0, limit),
       args,
@@ -3025,6 +3090,49 @@ export class EntityService {
         });
       });
       console.log('done');
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Set repair request as approved or unapproved. */
+  async toggleApproveEntityRepairRequest(
+    user: User,
+    id: number,
+    approve: boolean
+  ) {
+    try {
+      const repairRequest = await this.prisma.entityRepairRequest.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          entityId: true,
+        },
+      });
+      await this.prisma.entityRepairRequest.update({
+        where: { id },
+        data: approve
+          ? { approverId: user.id, approvedAt: new Date() }
+          : { approverId: null, approvedAt: null },
+      });
+
+      const users = await this.getUserIds(repairRequest.entityId, user.id);
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) approved repair request (${id}) on entity ${repairRequest.entityId}`,
+          link: `/entity/${repairRequest.entityId}`,
+        });
+      }
+      await this.createEntityHistoryInBackground({
+        type: 'Repair request approval',
+        description: approve
+          ? `Repair request (${id}) has been approved.`
+          : `Repair request (${id}) has been unapproved.`,
+        entityId: repairRequest.entityId,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

@@ -239,7 +239,7 @@ type Entity {
   model: String
   periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   registeredDate: Date
-  repairs: [EntityRepair!]
+  repairs: [EntityRepairRequest!]
   sparePRs: [EntitySparePR!]
   status: EntityStatus
   statusChangedAt: Date
@@ -440,28 +440,39 @@ type EntityPeriodicMaintenancePageInfo {
   startCursor: String
 }
 
-type EntityRepair {
-  completedAt: Date
-  completedBy: User
+type EntityRepairRequest {
+  additionalInfo: String
+  approvedAt: Date
+  approvedBy: User
+  approverId: Int
+  attendInfo: String
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
-  description: String!
   entityId: Int!
   id: Int!
-  status: RepairStatus!
-  title: String!
+  internal: Boolean
+  location: String
+  operator: User
+  operatorId: Int
+  projectManager: User
+  projectManagerId: Int
+  projectName: String
+  reason: String
+  requestedBy: User
+  supervisor: User
+  supervisorId: Int
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
 }
 
-type EntityRepairEdge {
+type EntityRepairRequestEdge {
   cursor: String
-  node: EntityRepair
+  node: EntityRepairRequest
 }
 
-type EntityRepairPageInfo {
+type EntityRepairRequestPageInfo {
   count: Int!
   endCursor: String
   hasNextPage: Boolean!
@@ -838,7 +849,7 @@ type Mutation {
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
   addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
-  addEntityRepair(description: String!, entityId: Int!, title: String!): String!
+  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   addEntitySparePR(description: String!, entityId: Int!, requestedDate: Date!, title: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachinePeriodicMaintenance(machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
@@ -866,7 +877,7 @@ type Mutation {
   deleteEntityBreakdown(id: Int!): String!
   deleteEntityPMTask(id: Int!): String!
   deleteEntityPeriodicMaintenance(id: Int!): String!
-  deleteEntityRepair(id: Int!): String!
+  deleteEntityRepairRequest(id: Int!): String!
   deleteEntitySparePR(id: Int!): String!
   deleteMachineBreakdown(id: Int!): String!
   deleteMachinePMTask(id: Int!): String!
@@ -883,7 +894,7 @@ type Mutation {
   editEntityBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editEntityLocation(id: Int!, location: String!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editEntityRepair(description: String!, id: Int!, title: String!): String!
+  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editMachine(currentRunning: Int, id: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   editMachineAttachment(description: String!, id: Int!): String!
@@ -920,7 +931,6 @@ type Mutation {
   removeUserRole(roleId: Int!, userId: Int!): String!
   setEntityBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
-  setEntityRepairStatus(id: Int!, status: RepairStatus!): String!
   setEntitySparePRStatus(id: Int!, status: SparePRStatus!): String!
   setEntityStatus(entityId: Int!, status: EntityStatus!): String!
   setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
@@ -933,6 +943,7 @@ type Mutation {
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
+  toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   toggleMachinePMTask(complete: Boolean!, id: Int!): String!
@@ -1006,8 +1017,8 @@ type PaginatedEntityPeriodicMaintenanceTask {
 }
 
 type PaginatedEntityRepair {
-  edges: [EntityRepairEdge!]
-  pageInfo: EntityRepairPageInfo
+  edges: [EntityRepairRequestEdge!]
+  pageInfo: EntityRepairRequestPageInfo
 }
 
 type PaginatedEntitySparePR {
@@ -1649,21 +1660,6 @@ type Query {
     status: PeriodicMaintenanceStatus
     transportationId: Int
   ): PaginatedTransportationPeriodicMaintenance!
-  getAllRepairOfEntity(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-    entityId: Int!
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-  ): PaginatedEntityRepair!
   getAllRepairOfMachine(
     """Paginate after opaque cursor"""
     after: String
@@ -1694,6 +1690,21 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationRepair!
+  getAllRepairRequestOfEntity(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    entityId: Int!
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedEntityRepair!
   getAllRoles(
     """Paginate after opaque cursor"""
     after: String

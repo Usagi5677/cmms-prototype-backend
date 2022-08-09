@@ -247,55 +247,76 @@ export class EntityResolver {
     return `Periodic maintenance status updated.`;
   }
 
-  @Permissions('ADD_ENTITY_REPAIR')
+  @Permissions('ADD_ENTITY_REPAIR_REQUEST')
   @Mutation(() => String)
-  async addEntityRepair(
+  async addEntityRepairRequest(
     @UserEntity() user: User,
     @Args('entityId') entityId: number,
-    @Args('title') title: string,
-    @Args('description') description: string
+    @Args('internal', { nullable: true }) internal: boolean,
+    @Args('projectName', { nullable: true }) projectName: string,
+    @Args('location', { nullable: true }) location: string,
+    @Args('reason', { nullable: true }) reason: string,
+    @Args('additionalInfo', { nullable: true }) additionalInfo: string,
+    @Args('attendInfo', { nullable: true }) attendInfo: string,
+    @Args('operatorId', { nullable: true }) operatorId: number,
+    @Args('supervisorId', { nullable: true }) supervisorId: number,
+    @Args('projectManagerId', { nullable: true }) projectManagerId: number
   ): Promise<String> {
-    await this.entityService.createEntityRepair(
+    await this.entityService.createEntityRepairRequest(
       user,
       entityId,
-      title,
-      description
+      internal,
+      projectName,
+      location,
+      reason,
+      additionalInfo,
+      attendInfo,
+      operatorId,
+      supervisorId,
+      projectManagerId
     );
-    return `Added repair to entity.`;
+    return `Added repair request to entity.`;
   }
 
-  @Permissions('EDIT_ENTITY_REPAIR')
+  @Permissions('EDIT_ENTITY_REPAIR_REQUEST')
   @Mutation(() => String)
-  async editEntityRepair(
+  async editEntityRepairRequest(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('title') title: string,
-    @Args('description') description: string
+    @Args('internal', { nullable: true }) internal: boolean,
+    @Args('projectName', { nullable: true }) projectName: string,
+    @Args('location', { nullable: true }) location: string,
+    @Args('reason', { nullable: true }) reason: string,
+    @Args('additionalInfo', { nullable: true }) additionalInfo: string,
+    @Args('attendInfo', { nullable: true }) attendInfo: string,
+    @Args('operatorId', { nullable: true }) operatorId: number,
+    @Args('supervisorId', { nullable: true }) supervisorId: number,
+    @Args('projectManagerId', { nullable: true }) projectManagerId: number
   ): Promise<String> {
-    await this.entityService.editEntityRepair(user, id, title, description);
-    return `Repair updated.`;
+    await this.entityService.editEntityRepairRequest(
+      user,
+      id,
+      internal,
+      projectName,
+      location,
+      reason,
+      additionalInfo,
+      attendInfo,
+      operatorId,
+      supervisorId,
+      projectManagerId
+    );
+    return `Repair request updated.`;
   }
 
-  @Permissions('DELETE_ENTITY_REPAIR')
+  @Permissions('DELETE_ENTITY_REPAIR_REQUEST')
   @Mutation(() => String)
-  async deleteEntityRepair(
+  async deleteEntityRepairRequest(
     @UserEntity() user: User,
     @Args('id') id: number
   ): Promise<String> {
-    await this.entityService.deleteEntityRepair(user, id);
-    return `Repair deleted.`;
-  }
-
-  @Permissions('EDIT_ENTITY_REPAIR')
-  @Mutation(() => String)
-  async setEntityRepairStatus(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('status', { type: () => RepairStatus })
-    status: RepairStatus
-  ): Promise<String> {
-    await this.entityService.setEntityRepairStatus(user, id, status);
-    return `Repair status updated.`;
+    await this.entityService.deleteEntityRepairRequest(user, id);
+    return `Repair request deleted.`;
   }
 
   @Permissions('ADD_ENTITY_SPARE_PR')
@@ -436,11 +457,14 @@ export class EntityResolver {
   }
 
   @Query(() => PaginatedEntityRepair)
-  async getAllRepairOfEntity(
+  async getAllRepairRequestOfEntity(
     @UserEntity() user: User,
     @Args() args: EntityRepairConnectionArgs
   ): Promise<PaginatedEntityRepair> {
-    return await this.entityService.getEntityRepairWithPagination(user, args);
+    return await this.entityService.getEntityRepairRequestWithPagination(
+      user,
+      args
+    );
   }
 
   @Query(() => PaginatedEntityBreakdown)
@@ -618,7 +642,7 @@ export class EntityResolver {
       id,
       verify
     );
-    return `Periodic maintenance updated.`;
+    return `Periodic maintenance verification updated.`;
   }
 
   @Query(() => PaginatedEntityPeriodicMaintenance)
@@ -709,5 +733,18 @@ export class EntityResolver {
   async uploadEntityDataTwo(@UserEntity() user: User): Promise<String> {
     this.entityService.UploadEntityDataTwo(user);
     return `Entity Data Two Uploaded`;
+  }
+  @Mutation(() => String)
+  async toggleApproveEntityRepairRequest(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('approve') approve: boolean
+  ): Promise<string> {
+    await this.entityService.toggleApproveEntityRepairRequest(
+      user,
+      id,
+      approve
+    );
+    return `Repair request approval updated.`;
   }
 }
