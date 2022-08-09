@@ -6,5 +6,5 @@ export class CreateEntityAttachmentInput {
   entityId: string;
   description: string;
   @Field({ nullable: true })
-  isPublic: boolean;
+  checklistId: string;
 }

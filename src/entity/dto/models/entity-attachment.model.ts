@@ -10,5 +10,5 @@ export class EntityAttachment extends BaseModel {
   originalName?: string;
   sharepointFileName?: string;
   mode: string;
-  completedBy?: User;
+  user?: User;
 }

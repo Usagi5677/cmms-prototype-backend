@@ -80,6 +80,7 @@ input ChangeChecklistTemplateInput {
 }
 
 type Checklist {
+  attachments: [EntityAttachment!]!
   comments: [ChecklistComment!]!
 
   """Identifies the date and time when the object was created."""
@@ -130,6 +131,7 @@ type ChecklistItem {
 }
 
 type ChecklistSummary {
+  attachments: [EntityAttachment!]!
   comments: [ChecklistComment!]!
 
   """Identifies the date and time when the object was created."""
@@ -263,8 +265,6 @@ type EntityAssign {
 }
 
 type EntityAttachment {
-  completedBy: User
-
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   description: String!
@@ -277,6 +277,7 @@ type EntityAttachment {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
+  user: User
 }
 
 type EntityAttachmentEdge {

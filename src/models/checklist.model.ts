@@ -1,4 +1,5 @@
 import { ObjectType } from '@nestjs/graphql';
+import { EntityAttachment } from 'src/entity/dto/models/entity-attachment.model';
 import { BaseModel } from './base.model';
 import { ChecklistComment } from './checklist-comment.model.ts';
 import { ChecklistItem } from './checklist-item.model';
@@ -16,4 +17,5 @@ export class Checklist extends BaseModel {
   workingHour?: number;
   items: ChecklistItem[];
   comments: ChecklistComment[];
+  attachments: EntityAttachment[];
 }

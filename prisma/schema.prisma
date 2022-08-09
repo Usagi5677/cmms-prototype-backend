@@ -248,6 +248,7 @@ model Checklist {
   workingHour         Int?
   items               ChecklistItem[]
   comments            ChecklistComment[]
+  attachments         EntityAttachment[]
   entity              Entity?            @relation(fields: [entityId], references: [id], onDelete: Cascade)
   entityId            Int?
 
@@ -625,18 +626,20 @@ model EntityPeriodicMaintenance {
 }
 
 model EntityAttachment {
-  id                 Int      @id @default(autoincrement())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                 Int        @id @default(autoincrement())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
   userId             Int
-  user               User     @relation(fields: [userId], references: [id])
+  user               User       @relation(fields: [userId], references: [id])
   entityId           Int
-  entity             Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  entity             Entity     @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  checklistId        Int?
+  checklist          Checklist? @relation(fields: [checklistId], references: [id], onDelete: Cascade)
   description        String
   mimeType           String?
   originalName       String?
   sharepointFileName String?
-  mode               String   @default("Public")
+  mode               String     @default("Public")
 }
 
 model EntityPeriodicMaintenanceTask {
