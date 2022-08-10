@@ -5,4 +5,6 @@ import ConnectionArgs from 'src/common/pagination/connection-args';
 export class EntityRepairConnectionArgs extends ConnectionArgs {
   search?: string;
   entityId: number;
+  approve?: boolean;
+  complete?: boolean;
 }

@@ -1429,14 +1429,13 @@ export class EntityService {
   ): Promise<PaginatedEntityRepair> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { entityId, search } = args;
+    const { entityId, search, approve, complete } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     if (entityId) {
       where.AND.push({ entityId });
     }
-    //for now these only
     if (search) {
       const or: any = [
         { projectName: { contains: search, mode: 'insensitive' } },
@@ -1447,6 +1446,16 @@ export class EntityService {
       }
       where.AND.push({
         OR: or,
+      });
+    }
+    if (approve) {
+      where.AND.push({
+        NOT: [{ approvedAt: null }],
+      });
+    }
+    if (complete) {
+      where.AND.push({
+        NOT: [{ repairedAt: null }],
       });
     }
     const repair = await this.prisma.entityRepairRequest.findMany({

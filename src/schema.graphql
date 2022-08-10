@@ -1698,9 +1698,11 @@ type Query {
   getAllRepairRequestOfEntity(
     """Paginate after opaque cursor"""
     after: String
+    approve: Boolean
 
     """Paginate before opaque cursor"""
     before: String
+    complete: Boolean
     entityId: Int!
 
     """Paginate first"""
