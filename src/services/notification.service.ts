@@ -53,7 +53,7 @@ export class NotificationService {
     if (emailOptions) {
       this.sendEmail(emailOptions);
     }
-    await this.pubSub.publish('notificationCreated', {
+    await this.pubSub.publish('cmms-notificationCreated', {
       notificationCreated: notif,
     });
   }
