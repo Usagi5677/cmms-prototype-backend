@@ -257,6 +257,7 @@ type EntityAssign {
   createdAt: Date!
   entityId: Int!
   id: Int!
+  type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -866,7 +867,7 @@ type Mutation {
   addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
-  assignUserToEntity(entityId: Int!, userIds: [Int!]!): String!
+  assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   assignUserToMachine(machineId: Int!, userIds: [Int!]!): String!
   assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
@@ -957,7 +958,7 @@ type Mutation {
   toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyMachinePeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyTransportationPeriodicMaintenance(id: Int!, verify: Boolean!): String!
-  unassignUserFromEntity(entityId: Int!, userId: Int!): String!
+  unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
   unassignUserFromMachine(machineId: Int!, userId: Int!): String!
   unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
 
@@ -1963,10 +1964,6 @@ type Query {
     last: Int
     name: String
   ): PaginatedType!
-  uploadEntityDataOne: String!
-  uploadEntityDataTwo: String!
-  uploadEntityTypeDataOne: String!
-  uploadEntityTypeDataTwo: String!
   uploadMachineData: String!
   uploadTransportsData: String!
 }

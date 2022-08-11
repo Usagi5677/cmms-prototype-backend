@@ -7,4 +7,5 @@ export class EntityAssign extends BaseModel {
   entityId: number;
   userId: number;
   user?: User;
+  type: string;
 }

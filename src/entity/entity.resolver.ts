@@ -105,7 +105,7 @@ export class EntityResolver {
     }
   }
 
-  @Permissions('EDIT_ENTITY')
+  // Permission checked in service
   @Mutation(() => String)
   async editEntity(
     @UserEntity() user: User,
@@ -491,9 +491,10 @@ export class EntityResolver {
   async assignUserToEntity(
     @UserEntity() user: User,
     @Args('entityId') entityId: number,
+    @Args('type') type: string,
     @Args('userIds', { type: () => [Int] }) userIds: number[]
   ): Promise<String> {
-    await this.entityService.assignUserToEntity(user, entityId, userIds);
+    await this.entityService.assignUserToEntity(user, entityId, type, userIds);
     return `Successfully assigned user${
       userIds.length > 1 ? 's' : ''
     } to entity.`;
@@ -504,9 +505,15 @@ export class EntityResolver {
   async unassignUserFromEntity(
     @UserEntity() user: User,
     @Args('entityId') entityId: number,
+    @Args('type') type: string,
     @Args('userId') userId: number
   ): Promise<string> {
-    await this.entityService.unassignUserFromEntity(user, entityId, userId);
+    await this.entityService.unassignUserFromEntity(
+      user,
+      entityId,
+      type,
+      userId
+    );
     return `Successfully unassigned user from entity.`;
   }
 
@@ -682,7 +689,7 @@ export class EntityResolver {
     return this.entityService.getAllEntityPMStatusCount(user);
   }
 
-  @Permissions('EDIT_ENTITY_LOCATION')
+  // Permission checked in service
   @Mutation(() => String)
   async editEntityLocation(
     @UserEntity() user: User,
@@ -712,52 +719,5 @@ export class EntityResolver {
       isAssigned,
       entityType
     );
-  }
-
-  @Query(() => String)
-  async uploadEntityTypeDataOne(@UserEntity() user: User): Promise<String> {
-    this.entityService.UploadEntityTypeDataOne(user);
-    return `Entity Data Type One Uploaded`;
-  }
-  @Query(() => String)
-  async uploadEntityTypeDataTwo(@UserEntity() user: User): Promise<String> {
-    this.entityService.UploadEntityTypeDataTwo(user);
-    return `Entity Data Type Two Uploaded`;
-  }
-  @Query(() => String)
-  async uploadEntityDataOne(@UserEntity() user: User): Promise<String> {
-    this.entityService.UploadEntityDataOne(user);
-    return `Entity Data One Uploaded`;
-  }
-  @Query(() => String)
-  async uploadEntityDataTwo(@UserEntity() user: User): Promise<String> {
-    this.entityService.UploadEntityDataTwo(user);
-    return `Entity Data Two Uploaded`;
-  }
-  @Mutation(() => String)
-  async toggleApproveEntityRepairRequest(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('approve') approve: boolean
-  ): Promise<string> {
-    await this.entityService.toggleApproveEntityRepairRequest(
-      user,
-      id,
-      approve
-    );
-    return `Repair request approval updated.`;
-  }
-  @Mutation(() => String)
-  async toggleCompleteEntityRepairRequest(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('complete') complete: boolean
-  ): Promise<string> {
-    await this.entityService.toggleCompleteEntityRepairRequest(
-      user,
-      id,
-      complete
-    );
-    return `Repair request completion updated.`;
   }
 }

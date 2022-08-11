@@ -1,10 +1,12 @@
 import { InjectQueue } from '@nestjs/bull';
 import {
   BadRequestException,
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
@@ -37,11 +39,11 @@ import { EntitySparePRConnectionArgs } from './dto/args/entity-sparePR-connectio
 import { PaginatedEntitySparePR } from './dto/paginations/entity-sparePR-connection.model';
 import { EntityHistoryConnectionArgs } from './dto/args/entity-history-connection.args';
 import { PaginatedEntityHistory } from './dto/paginations/entity-history-connection.model';
-import { Prisma } from '@prisma/client';
+import { Entity, Prisma } from '@prisma/client';
 import { EntityPeriodicMaintenanceConnectionArgs } from './dto/args/entity-periodic-maintenance-connection.args';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
 import { PaginatedEntityPeriodicMaintenanceTask } from './dto/paginations/entity-pm-tasks-connection.model';
-import { Entity } from './dto/models/entity.model';
+import { ENTITY_ASSIGNMENT_TYPES } from 'src/constants';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -202,10 +204,18 @@ export class EntityService {
     brand: string,
     registeredDate: Date
   ) {
+    const entity = await this.prisma.entity.findFirst({
+      where: { id },
+    });
+    // Check if admin of entity or has permission
+    await this.checkEntityAssignmentOrPermission(
+      id,
+      user.id,
+      entity,
+      ['Admin'],
+      ['EDIT_ENTITY']
+    );
     try {
-      const entity = await this.prisma.entity.findFirst({
-        where: { id },
-      });
       if (entity.machineNumber != machineNumber) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
@@ -329,7 +339,7 @@ export class EntityService {
 
       await this.prisma.entity.update({
         data: {
-          typeId,
+          typeId: typeId ?? undefined,
           machineNumber,
           model,
           zone,
@@ -1684,9 +1694,24 @@ export class EntityService {
   }
 
   //** Assign 'user' to entity. */
-  async assignUserToEntity(user: User, entityId: number, userIds: number[]) {
+  async assignUserToEntity(
+    user: User,
+    entityId: number,
+    type: string,
+    userIds: number[]
+  ) {
+    if (!ENTITY_ASSIGNMENT_TYPES.includes(type)) {
+      throw new BadRequestException('Invalid assignment type.');
+    }
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: entityId },
+      include: { type: true },
+    });
+    if (!entity) {
+      throw new BadRequestException('Invalid entity.');
+    }
     try {
-      const entityUserIds = await this.getUserIds(entityId, user.id);
+      const entityUserIds = await this.getUserIds(entityId, user.id, type);
       const entityUsersExceptNewAssignments = entityUserIds.filter(
         (id) => !userIds.includes(id)
       );
@@ -1701,6 +1726,13 @@ export class EntityService {
           email: true,
         },
       });
+      await this.prisma.entityAssignment.createMany({
+        data: userIds.map((userId) => ({
+          entityId,
+          userId,
+          type,
+        })),
+      });
 
       // Text format new assignments into a readable list with commas and 'and'
       // at the end.
@@ -1708,16 +1740,25 @@ export class EntityService {
         .map((a) => `${a.fullName} (${a.rcno})`)
         .join(', ')
         .replace(/, ([^,]*)$/, ' and $1');
+
       // Notification to entity assigned users except new assignments
       for (const id of entityUsersExceptNewAssignments) {
         await this.notificationService.createInBackground({
           userId: id,
-          body: `${user.fullName} (${user.rcno}) assigned ${newAssignmentsFormatted} to entity ${entityId}`,
+          body: `${user.fullName} (${
+            user.rcno
+          }) assigned ${newAssignmentsFormatted} to ${
+            `${entity.type?.name} ` ?? ''
+          }${entity.machineNumber} as ${type}.`,
           link: `/entity/${entityId}`,
         });
         await this.createEntityHistoryInBackground({
           type: 'User Assign',
-          description: `${user.fullName} (${user.rcno}) assigned ${newAssignmentsFormatted} to entity ${entityId}`,
+          description: `${user.fullName} (${
+            user.rcno
+          }) assigned ${newAssignmentsFormatted} to ${
+            `${entity.type?.name} ` ?? ''
+          }${entity.machineNumber} as ${type}.`,
           entityId: entityId,
           completedById: user.id,
         });
@@ -1727,7 +1768,9 @@ export class EntityService {
       const newAssignmentsWithoutCurrentUser = newAssignments.filter(
         (na) => na.id !== user.id
       );
-      const emailBody = `You have been assigned to entity ${entityId}`;
+      const emailBody = `You have been assigned to ${
+        `${entity.type?.name} ` ?? ''
+      }${entity.machineNumber} as ${type}.`;
       for (const newAssignment of newAssignmentsWithoutCurrentUser) {
         await this.notificationService.createInBackground({
           userId: newAssignment.id,
@@ -1736,17 +1779,11 @@ export class EntityService {
         });
         await this.createEntityHistoryInBackground({
           type: 'User Assign',
-          description: `${newAssignment.fullName} (${newAssignment.rcno}) assigned to entity.`,
+          description: `${newAssignment.fullName} (${newAssignment.rcno}) assigned as ${type}.`,
           entityId: entityId,
           completedById: user.id,
         });
       }
-      await this.prisma.entityAssignment.createMany({
-        data: userIds.map((userId) => ({
-          entityId,
-          userId,
-        })),
-      });
     } catch (e) {
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&
@@ -1763,7 +1800,12 @@ export class EntityService {
   }
 
   //** unassign user from entity. */
-  async unassignUserFromEntity(user: User, entityId: number, userId: number) {
+  async unassignUserFromEntity(
+    user: User,
+    entityId: number,
+    type: string,
+    userId: number
+  ) {
     try {
       const unassign = await this.prisma.user.findFirst({
         where: {
@@ -1774,14 +1816,14 @@ export class EntityService {
           rcno: true,
         },
       });
+      await this.prisma.entityAssignment.deleteMany({
+        where: { entityId, userId, type },
+      });
       await this.createEntityHistoryInBackground({
         type: 'User Unassigned',
-        description: `${unassign.fullName} (${unassign.rcno}) unassigned from entity.`,
+        description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
         entityId: entityId,
         completedById: user.id,
-      });
-      await this.prisma.entityAssignment.deleteMany({
-        where: { entityId, userId },
       });
     } catch (e) {
       console.log(e);
@@ -2003,10 +2045,15 @@ export class EntityService {
   }
 
   // Get unique array of ids of entity assigned users
-  async getUserIds(entityId: number, removeUserId?: number): Promise<number[]> {
+  async getUserIds(
+    entityId: number,
+    removeUserId?: number,
+    type?: string
+  ): Promise<number[]> {
     const getAssignedUsers = await this.prisma.entityAssignment.findMany({
       where: {
         entityId,
+        type: type ?? undefined,
       },
     });
 
@@ -2731,16 +2778,20 @@ export class EntityService {
 
   //** Edit entity location */
   async editEntityLocation(user: User, id: number, location: string) {
+    const entity = await this.prisma.entity.findFirst({
+      where: {
+        id,
+      },
+    });
+    // Check if admin of entity
+    await this.checkEntityAssignmentOrPermission(
+      id,
+      user.id,
+      entity,
+      ['Admin'],
+      ['EDIT_ENTITY_LOCATION']
+    );
     try {
-      const entity = await this.prisma.entity.findFirst({
-        where: {
-          id,
-        },
-        select: {
-          location: true,
-        },
-      });
-
       if (entity.location != location) {
         const users = await this.getUserIds(id, user.id);
         for (let index = 0; index < users.length; index++) {
@@ -2889,236 +2940,39 @@ export class EntityService {
     }
   }
 
-  //** Get upload all entity type data to db*/
-  async UploadEntityTypeDataOne(user: User) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const reader = require('xlsx');
-
-      // Reading our test file
-      const file = reader.readFile(
-        'src/common/importData/machineDataCleaned.xlsx'
-      );
-
-      // eslint-disable-next-line prefer-const
-      let data = [];
-
-      const sheets = file.SheetNames;
-
-      for (let i = 0; i < sheets.length; i++) {
-        const temp = reader.utils.sheet_to_json(
-          file.Sheets[file.SheetNames[i]]
-        );
-        temp.forEach((res) => {
-          data.push(res);
-        });
-      }
-
-      data.map(async (machine: any, index: number) => {
-        if (machine?.uniqueType) {
-          await this.prisma.type.create({
-            data: {
-              entityType: 'Machine',
-              name: machine?.uniqueType,
-              active: true,
-            },
-          });
-        }
-      });
-      console.log('done');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
+  async checkEntityAssignmentOrPermission(
+    entityId: number,
+    userId: number,
+    entity?: Entity,
+    assignments?: ('User' | 'Engineer' | 'Admin')[],
+    permissions?: string[]
+  ) {
+    if (!entity) {
+      entity = await this.findOne(entityId);
     }
-  }
-
-  //** Get upload all entity type two data to db*/
-  async UploadEntityTypeDataTwo(user: User) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const reader = require('xlsx');
-
-      // Reading our test file
-      const file = reader.readFile(
-        'src/common/importData/transportsDataCleaned.xlsx'
-      );
-
-      // eslint-disable-next-line prefer-const
-      let data = [];
-
-      const sheets = file.SheetNames;
-
-      for (let i = 0; i < sheets.length; i++) {
-        const temp = reader.utils.sheet_to_json(
-          file.Sheets[file.SheetNames[i]]
-        );
-        temp.forEach((res) => {
-          data.push(res);
-        });
-      }
-
-      data.map(async (transportation: any, index: number) => {
-        if (transportation?.uniqueType) {
-          await this.prisma.type.create({
-            data: {
-              entityType: transportation?.transportType,
-              name: transportation?.uniqueType,
-              active: true,
-            },
-          });
-        }
+    if (assignments) {
+      const currentAssignments = await this.prisma.entityAssignment.findMany({
+        where: { entityId, userId, type: { in: assignments } },
       });
-      console.log('done');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-  //** Get upload all entity data to db*/
-  async UploadEntityDataOne(user: User) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const reader = require('xlsx');
-
-      // Reading our test file
-      const file = reader.readFile(
-        'src/common/importData/machineDataCleaned.xlsx'
-      );
-
-      // eslint-disable-next-line prefer-const
-      let data = [];
-
-      const sheets = file.SheetNames;
-
-      for (let i = 0; i < sheets.length; i++) {
-        const temp = reader.utils.sheet_to_json(
-          file.Sheets[file.SheetNames[i]]
-        );
-        temp.forEach((res) => {
-          data.push(res);
-        });
-      }
-
-      data.map(async (machine: Entity, index: number) => {
-        let date;
-        let newDate;
-        if (data[index]?.registeredDate?.toString().length == 4) {
-          date = `1/1/${data[index]?.registeredDate}`;
-          newDate = new Date(date);
-        }
-        //console.log(index + ' : ' + data[index]?.registeredDate);
-        const newDateTwo = new Date(
-          Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
-        );
-
-        const type = await this.prisma.type.findFirst({
-          where: {
-            name: machine?.type?.toString(),
-            entityType: 'Machine',
-          },
-        });
-        await this.prisma.entity.create({
-          data: {
-            createdById: user.id,
-            machineNumber: machine?.machineNumber?.toString(),
-            registeredDate: newDate ? newDate : newDateTwo,
-            model: machine?.model?.toString(),
-            typeId: type?.id,
-            zone: machine?.zone?.toString(),
-            location: machine?.location?.toString().trim(),
-            status: (machine?.status?.charAt(0).toUpperCase() +
-              machine?.status?.slice(1)) as EntityStatus,
-            currentRunning: machine?.currentRunning,
-            lastService: machine?.lastService,
-            measurement: machine?.measurement,
-          },
-        });
-      });
-      console.log('done');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Get upload all entity data two to db*/
-  async UploadEntityDataTwo(user: User) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const reader = require('xlsx');
-
-      // Reading our test file
-      const file = reader.readFile(
-        'src/common/importData/transportsDataCleaned.xlsx'
-      );
-
-      // eslint-disable-next-line prefer-const
-      let data = [];
-
-      const sheets = file.SheetNames;
-
-      for (let i = 0; i < sheets.length; i++) {
-        const temp = reader.utils.sheet_to_json(
-          file.Sheets[file.SheetNames[i]]
-        );
-        temp.forEach((res) => {
-          data.push(res);
-        });
-      }
-
-      data.map(async (transportation: any, index: number) => {
-        let date;
-        let newDate;
-        let newDateTwo;
-        if (data[index]?.registeredDate?.toString().length == 4) {
-          date = `1/1/${data[index]?.registeredDate}`;
-          newDate = new Date(date);
-        }
-        console.log(
-          index +
-            ' : ' +
-            new Date(
-              Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
-            )
-        );
-        if (data[index]?.registeredDate) {
-          newDateTwo = new Date(
-            Math.round((data[index]?.registeredDate - 25569) * 86400 * 1000)
+      const currentAssignmentsArray = currentAssignments.map((a) => a.type);
+      for (const assignment of assignments) {
+        if (!currentAssignmentsArray.includes(assignment)) {
+          throw new ForbiddenException(
+            'You do not have access to this resource.'
           );
-        } else {
-          newDateTwo = null;
         }
-        //console.log(moment(newDateTwo).format('DD MMMM YYYY HH:mm:ss'));
-        const type = await this.prisma.type.findFirst({
-          where: {
-            name: transportation?.type?.toString(),
-            NOT: [{ entityType: 'Machine' }],
-          },
-        });
-        console.log(type?.id);
-        await this.prisma.entity.create({
-          data: {
-            createdById: user.id,
-            machineNumber: transportation?.machineNumber?.toString(),
-            registeredDate: newDate ? newDate : newDateTwo,
-            model: transportation?.model?.toString(),
-            typeId: type?.id,
-            department: transportation?.department?.toString(),
-            engine: transportation?.engine?.toString(),
-            brand: transportation?.brand?.toString(),
-            location: transportation?.location?.toString().trim(),
-            status: (transportation?.status?.charAt(0).toUpperCase() +
-              transportation?.status?.slice(1)) as EntityStatus,
-            currentMileage: transportation?.currentMileage,
-            lastServiceMileage: transportation?.lastServiceMileage,
-            measurement: transportation?.measurement,
-          },
-        });
-      });
-      console.log('done');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+    if (permissions) {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(userId);
+      for (const permission in permissions) {
+        if (!userPermissions.includes(permission)) {
+          throw new ForbiddenException(
+            'You do not have access to this resource.'
+          );
+        }
+      }
     }
   }
 
