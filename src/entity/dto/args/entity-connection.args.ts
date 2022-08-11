@@ -14,4 +14,5 @@ export class EntityConnectionArgs extends ConnectionArgs {
   location?: string[];
   department?: string[];
   isAssigned?: boolean;
+  typeId?: number;
 }

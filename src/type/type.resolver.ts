@@ -11,7 +11,6 @@ import { PaginatedType } from './dto/type-connection.model';
 import { TypeConnectionArgs } from './dto/type-connection.args';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
-@Permissions('MODIFY_TYPES')
 @Resolver(() => Type)
 export class TypeResolver {
   constructor(private readonly typeService: TypeService) {}

@@ -948,9 +948,7 @@ type Mutation {
   setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
   setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
   setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
-  toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
-  toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   toggleMachinePMTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
@@ -1195,6 +1193,7 @@ type Query {
     search: String
     self: Boolean
     status: EntityStatus
+    typeId: Int
   ): PaginatedEntity!
   assignedMachines(
     """Paginate after opaque cursor"""
@@ -1301,6 +1300,7 @@ type Query {
     search: String
     self: Boolean
     status: EntityStatus
+    typeId: Int
   ): PaginatedEntity!
   getAllAssignedMachine(
     """Paginate after opaque cursor"""
@@ -1413,6 +1413,7 @@ type Query {
     search: String
     self: Boolean
     status: EntityStatus
+    typeId: Int
   ): PaginatedEntity!
   getAllEntityPeriodicMaintenance(
     """Paginate after opaque cursor"""
@@ -1474,6 +1475,7 @@ type Query {
     search: String
     self: Boolean
     status: EntityStatus
+    typeId: Int
   ): PaginatedEntity!
   getAllHistoryOfEntity(
     """Paginate after opaque cursor"""

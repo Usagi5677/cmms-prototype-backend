@@ -471,6 +471,7 @@ export class EntityService {
       location,
       department,
       isAssigned,
+      typeId,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -534,6 +535,11 @@ export class EntityService {
       });
     }
 
+    if (typeId) {
+      where.AND.push({
+        typeId,
+      });
+    }
     const entity = await this.prisma.entity.findMany({
       skip: offset,
       take: limitPlusOne,
