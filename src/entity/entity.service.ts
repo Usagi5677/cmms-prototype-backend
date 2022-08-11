@@ -6,7 +6,6 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
@@ -364,6 +363,14 @@ export class EntityService {
 
   //** Set entity status. */
   async setEntityStatus(user: User, entityId: number, status: EntityStatus) {
+    // Check if admin of entity or has permission
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer'],
+      ['EDIT_ENTITY']
+    );
     try {
       if (status === 'Working') {
         await this.prisma.entityBreakdown.updateMany({
@@ -448,6 +455,13 @@ export class EntityService {
         type: true,
       },
     });
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      entity,
+      ['Admin', 'Engineer', 'User'],
+      ['VIEW_ALL_ENTITY']
+    );
     if (!entity) throw new BadRequestException('Entity not found.');
     const reading = await this.getLatestReading(entity);
     entity.currentMileage = reading;
@@ -460,6 +474,10 @@ export class EntityService {
     user: User,
     args: EntityConnectionArgs
   ): Promise<PaginatedEntity> {
+    const userPermissions = await this.userService.getUserRolesPermissionsList(
+      user.id
+    );
+    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const {
@@ -479,9 +497,9 @@ export class EntityService {
     if (createdById) {
       where.AND.push({ createdById });
     }
-    if (assignedToId) {
+    if (assignedToId || !hasViewAll) {
       where.AND.push({
-        assignees: { some: { userId: assignedToId } },
+        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
       });
     }
 
@@ -586,6 +604,13 @@ export class EntityService {
     startDate: Date,
     tasks: string[]
   ) {
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_PERIODIC_MAINTENANCE']
+    );
     try {
       const periodicMaintenance =
         await this.prisma.entityPeriodicMaintenance.create({
@@ -635,19 +660,26 @@ export class EntityService {
     value: number,
     startDate: Date
   ) {
+    const periodicMaintenance =
+      await this.prisma.entityPeriodicMaintenance.findFirst({
+        where: { id },
+        select: {
+          id: true,
+          entityId: true,
+          title: true,
+          measurement: true,
+          startDate: true,
+          value: true,
+        },
+      });
+    await this.checkEntityAssignmentOrPermission(
+      periodicMaintenance.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_PERIODIC_MAINTENANCE']
+    );
     try {
-      const periodicMaintenance =
-        await this.prisma.entityPeriodicMaintenance.findFirst({
-          where: { id },
-          select: {
-            id: true,
-            entityId: true,
-            title: true,
-            measurement: true,
-            startDate: true,
-            value: true,
-          },
-        });
       if (periodicMaintenance.title != title) {
         await this.createEntityHistoryInBackground({
           type: 'Periodic Maintenance Edit',
@@ -711,17 +743,23 @@ export class EntityService {
 
   //** Delete entity periodic maintenance. */
   async deleteEntityPeriodicMaintenance(user: User, id: number) {
+    const periodicMaintenance =
+      await this.prisma.entityPeriodicMaintenance.findFirst({
+        where: { id },
+        select: {
+          id: true,
+          entityId: true,
+          title: true,
+        },
+      });
+    await this.checkEntityAssignmentOrPermission(
+      periodicMaintenance.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_PERIODIC_MAINTENANCE']
+    );
     try {
-      const periodicMaintenance =
-        await this.prisma.entityPeriodicMaintenance.findFirst({
-          where: { id },
-          select: {
-            id: true,
-            entityId: true,
-            title: true,
-          },
-        });
-
       const users = await this.getUserIds(
         periodicMaintenance.entityId,
         user.id
@@ -754,15 +792,22 @@ export class EntityService {
     id: number,
     status: PeriodicMaintenanceStatus
   ) {
+    let completedFlag = false;
+    const periodicMaintenance =
+      await this.prisma.entityPeriodicMaintenance.findFirst({
+        where: { id },
+        select: {
+          entityId: true,
+        },
+      });
+    await this.checkEntityAssignmentOrPermission(
+      periodicMaintenance.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_PERIODIC_MAINTENANCE']
+    );
     try {
-      let completedFlag = false;
-      const periodicMaintenance =
-        await this.prisma.entityPeriodicMaintenance.findFirst({
-          where: { id },
-          select: {
-            entityId: true,
-          },
-        });
       if (status == 'Done') {
         completedFlag = true;
         await this.createEntityHistoryInBackground({
@@ -825,6 +870,13 @@ export class EntityService {
     supervisorId: number,
     projectManagerId: number
   ) {
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_REPAIR_REQUEST']
+    );
     try {
       const repair = await this.prisma.entityRepairRequest.create({
         data: {
@@ -875,15 +927,22 @@ export class EntityService {
     supervisorId: number,
     projectManagerId: number
   ) {
+    const repair = await this.prisma.entityRepairRequest.findFirst({
+      where: { id },
+      include: {
+        operator: true,
+        supervisor: true,
+        projectManager: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      repair.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer'],
+      ['MODIFY_REPAIR_REQUEST']
+    );
     try {
-      const repair = await this.prisma.entityRepairRequest.findFirst({
-        where: { id },
-        include: {
-          operator: true,
-          supervisor: true,
-          projectManager: true,
-        },
-      });
       if (repair.internal != internal) {
         await this.createEntityHistoryInBackground({
           type: 'Repair Request Edit',
@@ -1009,15 +1068,22 @@ export class EntityService {
 
   //** Delete entity repair request. */
   async deleteEntityRepairRequest(user: User, id: number) {
+    const repair = await this.prisma.entityRepairRequest.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        entityId: true,
+        projectName: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      repair.entityId,
+      user.id,
+      undefined,
+      ['Admin'],
+      ['MODIFY_REPAIR_REQUEST']
+    );
     try {
-      const repair = await this.prisma.entityRepairRequest.findFirst({
-        where: { id },
-        select: {
-          id: true,
-          entityId: true,
-          projectName: true,
-        },
-      });
       await this.createEntityHistoryInBackground({
         type: 'Repair Delete',
         description: `(${id}) Repair Request (Project Name: ${repair.projectName}) deleted.`,
@@ -1049,6 +1115,13 @@ export class EntityService {
     title: string,
     description: string
   ) {
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_SPARE_PR']
+    );
     try {
       const sparePR = await this.prisma.entitySparePR.create({
         data: {
@@ -1086,17 +1159,24 @@ export class EntityService {
     title: string,
     description: string
   ) {
+    const sparePR = await this.prisma.entitySparePR.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        entityId: true,
+        title: true,
+        description: true,
+        requestedDate: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      sparePR.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_SPARE_PR']
+    );
     try {
-      const sparePR = await this.prisma.entitySparePR.findFirst({
-        where: { id },
-        select: {
-          id: true,
-          entityId: true,
-          title: true,
-          description: true,
-          requestedDate: true,
-        },
-      });
       if (sparePR.title != title) {
         await this.createEntityHistoryInBackground({
           type: 'Spare PR Edit',
@@ -1148,15 +1228,22 @@ export class EntityService {
 
   //** Delete entity spare pr. */
   async deleteEntitySparePR(user: User, id: number) {
+    const sparePR = await this.prisma.entitySparePR.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        entityId: true,
+        title: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      sparePR.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_SPARE_PR']
+    );
     try {
-      const sparePR = await this.prisma.entitySparePR.findFirst({
-        where: { id },
-        select: {
-          id: true,
-          entityId: true,
-          title: true,
-        },
-      });
       await this.createEntityHistoryInBackground({
         type: 'Spare PR Delete',
         description: `(${id}) Spare PR (${sparePR.title}) deleted.`,
@@ -1182,14 +1269,21 @@ export class EntityService {
 
   //** Set entity spare pr status. */
   async setEntitySparePRStatus(user: User, id: number, status: SparePRStatus) {
+    let completedFlag = false;
+    const sparePR = await this.prisma.entitySparePR.findFirst({
+      where: { id },
+      select: {
+        entityId: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      sparePR.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_SPARE_PR']
+    );
     try {
-      let completedFlag = false;
-      const sparePR = await this.prisma.entitySparePR.findFirst({
-        where: { id },
-        select: {
-          entityId: true,
-        },
-      });
       if (status == 'Done') {
         completedFlag = true;
         await this.createEntityHistoryInBackground({
@@ -1234,6 +1328,13 @@ export class EntityService {
     title: string,
     description: string
   ) {
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer'],
+      ['MODIFY_BREAKDOWN']
+    );
     try {
       const breakdown = await this.prisma.entityBreakdown.create({
         data: {
@@ -1274,17 +1375,24 @@ export class EntityService {
     description: string,
     estimatedDateOfRepair: Date
   ) {
+    const breakdown = await this.prisma.entityBreakdown.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        entityId: true,
+        title: true,
+        description: true,
+        estimatedDateOfRepair: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      breakdown.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer'],
+      ['MODIFY_BREAKDOWN']
+    );
     try {
-      const breakdown = await this.prisma.entityBreakdown.findFirst({
-        where: { id },
-        select: {
-          id: true,
-          entityId: true,
-          title: true,
-          description: true,
-          estimatedDateOfRepair: true,
-        },
-      });
       if (breakdown.title != title) {
         await this.createEntityHistoryInBackground({
           type: 'Breakdown Edit',
@@ -1337,15 +1445,22 @@ export class EntityService {
 
   //** Delete entity breakdown. */
   async deleteEntityBreakdown(user: User, id: number) {
+    const breakdown = await this.prisma.entityBreakdown.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        entityId: true,
+        title: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      breakdown.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer'],
+      ['MODIFY_BREAKDOWN']
+    );
     try {
-      const breakdown = await this.prisma.entityBreakdown.findFirst({
-        where: { id },
-        select: {
-          id: true,
-          entityId: true,
-          title: true,
-        },
-      });
       await this.createEntityHistoryInBackground({
         type: 'Breakdown Delete',
         description: `(${id}) Breakdown (${breakdown.title}) deleted.`,
@@ -1375,15 +1490,22 @@ export class EntityService {
     id: number,
     status: BreakdownStatus
   ) {
+    let completedFlag = false;
+    let entityStatus;
+    const breakdown = await this.prisma.entityBreakdown.findFirst({
+      where: { id },
+      select: {
+        entityId: true,
+      },
+    });
+    await this.checkEntityAssignmentOrPermission(
+      breakdown.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer'],
+      ['MODIFY_BREAKDOWN']
+    );
     try {
-      let completedFlag = false;
-      let entityStatus;
-      const breakdown = await this.prisma.entityBreakdown.findFirst({
-        where: { id },
-        select: {
-          entityId: true,
-        },
-      });
       if (status == 'Done') {
         completedFlag = true;
         entityStatus = 'Working';
@@ -1713,6 +1835,13 @@ export class EntityService {
       where: { id: entityId },
       include: { type: true },
     });
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin'],
+      ['ASSIGN_TO_ENTITY']
+    );
     if (!entity) {
       throw new BadRequestException('Invalid entity.');
     }
@@ -1812,6 +1941,13 @@ export class EntityService {
     type: string,
     userId: number
   ) {
+    await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      undefined,
+      ['Admin'],
+      ['ASSIGN_TO_ENTITY']
+    );
     try {
       const unassign = await this.prisma.user.findFirst({
         where: {
@@ -2956,6 +3092,7 @@ export class EntityService {
     if (!entity) {
       entity = await this.findOne(entityId);
     }
+    let hasAssignment = true;
     if (assignments) {
       const currentAssignments = await this.prisma.entityAssignment.findMany({
         where: { entityId, userId, type: { in: assignments } },
@@ -2963,22 +3100,22 @@ export class EntityService {
       const currentAssignmentsArray = currentAssignments.map((a) => a.type);
       for (const assignment of assignments) {
         if (!currentAssignmentsArray.includes(assignment)) {
-          throw new ForbiddenException(
-            'You do not have access to this resource.'
-          );
+          hasAssignment = false;
         }
       }
     }
+    let hasPermission = true;
     if (permissions) {
       const userPermissions =
         await this.userService.getUserRolesPermissionsList(userId);
-      for (const permission in permissions) {
+      for (const permission of permissions) {
         if (!userPermissions.includes(permission)) {
-          throw new ForbiddenException(
-            'You do not have access to this resource.'
-          );
+          hasPermission = false;
         }
       }
+    }
+    if (!hasAssignment && !hasPermission) {
+      throw new ForbiddenException('You do not have access to this resource.');
     }
   }
 

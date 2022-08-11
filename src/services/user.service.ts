@@ -4,7 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { User, Prisma, PermissionRole } from '@prisma/client';
+import { User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 //import { UserGroupConnectionArgs } from 'src/models/args/user-group-connection.args';
 import {
@@ -12,9 +12,6 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { APSService } from './aps.service';
-import { RoleEnum } from 'src/common/enums/roles';
-import { Profile } from 'src/models/profile.model';
-import { Roles } from 'src/models/roles.model';
 import { UsersConnectionArgs } from 'src/models/args/user-connection.args';
 import { PaginatedUsers } from 'src/models/pagination/user-connection.model';
 @Injectable()

@@ -12,6 +12,7 @@ import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-c
 import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-connection.args';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Roles as RoleModel } from 'src/models/roles.model';
+import { Permissions } from 'src/decorators/permissions.decorator';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => PermissionRole)
@@ -65,6 +66,7 @@ export class PermissionRoleResolver {
     return `Assigned permission.`;
   }
 
+  @Permissions('VIEW_ROLES')
   @Query(() => [RoleModel])
   async getRoles(): Promise<RoleModel[]> {
     const roles: any = await this.prisma.role.findMany({

@@ -14,7 +14,6 @@ import { UserWithRoles } from 'src/models/user-with-roles.model';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { RedisCacheService } from 'src/redisCache.service';
-import { PermissionEnum } from 'src/common/enums/permission';
 
 @Resolver(() => User)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -25,12 +24,6 @@ export class UserResolver {
     private apsService: APSService,
     private redisCacheService: RedisCacheService
   ) {}
-
-  @Permissions('ADD_MACHINE')
-  @Query(() => String)
-  sayHello(): string {
-    return 'Hello World!';
-  }
 
   @Query(() => UserWithRoles)
   async me(@UserEntity() user: User): Promise<User> {
@@ -46,6 +39,7 @@ export class UserResolver {
             },
           },
         },
+        entityAssignment: { include: { entity: { include: { type: true } } } },
       },
     });
     return userDB;

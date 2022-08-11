@@ -52,6 +52,7 @@ export class EntityResolver {
     return this.entityService.search(query, limit);
   }
 
+  @Permissions('ADD_ENTITY')
   @Mutation(() => String)
   async createEntity(
     @UserEntity() user: User,
@@ -146,7 +147,7 @@ export class EntityResolver {
     return `Entity updated.`;
   }
 
-  @Permissions('EDIT_ENTITY')
+  // Permission checked in service
   @Mutation(() => String)
   async setEntityStatus(
     @UserEntity() user: User,
@@ -158,7 +159,7 @@ export class EntityResolver {
     return `Entity status set to ${status}.`;
   }
 
-  @Permissions('VIEW_ENTITY')
+  // Permission checked in service
   @Query(() => Entity)
   async getSingleEntity(
     @UserEntity() user: User,
@@ -167,7 +168,9 @@ export class EntityResolver {
     return await this.entityService.getSingleEntity(user, entityId);
   }
 
-  @Permissions('VIEW_ALL_ENTITY')
+  // Permission checked in service
+  // Returns all entities if user has VIEW_ALL_ENTITY permission. Otherwise only
+  // returns assigned entities
   @Query(() => PaginatedEntity)
   async getAllEntity(
     @UserEntity() user: User,
@@ -176,7 +179,7 @@ export class EntityResolver {
     return await this.entityService.getAllEntityWithPagination(user, args);
   }
 
-  @Permissions('ADD_ENTITY_PERIODIC_MAINTENANCE')
+  // Permission checked in service
   @Mutation(() => String)
   async addEntityPeriodicMaintenance(
     @UserEntity() user: User,
@@ -197,10 +200,10 @@ export class EntityResolver {
       startDate,
       tasks
     );
-    return `Added periodic maintenance to entity.`;
+    return `Added periodic maintenance.`;
   }
 
-  @Permissions('EDIT_ENTITY_PERIODIC_MAINTENANCE')
+  // Permission checked in service
   @Mutation(() => String)
   async editEntityPeriodicMaintenance(
     @UserEntity() user: User,
@@ -221,7 +224,7 @@ export class EntityResolver {
     return `Periodic maintenance updated.`;
   }
 
-  @Permissions('DELETE_ENTITY_PERIODIC_MAINTENANCE')
+  // Permission checked in service
   @Mutation(() => String)
   async deleteEntityPeriodicMaintenance(
     @UserEntity() user: User,
@@ -231,7 +234,7 @@ export class EntityResolver {
     return `Periodic maintenance deleted.`;
   }
 
-  @Permissions('EDIT_ENTITY_PERIODIC_MAINTENANCE')
+  // Permission checked in service
   @Mutation(() => String)
   async setEntityPeriodicMaintenanceStatus(
     @UserEntity() user: User,
@@ -247,7 +250,7 @@ export class EntityResolver {
     return `Periodic maintenance status updated.`;
   }
 
-  @Permissions('ADD_ENTITY_REPAIR_REQUEST')
+  // Permission checked in service
   @Mutation(() => String)
   async addEntityRepairRequest(
     @UserEntity() user: User,
@@ -278,7 +281,7 @@ export class EntityResolver {
     return `Added repair request to entity.`;
   }
 
-  @Permissions('EDIT_ENTITY_REPAIR_REQUEST')
+  // Permission checked in service
   @Mutation(() => String)
   async editEntityRepairRequest(
     @UserEntity() user: User,
@@ -309,7 +312,7 @@ export class EntityResolver {
     return `Repair request updated.`;
   }
 
-  @Permissions('DELETE_ENTITY_REPAIR_REQUEST')
+  // Permission checked in service
   @Mutation(() => String)
   async deleteEntityRepairRequest(
     @UserEntity() user: User,
@@ -319,7 +322,7 @@ export class EntityResolver {
     return `Repair request deleted.`;
   }
 
-  @Permissions('ADD_ENTITY_SPARE_PR')
+  // Permission checked in service
   @Mutation(() => String)
   async addEntitySparePR(
     @UserEntity() user: User,
@@ -335,10 +338,10 @@ export class EntityResolver {
       title,
       description
     );
-    return `Added Spare PR to entity.`;
+    return `Added Spare PR.`;
   }
 
-  @Permissions('EDIT_ENTITY_SPARE_PR')
+  // Permission checked in service
   @Mutation(() => String)
   async editEntitySparePR(
     @UserEntity() user: User,
@@ -357,7 +360,7 @@ export class EntityResolver {
     return `Spare PR updated.`;
   }
 
-  @Permissions('DELETE_ENTITY_SPARE_PR')
+  // Permission checked in service
   @Mutation(() => String)
   async deleteEntitySparePR(
     @UserEntity() user: User,
@@ -367,7 +370,7 @@ export class EntityResolver {
     return `Spare PR deleted.`;
   }
 
-  @Permissions('EDIT_ENTITY_SPARE_PR')
+  // Permission checked in service
   @Mutation(() => String)
   async setEntitySparePRStatus(
     @UserEntity() user: User,
@@ -379,7 +382,7 @@ export class EntityResolver {
     return `Spare PR status updated.`;
   }
 
-  @Permissions('ADD_ENTITY_BREAKDOWN')
+  // Permission checked in service
   @Mutation(() => String)
   async addEntityBreakdown(
     @UserEntity() user: User,
@@ -396,7 +399,7 @@ export class EntityResolver {
     return `Added Breakdown to entity.`;
   }
 
-  @Permissions('EDIT_ENTITY_BREAKDOWN')
+  // Permission checked in service
   @Mutation(() => String)
   async editEntityBreakdown(
     @UserEntity() user: User,
@@ -415,7 +418,7 @@ export class EntityResolver {
     return `Breakdown updated.`;
   }
 
-  @Permissions('DELETE_ENTITY_BREAKDOWN')
+  // Permission checked in service
   @Mutation(() => String)
   async deleteEntityBreakdown(
     @UserEntity() user: User,
@@ -425,7 +428,7 @@ export class EntityResolver {
     return `Breakdown deleted.`;
   }
 
-  @Permissions('EDIT_ENTITY_BREAKDOWN')
+  // Permission checked in service
   @Mutation(() => String)
   async setEntityBreakdownStatus(
     @UserEntity() user: User,
@@ -486,7 +489,7 @@ export class EntityResolver {
     return await this.entityService.getEntityHistoryWithPagination(user, args);
   }
 
-  @Permissions('ASSIGN_USER_TO_ENTITY')
+  // Permission checked in service
   @Mutation(() => String)
   async assignUserToEntity(
     @UserEntity() user: User,
@@ -500,7 +503,7 @@ export class EntityResolver {
     } to entity.`;
   }
 
-  @Permissions('UNASSIGN_USER_TO_ENTITY')
+  // Permission checked in service
   @Mutation(() => String)
   async unassignUserFromEntity(
     @UserEntity() user: User,

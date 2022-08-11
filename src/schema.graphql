@@ -255,6 +255,7 @@ type Entity {
 type EntityAssign {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
+  entity: Entity
   entityId: Int!
   id: Int!
   type: String!
@@ -1143,6 +1144,12 @@ type PermissionRole {
   updatedAt: Date!
 }
 
+type PermissionWithDescription {
+  description: String!
+  name: String!
+  type: String!
+}
+
 type Profile {
   department: String!
   division: String!
@@ -1926,10 +1933,10 @@ type Query {
   ): PaginatedMachineAttachment!
   me: UserWithRoles!
   notifications: [Notification!]!
+  permissions: [PermissionWithDescription!]!
   profile: Profile!
   redisGet(key: String!): String
   redisKeys: [String!]!
-  sayHello: String!
   searchAPSUsers(query: String!): [User!]!
   searchEntity(limit: Int, query: String!): [Entity!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
@@ -2404,6 +2411,7 @@ type UserRoles {
 
 type UserWithRoles {
   email: String!
+  entityAssignment: [EntityAssign!]
   fullName: String!
   id: Int!
   location: String

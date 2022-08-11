@@ -23,6 +23,7 @@ import { ChecklistModule } from './checklist/checklist.module';
 import { InitService } from './services/init.service';
 import { EntityModule } from './entity/entity.module';
 import { TypeModule } from './type/type.module';
+import { PermissionModule } from './permission/permission.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { TypeModule } from './type/type.module';
     ChecklistModule,
     EntityModule,
     TypeModule,
+    PermissionModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, DateScalar, InitService],
