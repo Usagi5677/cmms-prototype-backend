@@ -55,7 +55,6 @@ export class ChecklistTemplateService {
       'VIEW_TEMPLATES',
       true
     );
-    console.log({ hasPermission });
     // If user does not have the permission, check if they are assigned as
     // admin to any entity.
     if (!hasPermission) {
