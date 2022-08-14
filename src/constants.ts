@@ -86,6 +86,16 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'Create, edit and delete types.',
   },
   { name: 'VIEW_TYPES', type: 'Config', description: 'View all types.' },
+  {
+    name: 'VIEW_TEMPLATES',
+    type: 'Config',
+    description: 'View all templates.',
+  },
+  {
+    name: 'MODIFY_TEMPLATES',
+    type: 'Config',
+    description: 'Create, edit and delete templates.',
+  },
   { name: 'VIEW_DASHBOARD', type: 'Misc', description: 'View dashboard.' },
 ];
 

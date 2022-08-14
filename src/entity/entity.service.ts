@@ -3097,6 +3097,7 @@ export class EntityService {
       const currentAssignments = await this.prisma.entityAssignment.findMany({
         where: { entityId, userId, type: { in: assignments } },
       });
+      if (currentAssignments.length === 0) hasAssignment = false;
       const currentAssignmentsArray = currentAssignments.map((a) => a.type);
       for (const assignment of assignments) {
         if (!currentAssignmentsArray.includes(assignment)) {
@@ -3116,6 +3117,19 @@ export class EntityService {
     }
     if (!hasAssignment && !hasPermission) {
       throw new ForbiddenException('You do not have access to this resource.');
+    }
+  }
+
+  // Throw an error if user does not have assignment to any entity.
+  async checkAllEntityAssignments(
+    userId: number,
+    assignments: ('User' | 'Engineer' | 'Admin')[]
+  ) {
+    const userAssignments = await this.prisma.entityAssignment.count({
+      where: { userId, type: { in: assignments } },
+    });
+    if (userAssignments === 0) {
+      throw new ForbiddenException('You do not have access to this resource');
     }
   }
 

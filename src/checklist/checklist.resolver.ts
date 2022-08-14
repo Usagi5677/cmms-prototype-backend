@@ -31,19 +31,21 @@ export class ChecklistResolver {
 
   @Mutation(() => String)
   async updateWorkingHours(
+    @UserEntity() user: User,
     @Args('id') id: number,
     @Args('newHrs') newHrs: number
   ): Promise<string> {
-    await this.checklistService.updateWorkingHours(id, newHrs);
+    await this.checklistService.updateWorkingHours(user, id, newHrs);
     return `Checklist updated.`;
   }
 
   @Mutation(() => String)
   async updateReading(
+    @UserEntity() user: User,
     @Args('id') id: number,
     @Args('reading') reading: number
   ): Promise<string> {
-    await this.checklistService.updateReading(id, reading);
+    await this.checklistService.updateReading(user, id, reading);
     return `Checklist updated.`;
   }
 
@@ -69,8 +71,11 @@ export class ChecklistResolver {
   }
 
   @Mutation(() => String)
-  async removeChecklistComment(@Args('id') id: number): Promise<string> {
-    await this.checklistService.removeComment(id);
+  async removeChecklistComment(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<string> {
+    await this.checklistService.removeComment(user, id);
     return `Checklist comment removed.`;
   }
 

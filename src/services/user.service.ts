@@ -1,6 +1,7 @@
 import { PrismaService } from 'nestjs-prisma';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -59,6 +60,20 @@ export class UserService {
       permissions = [...permissions, ...rolePermissions];
     }
     return permissions;
+  }
+
+  // Check if user has the input permission. If not, throw Forbidden exception.
+  async checkUserPermission(
+    userId: number,
+    permission: string,
+    returnFalse: boolean = false
+  ) {
+    const userPermissions = await this.getUserRolesPermissionsList(userId);
+    if (!userPermissions.includes(permission)) {
+      if (returnFalse) return false;
+      throw new ForbiddenException('You do not have access to this resource.');
+    }
+    return true;
   }
 
   //** Get roles of user. First checks cache. If not in cache, gets from db and adds to cache */

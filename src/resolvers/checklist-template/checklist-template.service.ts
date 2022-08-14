@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -10,8 +12,11 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { CHECKLIST_TYPES } from 'src/constants';
+import { EntityService } from 'src/entity/entity.service';
 import { ChecklistTemplateWithItems } from 'src/models/checklist-template-with-items.model';
 import { ChecklistWithItems } from 'src/models/checklist-with-items.model';
+import { User } from 'src/models/user.model';
+import { UserService } from 'src/services/user.service';
 import { ChangeChecklistTemplateInput } from './dto/change-checklist-template.input';
 import { ChecklistTemplateConnection } from './dto/checklist-template-connection.model';
 import { ChecklistTemplateConnectionArgs } from './dto/checklist-template.connection.args';
@@ -21,7 +26,12 @@ import { UpdateChecklistTemplateInput } from './dto/update-checklist-template.in
 
 @Injectable()
 export class ChecklistTemplateService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => EntityService))
+    private readonly entityService: EntityService,
+    private readonly userService: UserService
+  ) {}
   async create({ name, type, items }: CreateChecklistTemplateInput) {
     if (!CHECKLIST_TYPES.includes(type)) {
       throw new BadRequestException('Invalid checklist template type.');
@@ -37,8 +47,20 @@ export class ChecklistTemplateService {
   }
 
   async findAll(
+    user: User,
     args: ChecklistTemplateConnectionArgs
   ): Promise<ChecklistTemplateConnection> {
+    const hasPermission = await this.userService.checkUserPermission(
+      user.id,
+      'VIEW_TEMPLATES',
+      true
+    );
+    console.log({ hasPermission });
+    // If user does not have the permission, check if they are assigned as
+    // admin to any entity.
+    if (!hasPermission) {
+      await this.entityService.checkAllEntityAssignments(user.id, ['Admin']);
+    }
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const { search, type } = args;
@@ -88,7 +110,34 @@ export class ChecklistTemplateService {
     });
   }
 
-  async update({ id, name, type }: UpdateChecklistTemplateInput) {
+  async update(user: User, { id, name, type }: UpdateChecklistTemplateInput) {
+    let isEntityAdmin = false;
+    const checklistTemplate = await this.prisma.checklistTemplate.findFirst({
+      where: { id },
+    });
+    if (checklistTemplate.name === null) {
+      const entity = await this.prisma.entity.findFirst({
+        where: {
+          OR: [
+            { weeklyChecklistTemplateId: id },
+            { dailyChecklistTemplateId: id },
+          ],
+        },
+      });
+      if (entity) {
+        await this.entityService.checkEntityAssignmentOrPermission(
+          entity.id,
+          user.id,
+          entity,
+          ['Admin'],
+          ['MODIFY_TEMPLATES']
+        );
+        isEntityAdmin = true;
+      }
+    }
+    if (!isEntityAdmin) {
+      await this.userService.checkUserPermission(user.id, 'MODIFY_TEMPLATES');
+    }
     if (type && !CHECKLIST_TYPES.includes(type)) {
       throw new BadRequestException('Invalid checklist template type.');
     }
@@ -123,7 +172,18 @@ export class ChecklistTemplateService {
     await this.updateEntityChecklists(entityId, type);
   }
 
-  async addItem(id: number, name: string, entityId?: number) {
+  async addItem(user: User, id: number, name: string, entityId?: number) {
+    if (entityId) {
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin'],
+        ['MODIFY_TEMPLATES']
+      );
+    } else {
+      await this.userService.checkUserPermission(user.id, 'MODIFY_TEMPLATES');
+    }
     if (entityId) {
       const template = await this.prisma.checklistTemplate.findFirst({
         where: { id },
@@ -164,7 +224,23 @@ export class ChecklistTemplateService {
     );
   }
 
-  async removeItem(id: number, templateId?: number, entityId?: number) {
+  async removeItem(
+    user: User,
+    id: number,
+    templateId?: number,
+    entityId?: number
+  ) {
+    if (entityId) {
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin'],
+        ['MODIFY_TEMPLATES']
+      );
+    } else {
+      await this.userService.checkUserPermission(user.id, 'MODIFY_TEMPLATES');
+    }
     if (templateId && entityId) {
       const template = await this.prisma.checklistTemplate.findFirst({
         where: { id: templateId },
@@ -207,13 +283,22 @@ export class ChecklistTemplateService {
     );
   }
 
-  async entityChecklistTemplate({
-    entityId,
-    type,
-  }: EntityChecklistTemplateInput): Promise<ChecklistTemplateWithItems> {
+  async entityChecklistTemplate(
+    { entityId, type }: EntityChecklistTemplateInput,
+    user?: User
+  ): Promise<ChecklistTemplateWithItems> {
     const entity = await this.prisma.entity.findFirst({
       where: { id: entityId },
     });
+    if (user) {
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        ['Admin', 'Engineer', 'User'],
+        ['VIEW_TEMPLATES']
+      );
+    }
     // Validate checklist type
     let template: ChecklistTemplateWithItems = null;
     if (type === 'Daily') {
@@ -255,14 +340,20 @@ export class ChecklistTemplateService {
     return template;
   }
 
-  async changeChecklistTemplate({
-    entityId,
-    newChecklistId,
-  }: ChangeChecklistTemplateInput) {
+  async changeChecklistTemplate(
+    user: User,
+    { entityId, newChecklistId }: ChangeChecklistTemplateInput
+  ) {
     const entity = await this.prisma.entity.findFirst({
       where: { id: entityId },
     });
-
+    await this.entityService.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      entity,
+      ['Admin'],
+      ['MODIFY_TEMPLATES']
+    );
     // Validate new checklist template
     const newChecklistTemplate = await this.prisma.checklistTemplate.findFirst({
       where: { id: newChecklistId },

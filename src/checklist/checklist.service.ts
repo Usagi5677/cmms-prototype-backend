@@ -15,6 +15,7 @@ import { User } from 'src/models/user.model';
 import { ChecklistSummaryInput } from './dto/checklist-summary.input';
 import { ChecklistSummary } from './dto/checklist-summary';
 import { EntityService } from 'src/entity/entity.service';
+import { ForbiddenError } from 'apollo-server-express';
 
 @Injectable()
 export class ChecklistService {
@@ -83,6 +84,20 @@ export class ChecklistService {
 
   //** Set checklist item as complete or incomplete. */
   async toggleChecklistItem(user: User, id: number, complete: boolean) {
+    const checklistItem = await this.prisma.checklistItem.findFirst({
+      where: { id },
+      select: { checklistId: true },
+    });
+    const checklist = await this.prisma.checklist.findFirst({
+      where: { id: checklistItem.checklistId },
+      select: { entityId: true },
+    });
+    await this.entityService.checkEntityAssignmentOrPermission(
+      checklist.entityId,
+      user.id,
+      undefined,
+      []
+    );
     await this.prisma.checklistItem.update({
       where: { id },
       data: complete
@@ -91,14 +106,34 @@ export class ChecklistService {
     });
   }
 
-  async updateWorkingHours(id: number, newHrs: number) {
+  async updateWorkingHours(user: User, id: number, newHrs: number) {
+    const checklist = await this.prisma.checklist.findFirst({
+      where: { id },
+      select: { entityId: true },
+    });
+    await this.entityService.checkEntityAssignmentOrPermission(
+      checklist.entityId,
+      user.id,
+      undefined,
+      []
+    );
     await this.prisma.checklist.update({
       where: { id },
       data: { workingHour: newHrs, currentMeterReading: null },
     });
   }
 
-  async updateReading(id: number, reading: number) {
+  async updateReading(user: User, id: number, reading: number) {
+    const checklist = await this.prisma.checklist.findFirst({
+      where: { id },
+      select: { entityId: true },
+    });
+    await this.entityService.checkEntityAssignmentOrPermission(
+      checklist.entityId,
+      user.id,
+      undefined,
+      []
+    );
     await this.prisma.checklist.update({
       where: { id },
       data: { currentMeterReading: reading, workingHour: null },
@@ -241,7 +276,14 @@ export class ChecklistService {
     });
   }
 
-  async removeComment(id: number) {
+  async removeComment(user: User, id: number) {
+    const comment = await this.prisma.checklistComment.findFirst({
+      where: { id },
+      select: { userId: true },
+    });
+    if (comment.userId !== user.id) {
+      throw new ForbiddenError("Cannot delete other user's comments.");
+    }
     await this.prisma.checklistComment.delete({ where: { id } });
   }
 

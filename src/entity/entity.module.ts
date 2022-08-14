@@ -1,4 +1,4 @@
-import { forwardRef, Global, Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { EntityService } from './entity.service';
 import { EntityResolver } from './entity.resolver';
 import { RedisCacheModule } from 'src/redisCache.module';
@@ -16,7 +16,7 @@ import { EntityConsumer } from './entity.consumer';
     BullModule.registerQueue({
       name: 'cmms-entity-history',
     }),
-    ChecklistTemplateModule,
+    forwardRef(() => ChecklistTemplateModule),
   ],
   providers: [EntityResolver, EntityService, EntityConsumer],
   exports: [EntityService],
