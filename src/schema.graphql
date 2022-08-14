@@ -1166,6 +1166,7 @@ type Profile {
 }
 
 type Query {
+  allEntityBreakdownCount: entityBreakdownCount!
   allEntityPMStatusCount: maintenanceStatusCount!
   allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allEntityStatusCount(entityType: String, isAssigned: Boolean): entityStatusCount!
@@ -2418,6 +2419,12 @@ type UserWithRoles {
   rcno: Int!
   roles: [UserRoles!]
   userId: String!
+}
+
+type entityBreakdownCount {
+  machine: Int
+  vehicle: Int
+  vessel: Int
 }
 
 type entityStatusCount {

@@ -3208,4 +3208,50 @@ export class EntityService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  //** Get all entity breakdown count*/
+  async getAllEntityBreakdownCount() {
+    try {
+      const key = `allEntityBreakdownCount`;
+      let breakdownCount = await this.redisCacheService.get(key);
+
+      if (!breakdownCount) {
+        breakdownCount = '';
+
+        const machine = await this.prisma.entity.findMany({
+          where: {
+            status: 'Breakdown',
+            type: {
+              entityType: 'Machine',
+            },
+          },
+        });
+        const vehicle = await this.prisma.entity.findMany({
+          where: {
+            status: 'Breakdown',
+            type: {
+              entityType: 'Vehicle',
+            },
+          },
+        });
+        const vessel = await this.prisma.entity.findMany({
+          where: {
+            status: 'Breakdown',
+            type: {
+              entityType: 'Vessel',
+            },
+          },
+        });
+        breakdownCount = {
+          machine: machine.length ?? 0,
+          vehicle: vehicle.length ?? 0,
+          vessel: vessel.length ?? 0,
+        };
+      }
+      return breakdownCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }

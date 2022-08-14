@@ -34,6 +34,7 @@ import { PMTaskStatusCount } from 'src/models/PMTaskStatusCount.model';
 import { maintenanceStatusCount } from 'src/models/maintenanceStatusCount.model';
 import { entityStatusCount } from './dto/models/entityStatusCount.model';
 import { Entity } from './dto/models/entity.model';
+import { entityBreakdownCount } from './dto/models/entityBreakdownCount.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -722,5 +723,9 @@ export class EntityResolver {
       isAssigned,
       entityType
     );
+  }
+  @Query(() => entityBreakdownCount)
+  async allEntityBreakdownCount(): Promise<entityBreakdownCount> {
+    return this.entityService.getAllEntityBreakdownCount();
   }
 }
