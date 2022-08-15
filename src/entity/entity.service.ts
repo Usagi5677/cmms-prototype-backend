@@ -79,11 +79,31 @@ export class EntityService {
     return entity;
   }
 
-  async search(query: string, limit?: number) {
+  async search(query: string, limit?: number, entityType?: string) {
     if (!limit) limit = 10;
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    if (query) {
+      const or: any = [
+        { machineNumber: { contains: query, mode: 'insensitive' } },
+      ];
+    }
+    if (entityType) {
+      where.AND.push({
+        type: {
+          entityType: {
+            in: entityType,
+          },
+        },
+      });
+    }
+
     const entities = await this.prisma.entity.findMany({
-      where: { machineNumber: { contains: query, mode: 'insensitive' } },
+      where,
       take: limit,
+      include: {
+        type: true,
+      },
     });
     return entities;
   }
@@ -3263,6 +3283,125 @@ export class EntityService {
         };
       }
       return breakdownCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** to check if assigned user has checklist or tasks to be done*/
+  async getAllEntityChecklistAndPMSummary(user: User) {
+    try {
+      const key = `allEntityChecklistAndPMSummary`;
+      let checklistAndPMSummary = await this.redisCacheService.get(key);
+
+      if (!checklistAndPMSummary) {
+        checklistAndPMSummary = '';
+
+        const pm = await this.prisma.entityPeriodicMaintenanceTask.findMany({
+          where: {
+            completedAt: null,
+            periodicMaintenance: {
+              entity: {
+                assignees: { some: { userId: user.id } },
+              },
+            },
+          },
+          include: {
+            periodicMaintenance: {
+              include: {
+                entity: {
+                  include: {
+                    type: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const checklist = await this.prisma.checklistItem.findMany({
+          where: {
+            completedAt: null,
+            checklist: {
+              entity: {
+                assignees: { some: { userId: user.id } },
+              },
+            },
+          },
+          include: {
+            checklist: {
+              include: {
+                entity: {
+                  include: {
+                    type: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        let machineTaskComplete = false;
+        let vehicleTaskComplete = false;
+        let vesselTaskComplete = false;
+        let machineChecklistComplete = false;
+        let vehicleChecklistComplete = false;
+        let vesselChecklistComplete = false;
+        for (const p of pm) {
+          if (p.periodicMaintenance.entity.type.entityType === 'Machine') {
+            machineTaskComplete = true;
+          } else if (
+            p.periodicMaintenance.entity.type.entityType === 'Vehicle'
+          ) {
+            vehicleTaskComplete = true;
+          } else if (
+            p.periodicMaintenance.entity.type.entityType === 'Vessel'
+          ) {
+            vesselTaskComplete = true;
+          } else if (
+            machineTaskComplete &&
+            vehicleTaskComplete &&
+            vesselTaskComplete
+          ) {
+            break;
+          }
+        }
+        for (const ck of checklist) {
+          if (ck.checklist.entity.type.entityType === 'Machine') {
+            machineChecklistComplete = true;
+          } else if (ck.checklist.entity.type.entityType === 'Vehicle') {
+            vehicleChecklistComplete = true;
+          } else if (ck.checklist.entity.type.entityType === 'Vessel') {
+            vesselChecklistComplete = true;
+          } else if (
+            machineChecklistComplete &&
+            vehicleChecklistComplete &&
+            vesselChecklistComplete
+          ) {
+            break;
+          }
+        }
+
+        const pmUnique = [
+          ...new Set(pm.map((m) => m.periodicMaintenance.entityId)),
+        ];
+        const pmChecklistUnique = [
+          ...new Set(checklist.map((m) => m.checklist.entityId)),
+        ];
+
+        checklistAndPMSummary = {
+          pm: pmUnique,
+          checklist: pmChecklistUnique,
+          machineTaskComplete,
+          vehicleTaskComplete,
+          vesselTaskComplete,
+          machineChecklistComplete,
+          vehicleChecklistComplete,
+          vesselChecklistComplete,
+        };
+      }
+      return checklistAndPMSummary;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

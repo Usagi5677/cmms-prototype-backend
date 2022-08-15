@@ -1423,6 +1423,7 @@ type Query {
     status: EntityStatus
     typeId: Int
   ): PaginatedEntity!
+  getAllEntityChecklistAndPMSummary: entityChecklistAndPMSummary!
   getAllEntityPeriodicMaintenance(
     """Paginate after opaque cursor"""
     after: String
@@ -1939,7 +1940,7 @@ type Query {
   redisGet(key: String!): String
   redisKeys: [String!]!
   searchAPSUsers(query: String!): [User!]!
-  searchEntity(limit: Int, query: String!): [Entity!]!
+  searchEntity(entityType: String, limit: Int, query: String!): [Entity!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
   singleMachineUsageHistory(from: Date!, machineId: Int!, to: Date!): [MachineUsageHistory!]!
   singleTransportationUsageHistory(from: Date!, to: Date!, transportationId: Int!): [TransportationUsageHistory!]!
@@ -2425,6 +2426,17 @@ type entityBreakdownCount {
   machine: Int
   vehicle: Int
   vessel: Int
+}
+
+type entityChecklistAndPMSummary {
+  checklist: [String!]
+  machineChecklistComplete: Boolean
+  machineTaskComplete: Boolean
+  pm: [String!]
+  vehicleChecklistComplete: Boolean
+  vehicleTaskComplete: Boolean
+  vesselChecklistComplete: Boolean
+  vesselTaskComplete: Boolean
 }
 
 type entityStatusCount {

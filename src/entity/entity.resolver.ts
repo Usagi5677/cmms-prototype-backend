@@ -35,6 +35,7 @@ import { maintenanceStatusCount } from 'src/models/maintenanceStatusCount.model'
 import { entityStatusCount } from './dto/models/entityStatusCount.model';
 import { Entity } from './dto/models/entity.model';
 import { entityBreakdownCount } from './dto/models/entityBreakdownCount.model';
+import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSummary.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -48,9 +49,10 @@ export class EntityResolver {
   @Query(() => [Entity], { name: 'searchEntity' })
   search(
     @Args('query') query: string,
-    @Args('limit', { nullable: true }) limit: number
+    @Args('limit', { nullable: true }) limit: number,
+    @Args('entityType', { nullable: true }) entityType: string
   ) {
-    return this.entityService.search(query, limit);
+    return this.entityService.search(query, limit, entityType);
   }
 
   @Permissions('ADD_ENTITY')
@@ -727,5 +729,12 @@ export class EntityResolver {
   @Query(() => entityBreakdownCount)
   async allEntityBreakdownCount(): Promise<entityBreakdownCount> {
     return this.entityService.getAllEntityBreakdownCount();
+  }
+
+  @Query(() => entityChecklistAndPMSummary)
+  async getAllEntityChecklistAndPMSummary(
+    @UserEntity() user: User
+  ): Promise<entityChecklistAndPMSummary> {
+    return this.entityService.getAllEntityChecklistAndPMSummary(user);
   }
 }
