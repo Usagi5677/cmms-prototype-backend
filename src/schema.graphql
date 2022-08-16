@@ -1958,6 +1958,7 @@ type Query {
     search: String
     transportationId: Int!
   ): PaginatedTransportationAttachment!
+  type(id: Int!): Type!
   types(
     """Paginate after opaque cursor"""
     after: String

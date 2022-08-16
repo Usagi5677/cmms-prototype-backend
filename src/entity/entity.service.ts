@@ -2502,6 +2502,7 @@ export class EntityService {
             id: 'desc',
           },
         },
+        type: true,
       },
     });
 
