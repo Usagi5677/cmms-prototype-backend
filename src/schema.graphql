@@ -1230,7 +1230,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
@@ -1337,7 +1337,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
@@ -1450,7 +1450,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
@@ -1513,7 +1513,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus

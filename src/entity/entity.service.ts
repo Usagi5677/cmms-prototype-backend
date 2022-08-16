@@ -474,7 +474,7 @@ export class EntityService {
       assignedToId,
       entityType,
       status,
-      location,
+      locationIds,
       department,
       isAssigned,
       typeId,
@@ -495,10 +495,10 @@ export class EntityService {
       where.AND.push({ status });
     }
 
-    if (location?.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
-        location: {
-          in: location,
+        locationId: {
+          in: locationIds,
         },
       });
     }
@@ -2466,7 +2466,7 @@ export class EntityService {
   ): Promise<PaginatedEntity> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, status, location } = args;
+    const { createdById, search, assignedToId, status, locationIds } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -2484,10 +2484,10 @@ export class EntityService {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (locationIds.length > 0) {
       where.AND.push({
-        location: {
-          in: location,
+        locationId: {
+          in: locationIds,
         },
       });
     }

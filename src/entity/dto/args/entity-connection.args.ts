@@ -11,7 +11,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   createdByUserId?: string;
   entityType?: string;
   status?: EntityStatus;
-  location?: string[];
+  locationIds?: number[];
   department?: string[];
   isAssigned?: boolean;
   typeId?: number;
