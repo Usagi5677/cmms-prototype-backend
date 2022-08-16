@@ -955,7 +955,7 @@ type Mutation {
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
   removeEntity(entityId: Int!): String!
   removeEntityAttachment(id: Int!): String!
-  removeLocation(id: Int!): Location!
+  removeLocation(id: Int!): String!
   removeMachine(machineId: Int!): String!
   removeMachineAttachment(id: Int!): String!
   removeRole(id: Int!): String!
@@ -994,7 +994,7 @@ type Mutation {
   """
   updateAllEntityChecklists: String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
-  updateLocation(updateLocationInput: UpdateLocationInput!): Location!
+  updateLocation(updateLocationInput: UpdateLocationInput!): String!
   updateReading(id: Int!, reading: Int!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
