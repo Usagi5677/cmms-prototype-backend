@@ -642,6 +642,7 @@ Table EntityHistory {
   workingHour Float
   idleHour Float
   breakdownHour Float
+  locationId Int
   location String
 }
 
@@ -653,6 +654,7 @@ Table EntityRepairRequest {
   entity Entity [not null]
   internal Boolean [not null, default: true]
   projectName String
+  locationId Int
   location String
   reason String
   additionalInfo String

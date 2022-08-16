@@ -687,6 +687,7 @@ model EntityHistory {
   workingHour   Float?
   idleHour      Float?
   breakdownHour Float?
+  locationId    Int?
   location      String?
 }
 
@@ -698,6 +699,7 @@ model EntityRepairRequest {
   entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
   internal         Boolean   @default(true)
   projectName      String?
+  locationId       Int?
   location         String?
   reason           String?
   additionalInfo   String?
