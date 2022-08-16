@@ -63,7 +63,7 @@ export class EntityResolver {
     @Args('machineNumber', { nullable: true }) machineNumber: string,
     @Args('model', { nullable: true }) model: string,
     @Args('zone', { nullable: true }) zone: string,
-    @Args('location', { nullable: true }) location: string,
+    @Args('locationId', { nullable: true }) locationId: number,
     @Args('department', { nullable: true }) department: string,
     @Args('engine', { nullable: true }) engine: string,
     @Args('measurement', { nullable: true }) measurement: string,
@@ -78,7 +78,7 @@ export class EntityResolver {
       machineNumber,
       model,
       zone,
-      location,
+      locationId,
       department,
       engine,
       measurement,
@@ -114,7 +114,7 @@ export class EntityResolver {
     @Args('machineNumber', { nullable: true }) machineNumber: string,
     @Args('model', { nullable: true }) model: string,
     @Args('zone', { nullable: true }) zone: string,
-    @Args('location', { nullable: true }) location: string,
+    @Args('locationId', { nullable: true }) locationId: number,
     @Args('department', { nullable: true }) department: string,
     @Args('engine', { nullable: true }) engine: string,
     @Args('measurement', { nullable: true }) measurement: string,
@@ -128,7 +128,7 @@ export class EntityResolver {
       machineNumber,
       model,
       zone,
-      location,
+      locationId,
       department,
       engine,
       measurement,
@@ -683,16 +683,16 @@ export class EntityResolver {
     return this.entityService.getAllEntityPMStatusCount(user);
   }
 
-  // Permission checked in service
-  @Mutation(() => String)
-  async editEntityLocation(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('location') location: string
-  ): Promise<String> {
-    await this.entityService.editEntityLocation(user, id, location);
-    return `Location updated.`;
-  }
+  // // Permission checked in service
+  // @Mutation(() => String)
+  // async editEntityLocation(
+  //   @UserEntity() user: User,
+  //   @Args('id') id: number,
+  //   @Args('location') location: string
+  // ): Promise<String> {
+  //   await this.entityService.editEntityLocation(user, id, location);
+  //   return `Location updated.`;
+  // }
 
   @Query(() => PaginatedEntity)
   async getAllAssignedEntity(

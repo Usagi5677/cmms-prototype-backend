@@ -121,6 +121,7 @@ Table Location {
   createdById Int
   createdBy User
   active Boolean [not null, default: true]
+  entities Entity [not null]
 }
 
 Table Machine {
@@ -534,7 +535,7 @@ Table Entity {
   type Type
   zone String
   locationId Int
-  location String
+  location Location
   currentRunning Int
   lastService Int
   department String
@@ -870,6 +871,8 @@ Ref: TransportationSparePR.completedById > User.id
 Ref: Entity.createdById > User.id
 
 Ref: Entity.typeId > Type.id
+
+Ref: Entity.locationId > Location.id
 
 Ref: Entity.deletedById > User.id
 

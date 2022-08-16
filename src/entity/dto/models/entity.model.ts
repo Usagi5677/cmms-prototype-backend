@@ -1,5 +1,6 @@
 import { ObjectType } from '@nestjs/graphql';
 import { EntityStatus } from 'src/common/enums/entityStatus';
+import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from 'src/models/base.model';
 import { ChecklistItem } from 'src/models/checklist-item.model';
 import { User } from 'src/models/user.model';
@@ -19,7 +20,7 @@ export class Entity extends BaseModel {
   registeredDate?: Date;
   model?: string;
   zone?: string;
-  location?: string;
+  location?: Location;
   department?: string;
   engine?: string;
   currentRunning?: number;

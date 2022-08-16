@@ -36,6 +36,7 @@ export class LocationService {
       skip: offset,
       take: limitPlusOne,
       where,
+      orderBy: { name: 'asc' },
     });
     const count = await this.prisma.location.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(

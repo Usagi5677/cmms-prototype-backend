@@ -115,7 +115,7 @@ export class EntityService {
     machineNumber: string,
     model: string,
     zone: string,
-    location: string,
+    locationId: number,
     department: string,
     engine: string,
     measurement: string,
@@ -141,7 +141,7 @@ export class EntityService {
           machineNumber,
           model,
           zone,
-          location,
+          locationId,
           department,
           engine,
           measurement,
@@ -208,7 +208,7 @@ export class EntityService {
     machineNumber: string,
     model: string,
     zone: string,
-    location: string,
+    locationId: number,
     department: string,
     engine: string,
     measurement: string,
@@ -217,6 +217,10 @@ export class EntityService {
   ) {
     const entity = await this.prisma.entity.findFirst({
       where: { id },
+      include: {
+        location: locationId ? true : false,
+        type: typeId ? true : false,
+      },
     });
     // Check if admin of entity or has permission
     await this.checkEntityAssignmentOrPermission(
@@ -243,10 +247,13 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.typeId != typeId) {
+      if (typeId && entity.typeId != typeId) {
+        const newType = await this.prisma.type.findFirst({
+          where: { id: typeId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Type changed from ${entity.typeId} to ${typeId}.`,
+          description: `Type changed from ${entity.type.name} to ${newType.name}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -259,10 +266,15 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.location != location) {
+      if (locationId && entity.locationId != locationId) {
+        const newLocation = await this.prisma.location.findFirst({
+          where: { id: locationId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Location changed from ${entity.location} to ${location}.`,
+          description: `Location changed${
+            entity.locationId ? ` from ${entity.location.name}` : ``
+          } to ${newLocation.name}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -322,7 +334,7 @@ export class EntityService {
           machineNumber,
           model,
           zone,
-          location,
+          locationId: locationId ?? undefined,
           department,
           engine,
           measurement,
@@ -429,6 +441,7 @@ export class EntityService {
         },
         assignees: { include: { user: true } },
         type: true,
+        location: true,
       },
     });
     await this.checkEntityAssignmentOrPermission(
@@ -547,6 +560,7 @@ export class EntityService {
           },
         },
         type: true,
+        location: true,
       },
     });
     for (const entity of entities) {
@@ -2082,7 +2096,7 @@ export class EntityService {
         workingHour: await this.getLatestReading(entity),
         idleHour: idleHour,
         breakdownHour: breakdownHour,
-        location: entity.location,
+        location: entity.location.name,
       },
     });
   }
@@ -2896,50 +2910,50 @@ export class EntityService {
     }
   }
 
-  //** Edit entity location */
-  async editEntityLocation(user: User, id: number, location: string) {
-    const entity = await this.prisma.entity.findFirst({
-      where: {
-        id,
-      },
-    });
-    // Check if admin of entity
-    await this.checkEntityAssignmentOrPermission(
-      id,
-      user.id,
-      entity,
-      ['Admin'],
-      ['EDIT_ENTITY_LOCATION']
-    );
-    try {
-      if (entity.location != location) {
-        const users = await this.getUserIds(id, user.id);
-        for (let index = 0; index < users.length; index++) {
-          await this.notificationService.createInBackground({
-            userId: users[index],
-            body: `${user.fullName} (${user.rcno}) changed location from ${entity.location} to ${location}.`,
-            link: `/entity/${id}`,
-          });
-        }
-        await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Location changed from ${entity.location} to ${location}.`,
-          entityId: id,
-          completedById: user.id,
-        });
+  // //** Edit entity location */
+  // async editEntityLocation(user: User, id: number, location: string) {
+  //   const entity = await this.prisma.entity.findFirst({
+  //     where: {
+  //       id,
+  //     },
+  //   });
+  //   // Check if admin of entity
+  //   await this.checkEntityAssignmentOrPermission(
+  //     id,
+  //     user.id,
+  //     entity,
+  //     ['Admin'],
+  //     ['EDIT_ENTITY_LOCATION']
+  //   );
+  //   try {
+  //     if (entity.location != location) {
+  //       const users = await this.getUserIds(id, user.id);
+  //       for (let index = 0; index < users.length; index++) {
+  //         await this.notificationService.createInBackground({
+  //           userId: users[index],
+  //           body: `${user.fullName} (${user.rcno}) changed location from ${entity.location} to ${location}.`,
+  //           link: `/entity/${id}`,
+  //         });
+  //       }
+  //       await this.createEntityHistoryInBackground({
+  //         type: 'Entity Edit',
+  //         description: `Location changed from ${entity.location} to ${location}.`,
+  //         entityId: id,
+  //         completedById: user.id,
+  //       });
 
-        await this.prisma.entity.update({
-          where: { id },
-          data: {
-            location,
-          },
-        });
-      }
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
+  //       await this.prisma.entity.update({
+  //         where: { id },
+  //         data: {
+  //           location,
+  //         },
+  //       });
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //     throw new InternalServerErrorException('Unexpected error occured.');
+  //   }
+  // }
 
   //** Get all entity status count*/
   async getAllEntityStatusCount(

@@ -131,6 +131,7 @@ model Location {
   createdById Int?
   createdBy   User?    @relation(fields: [createdById], references: [id])
   active      Boolean  @default(true)
+  entities    Entity[]
 }
 
 model Machine {
@@ -574,7 +575,7 @@ model Entity {
   type                      Type?                       @relation(fields: [typeId], references: [id])
   zone                      String?
   locationId                Int?
-  location                  String?
+  location                  Location?                   @relation(fields: [locationId], references: [id])
   currentRunning            Int?
   lastService               Int?
   department                String?
