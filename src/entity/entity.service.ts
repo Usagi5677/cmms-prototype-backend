@@ -423,7 +423,7 @@ export class EntityService {
   }
 
   async getLatestReading(entity: any): Promise<number> {
-    let reading = 0;
+    let reading = entity.currentRunning;
     const latestDailyChecklistWithReading =
       await this.prisma.checklist.findFirst({
         where: {
@@ -578,7 +578,7 @@ export class EntityService {
         typeId,
       });
     }
-    const entity = await this.prisma.entity.findMany({
+    const entities = await this.prisma.entity.findMany({
       skip: offset,
       take: limitPlusOne,
       where,
@@ -594,9 +594,14 @@ export class EntityService {
         type: true,
       },
     });
+    for (const entity of entities) {
+      const reading = await this.getLatestReading(entity);
+      entity.currentMileage = reading;
+      entity.currentRunning = reading;
+    }
     const count = await this.prisma.entity.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
-      entity.slice(0, limit),
+      entities.slice(0, limit),
       args,
       {
         arrayLength: count,
