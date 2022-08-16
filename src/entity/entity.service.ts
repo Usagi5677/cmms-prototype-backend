@@ -287,7 +287,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.measurement != engine) {
+      if (entity.measurement != measurement) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Measurement changed from ${entity.measurement} to ${measurement}.`,
