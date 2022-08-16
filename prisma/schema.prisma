@@ -66,6 +66,7 @@ model User {
   entityRepairRequestRequestedBy               EntityRepairRequest[]                   @relation(name: "requestedBy")
   entityRepairRequestApprovedBy                EntityRepairRequest[]                   @relation(name: "approvedBy")
   entityRepairRequestRepairedBy                EntityRepairRequest[]                   @relation(name: "repairedBy")
+  locationsCreated                             Location[]
 }
 
 model Notification {
@@ -120,6 +121,16 @@ model Type {
   Entity         Entity[]
   Machine        Machine[]
   Transportation Transportation[]
+}
+
+model Location {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  active      Boolean  @default(true)
 }
 
 model Machine {
@@ -562,6 +573,7 @@ model Entity {
   typeId                    Int?
   type                      Type?                       @relation(fields: [typeId], references: [id])
   zone                      String?
+  locationId                Int?
   location                  String?
   currentRunning            Int?
   lastService               Int?

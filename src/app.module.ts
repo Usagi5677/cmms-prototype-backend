@@ -24,6 +24,7 @@ import { InitService } from './services/init.service';
 import { EntityModule } from './entity/entity.module';
 import { TypeModule } from './type/type.module';
 import { PermissionModule } from './permission/permission.module';
+import { LocationModule } from './location/location.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { PermissionModule } from './permission/permission.module';
     EntityModule,
     TypeModule,
     PermissionModule,
+    LocationModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver, DateScalar, InitService],

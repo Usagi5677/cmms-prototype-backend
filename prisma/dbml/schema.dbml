@@ -54,6 +54,7 @@ Table User {
   entityRepairRequestRequestedBy EntityRepairRequest [not null]
   entityRepairRequestApprovedBy EntityRepairRequest [not null]
   entityRepairRequestRepairedBy EntityRepairRequest [not null]
+  locationsCreated Location [not null]
 }
 
 Table Notification {
@@ -110,6 +111,16 @@ Table Type {
   Entity Entity [not null]
   Machine Machine [not null]
   Transportation Transportation [not null]
+}
+
+Table Location {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  createdBy User
+  active Boolean [not null, default: true]
 }
 
 Table Machine {
@@ -522,6 +533,7 @@ Table Entity {
   typeId Int
   type Type
   zone String
+  locationId Int
   location String
   currentRunning Int
   lastService Int
@@ -742,6 +754,8 @@ Ref: UserRole.userId > User.id
 Ref: UserRole.roleId > Role.id
 
 Ref: PermissionRole.roleId > Role.id
+
+Ref: Location.createdById > User.id
 
 Ref: Machine.createdById > User.id
 
