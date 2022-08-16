@@ -208,6 +208,10 @@ input CreateChecklistTemplateInput {
   type: String!
 }
 
+input CreateLocationInput {
+  name: String!
+}
+
 input CreateTypeInput {
   entityType: String!
   name: String!
@@ -534,6 +538,30 @@ type EntityUsageHistory {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   workingHour: Float
+}
+
+type Location {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User!
+}
+
+type LocationEdge {
+  cursor: String
+  node: Location
+}
+
+type LocationPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type Machine {
@@ -873,6 +901,7 @@ type Mutation {
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
+  createLocation(createLocationInput: CreateLocationInput!): String!
   createMachine(currentRunning: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   createMachinePeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createTransportation(currentMileage: Int, department: String, engine: String, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, typeId: Int): String!
@@ -926,6 +955,7 @@ type Mutation {
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
   removeEntity(entityId: Int!): String!
   removeEntityAttachment(id: Int!): String!
+  removeLocation(id: Int!): Location!
   removeMachine(machineId: Int!): String!
   removeMachineAttachment(id: Int!): String!
   removeRole(id: Int!): String!
@@ -964,6 +994,7 @@ type Mutation {
   """
   updateAllEntityChecklists: String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
+  updateLocation(updateLocationInput: UpdateLocationInput!): Location!
   updateReading(id: Int!, reading: Int!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
@@ -1027,6 +1058,11 @@ type PaginatedEntityRepair {
 type PaginatedEntitySparePR {
   edges: [EntitySparePREdge!]
   pageInfo: EntitySparePRPageInfo
+}
+
+type PaginatedLocation {
+  edges: [LocationEdge!]
+  pageInfo: LocationPageInfo
 }
 
 type PaginatedMachine {
@@ -1915,6 +1951,21 @@ type Query {
   getTransportationLatestAttachment(transportationId: Int!): TransportationAttachment!
   getTransportationReport(from: Date!, to: Date!): [TransportationReport!]!
   getUsersWithPermission(permissions: [String!]!): [User!]!
+  location(id: Int!): Location!
+  locations(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    name: String
+  ): PaginatedLocation!
   machineAttachment(id: Int!): MachineAttachment!
   machineAttachments(
     """Paginate after opaque cursor"""
@@ -2361,6 +2412,11 @@ input UpdateChecklistTemplateInput {
   items: [String!]
   name: String
   type: String
+}
+
+input UpdateLocationInput {
+  id: Int!
+  name: String
 }
 
 input UpdateTypeInput {
