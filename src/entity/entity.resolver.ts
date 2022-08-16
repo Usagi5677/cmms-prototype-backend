@@ -69,8 +69,6 @@ export class EntityResolver {
     @Args('measurement', { nullable: true }) measurement: string,
     @Args('currentRunning', { nullable: true }) currentRunning: number,
     @Args('lastService', { nullable: true }) lastService: number,
-    @Args('currentMileage', { nullable: true }) currentMileage: number,
-    @Args('lastServiceMileage', { nullable: true }) lastServiceMileage: number,
     @Args('brand', { nullable: true }) brand: string,
     @Args('registeredDate', { nullable: true }) registeredDate: Date
   ): Promise<String> {
@@ -86,8 +84,6 @@ export class EntityResolver {
       measurement,
       currentRunning,
       lastService,
-      currentMileage,
-      lastServiceMileage,
       brand,
       registeredDate
     );
@@ -122,10 +118,6 @@ export class EntityResolver {
     @Args('department', { nullable: true }) department: string,
     @Args('engine', { nullable: true }) engine: string,
     @Args('measurement', { nullable: true }) measurement: string,
-    @Args('currentRunning', { nullable: true }) currentRunning: number,
-    @Args('lastService', { nullable: true }) lastService: number,
-    @Args('currentMileage', { nullable: true }) currentMileage: number,
-    @Args('lastServiceMileage', { nullable: true }) lastServiceMileage: number,
     @Args('brand', { nullable: true }) brand: string,
     @Args('registeredDate', { nullable: true }) registeredDate: Date
   ): Promise<String> {
@@ -140,10 +132,6 @@ export class EntityResolver {
       department,
       engine,
       measurement,
-      currentRunning,
-      lastService,
-      currentMileage,
-      lastServiceMileage,
       brand,
       registeredDate
     );

@@ -121,8 +121,6 @@ export class EntityService {
     measurement: string,
     currentRunning: number,
     lastService: number,
-    currentMileage: number,
-    lastServiceMileage: number,
     brand: string,
     registeredDate: Date
   ) {
@@ -149,8 +147,6 @@ export class EntityService {
           measurement,
           currentRunning,
           lastService,
-          currentMileage,
-          lastServiceMileage,
           brand,
           registeredDate,
           dailyChecklistTemplateId: newDailyTemplate.id,
@@ -216,10 +212,6 @@ export class EntityService {
     department: string,
     engine: string,
     measurement: string,
-    currentRunning: number,
-    lastService: number,
-    currentMileage: number,
-    lastServiceMileage: number,
     brand: string,
     registeredDate: Date
   ) {
@@ -271,38 +263,6 @@ export class EntityService {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Location changed from ${entity.location} to ${location}.`,
-          entityId: id,
-          completedById: user.id,
-        });
-      }
-      if (entity.currentRunning != currentRunning) {
-        await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Current Running changed from ${entity.currentRunning} to ${currentRunning}.`,
-          entityId: id,
-          completedById: user.id,
-        });
-      }
-      if (entity.lastService != lastService) {
-        await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Last Service changed from ${entity.lastService} to ${lastService}.`,
-          entityId: id,
-          completedById: user.id,
-        });
-      }
-      if (entity.currentMileage != currentMileage) {
-        await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Current Mileage changed from ${entity.currentMileage} to ${currentMileage}.`,
-          entityId: id,
-          completedById: user.id,
-        });
-      }
-      if (entity.lastServiceMileage != lastServiceMileage) {
-        await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Last Service Mileage changed from ${entity.lastServiceMileage} to ${lastServiceMileage}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -366,10 +326,6 @@ export class EntityService {
           department,
           engine,
           measurement,
-          currentRunning,
-          lastService,
-          currentMileage,
-          lastServiceMileage,
           brand,
           registeredDate,
         },
@@ -484,7 +440,6 @@ export class EntityService {
     );
     if (!entity) throw new BadRequestException('Entity not found.');
     const reading = await this.getLatestReading(entity);
-    entity.currentMileage = reading;
     entity.currentRunning = reading;
     return entity;
   }
@@ -596,7 +551,6 @@ export class EntityService {
     });
     for (const entity of entities) {
       const reading = await this.getLatestReading(entity);
-      entity.currentMileage = reading;
       entity.currentRunning = reading;
     }
     const count = await this.prisma.entity.count({ where });
@@ -2250,7 +2204,6 @@ export class EntityService {
         include: {
           entity: {
             select: {
-              currentMileage: true,
               currentRunning: true,
             },
           },
@@ -2267,7 +2220,7 @@ export class EntityService {
       } else if (periodicMaintenance[index].measurement === 'day') {
         notifDate.add(value, 'd');
       } else if (periodicMaintenance[index].measurement === 'km') {
-        if (value >= periodicMaintenance[index].entity.currentMileage) {
+        if (value >= periodicMaintenance[index].entity.currentRunning) {
           const users = await this.prisma.entityAssignment.findMany({
             where: {
               entityId: periodicMaintenance[index].entityId,

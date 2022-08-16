@@ -567,8 +567,6 @@ model Entity {
   lastService               Int?
   department                String?
   engine                    String?
-  currentMileage            Int?
-  lastServiceMileage        Int?
   brand                     String?
   status                    EntityStatus                @default(Working)
   statusChangedAt           DateTime?

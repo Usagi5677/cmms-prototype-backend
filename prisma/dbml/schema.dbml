@@ -527,8 +527,6 @@ Table Entity {
   lastService Int
   department String
   engine String
-  currentMileage Int
-  lastServiceMileage Int
   brand String
   status EntityStatus [not null, default: 'Working']
   statusChangedAt DateTime
