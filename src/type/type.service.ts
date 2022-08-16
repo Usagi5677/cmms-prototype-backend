@@ -59,6 +59,14 @@ export class TypeService {
     };
   }
 
+  async findOne(id: number) {
+    const type = await this.prisma.type.findFirst({ where: { id } });
+    if (!type) {
+      throw new BadRequestException('Invalid type.');
+    }
+    return type;
+  }
+
   async update({ id, entityType, name }: UpdateTypeInput) {
     await this.prisma.type.update({
       where: { id },

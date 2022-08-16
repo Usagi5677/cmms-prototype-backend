@@ -27,6 +27,11 @@ export class TypeResolver {
     return this.typeService.findAll(args);
   }
 
+  @Query(() => Type, { name: 'type' })
+  async findOne(@Args('id', { type: () => Int }) id: number) {
+    return await this.typeService.findOne(id);
+  }
+
   @Mutation(() => String)
   async updateType(@Args('updateTypeInput') input: UpdateTypeInput) {
     await this.typeService.update(input);
