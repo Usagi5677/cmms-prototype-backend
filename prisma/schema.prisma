@@ -124,14 +124,16 @@ model Type {
 }
 
 model Location {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String
-  createdById Int?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-  active      Boolean  @default(true)
-  entities    Entity[]
+  id             Int                   @id @default(autoincrement())
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  name           String
+  createdById    Int?
+  createdBy      User?                 @relation(fields: [createdById], references: [id])
+  active         Boolean               @default(true)
+  entities       Entity[]
+  histories      EntityHistory[]
+  repairRequests EntityRepairRequest[]
 }
 
 model Machine {
@@ -688,7 +690,7 @@ model EntityHistory {
   idleHour      Float?
   breakdownHour Float?
   locationId    Int?
-  location      String?
+  location      Location?     @relation(fields: [locationId], references: [id])
 }
 
 model EntityRepairRequest {
@@ -700,7 +702,7 @@ model EntityRepairRequest {
   internal         Boolean   @default(true)
   projectName      String?
   locationId       Int?
-  location         String?
+  location         Location? @relation(fields: [locationId], references: [id])
   reason           String?
   additionalInfo   String?
   attendInfo       String?

@@ -1,6 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { GraphQLFloat } from 'graphql';
 import { EntityStatus } from 'src/common/enums/entityStatus';
+import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from 'src/models/base.model';
 import { User } from 'src/models/user.model';
 
@@ -19,5 +20,5 @@ export class EntityHistory extends BaseModel {
   idleHour?: typeof GraphQLFloat;
   @Field(() => GraphQLFloat)
   workingHour?: typeof GraphQLFloat;
-  location?: string;
+  location?: Location;
 }

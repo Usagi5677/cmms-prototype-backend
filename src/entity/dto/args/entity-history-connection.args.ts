@@ -7,5 +7,5 @@ export class EntityHistoryConnectionArgs extends ConnectionArgs {
   entityId: number;
   from?: Date;
   to?: Date;
-  location?: string[];
+  locationIds?: number[];
 }

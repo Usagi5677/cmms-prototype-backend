@@ -122,6 +122,8 @@ Table Location {
   createdBy User
   active Boolean [not null, default: true]
   entities Entity [not null]
+  histories EntityHistory [not null]
+  repairRequests EntityRepairRequest [not null]
 }
 
 Table Machine {
@@ -643,7 +645,7 @@ Table EntityHistory {
   idleHour Float
   breakdownHour Float
   locationId Int
-  location String
+  location Location
 }
 
 Table EntityRepairRequest {
@@ -655,7 +657,7 @@ Table EntityRepairRequest {
   internal Boolean [not null, default: true]
   projectName String
   locationId Int
-  location String
+  location Location
   reason String
   additionalInfo String
   attendInfo String
@@ -908,7 +910,11 @@ Ref: EntityHistory.entityId > Entity.id
 
 Ref: EntityHistory.completedById > User.id
 
+Ref: EntityHistory.locationId > Location.id
+
 Ref: EntityRepairRequest.entityId > Entity.id
+
+Ref: EntityRepairRequest.locationId > Location.id
 
 Ref: EntityRepairRequest.repairedById > User.id
 

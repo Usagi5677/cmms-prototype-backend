@@ -350,7 +350,7 @@ type EntityHistory {
   entityType: String
   id: Int!
   idleHour: Float
-  location: String
+  location: Location
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -881,7 +881,7 @@ type Mutation {
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
   addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
-  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
+  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   addEntitySparePR(description: String!, entityId: Int!, requestedDate: Date!, title: String!): String!
   addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
   addMachinePeriodicMaintenance(machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
@@ -926,7 +926,7 @@ type Mutation {
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
+  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editMachine(currentRunning: Int, id: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   editMachineAttachment(description: String!, id: Int!): String!
@@ -1533,7 +1533,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     to: Date
   ): PaginatedEntityHistory!

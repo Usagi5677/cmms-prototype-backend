@@ -855,7 +855,7 @@ export class EntityService {
     entityId: number,
     internal: boolean,
     projectName: string,
-    location: string,
+    locationId: number,
     reason: string,
     additionalInfo: string,
     attendInfo: string,
@@ -876,7 +876,7 @@ export class EntityService {
           entityId,
           internal,
           projectName,
-          location,
+          locationId,
           reason,
           additionalInfo,
           attendInfo,
@@ -912,7 +912,7 @@ export class EntityService {
     id: number,
     internal: boolean,
     projectName: string,
-    location: string,
+    locationId: number,
     reason: string,
     additionalInfo: string,
     attendInfo: string,
@@ -950,14 +950,6 @@ export class EntityService {
         await this.createEntityHistoryInBackground({
           type: 'Repair Request Edit',
           description: `(${id}) Project name changed from ${repair.projectName} to ${projectName}.`,
-          entityId: repair.entityId,
-          completedById: user.id,
-        });
-      }
-      if (repair.location != location) {
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Request Edit',
-          description: `(${id}) Description changed from ${repair.location} to ${location}.`,
           entityId: repair.entityId,
           completedById: user.id,
         });
@@ -1044,7 +1036,7 @@ export class EntityService {
         data: {
           internal,
           projectName,
-          location,
+          locationId,
           reason,
           additionalInfo,
           attendInfo,
@@ -1747,7 +1739,7 @@ export class EntityService {
   ): Promise<PaginatedEntityHistory> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, entityId, location, from, to } = args;
+    const { search, entityId, locationIds, from, to } = args;
     const fromDate = moment(from).startOf('day');
     const toDate = moment(to).endOf('day');
 
@@ -1757,9 +1749,9 @@ export class EntityService {
     if (entityId) {
       where.AND.push({ entityId });
     }
-    if (location?.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
-        location: {
+        locationId: {
           in: location,
         },
       });
@@ -1790,6 +1782,7 @@ export class EntityService {
       where,
       include: {
         completedBy: true,
+        location: true,
       },
       orderBy: { id: 'desc' },
     });
@@ -2050,7 +2043,7 @@ export class EntityService {
       select: {
         status: true,
         typeId: true,
-        location: true,
+        locationId: true,
         id: true,
       },
     });
@@ -2096,7 +2089,7 @@ export class EntityService {
         workingHour: await this.getLatestReading(entity),
         idleHour: idleHour,
         breakdownHour: breakdownHour,
-        location: entity.location.name,
+        locationId: entity.locationId,
       },
     });
   }
