@@ -15,13 +15,13 @@ import { TypeConnectionArgs } from './dto/type-connection.args';
 export class TypeResolver {
   constructor(private readonly typeService: TypeService) {}
 
+  @Permissions('MODIFY_TYPES')
   @Mutation(() => String)
   async createType(@Args('createTypeInput') input: CreateTypeInput) {
     await this.typeService.create(input);
     return 'Successfully created type.';
   }
 
-  // @Permissions('VIEW_TYPES')
   @Query(() => PaginatedType, { name: 'types' })
   async findAll(@Args() args: TypeConnectionArgs) {
     return this.typeService.findAll(args);
@@ -32,12 +32,14 @@ export class TypeResolver {
     return await this.typeService.findOne(id);
   }
 
+  @Permissions('MODIFY_TYPES')
   @Mutation(() => String)
   async updateType(@Args('updateTypeInput') input: UpdateTypeInput) {
     await this.typeService.update(input);
     return 'Successfully updated type.';
   }
 
+  @Permissions('MODIFY_TYPES')
   @Mutation(() => String)
   async removeType(@Args('id', { type: () => Int }) id: number) {
     await this.typeService.remove(id);
