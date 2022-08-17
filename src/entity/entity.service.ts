@@ -231,7 +231,7 @@ export class EntityService {
       ['EDIT_ENTITY']
     );
     try {
-      if (entity.machineNumber != machineNumber) {
+      if (machineNumber && entity.machineNumber != machineNumber) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Machine number changed from ${entity.machineNumber} to ${machineNumber}.`,
@@ -239,7 +239,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.model != model) {
+      if (model && entity.model != model) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Model changed from ${entity.model} to ${model}.`,
@@ -258,7 +258,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.department != department) {
+      if (department && entity.department != department) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Department changed from ${entity.department} to ${department}.`,
@@ -279,7 +279,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.engine != engine) {
+      if (engine && entity.engine != engine) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Engine changed from ${entity.engine} to ${engine}.`,
@@ -287,7 +287,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.measurement != measurement) {
+      if (measurement && entity.measurement != measurement) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Measurement changed from ${entity.measurement} to ${measurement}.`,
@@ -295,7 +295,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.brand != brand) {
+      if (brand && entity.brand != brand) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Brand changed from ${entity.brand} to ${brand}.`,
@@ -304,8 +304,9 @@ export class EntityService {
         });
       }
       if (
+        registeredDate &&
         moment(entity.registeredDate).format('DD MMMM YYYY HH:mm:ss') !=
-        moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
+          moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
       ) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
