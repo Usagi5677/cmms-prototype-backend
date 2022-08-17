@@ -22,7 +22,7 @@ export class RedisCacheResolver {
   }
 
   @Mutation(() => String, { name: 'flushRedis' })
-  async flushRedis(): Promise<String> {
+  async flushRedis(): Promise<string> {
     await this.redisCacheService.deleteAll();
     return 'Redis cache flushed.';
   }

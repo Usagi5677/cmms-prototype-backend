@@ -1,21 +1,15 @@
 import { PrismaService } from 'nestjs-prisma';
 import {
   BadRequestException,
-  Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
-import { UserService } from './user.service';
-import { NotificationService } from './notification.service';
-import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
-import { ConfigService } from '@nestjs/config';
 import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-connection.args';
 import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-connection.model';
 import { permissions as PERMISSIONS } from 'src/constants';
@@ -24,11 +18,7 @@ import { permissions as PERMISSIONS } from 'src/constants';
 export class PermissionRoleService {
   constructor(
     private prisma: PrismaService,
-    private userService: UserService,
-    private readonly redisCacheService: RedisCacheService,
-    private readonly notificationService: NotificationService,
-    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-    private configService: ConfigService
+    private readonly redisCacheService: RedisCacheService
   ) {}
 
   //** Create role. */

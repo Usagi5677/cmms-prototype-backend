@@ -3,7 +3,6 @@ import { Resolver, Query, Args, Mutation, Int } from '@nestjs/graphql';
 import { EntityService } from './entity.service';
 import { InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
-import { UserService } from 'src/services/user.service';
 import { PrismaService } from 'nestjs-prisma';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
@@ -13,7 +12,6 @@ import { EntityStatus } from 'src/common/enums/entityStatus';
 import { PaginatedEntity } from './dto/paginations/entity-connection.model';
 import { EntityConnectionArgs } from './dto/args/entity-connection.args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
-import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
@@ -42,7 +40,6 @@ import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSu
 export class EntityResolver {
   constructor(
     private readonly entityService: EntityService,
-    private userService: UserService,
     private prisma: PrismaService
   ) {}
 
@@ -677,10 +674,8 @@ export class EntityResolver {
   }
 
   @Query(() => maintenanceStatusCount)
-  async allEntityPMStatusCount(
-    @UserEntity() user: User
-  ): Promise<maintenanceStatusCount> {
-    return this.entityService.getAllEntityPMStatusCount(user);
+  async allEntityPMStatusCount(): Promise<maintenanceStatusCount> {
+    return this.entityService.getAllEntityPMStatusCount();
   }
 
   // // Permission checked in service

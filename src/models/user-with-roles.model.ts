@@ -1,6 +1,5 @@
 import { ObjectType } from '@nestjs/graphql';
 import { EntityAssign } from 'src/entity/dto/models/entity-assign.model';
-import { Roles } from './roles.model';
 import { UserRoles } from './user-roles.model';
 
 @ObjectType()

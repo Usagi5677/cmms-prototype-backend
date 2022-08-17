@@ -9,8 +9,6 @@ import { Permissions } from 'src/decorators/permissions.decorator';
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => PermissionWithDescription)
 export class PermissionResolver {
-  constructor() {}
-
   @Permissions('VIEW_PERMISSION')
   @Query(() => [PermissionWithDescription])
   permissions() {

@@ -4,7 +4,6 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../guards/gql-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { User } from 'src/models/user.model';
-import { UserService } from 'src/services/user.service';
 import { PrismaService } from 'nestjs-prisma';
 import { PermissionRole } from 'src/models/permission-role.model';
 import { PermissionRoleService } from 'src/services/permissionRole.service';

@@ -82,7 +82,7 @@ function checkPagingSanity(args: ConnectionArgs): PagingMeta {
 interface PagingParams {
   offset?: number;
   limit?: number;
-  filter?: Object;
+  filter?: unknown;
 }
 
 export function getPagingParameters(args: ConnectionArgs): PagingParams {
@@ -98,7 +98,7 @@ export function getPagingParameters(args: ConnectionArgs): PagingParams {
     case 'backward': {
       const { last, before } = meta;
       let limit = last;
-      let offset = getId(before!) - last;
+      let offset = getId(before) - last;
 
       if (offset < 0) {
         limit = Math.max(last + offset, 0);

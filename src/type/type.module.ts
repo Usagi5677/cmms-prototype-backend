@@ -3,6 +3,6 @@ import { TypeService } from './type.service';
 import { TypeResolver } from './type.resolver';
 
 @Module({
-  providers: [TypeResolver, TypeService]
+  providers: [TypeResolver, TypeService],
 })
 export class TypeModule {}

@@ -301,7 +301,7 @@ export class ChecklistService {
       from = moment(from).startOf('week').toDate();
       to = moment(to).endOf('week').toDate();
     }
-    let where: any = {
+    const where: any = {
       entityId,
       type,
       from: { gte: from },

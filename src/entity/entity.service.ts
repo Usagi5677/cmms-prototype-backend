@@ -7,14 +7,11 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
-import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PrismaService } from 'nestjs-prisma';
 import { User } from 'src/models/user.model';
 import { RedisCacheService } from 'src/redisCache.service';
 import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
-import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';
 import * as moment from 'moment';
@@ -27,7 +24,6 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
-import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
@@ -65,8 +61,6 @@ export class EntityService {
     private readonly notificationService: NotificationService,
     @InjectQueue('cmms-entity-history')
     private entityHistoryQueue: Queue,
-    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-    private configService: ConfigService,
     @Inject(forwardRef(() => ChecklistTemplateService))
     private readonly checklistTemplateService: ChecklistTemplateService
   ) {}
@@ -84,9 +78,9 @@ export class EntityService {
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     if (query) {
-      const or: any = [
-        { machineNumber: { contains: query, mode: 'insensitive' } },
-      ];
+      where.AND.push({
+        machineNumber: { contains: query, mode: 'insensitive' },
+      });
     }
     if (entityType) {
       where.AND.push({
@@ -103,6 +97,7 @@ export class EntityService {
       take: limit,
       include: {
         type: true,
+        location: true,
       },
     });
     return entities;
@@ -2869,7 +2864,7 @@ export class EntityService {
     }
   }
 
-  async getAllEntityPMStatusCount(user: User) {
+  async getAllEntityPMStatusCount() {
     try {
       const key = `allEntityPMStatusCount`;
       let pmStatusCount = await this.redisCacheService.get(key);
