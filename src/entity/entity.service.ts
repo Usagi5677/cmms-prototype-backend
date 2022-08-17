@@ -2506,6 +2506,7 @@ export class EntityService {
           },
         },
         type: true,
+        location: true,
       },
     });
 
