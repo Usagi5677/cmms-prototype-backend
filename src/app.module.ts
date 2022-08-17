@@ -14,8 +14,6 @@ import { BullModule } from '@nestjs/bull';
 import jwtDecode from 'jwt-decode';
 import { PubsubModule } from './resolvers/pubsub/pubsub.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { MachineModule } from './resolvers/machine/machine.module';
-import { TransportationModule } from './resolvers/transportation/transportation.module';
 import { AttachmentModule } from './resolvers/attachment/attachment.module';
 import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.module';
 import { ChecklistTemplateModule } from './resolvers/checklist-template/checklist-template.module';
@@ -72,8 +70,6 @@ import { LocationModule } from './location/location.module';
     PubsubModule,
     AuthModule,
     UserModule,
-    MachineModule,
-    TransportationModule,
     AttachmentModule,
     PermissionRoleModule,
     ScheduleModule.forRoot(),

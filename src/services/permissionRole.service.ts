@@ -85,7 +85,7 @@ export class PermissionRoleService {
     //for now these only
     if (search) {
       const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
-      // If search contains all numbers, search the machine ids as well
+      // If search contains all numbers, search ids as well
       if (/^(0|[1-9]\d*)$/.test(search)) {
         or.push({ id: parseInt(search) });
       }

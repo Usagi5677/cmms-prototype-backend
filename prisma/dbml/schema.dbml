@@ -13,31 +13,9 @@ Table User {
   location String
   notifications Notification [not null]
   roles UserRole [not null]
-  machineCreated Machine [not null]
-  machineAssignments MachineAssignment [not null]
-  machineAttachments MachineAttachment [not null]
   checklistCompletions ChecklistItem [not null]
   checklistComments ChecklistComment [not null]
-  machinePeriodicMaintenanceCompletions MachinePeriodicMaintenance [not null]
-  machineRepairs MachineRepair [not null]
-  machineBreakdowns MachineBreakdown [not null]
-  machineSparePRs MachineSparePR [not null]
-  machineHistories MachineHistory [not null]
-  transportationCreated Transportation [not null]
-  transportationAssignments TransportationAssignment [not null]
-  transportAttachments TransportationAttachment [not null]
-  transportationPeriodicMaintenanceCompletions TransportationPeriodicMaintenance [not null]
-  transportationRepairs TransportationRepair [not null]
-  transportationBreakdowns TransportationBreakdown [not null]
-  transportationSparePRs TransportationSparePR [not null]
-  transportationHistories TransportationHistory [not null]
   roleCreated Role [not null]
-  machinePeriodicMaintenanceTasks MachinePeriodicMaintenanceTask [not null]
-  machineDeleted Machine [not null]
-  transportationDeleted Transportation [not null]
-  transportationPeriodicMaintenanceTasks TransportationPeriodicMaintenanceTask [not null]
-  machinePeriodicMaintenances MachinePeriodicMaintenance [not null]
-  transportationPeriodicMaintenances TransportationPeriodicMaintenance [not null]
   entityCreated Entity [not null]
   entityDeleted Entity [not null]
   entityAssignment EntityAssignment [not null]
@@ -109,8 +87,6 @@ Table Type {
   name String [not null]
   active Boolean [not null, default: true]
   Entity Entity [not null]
-  Machine Machine [not null]
-  Transportation Transportation [not null]
 }
 
 Table Location {
@@ -126,71 +102,6 @@ Table Location {
   repairRequests EntityRepairRequest [not null]
 }
 
-Table Machine {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  createdById Int [not null]
-  createdBy User [not null]
-  machineNumber String
-  registeredDate DateTime
-  model String
-  typeId Int
-  type Type
-  zone String
-  location String
-  currentRunning Int
-  lastService Int
-  status MachineStatus [not null, default: 'Working']
-  statusChangedAt DateTime
-  measurement String [default: 'km']
-  isDeleted Boolean
-  deletedAt DateTime
-  deletedById Int
-  deletedBy User
-  dailyChecklistTemplateId Int
-  dailyChecklistTemplate ChecklistTemplate
-  weeklyChecklistTemplateId Int
-  weeklyChecklistTemplate ChecklistTemplate
-  checklists Checklist [not null]
-  assignees MachineAssignment [not null]
-  periodicMaintenancePlans MachinePeriodicMaintenance [not null]
-  histories MachineHistory [not null]
-  attachments MachineAttachment [not null]
-  repairs MachineRepair [not null]
-  breakdowns MachineBreakdown [not null]
-  sparePRs MachineSparePR [not null]
-}
-
-Table MachineAssignment {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  userId Int [not null]
-  user User [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-
-  indexes {
-    (userId, machineId) [unique]
-  }
-}
-
-Table MachineAttachment {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  userId Int [not null]
-  user User [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-  description String [not null]
-  mimeType String
-  originalName String
-  sharepointFileName String
-  mode String [not null, default: 'Public']
-}
-
 Table ChecklistTemplate {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
@@ -198,10 +109,6 @@ Table ChecklistTemplate {
   name String
   items ChecklistTemplateItem [not null]
   type String [not null, default: 'Daily']
-  machinesDaily Machine [not null]
-  machinesWeekly Machine [not null]
-  transportationsDaily Transportation [not null]
-  transportationsWeekly Transportation [not null]
   entitiesDaily Entity [not null]
   entitiesWeekly Entity [not null]
 }
@@ -219,10 +126,6 @@ Table Checklist {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  machineId Int
-  machine Machine
-  transportationId Int
-  transportation Transportation
   from DateTime [not null]
   to DateTime [not null]
   type String [not null, default: 'Daily']
@@ -235,7 +138,7 @@ Table Checklist {
   entityId Int
 
   indexes {
-    (machineId, transportationId, entityId, from, to, type) [unique]
+    (entityId, from, to, type) [unique]
   }
 }
 
@@ -264,264 +167,6 @@ Table ChecklistComment {
   description String [not null]
   userId Int
   user User
-}
-
-Table MachinePeriodicMaintenance {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-  title String [not null]
-  measurement String
-  value Int
-  startDate DateTime
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status PeriodicMaintenanceStatus [not null, default: 'Pending']
-  verifiedById Int
-  verifiedBy User
-  verifiedAt DateTime
-  machinePeriodicMaintenanceTask MachinePeriodicMaintenanceTask [not null]
-}
-
-Table MachinePeriodicMaintenanceTask {
-  id Int [pk, increment]
-  periodicMaintenanceId Int [not null]
-  periodicMaintenance MachinePeriodicMaintenance [not null]
-  parentTaskId Int
-  name String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  parentTask MachinePeriodicMaintenanceTask
-  subTasks MachinePeriodicMaintenanceTask [not null]
-}
-
-Table MachineHistory {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-  completedById Int
-  completedBy User
-  type String [not null]
-  description String [not null]
-  machineStatus MachineStatus
-  machineType String
-  workingHour Float
-  idleHour Float
-  breakdownHour Float
-  location String
-}
-
-Table MachineRepair {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status RepairStatus [not null, default: 'Pending']
-}
-
-Table MachineBreakdown {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  estimatedDateOfRepair DateTime
-  status BreakdownStatus [not null, default: 'Breakdown']
-}
-
-Table MachineSparePR {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  machineId Int [not null]
-  machine Machine [not null]
-  requestedDate DateTime [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status SparePRStatus [not null, default: 'Pending']
-}
-
-Table Transportation {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  createdById Int [not null]
-  createdBy User [not null]
-  machineNumber String
-  registeredDate DateTime
-  model String
-  typeId Int
-  type Type
-  location String
-  status TransportationStatus [not null, default: 'Working']
-  statusChangedAt DateTime
-  department String
-  engine String
-  currentMileage Int
-  lastServiceMileage Int
-  measurement String [default: 'km']
-  transportType String [default: 'Vehicle']
-  brand String
-  isDeleted Boolean
-  deletedAt DateTime
-  deletedById Int
-  deletedBy User
-  assignees TransportationAssignment [not null]
-  dailyChecklistTemplateId Int
-  dailyChecklistTemplate ChecklistTemplate
-  weeklyChecklistTemplateId Int
-  weeklyChecklistTemplate ChecklistTemplate
-  checklists Checklist [not null]
-  periodicMaintenancePlans TransportationPeriodicMaintenance [not null]
-  attachments TransportationAttachment [not null]
-  histories TransportationHistory [not null]
-  repairs TransportationRepair [not null]
-  breakdowns TransportationBreakdown [not null]
-  sparePRs TransportationSparePR [not null]
-}
-
-Table TransportationAssignment {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  userId Int [not null]
-  user User [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-
-  indexes {
-    (userId, transportationId) [unique]
-  }
-}
-
-Table TransportationPeriodicMaintenance {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  title String [not null]
-  measurement String
-  value Int
-  startDate DateTime
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status PeriodicMaintenanceStatus [not null, default: 'Pending']
-  verifiedById Int
-  verifiedBy User
-  verifiedAt DateTime
-  transportationPeriodicMaintenanceTask TransportationPeriodicMaintenanceTask [not null]
-}
-
-Table TransportationAttachment {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  userId Int [not null]
-  user User [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  description String [not null]
-  mimeType String
-  originalName String
-  sharepointFileName String
-  mode String [not null, default: 'Public']
-}
-
-Table TransportationPeriodicMaintenanceTask {
-  id Int [pk, increment]
-  periodicMaintenanceId Int [not null]
-  periodicMaintenance TransportationPeriodicMaintenance [not null]
-  parentTaskId Int
-  name String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  parentTask TransportationPeriodicMaintenanceTask
-  subTasks TransportationPeriodicMaintenanceTask [not null]
-}
-
-Table TransportationHistory {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  completedById Int
-  completedBy User
-  type String [not null]
-  description String [not null]
-  transportationStatus TransportationStatus
-  transportationType String
-  workingHour Float
-  idleHour Float
-  breakdownHour Float
-  location String
-}
-
-Table TransportationRepair {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status RepairStatus [not null, default: 'Pending']
-}
-
-Table TransportationBreakdown {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  estimatedDateOfRepair DateTime
-  status BreakdownStatus [not null, default: 'Breakdown']
-}
-
-Table TransportationSparePR {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  transportationId Int [not null]
-  transportation Transportation [not null]
-  requestedDate DateTime [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status SparePRStatus [not null, default: 'Pending']
 }
 
 Table Entity {
@@ -707,13 +352,6 @@ Table EntitySparePR {
   status SparePRStatus [not null, default: 'Pending']
 }
 
-Enum MachineStatus {
-  Working
-  Idle
-  Breakdown
-  Dispose
-}
-
 Enum SparePRStatus {
   Done
   Pending
@@ -736,13 +374,6 @@ Enum PeriodicMaintenanceStatus {
   Missed
 }
 
-Enum TransportationStatus {
-  Working
-  Idle
-  Breakdown
-  Dispose
-}
-
 Enum EntityStatus {
   Working
   Idle
@@ -762,29 +393,7 @@ Ref: PermissionRole.roleId > Role.id
 
 Ref: Location.createdById > User.id
 
-Ref: Machine.createdById > User.id
-
-Ref: Machine.typeId > Type.id
-
-Ref: Machine.deletedById > User.id
-
-Ref: Machine.dailyChecklistTemplateId > ChecklistTemplate.id
-
-Ref: Machine.weeklyChecklistTemplateId > ChecklistTemplate.id
-
-Ref: MachineAssignment.userId > User.id
-
-Ref: MachineAssignment.machineId > Machine.id
-
-Ref: MachineAttachment.userId > User.id
-
-Ref: MachineAttachment.machineId > Machine.id
-
 Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
-
-Ref: Checklist.machineId > Machine.id
-
-Ref: Checklist.transportationId > Transportation.id
 
 Ref: Checklist.entityId > Entity.id
 
@@ -797,80 +406,6 @@ Ref: ChecklistComment.checklistId > Checklist.id
 Ref: ChecklistComment.itemId > ChecklistItem.id
 
 Ref: ChecklistComment.userId > User.id
-
-Ref: MachinePeriodicMaintenance.machineId > Machine.id
-
-Ref: MachinePeriodicMaintenance.completedById > User.id
-
-Ref: MachinePeriodicMaintenance.verifiedById > User.id
-
-Ref: MachinePeriodicMaintenanceTask.periodicMaintenanceId > MachinePeriodicMaintenance.id
-
-Ref: MachinePeriodicMaintenanceTask.completedById > User.id
-
-Ref: MachinePeriodicMaintenanceTask.parentTaskId - MachinePeriodicMaintenanceTask.id
-
-Ref: MachineHistory.machineId > Machine.id
-
-Ref: MachineHistory.completedById > User.id
-
-Ref: MachineRepair.machineId > Machine.id
-
-Ref: MachineRepair.completedById > User.id
-
-Ref: MachineBreakdown.machineId > Machine.id
-
-Ref: MachineBreakdown.completedById > User.id
-
-Ref: MachineSparePR.machineId > Machine.id
-
-Ref: MachineSparePR.completedById > User.id
-
-Ref: Transportation.createdById > User.id
-
-Ref: Transportation.typeId > Type.id
-
-Ref: Transportation.deletedById > User.id
-
-Ref: Transportation.dailyChecklistTemplateId > ChecklistTemplate.id
-
-Ref: Transportation.weeklyChecklistTemplateId > ChecklistTemplate.id
-
-Ref: TransportationAssignment.userId > User.id
-
-Ref: TransportationAssignment.transportationId > Transportation.id
-
-Ref: TransportationPeriodicMaintenance.transportationId > Transportation.id
-
-Ref: TransportationPeriodicMaintenance.completedById > User.id
-
-Ref: TransportationPeriodicMaintenance.verifiedById > User.id
-
-Ref: TransportationAttachment.userId > User.id
-
-Ref: TransportationAttachment.transportationId > Transportation.id
-
-Ref: TransportationPeriodicMaintenanceTask.periodicMaintenanceId > TransportationPeriodicMaintenance.id
-
-Ref: TransportationPeriodicMaintenanceTask.completedById > User.id
-
-Ref: TransportationPeriodicMaintenanceTask.parentTaskId - TransportationPeriodicMaintenanceTask.id
-
-Ref: TransportationHistory.transportationId > Transportation.id
-
-Ref: TransportationHistory.completedById > User.id
-
-Ref: TransportationRepair.transportationId > Transportation.id
-
-Ref: TransportationRepair.completedById > User.id
-
-Ref: TransportationBreakdown.transportationId > Transportation.id
-
-Ref: TransportationBreakdown.completedById > User.id
-
-Ref: TransportationSparePR.transportationId > Transportation.id
-
-Ref: TransportationSparePR.completedById > User.id
 
 Ref: Entity.createdById > User.id
 
