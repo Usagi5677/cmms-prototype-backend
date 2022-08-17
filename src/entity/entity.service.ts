@@ -449,7 +449,7 @@ export class EntityService {
       entityId,
       user.id,
       entity,
-      ['Admin', 'Engineer', 'User'],
+      [],
       ['VIEW_ALL_ENTITY']
     );
     if (!entity) throw new BadRequestException('Entity not found.');
@@ -3068,6 +3068,7 @@ export class EntityService {
     }
   }
 
+  // Pass empty array for assignment to check for any assignment
   async checkEntityAssignmentOrPermission(
     entityId: number,
     userId: number,
@@ -3081,7 +3082,11 @@ export class EntityService {
     let hasAssignment = true;
     if (assignments) {
       const currentAssignments = await this.prisma.entityAssignment.findMany({
-        where: { entityId, userId, type: { in: assignments } },
+        where: {
+          entityId,
+          userId,
+          type: assignments.length === 0 ? undefined : { in: assignments },
+        },
       });
       if (currentAssignments.length === 0) hasAssignment = false;
       const currentAssignmentsArray = currentAssignments.map((a) => a.type);
