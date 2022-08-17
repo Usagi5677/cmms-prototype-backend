@@ -3,7 +3,6 @@ import { Resolver, Query, Args, Mutation, Int } from '@nestjs/graphql';
 import { EntityService } from './entity.service';
 import { InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
-import { UserService } from 'src/services/user.service';
 import { PrismaService } from 'nestjs-prisma';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
@@ -13,7 +12,6 @@ import { EntityStatus } from 'src/common/enums/entityStatus';
 import { PaginatedEntity } from './dto/paginations/entity-connection.model';
 import { EntityConnectionArgs } from './dto/args/entity-connection.args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
-import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
@@ -42,7 +40,6 @@ import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSu
 export class EntityResolver {
   constructor(
     private readonly entityService: EntityService,
-    private userService: UserService,
     private prisma: PrismaService
   ) {}
 
@@ -63,7 +60,7 @@ export class EntityResolver {
     @Args('machineNumber', { nullable: true }) machineNumber: string,
     @Args('model', { nullable: true }) model: string,
     @Args('zone', { nullable: true }) zone: string,
-    @Args('location', { nullable: true }) location: string,
+    @Args('locationId', { nullable: true }) locationId: number,
     @Args('department', { nullable: true }) department: string,
     @Args('engine', { nullable: true }) engine: string,
     @Args('measurement', { nullable: true }) measurement: string,
@@ -78,7 +75,7 @@ export class EntityResolver {
       machineNumber,
       model,
       zone,
-      location,
+      locationId,
       department,
       engine,
       measurement,
@@ -114,7 +111,7 @@ export class EntityResolver {
     @Args('machineNumber', { nullable: true }) machineNumber: string,
     @Args('model', { nullable: true }) model: string,
     @Args('zone', { nullable: true }) zone: string,
-    @Args('location', { nullable: true }) location: string,
+    @Args('locationId', { nullable: true }) locationId: number,
     @Args('department', { nullable: true }) department: string,
     @Args('engine', { nullable: true }) engine: string,
     @Args('measurement', { nullable: true }) measurement: string,
@@ -128,7 +125,7 @@ export class EntityResolver {
       machineNumber,
       model,
       zone,
-      location,
+      locationId,
       department,
       engine,
       measurement,
@@ -248,7 +245,7 @@ export class EntityResolver {
     @Args('entityId') entityId: number,
     @Args('internal', { nullable: true }) internal: boolean,
     @Args('projectName', { nullable: true }) projectName: string,
-    @Args('location', { nullable: true }) location: string,
+    @Args('locationId', { nullable: true }) locationId: number,
     @Args('reason', { nullable: true }) reason: string,
     @Args('additionalInfo', { nullable: true }) additionalInfo: string,
     @Args('attendInfo', { nullable: true }) attendInfo: string,
@@ -261,7 +258,7 @@ export class EntityResolver {
       entityId,
       internal,
       projectName,
-      location,
+      locationId,
       reason,
       additionalInfo,
       attendInfo,
@@ -279,7 +276,7 @@ export class EntityResolver {
     @Args('id') id: number,
     @Args('internal', { nullable: true }) internal: boolean,
     @Args('projectName', { nullable: true }) projectName: string,
-    @Args('location', { nullable: true }) location: string,
+    @Args('locationId', { nullable: true }) locationId: number,
     @Args('reason', { nullable: true }) reason: string,
     @Args('additionalInfo', { nullable: true }) additionalInfo: string,
     @Args('attendInfo', { nullable: true }) attendInfo: string,
@@ -292,7 +289,7 @@ export class EntityResolver {
       id,
       internal,
       projectName,
-      location,
+      locationId,
       reason,
       additionalInfo,
       attendInfo,
@@ -677,22 +674,20 @@ export class EntityResolver {
   }
 
   @Query(() => maintenanceStatusCount)
-  async allEntityPMStatusCount(
-    @UserEntity() user: User
-  ): Promise<maintenanceStatusCount> {
-    return this.entityService.getAllEntityPMStatusCount(user);
+  async allEntityPMStatusCount(): Promise<maintenanceStatusCount> {
+    return this.entityService.getAllEntityPMStatusCount();
   }
 
-  // Permission checked in service
-  @Mutation(() => String)
-  async editEntityLocation(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('location') location: string
-  ): Promise<String> {
-    await this.entityService.editEntityLocation(user, id, location);
-    return `Location updated.`;
-  }
+  // // Permission checked in service
+  // @Mutation(() => String)
+  // async editEntityLocation(
+  //   @UserEntity() user: User,
+  //   @Args('id') id: number,
+  //   @Args('location') location: string
+  // ): Promise<String> {
+  //   await this.entityService.editEntityLocation(user, id, location);
+  //   return `Location updated.`;
+  // }
 
   @Query(() => PaginatedEntity)
   async getAllAssignedEntity(

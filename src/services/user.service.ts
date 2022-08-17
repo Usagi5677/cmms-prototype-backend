@@ -66,7 +66,7 @@ export class UserService {
   async checkUserPermission(
     userId: number,
     permission: string,
-    returnFalse: boolean = false
+    returnFalse = false
   ) {
     const userPermissions = await this.getUserRolesPermissionsList(userId);
     if (!userPermissions.includes(permission)) {

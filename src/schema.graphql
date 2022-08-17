@@ -20,42 +20,6 @@ type AllEntityUsageHistory {
   workingPercentage: Float
 }
 
-type AllMachineUsageHistory {
-  breakdownHour: Float
-  breakdownPercentage: Float
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  date: Date!
-  id: Int!
-  idleHour: Float
-  idlePercentage: Float
-  totalHour: Float
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  workingHour: Float
-  workingPercentage: Float
-}
-
-type AllTransportationUsageHistory {
-  breakdownHour: Float
-  breakdownPercentage: Float
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  date: Date!
-  id: Int!
-  idleHour: Float
-  idlePercentage: Float
-  totalHour: Float
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  workingHour: Float
-  workingPercentage: Float
-}
-
 type BreakdownNotif {
   count: Int
 
@@ -86,12 +50,11 @@ type Checklist {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
+  entity: [Entity!]
   from: Date!
   id: Int!
   items: [ChecklistItem!]!
-  machine: Machine
   to: Date!
-  transportation: Transportation
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -137,15 +100,14 @@ type ChecklistSummary {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
+  entity: [Entity!]
   from: Date!
   hasComments: Boolean!
   hasIssues: Boolean!
   id: Int!
   itemCompletion: String!
   items: [ChecklistItem!]!
-  machine: Machine
   to: Date!
-  transportation: Transportation
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -237,7 +199,7 @@ type Entity {
   id: Int!
   isDeleted: Boolean
   lastService: Int
-  location: String
+  location: Location
   machineNumber: String
   measurement: String
   model: String
@@ -350,7 +312,7 @@ type EntityHistory {
   entityType: String
   id: Int!
   idleHour: Float
-  location: String
+  location: Location
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -564,316 +526,6 @@ type LocationPageInfo {
   startCursor: String
 }
 
-type Machine {
-  assignees: [MachineAssign!]
-  breakdowns: [MachineBreakdown!]
-  checklistItems: [ChecklistItem!]
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  createdBy: User
-  currentRunning: Int
-  deletedAt: Date
-  histories: [MachineHistory!]
-  id: Int!
-  isDeleted: Boolean
-  lastService: Int
-  location: String
-  machineNumber: String
-  measurement: String
-  model: String
-  periodicMaintenancePlans: [MachinePeriodicMaintenance!]
-  registeredDate: Date
-  repairs: [MachineRepair!]
-  sparePRs: [MachineSparePR!]
-  status: MachineStatus
-  statusChangedAt: Date
-  type: Type
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  zone: String
-}
-
-type MachineAssign {
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  machineId: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  user: User
-  userId: Int!
-}
-
-type MachineAttachment {
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  machineId: Int!
-  mimeType: String
-  mode: String!
-  originalName: String
-  sharepointFileName: String
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type MachineAttachmentEdge {
-  cursor: String
-  node: MachineAttachment
-}
-
-type MachineAttachmentPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachineBreakdown {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  estimatedDateOfRepair: Date
-  id: Int!
-  machineId: Int!
-  status: BreakdownStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type MachineBreakdownEdge {
-  cursor: String
-  node: MachineBreakdown
-}
-
-type MachineBreakdownPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachineEdge {
-  cursor: String
-  node: Machine
-}
-
-type MachineHistory {
-  breakdownHour: Float
-  completedBy: User
-  completedById: Int
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  idleHour: Float
-  location: String
-  machineId: Int
-  machineStatus: MachineStatus
-  machineType: String
-  type: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  workingHour: Float
-}
-
-type MachineHistoryEdge {
-  cursor: String
-  node: MachineHistory
-}
-
-type MachineHistoryPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachinePMTask {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  name: String
-  parentTask: MachinePMTask
-  parentTaskId: Int
-  periodicMaintenance: MachinePeriodicMaintenance!
-  periodicMaintenanceId: Int
-  subTasks: [MachinePMTask!]
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type MachinePMTaskEdge {
-  cursor: String
-  node: MachinePMTask
-}
-
-type MachinePMTaskPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachinePageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachinePeriodicMaintenance {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  machine: Machine!
-  machineId: Int!
-  machinePeriodicMaintenanceTask: [MachinePMTask!]
-  measurement: String
-  startDate: Date
-  status: PeriodicMaintenanceStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  value: Int
-  verifiedAt: Date
-  verifiedBy: User
-}
-
-type MachinePeriodicMaintenanceEdge {
-  cursor: String
-  node: MachinePeriodicMaintenance
-}
-
-type MachinePeriodicMaintenancePageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachineRepair {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  machineId: Int!
-  status: RepairStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type MachineRepairEdge {
-  cursor: String
-  node: MachineRepair
-}
-
-type MachineRepairPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type MachineReport {
-  breakdown: Int!
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  type: String
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  working: Int!
-}
-
-type MachineSparePR {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  machineId: Int!
-  requestedDate: Date!
-  status: SparePRStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type MachineSparePREdge {
-  cursor: String
-  node: MachineSparePR
-}
-
-type MachineSparePRPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-"""Machine statuses."""
-enum MachineStatus {
-  Breakdown
-  Dispose
-  Idle
-  Working
-}
-
-type MachineUsageHistory {
-  breakdownHour: Float
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  date: Date!
-  id: Int!
-  idleHour: Float
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  workingHour: Float
-}
-
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
   addChecklistComment(checklistId: Int!, comment: String!): String!
@@ -881,71 +533,30 @@ type Mutation {
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
   addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
-  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
+  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   addEntitySparePR(description: String!, entityId: Int!, requestedDate: Date!, title: String!): String!
-  addMachineBreakdown(description: String!, machineId: Int!, title: String!): String!
-  addMachinePeriodicMaintenance(machineId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
-  addMachineRepair(description: String!, machineId: Int!, title: String!): String!
-  addMachineSparePR(description: String!, machineId: Int!, requestedDate: Date!, title: String!): String!
   addRole(name: String!): String!
-  addTransportationBreakdown(description: String!, title: String!, transportationId: Int!): String!
-  addTransportationPeriodicMaintenance(measurement: String!, startDate: Date!, tasks: [String!], title: String!, transportationId: Int!, value: Int!): String!
-  addTransportationRepair(description: String!, title: String!, transportationId: Int!): String!
-  addTransportationSparePR(description: String!, requestedDate: Date!, title: String!, transportationId: Int!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
-  assignUserToMachine(machineId: Int!, userIds: [Int!]!): String!
-  assignUserToTransportation(transportationId: Int!, userIds: [Int!]!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
-  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
+  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createLocation(createLocationInput: CreateLocationInput!): String!
-  createMachine(currentRunning: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
-  createMachinePeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
-  createTransportation(currentMileage: Int, department: String, engine: String, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, typeId: Int): String!
-  createTransportationPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createType(createTypeInput: CreateTypeInput!): String!
   deleteEntityBreakdown(id: Int!): String!
   deleteEntityPMTask(id: Int!): String!
   deleteEntityPeriodicMaintenance(id: Int!): String!
   deleteEntityRepairRequest(id: Int!): String!
   deleteEntitySparePR(id: Int!): String!
-  deleteMachineBreakdown(id: Int!): String!
-  deleteMachinePMTask(id: Int!): String!
-  deleteMachinePeriodicMaintenance(id: Int!): String!
-  deleteMachineRepair(id: Int!): String!
-  deleteMachineSparePR(id: Int!): String!
-  deleteTransportationBreakdown(id: Int!): String!
-  deleteTransportationPMTask(id: Int!): String!
-  deleteTransportationPeriodicMaintenance(id: Int!): String!
-  deleteTransportationRepair(id: Int!): String!
-  deleteTransportationSparePR(id: Int!): String!
-  editEntity(brand: String, department: String, engine: String, id: Int!, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
+  editEntity(brand: String, department: String, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
-  editEntityLocation(id: Int!, location: String!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
+  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
-  editMachine(currentRunning: Int, id: Int, lastService: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
-  editMachineAttachment(description: String!, id: Int!): String!
-  editMachineBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
-  editMachineLocation(id: Int!, location: String!): String!
-  editMachinePeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editMachineRepair(description: String!, id: Int!, title: String!): String!
-  editMachineSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
-  editMachineUsage(currentRunning: Int!, id: Int!, lastService: Int!): String!
   editRole(id: Int!, name: String!): String!
-  editTransportation(currentMileage: Int, department: String, engine: String, id: Int!, lastServiceMileage: Int, location: String, machineNumber: String, measurement: String, model: String, registeredDate: Date, transportType: String, typeId: Int): String!
-  editTransportationAttachment(description: String!, id: Int!): String!
-  editTransportationBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
-  editTransportationLocation(id: Int!, location: String!): String!
-  editTransportationPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editTransportationRepair(description: String!, id: Int!, title: String!): String!
-  editTransportationSparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
-  editTransportationUsage(currentMileage: Int!, id: Int!, lastServiceMileage: Int!): String!
   editUserLocation(id: Int!, location: String): String!
   flushRedis: String!
   readAllNotifications: Boolean!
@@ -955,46 +566,26 @@ type Mutation {
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
   removeEntity(entityId: Int!): String!
   removeEntityAttachment(id: Int!): String!
-  removeLocation(id: Int!): Location!
-  removeMachine(machineId: Int!): String!
-  removeMachineAttachment(id: Int!): String!
+  removeLocation(id: Int!): String!
   removeRole(id: Int!): String!
-  removeTransportation(transportationId: Int!): String!
-  removeTransportationAttachment(id: Int!): String!
   removeType(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
   setEntityBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setEntitySparePRStatus(id: Int!, status: SparePRStatus!): String!
   setEntityStatus(entityId: Int!, status: EntityStatus!): String!
-  setMachineBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
-  setMachinePeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
-  setMachineRepairStatus(id: Int!, status: RepairStatus!): String!
-  setMachineSparePRStatus(id: Int!, status: SparePRStatus!): String!
-  setMachineStatus(machineId: Int!, status: MachineStatus!): String!
-  setTransportationBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
-  setTransportationPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
-  setTransportationRepairStatus(id: Int!, status: RepairStatus!): String!
-  setTransportationSparePRStatus(id: Int!, status: SparePRStatus!): String!
-  setTransportationStatus(status: TransportationStatus!, transportationId: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
-  toggleMachinePMTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
-  toggleTransportationPMTask(complete: Boolean!, id: Int!): String!
   toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
-  toggleVerifyMachinePeriodicMaintenance(id: Int!, verify: Boolean!): String!
-  toggleVerifyTransportationPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
-  unassignUserFromMachine(machineId: Int!, userId: Int!): String!
-  unassignUserFromTransportation(transportationId: Int!, userId: Int!): String!
 
   """
   Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.
   """
   updateAllEntityChecklists: String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
-  updateLocation(updateLocationInput: UpdateLocationInput!): Location!
+  updateLocation(updateLocationInput: UpdateLocationInput!): String!
   updateReading(id: Int!, reading: Int!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
@@ -1065,89 +656,9 @@ type PaginatedLocation {
   pageInfo: LocationPageInfo
 }
 
-type PaginatedMachine {
-  edges: [MachineEdge!]
-  pageInfo: MachinePageInfo
-}
-
-type PaginatedMachineAttachment {
-  edges: [MachineAttachmentEdge!]
-  pageInfo: MachineAttachmentPageInfo
-}
-
-type PaginatedMachineBreakdown {
-  edges: [MachineBreakdownEdge!]
-  pageInfo: MachineBreakdownPageInfo
-}
-
-type PaginatedMachineHistory {
-  edges: [MachineHistoryEdge!]
-  pageInfo: MachineHistoryPageInfo
-}
-
-type PaginatedMachinePeriodicMaintenance {
-  edges: [MachinePeriodicMaintenanceEdge!]
-  pageInfo: MachinePeriodicMaintenancePageInfo
-}
-
-type PaginatedMachinePeriodicMaintenanceTask {
-  edges: [MachinePMTaskEdge!]
-  pageInfo: MachinePMTaskPageInfo
-}
-
-type PaginatedMachineRepair {
-  edges: [MachineRepairEdge!]
-  pageInfo: MachineRepairPageInfo
-}
-
-type PaginatedMachineSparePR {
-  edges: [MachineSparePREdge!]
-  pageInfo: MachineSparePRPageInfo
-}
-
 type PaginatedPermissionRole {
   edges: [RolesEdge!]
   pageInfo: RolesPageInfo
-}
-
-type PaginatedTransportation {
-  edges: [TransportationEdge!]
-  pageInfo: TransportationPageInfo
-}
-
-type PaginatedTransportationAttachment {
-  edges: [TransportationAttachmentEdge!]
-  pageInfo: TransportationAttachmentPageInfo
-}
-
-type PaginatedTransportationBreakdown {
-  edges: [TransportationBreakdownEdge!]
-  pageInfo: TransportationBreakdownPageInfo
-}
-
-type PaginatedTransportationHistory {
-  edges: [TransportationHistoryEdge!]
-  pageInfo: TransportationHistoryPageInfo
-}
-
-type PaginatedTransportationPeriodicMaintenance {
-  edges: [TransportationPeriodicMaintenanceEdge!]
-  pageInfo: TransportationPeriodicMaintenancePageInfo
-}
-
-type PaginatedTransportationPeriodicMaintenanceTask {
-  edges: [TransportationPMTaskEdge!]
-  pageInfo: TransportationPMTaskPageInfo
-}
-
-type PaginatedTransportationRepair {
-  edges: [TransportationRepairEdge!]
-  pageInfo: TransportationRepairPageInfo
-}
-
-type PaginatedTransportationSparePR {
-  edges: [TransportationSparePREdge!]
-  pageInfo: TransportationSparePRPageInfo
 }
 
 type PaginatedType {
@@ -1205,13 +716,6 @@ type Query {
   allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allEntityStatusCount(entityType: String, isAssigned: Boolean): entityStatusCount!
   allEntityUsageHistory(from: Date!, to: Date!): [AllEntityUsageHistory!]!
-  allMachineAndTransportStatusCount(isAssigned: Boolean): machineAndTransportsStatusCount!
-  allMachinePMStatusCount: maintenanceStatusCount!
-  allMachinePMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
-  allMachineUsageHistory(from: Date!, to: Date!): [AllMachineUsageHistory!]!
-  allTransportationPMStatusCount: maintenanceStatusCount!
-  allTransportationPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
-  allTransportationUsageHistory(from: Date!, to: Date!): [AllTransportationUsageHistory!]!
   appUsers: [User!]!
   assignedEntities(
     """Paginate after opaque cursor"""
@@ -1231,60 +735,13 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
     typeId: Int
   ): PaginatedEntity!
-  assignedMachines(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: MachineStatus
-  ): PaginatedMachine!
-  assignedTransportations(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-    department: [String!]
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: TransportationStatus
-    transportType: String
-  ): PaginatedTransportation!
   breakdownCount: BreakdownNotif!
-  breakdownMachineCount: BreakdownNotif!
-  breakdownVehicleCount: BreakdownNotif!
-  breakdownVesselCount: BreakdownNotif!
   checklist(input: ChecklistInput!): Checklist
   checklistSummary(input: ChecklistSummaryInput!): [ChecklistSummary!]!
   checklistTemplate(id: Int!): ChecklistTemplate!
@@ -1338,56 +795,12 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
     typeId: Int
   ): PaginatedEntity!
-  getAllAssignedMachine(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: MachineStatus
-  ): PaginatedMachine!
-  getAllAssignedTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-    department: [String!]
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: TransportationStatus
-    transportType: String
-  ): PaginatedTransportation!
   getAllBreakdownOfEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -1403,36 +816,6 @@ type Query {
     last: Int
     search: String
   ): PaginatedEntityBreakdown!
-  getAllBreakdownOfMachine(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    machineId: Int!
-    search: String
-  ): PaginatedMachineBreakdown!
-  getAllBreakdownOfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationBreakdown!
   getAllEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -1451,7 +834,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
@@ -1514,7 +897,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     self: Boolean
     status: EntityStatus
@@ -1534,126 +917,10 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     to: Date
   ): PaginatedEntityHistory!
-  getAllHistoryOfMachine(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-    from: Date
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    machineId: Int!
-    search: String
-    to: Date
-  ): PaginatedMachineHistory!
-  getAllHistoryOfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-    from: Date
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    to: Date
-    transportationId: Int!
-  ): PaginatedTransportationHistory!
-  getAllMachine(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: MachineStatus
-  ): PaginatedMachine!
-  getAllMachinePeriodicMaintenance(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    machineId: Int
-    search: String
-    status: PeriodicMaintenanceStatus
-  ): PaginatedMachinePeriodicMaintenance!
-  getAllMachinePeriodicMaintenanceTask(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    machineId: Int
-    search: String
-    status: PeriodicMaintenanceStatus
-  ): PaginatedMachinePeriodicMaintenanceTask!
-  getAllMachineUtilization(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: MachineStatus
-  ): PaginatedMachine!
   getAllPeriodicMaintenanceOfEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -1673,74 +940,6 @@ type Query {
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!
-  getAllPeriodicMaintenanceOfMachine(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    machineId: Int
-    search: String
-    status: PeriodicMaintenanceStatus
-  ): PaginatedMachinePeriodicMaintenance!
-  getAllPeriodicMaintenanceOfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    status: PeriodicMaintenanceStatus
-    transportationId: Int
-  ): PaginatedTransportationPeriodicMaintenance!
-  getAllRepairOfMachine(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    machineId: Int!
-    search: String
-  ): PaginatedMachineRepair!
-  getAllRepairOfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationRepair!
   getAllRepairRequestOfEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -1789,143 +988,6 @@ type Query {
     last: Int
     search: String
   ): PaginatedEntitySparePR!
-  getAllSparePROfMachine(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    machineId: Int!
-    search: String
-  ): PaginatedMachineSparePR!
-  getAllSparePROfTransportation(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationSparePR!
-  getAllTransportationPeriodicMaintenance(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    status: PeriodicMaintenanceStatus
-    transportationId: Int
-  ): PaginatedTransportationPeriodicMaintenance!
-  getAllTransportationPeriodicMaintenanceTask(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    status: PeriodicMaintenanceStatus
-    transportationId: Int
-  ): PaginatedTransportationPeriodicMaintenanceTask!
-  getAllTransportationUtilization(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-    department: [String!]
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: TransportationStatus
-    transportType: String
-  ): PaginatedTransportation!
-  getAllTransportationVehicles(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-    department: [String!]
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: TransportationStatus
-    transportType: String
-  ): PaginatedTransportation!
-  getAllTransportationVessels(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    createdById: Int
-    createdByUserId: String
-    department: [String!]
-
-    """Paginate first"""
-    first: Int
-    isAssigned: Boolean
-
-    """Paginate last"""
-    last: Int
-    location: [String!]
-    search: String
-    self: Boolean
-    status: TransportationStatus
-    transportType: String
-  ): PaginatedTransportation!
   getAllUsers(
     """Paginate after opaque cursor"""
     after: String
@@ -1941,15 +1003,9 @@ type Query {
     search: String
   ): PaginatedUsers!
   getEntityLatestAttachment(entityId: Int!): EntityAttachment!
-  getMachineLatestAttachment(machineId: Int!): MachineAttachment!
-  getMachineReport(from: Date!, to: Date!): [MachineReport!]!
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!
-  getSingleMachine(machineId: Int!): Machine!
-  getSingleTransportation(transportationId: Int!): Transportation!
-  getTransportationLatestAttachment(transportationId: Int!): TransportationAttachment!
-  getTransportationReport(from: Date!, to: Date!): [TransportationReport!]!
   getUsersWithPermission(permissions: [String!]!): [User!]!
   location(id: Int!): Location!
   locations(
@@ -1966,22 +1022,6 @@ type Query {
     last: Int
     name: String
   ): PaginatedLocation!
-  machineAttachment(id: Int!): MachineAttachment!
-  machineAttachments(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    machineId: Int!
-    search: String
-  ): PaginatedMachineAttachment!
   me: UserWithRoles!
   notifications: [Notification!]!
   permissions: [PermissionWithDescription!]!
@@ -1991,24 +1031,6 @@ type Query {
   searchAPSUsers(query: String!): [User!]!
   searchEntity(entityType: String, limit: Int, query: String!): [Entity!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
-  singleMachineUsageHistory(from: Date!, machineId: Int!, to: Date!): [MachineUsageHistory!]!
-  singleTransportationUsageHistory(from: Date!, to: Date!, transportationId: Int!): [TransportationUsageHistory!]!
-  transportationAttachment(id: Int!): TransportationAttachment!
-  transportationAttachments(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-    transportationId: Int!
-  ): PaginatedTransportationAttachment!
   type(id: Int!): Type!
   types(
     """Paginate after opaque cursor"""
@@ -2025,14 +1047,6 @@ type Query {
     last: Int
     name: String
   ): PaginatedType!
-  uploadMachineData: String!
-  uploadTransportsData: String!
-}
-
-"""Repair statuses."""
-enum RepairStatus {
-  Done
-  Pending
 }
 
 type Roles {
@@ -2068,319 +1082,6 @@ enum SparePRStatus {
 
 type Subscription {
   notificationCreated(userId: Int!): Notification!
-}
-
-type Transportation {
-  assignees: [TransportationAssign!]
-  brand: String
-  breakdowns: [TransportationBreakdown!]
-  checklistItems: [ChecklistItem!]
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  createdBy: User
-  currentMileage: Int
-  deletedAt: Date
-  department: String
-  engine: String
-  histories: [TransportationHistory!]
-  id: Int!
-  isDeleted: Boolean
-  lastServiceMileage: Int
-  location: String
-  machineNumber: String
-  measurement: String
-  model: String
-  periodicMaintenancePlans: [TransportationPeriodicMaintenance!]
-  registeredDate: Date
-  repairs: [TransportationRepair!]
-  sparePRs: [TransportationSparePR!]
-  status: TransportationStatus
-  statusChangedAt: Date
-  transportType: String
-  type: Type
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type TransportationAssign {
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  transportationId: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  user: User
-  userId: Int!
-}
-
-type TransportationAttachment {
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  mimeType: String
-  mode: String!
-  originalName: String
-  sharepointFileName: String
-  transportationId: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type TransportationAttachmentEdge {
-  cursor: String
-  node: TransportationAttachment
-}
-
-type TransportationAttachmentPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationBreakdown {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  estimatedDateOfRepair: Date
-  id: Int!
-  status: BreakdownStatus!
-  title: String!
-  transportationId: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type TransportationBreakdownEdge {
-  cursor: String
-  node: TransportationBreakdown
-}
-
-type TransportationBreakdownPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationEdge {
-  cursor: String
-  node: Transportation
-}
-
-type TransportationHistory {
-  breakdownHour: Float
-  completedBy: User
-  completedById: Int
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  idleHour: Float
-  location: String
-  transportationId: Int
-  transportationStatus: TransportationStatus
-  transportationType: String
-  type: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  workingHour: Float
-}
-
-type TransportationHistoryEdge {
-  cursor: String
-  node: TransportationHistory
-}
-
-type TransportationHistoryPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationPMTask {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  name: String
-  parentTask: TransportationPMTask
-  parentTaskId: Int
-  periodicMaintenance: TransportationPeriodicMaintenance!
-  periodicMaintenanceId: Int
-  subTasks: [TransportationPMTask!]
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type TransportationPMTaskEdge {
-  cursor: String
-  node: TransportationPMTask
-}
-
-type TransportationPMTaskPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationPeriodicMaintenance {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  measurement: String
-  startDate: Date
-  status: PeriodicMaintenanceStatus!
-  title: String!
-  transportation: Transportation!
-  transportationId: Int!
-  transportationPeriodicMaintenanceTask: [TransportationPMTask!]
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  value: Int
-  verifiedAt: Date
-  verifiedBy: User
-}
-
-type TransportationPeriodicMaintenanceEdge {
-  cursor: String
-  node: TransportationPeriodicMaintenance
-}
-
-type TransportationPeriodicMaintenancePageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationRepair {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  status: RepairStatus!
-  title: String!
-  transportationId: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type TransportationRepairEdge {
-  cursor: String
-  node: TransportationRepair
-}
-
-type TransportationRepairPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type TransportationReport {
-  breakdown: Int!
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  id: Int!
-  type: String
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  working: Int!
-}
-
-type TransportationSparePR {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  id: Int!
-  requestedDate: Date!
-  status: SparePRStatus!
-  title: String!
-  transportationId: Int!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type TransportationSparePREdge {
-  cursor: String
-  node: TransportationSparePR
-}
-
-type TransportationSparePRPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-"""Transportation statuses."""
-enum TransportationStatus {
-  Breakdown
-  Dispose
-  Idle
-  Working
-}
-
-type TransportationUsageHistory {
-  breakdownHour: Float
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  date: Date!
-  id: Int!
-  idleHour: Float
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-  workingHour: Float
 }
 
 type Type {
@@ -2499,17 +1200,6 @@ type entityStatusCount {
   dispose: Int
   idle: Int
   working: Int
-}
-
-type machineAndTransportsStatusCount {
-  machineBreakdown: Int
-  machineDispose: Int
-  machineIdle: Int
-  machineWorking: Int
-  transportationBreakdown: Int
-  transportationDispose: Int
-  transportationIdle: Int
-  transportationWorking: Int
 }
 
 type maintenanceStatusCount {

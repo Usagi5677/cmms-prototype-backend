@@ -7,14 +7,11 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
-import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PrismaService } from 'nestjs-prisma';
 import { User } from 'src/models/user.model';
 import { RedisCacheService } from 'src/redisCache.service';
 import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
-import { PUB_SUB } from 'src/resolvers/pubsub/pubsub.module';
 import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';
 import * as moment from 'moment';
@@ -27,7 +24,6 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
-import { RepairStatus } from 'src/common/enums/repairStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
@@ -65,8 +61,6 @@ export class EntityService {
     private readonly notificationService: NotificationService,
     @InjectQueue('cmms-entity-history')
     private entityHistoryQueue: Queue,
-    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-    private configService: ConfigService,
     @Inject(forwardRef(() => ChecklistTemplateService))
     private readonly checklistTemplateService: ChecklistTemplateService
   ) {}
@@ -84,9 +78,9 @@ export class EntityService {
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     if (query) {
-      const or: any = [
-        { machineNumber: { contains: query, mode: 'insensitive' } },
-      ];
+      where.AND.push({
+        machineNumber: { contains: query, mode: 'insensitive' },
+      });
     }
     if (entityType) {
       where.AND.push({
@@ -103,6 +97,7 @@ export class EntityService {
       take: limit,
       include: {
         type: true,
+        location: true,
       },
     });
     return entities;
@@ -115,7 +110,7 @@ export class EntityService {
     machineNumber: string,
     model: string,
     zone: string,
-    location: string,
+    locationId: number,
     department: string,
     engine: string,
     measurement: string,
@@ -141,7 +136,7 @@ export class EntityService {
           machineNumber,
           model,
           zone,
-          location,
+          locationId,
           department,
           engine,
           measurement,
@@ -208,7 +203,7 @@ export class EntityService {
     machineNumber: string,
     model: string,
     zone: string,
-    location: string,
+    locationId: number,
     department: string,
     engine: string,
     measurement: string,
@@ -217,6 +212,10 @@ export class EntityService {
   ) {
     const entity = await this.prisma.entity.findFirst({
       where: { id },
+      include: {
+        location: locationId ? true : false,
+        type: typeId ? true : false,
+      },
     });
     // Check if admin of entity or has permission
     await this.checkEntityAssignmentOrPermission(
@@ -227,7 +226,7 @@ export class EntityService {
       ['EDIT_ENTITY']
     );
     try {
-      if (entity.machineNumber != machineNumber) {
+      if (machineNumber && entity.machineNumber != machineNumber) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Machine number changed from ${entity.machineNumber} to ${machineNumber}.`,
@@ -235,7 +234,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.model != model) {
+      if (model && entity.model != model) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Model changed from ${entity.model} to ${model}.`,
@@ -243,15 +242,18 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.typeId != typeId) {
+      if (typeId && entity.typeId != typeId) {
+        const newType = await this.prisma.type.findFirst({
+          where: { id: typeId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Type changed from ${entity.typeId} to ${typeId}.`,
+          description: `Type changed from ${entity.type.name} to ${newType.name}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (entity.department != department) {
+      if (department && entity.department != department) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Department changed from ${entity.department} to ${department}.`,
@@ -259,15 +261,20 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.location != location) {
+      if (locationId && entity.locationId != locationId) {
+        const newLocation = await this.prisma.location.findFirst({
+          where: { id: locationId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Location changed from ${entity.location} to ${location}.`,
+          description: `Location changed${
+            entity.locationId ? ` from ${entity.location.name}` : ``
+          } to ${newLocation.name}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (entity.engine != engine) {
+      if (engine && entity.engine != engine) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Engine changed from ${entity.engine} to ${engine}.`,
@@ -275,7 +282,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.measurement != engine) {
+      if (measurement && entity.measurement != measurement) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Measurement changed from ${entity.measurement} to ${measurement}.`,
@@ -283,7 +290,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (entity.brand != brand) {
+      if (brand && entity.brand != brand) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Brand changed from ${entity.brand} to ${brand}.`,
@@ -292,8 +299,9 @@ export class EntityService {
         });
       }
       if (
+        registeredDate &&
         moment(entity.registeredDate).format('DD MMMM YYYY HH:mm:ss') !=
-        moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
+          moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
       ) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
@@ -322,7 +330,7 @@ export class EntityService {
           machineNumber,
           model,
           zone,
-          location,
+          locationId: locationId ?? undefined,
           department,
           engine,
           measurement,
@@ -429,13 +437,14 @@ export class EntityService {
         },
         assignees: { include: { user: true } },
         type: true,
+        location: true,
       },
     });
     await this.checkEntityAssignmentOrPermission(
       entityId,
       user.id,
       entity,
-      ['Admin', 'Engineer', 'User'],
+      [],
       ['VIEW_ALL_ENTITY']
     );
     if (!entity) throw new BadRequestException('Entity not found.');
@@ -461,7 +470,7 @@ export class EntityService {
       assignedToId,
       entityType,
       status,
-      location,
+      locationIds,
       department,
       isAssigned,
       typeId,
@@ -482,10 +491,10 @@ export class EntityService {
       where.AND.push({ status });
     }
 
-    if (location?.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
-        location: {
-          in: location,
+        locationId: {
+          in: locationIds,
         },
       });
     }
@@ -547,6 +556,7 @@ export class EntityService {
           },
         },
         type: true,
+        location: true,
       },
     });
     for (const entity of entities) {
@@ -841,7 +851,7 @@ export class EntityService {
     entityId: number,
     internal: boolean,
     projectName: string,
-    location: string,
+    locationId: number,
     reason: string,
     additionalInfo: string,
     attendInfo: string,
@@ -862,7 +872,7 @@ export class EntityService {
           entityId,
           internal,
           projectName,
-          location,
+          locationId,
           reason,
           additionalInfo,
           attendInfo,
@@ -898,7 +908,7 @@ export class EntityService {
     id: number,
     internal: boolean,
     projectName: string,
-    location: string,
+    locationId: number,
     reason: string,
     additionalInfo: string,
     attendInfo: string,
@@ -936,14 +946,6 @@ export class EntityService {
         await this.createEntityHistoryInBackground({
           type: 'Repair Request Edit',
           description: `(${id}) Project name changed from ${repair.projectName} to ${projectName}.`,
-          entityId: repair.entityId,
-          completedById: user.id,
-        });
-      }
-      if (repair.location != location) {
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Request Edit',
-          description: `(${id}) Description changed from ${repair.location} to ${location}.`,
           entityId: repair.entityId,
           completedById: user.id,
         });
@@ -1030,7 +1032,7 @@ export class EntityService {
         data: {
           internal,
           projectName,
-          location,
+          locationId,
           reason,
           additionalInfo,
           attendInfo,
@@ -1733,7 +1735,7 @@ export class EntityService {
   ): Promise<PaginatedEntityHistory> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, entityId, location, from, to } = args;
+    const { search, entityId, locationIds, from, to } = args;
     const fromDate = moment(from).startOf('day');
     const toDate = moment(to).endOf('day');
 
@@ -1743,9 +1745,9 @@ export class EntityService {
     if (entityId) {
       where.AND.push({ entityId });
     }
-    if (location?.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
-        location: {
+        locationId: {
           in: location,
         },
       });
@@ -1776,6 +1778,7 @@ export class EntityService {
       where,
       include: {
         completedBy: true,
+        location: true,
       },
       orderBy: { id: 'desc' },
     });
@@ -2036,7 +2039,7 @@ export class EntityService {
       select: {
         status: true,
         typeId: true,
-        location: true,
+        locationId: true,
         id: true,
       },
     });
@@ -2082,7 +2085,7 @@ export class EntityService {
         workingHour: await this.getLatestReading(entity),
         idleHour: idleHour,
         breakdownHour: breakdownHour,
-        location: entity.location,
+        locationId: entity.locationId,
       },
     });
   }
@@ -2452,7 +2455,7 @@ export class EntityService {
   ): Promise<PaginatedEntity> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, status, location } = args;
+    const { createdById, search, assignedToId, status, locationIds } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -2470,10 +2473,10 @@ export class EntityService {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (locationIds.length > 0) {
       where.AND.push({
-        location: {
-          in: location,
+        locationId: {
+          in: locationIds,
         },
       });
     }
@@ -2867,7 +2870,7 @@ export class EntityService {
     }
   }
 
-  async getAllEntityPMStatusCount(user: User) {
+  async getAllEntityPMStatusCount() {
     try {
       const key = `allEntityPMStatusCount`;
       let pmStatusCount = await this.redisCacheService.get(key);
@@ -2902,50 +2905,50 @@ export class EntityService {
     }
   }
 
-  //** Edit entity location */
-  async editEntityLocation(user: User, id: number, location: string) {
-    const entity = await this.prisma.entity.findFirst({
-      where: {
-        id,
-      },
-    });
-    // Check if admin of entity
-    await this.checkEntityAssignmentOrPermission(
-      id,
-      user.id,
-      entity,
-      ['Admin'],
-      ['EDIT_ENTITY_LOCATION']
-    );
-    try {
-      if (entity.location != location) {
-        const users = await this.getUserIds(id, user.id);
-        for (let index = 0; index < users.length; index++) {
-          await this.notificationService.createInBackground({
-            userId: users[index],
-            body: `${user.fullName} (${user.rcno}) changed location from ${entity.location} to ${location}.`,
-            link: `/entity/${id}`,
-          });
-        }
-        await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Location changed from ${entity.location} to ${location}.`,
-          entityId: id,
-          completedById: user.id,
-        });
+  // //** Edit entity location */
+  // async editEntityLocation(user: User, id: number, location: string) {
+  //   const entity = await this.prisma.entity.findFirst({
+  //     where: {
+  //       id,
+  //     },
+  //   });
+  //   // Check if admin of entity
+  //   await this.checkEntityAssignmentOrPermission(
+  //     id,
+  //     user.id,
+  //     entity,
+  //     ['Admin'],
+  //     ['EDIT_ENTITY_LOCATION']
+  //   );
+  //   try {
+  //     if (entity.location != location) {
+  //       const users = await this.getUserIds(id, user.id);
+  //       for (let index = 0; index < users.length; index++) {
+  //         await this.notificationService.createInBackground({
+  //           userId: users[index],
+  //           body: `${user.fullName} (${user.rcno}) changed location from ${entity.location} to ${location}.`,
+  //           link: `/entity/${id}`,
+  //         });
+  //       }
+  //       await this.createEntityHistoryInBackground({
+  //         type: 'Entity Edit',
+  //         description: `Location changed from ${entity.location} to ${location}.`,
+  //         entityId: id,
+  //         completedById: user.id,
+  //       });
 
-        await this.prisma.entity.update({
-          where: { id },
-          data: {
-            location,
-          },
-        });
-      }
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
+  //       await this.prisma.entity.update({
+  //         where: { id },
+  //         data: {
+  //           location,
+  //         },
+  //       });
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //     throw new InternalServerErrorException('Unexpected error occured.');
+  //   }
+  // }
 
   //** Get all entity status count*/
   async getAllEntityStatusCount(
@@ -3066,6 +3069,7 @@ export class EntityService {
     }
   }
 
+  // Pass empty array for assignment to check for any assignment
   async checkEntityAssignmentOrPermission(
     entityId: number,
     userId: number,
@@ -3079,7 +3083,11 @@ export class EntityService {
     let hasAssignment = true;
     if (assignments) {
       const currentAssignments = await this.prisma.entityAssignment.findMany({
-        where: { entityId, userId, type: { in: assignments } },
+        where: {
+          entityId,
+          userId,
+          type: assignments.length === 0 ? undefined : { in: assignments },
+        },
       });
       if (currentAssignments.length === 0) hasAssignment = false;
       const currentAssignmentsArray = currentAssignments.map((a) => a.type);

@@ -38,7 +38,7 @@ export class LocationResolver {
   }
 
   @Permissions('MODIFY_LOCATIONS')
-  @Mutation(() => Location)
+  @Mutation(() => String)
   async updateLocation(
     @Args('updateLocationInput') updateLocationInput: UpdateLocationInput
   ) {
@@ -47,7 +47,7 @@ export class LocationResolver {
   }
 
   @Permissions('MODIFY_LOCATIONS')
-  @Mutation(() => Location)
+  @Mutation(() => String)
   async removeLocation(@Args('id', { type: () => Int }) id: number) {
     await this.locationService.remove(id);
     return 'Successfully removed type.';

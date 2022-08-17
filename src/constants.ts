@@ -85,7 +85,6 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     type: 'Config',
     description: 'Create, edit and delete types.',
   },
-  { name: 'VIEW_TYPES', type: 'Config', description: 'View all types.' },
   {
     name: 'MODIFY_LOCATIONS',
     type: 'Config',

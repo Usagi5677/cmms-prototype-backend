@@ -414,17 +414,11 @@ export class ChecklistTemplateService {
         entitiesWeekly: true,
       },
     });
-    for (const machine of template.entitiesDaily) {
-      await this.updateEntityChecklists(machine.id, 'Daily');
+    for (const entity of template.entitiesDaily) {
+      await this.updateEntityChecklists(entity.id, 'Daily');
     }
-    for (const machine of template.entitiesWeekly) {
-      await this.updateEntityChecklists(machine.id, 'Weekly');
-    }
-    for (const transportation of template.entitiesDaily) {
-      await this.updateEntityChecklists(transportation.id, 'Daily');
-    }
-    for (const transportation of template.entitiesWeekly) {
-      await this.updateEntityChecklists(transportation.id, 'Weekly');
+    for (const entity of template.entitiesWeekly) {
+      await this.updateEntityChecklists(entity.id, 'Weekly');
     }
   }
 

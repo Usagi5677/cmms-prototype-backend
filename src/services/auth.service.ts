@@ -1,14 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from './../prisma/prisma.service';
-import { SecurityConfig } from '../configs/config.interface';
-import { Token } from '../models/token.model';
 import { APSService } from './aps.service';
 import { UserService } from './user.service';
 import { RedisCacheService } from 'src/redisCache.service';
@@ -17,7 +9,7 @@ import { RedisCacheService } from 'src/redisCache.service';
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly APSService: APSService,
+    private readonly apsService: APSService,
     private readonly userService: UserService,
     private readonly redisCacheService: RedisCacheService
   ) {}
@@ -30,7 +22,7 @@ export class AuthService {
       user = await this.prisma.user.findUnique({ where: { userId: uuid } });
       if (!user) {
         // If user not found in helpdesk system database, call APS
-        const profile = await this.APSService.getProfile(uuid);
+        const profile = await this.apsService.getProfile(uuid);
         // Create new user based on APS response
         user = await this.userService.createUser(
           profile.rcno,

@@ -1,10 +1,7 @@
 import { GraphQLModule } from '@nestjs/graphql';
 import { Module, UnauthorizedException } from '@nestjs/common';
-import { AppController } from './controllers/app.controller';
-import { AppService } from './services/app.service';
 import { AuthModule } from './resolvers/auth/auth.module';
 import { UserModule } from './resolvers/user/user.module';
-import { AppResolver } from './resolvers/app.resolver';
 import { DateScalar } from './common/scalars/date.scalar';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import config from './configs/config';
@@ -14,8 +11,6 @@ import { BullModule } from '@nestjs/bull';
 import jwtDecode from 'jwt-decode';
 import { PubsubModule } from './resolvers/pubsub/pubsub.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { MachineModule } from './resolvers/machine/machine.module';
-import { TransportationModule } from './resolvers/transportation/transportation.module';
 import { AttachmentModule } from './resolvers/attachment/attachment.module';
 import { PermissionRoleModule } from './resolvers/permissionRole/permissionRole.module';
 import { ChecklistTemplateModule } from './resolvers/checklist-template/checklist-template.module';
@@ -72,8 +67,6 @@ import { LocationModule } from './location/location.module';
     PubsubModule,
     AuthModule,
     UserModule,
-    MachineModule,
-    TransportationModule,
     AttachmentModule,
     PermissionRoleModule,
     ScheduleModule.forRoot(),
@@ -84,7 +77,6 @@ import { LocationModule } from './location/location.module';
     PermissionModule,
     LocationModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, AppResolver, DateScalar, InitService],
+  providers: [DateScalar, InitService],
 })
 export class AppModule {}

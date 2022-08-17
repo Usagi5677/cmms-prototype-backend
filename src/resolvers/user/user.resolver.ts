@@ -94,7 +94,7 @@ export class UserResolver {
     await this.prisma.userRole.deleteMany({
       where: { userId: targetUserId, roleId },
     });
-    await this.redisCacheService.delPattern(`roles-${targetUserId}-*`);
+    await this.redisCacheService.delPattern(`roles-${targetUserId}`);
     return 'User role removed.';
   }
 
@@ -116,7 +116,7 @@ export class UserResolver {
         })),
       });
 
-      await this.redisCacheService.delPattern(`roles-${targetUserId}-*`);
+      await this.redisCacheService.delPattern(`roles-${targetUserId}`);
       return 'User role added.';
     } catch (e) {
       console.log(e);

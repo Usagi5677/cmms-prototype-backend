@@ -27,7 +27,7 @@ export class TypeService {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const { name, entityType } = args;
-    let where: any = { AND: [{ active: true }] };
+    const where: any = { AND: [{ active: true }] };
     if (entityType) {
       where.AND.push({ entityType });
     }

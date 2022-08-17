@@ -28,7 +28,7 @@ export class LocationService {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const { name } = args;
-    let where: any = { AND: [{ active: true }] };
+    const where: any = { AND: [{ active: true }] };
     if (name) {
       where.AND.push({ name: { contains: name, mode: 'insensitive' } });
     }
@@ -36,6 +36,7 @@ export class LocationService {
       skip: offset,
       take: limitPlusOne,
       where,
+      orderBy: { name: 'asc' },
     });
     const count = await this.prisma.location.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
