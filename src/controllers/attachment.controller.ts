@@ -103,6 +103,13 @@ export class AttachmentController {
     if (!attachment) {
       throw new BadRequestException('Attachment does not exist.');
     }
+    await this.entityService.checkEntityAssignmentOrPermission(
+      attachment.entityId,
+      user.id,
+      undefined,
+      [],
+      ['VIEW_ALL_ENTITY']
+    );
     const file = await this.attachmentService.getFile(
       attachment.sharepointFileName
     );
