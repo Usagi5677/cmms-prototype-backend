@@ -2672,7 +2672,11 @@ export class EntityService {
         take: limitPlusOne,
         where,
         include: {
-          entity: true,
+          entity: {
+            include: {
+              type: true,
+            },
+          },
         },
         orderBy: { id: 'desc' },
       });
@@ -2772,6 +2776,7 @@ export class EntityService {
                       user: true,
                     },
                   },
+                  type: true,
                 },
               },
             },
