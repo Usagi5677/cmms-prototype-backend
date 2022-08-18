@@ -488,6 +488,17 @@ enum EntityStatus {
   Working
 }
 
+input EntityTransferInput {
+  entityId: Int!
+  newLocationId: Int!
+  users: [EntityTransferUserInputGQL!]!
+}
+
+input EntityTransferUserInputGQL {
+  type: String!
+  userUuid: String!
+}
+
 type EntityUsageHistory {
   breakdownHour: Float
 
@@ -557,6 +568,7 @@ type Mutation {
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editRole(id: Int!, name: String!): String!
   editUserLocation(id: Int!, locationId: Int): String!
+  entityTransfer(input: EntityTransferInput!): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
