@@ -22,7 +22,8 @@ model User {
   rcno                                 Int
   fullName                             String
   email                                String
-  location                             String?
+  locationId                           Int?
+  location                             Location?                       @relation(fields: [locationId], references: [id])
   notifications                        Notification[]
   roles                                UserRole[]
   checklistCompletions                 ChecklistItem[]
@@ -44,7 +45,7 @@ model User {
   entityRepairRequestRequestedBy       EntityRepairRequest[]           @relation(name: "requestedBy")
   entityRepairRequestApprovedBy        EntityRepairRequest[]           @relation(name: "approvedBy")
   entityRepairRequestRepairedBy        EntityRepairRequest[]           @relation(name: "repairedBy")
-  locationsCreated                     Location[]
+  locationsCreated                     Location[]                      @relation(name: "locationCreated")
 }
 
 model Notification {
@@ -105,11 +106,12 @@ model Location {
   updatedAt      DateTime              @updatedAt
   name           String
   createdById    Int?
-  createdBy      User?                 @relation(fields: [createdById], references: [id])
+  createdBy      User?                 @relation(name: "locationCreated", fields: [createdById], references: [id])
   active         Boolean               @default(true)
   entities       Entity[]
   histories      EntityHistory[]
   repairRequests EntityRepairRequest[]
+  user           User[]
 }
 
 enum SparePRStatus {

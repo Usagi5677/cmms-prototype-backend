@@ -5,7 +5,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+
 import { RedisCacheService } from 'src/redisCache.service';
 //import { UserGroupConnectionArgs } from 'src/models/args/user-group-connection.args';
 import {
@@ -15,6 +15,7 @@ import {
 import { APSService } from './aps.service';
 import { UsersConnectionArgs } from 'src/models/args/user-connection.args';
 import { PaginatedUsers } from 'src/models/pagination/user-connection.model';
+import { User } from 'src/models/user.model';
 @Injectable()
 export class UserService {
   constructor(
@@ -157,6 +158,7 @@ export class UserService {
             role: true,
           },
         },
+        location: true,
       },
     });
     const count = await this.prisma.user.count({ where });
@@ -180,12 +182,12 @@ export class UserService {
   }
 
   //** Edit user location */
-  async editUserLocation(user: User, id: number, location: string) {
+  async editUserLocation(user: User, id: number, locationId: number) {
     try {
       await this.prisma.user.update({
         where: { id },
         data: {
-          location,
+          locationId,
         },
       });
     } catch (e) {

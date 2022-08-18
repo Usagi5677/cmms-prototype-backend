@@ -40,6 +40,7 @@ export class UserResolver {
           },
         },
         entityAssignment: { include: { entity: { include: { type: true } } } },
+        location: true,
       },
     });
     return userDB;
@@ -175,10 +176,10 @@ export class UserResolver {
   async editUserLocation(
     @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('location', { nullable: true }) location: string
+    @Args('locationId', { nullable: true }) locationId: number
   ): Promise<String> {
     try {
-      await this.userService.editUserLocation(user, id, location);
+      await this.userService.editUserLocation(user, id, locationId);
       return 'User location updated.';
     } catch (e) {
       console.log(e);

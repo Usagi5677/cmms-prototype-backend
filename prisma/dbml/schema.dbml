@@ -10,7 +10,8 @@ Table User {
   rcno Int [not null]
   fullName String [not null]
   email String [not null]
-  location String
+  locationId Int
+  location Location
   notifications Notification [not null]
   roles UserRole [not null]
   checklistCompletions ChecklistItem [not null]
@@ -100,6 +101,7 @@ Table Location {
   entities Entity [not null]
   histories EntityHistory [not null]
   repairRequests EntityRepairRequest [not null]
+  user User [not null]
 }
 
 Table ChecklistTemplate {
@@ -381,6 +383,8 @@ Enum EntityStatus {
   Dispose
 }
 
+Ref: User.locationId - Location.id
+
 Ref: Notification.userId > User.id
 
 Ref: Role.createdById > User.id
@@ -391,7 +395,7 @@ Ref: UserRole.roleId > Role.id
 
 Ref: PermissionRole.roleId > Role.id
 
-Ref: Location.createdById > User.id
+Ref: Location.createdById - User.id
 
 Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
 

@@ -510,7 +510,6 @@ type Location {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  user: User!
 }
 
 type LocationEdge {
@@ -557,7 +556,7 @@ type Mutation {
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editRole(id: Int!, name: String!): String!
-  editUserLocation(id: Int!, location: String): String!
+  editUserLocation(id: Int!, locationId: Int): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
@@ -1132,7 +1131,7 @@ type User {
   email: String!
   fullName: String!
   id: Int!
-  location: String
+  location: Location
   permissions: [String!]
   rcno: Int!
   roles: [UserRoles!]
@@ -1172,7 +1171,7 @@ type UserWithRoles {
   entityAssignment: [EntityAssign!]
   fullName: String!
   id: Int!
-  location: String
+  location: Location
   rcno: Int!
   roles: [UserRoles!]
   userId: String!

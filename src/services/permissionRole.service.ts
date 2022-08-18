@@ -4,7 +4,6 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
 import {
   connectionFromArraySlice,
@@ -13,6 +12,7 @@ import {
 import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-connection.args';
 import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-connection.model';
 import { permissions as PERMISSIONS } from 'src/constants';
+import { User } from 'src/models/user.model';
 
 @Injectable()
 export class PermissionRoleService {
