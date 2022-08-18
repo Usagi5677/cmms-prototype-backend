@@ -7,6 +7,8 @@ import { NotificationModule } from 'src/resolvers/notification/notification.modu
 import { BullModule } from '@nestjs/bull';
 import { ChecklistTemplateModule } from 'src/resolvers/checklist-template/checklist-template.module';
 import { EntityConsumer } from './entity.consumer';
+import { LocationModule } from 'src/location/location.module';
+import { AuthModule } from 'src/resolvers/auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { EntityConsumer } from './entity.consumer';
       name: 'cmms-entity-history',
     }),
     forwardRef(() => ChecklistTemplateModule),
+    LocationModule,
+    AuthModule,
   ],
   providers: [EntityResolver, EntityService, EntityConsumer],
   exports: [EntityService],

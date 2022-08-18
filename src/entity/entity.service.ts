@@ -39,6 +39,12 @@ import { EntityPeriodicMaintenanceConnectionArgs } from './dto/args/entity-perio
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
 import { PaginatedEntityPeriodicMaintenanceTask } from './dto/paginations/entity-pm-tasks-connection.model';
 import { ENTITY_ASSIGNMENT_TYPES } from 'src/constants';
+import {
+  EntityTransferInput,
+  EntityTransferUserInput,
+} from './dto/args/entity-transfer.input';
+import { LocationService } from 'src/location/location.service';
+import { AuthService } from 'src/services/auth.service';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -62,11 +68,16 @@ export class EntityService {
     @InjectQueue('cmms-entity-history')
     private entityHistoryQueue: Queue,
     @Inject(forwardRef(() => ChecklistTemplateService))
-    private readonly checklistTemplateService: ChecklistTemplateService
+    private readonly checklistTemplateService: ChecklistTemplateService,
+    private readonly locationService: LocationService,
+    private readonly authService: AuthService
   ) {}
 
-  async findOne(id: number) {
-    const entity = await this.prisma.entity.findFirst({ where: { id } });
+  async findOne(id: number, includeLocation?: boolean) {
+    const entity = await this.prisma.entity.findFirst({
+      where: { id },
+      include: { location: includeLocation ? true : false },
+    });
     if (!entity) {
       throw new BadRequestException('Entity not found.');
     }
@@ -2952,50 +2963,101 @@ export class EntityService {
     }
   }
 
-  // //** Edit entity location */
-  // async editEntityLocation(user: User, id: number, location: string) {
-  //   const entity = await this.prisma.entity.findFirst({
-  //     where: {
-  //       id,
-  //     },
-  //   });
-  //   // Check if admin of entity
-  //   await this.checkEntityAssignmentOrPermission(
-  //     id,
-  //     user.id,
-  //     entity,
-  //     ['Admin'],
-  //     ['EDIT_ENTITY_LOCATION']
-  //   );
-  //   try {
-  //     if (entity.location != location) {
-  //       const users = await this.getEntityAssignmentIds(id, user.id);
-  //       for (let index = 0; index < users.length; index++) {
-  //         await this.notificationService.createInBackground({
-  //           userId: users[index],
-  //           body: `${user.fullName} (${user.rcno}) changed location from ${entity.location} to ${location}.`,
-  //           link: `/entity/${id}`,
-  //         });
-  //       }
-  //       await this.createEntityHistoryInBackground({
-  //         type: 'Entity Edit',
-  //         description: `Location changed from ${entity.location} to ${location}.`,
-  //         entityId: id,
-  //         completedById: user.id,
-  //       });
+  async entityTransfer({
+    entityId,
+    users,
+    newLocationId,
+  }: EntityTransferInput) {
+    const entity = await this.findOne(entityId, true);
+    const newLocation = await this.locationService.findOne(newLocationId);
+    for (const u of users) {
+      u.user = await this.authService.validateUser(u.userUuid);
+      if (!ENTITY_ASSIGNMENT_TYPES.includes(u.type)) {
+        throw new BadRequestException(`Invalid assignment type: ${u.type}`);
+      }
+    }
+    // Remove duplicates
+    users = users.filter(
+      (value, index, self) =>
+        index ===
+        self.findIndex(
+          (t) => t.user.id === value.user.id && t.type === value.type
+        )
+    );
 
-  //       await this.prisma.entity.update({
-  //         where: { id },
-  //         data: {
-  //           location,
-  //         },
-  //       });
-  //     }
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new InternalServerErrorException('Unexpected error occured.');
-  //   }
-  // }
+    // Find current assignments to find assignments to be created/removed
+    const currentAssignments = await this.prisma.entityAssignment.findMany({
+      where: { entityId, removedAt: null },
+      include: { user: true },
+    });
+    const newAssignments: EntityTransferUserInput[] = [];
+    for (const u of users) {
+      let exists = false;
+      for (const assignment of currentAssignments) {
+        if (u.type === assignment.type && u.user.id === assignment.userId) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        newAssignments.push(u);
+      }
+    }
+    const removedAssignments = [];
+    for (const assignment of currentAssignments) {
+      let exists = false;
+      for (const u of users) {
+        if (u.type === assignment.type && u.user.id === assignment.userId) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        removedAssignments.push(assignment);
+      }
+    }
+    const transactions = [
+      this.prisma.entity.update({
+        where: { id: entityId },
+        data: { locationId: newLocationId },
+      }),
+      this.prisma.entityAssignment.updateMany({
+        where: { id: { in: removedAssignments.map((a) => a.id) } },
+        data: { removedAt: new Date() },
+      }),
+      this.prisma.entityAssignment.createMany({
+        data: newAssignments.map((a) => ({
+          entityId,
+          type: a.type,
+          userId: a.user.id,
+        })),
+      }),
+    ];
+    await this.prisma.$transaction(transactions);
+    if (entity.locationId != newLocationId) {
+      await this.createEntityHistoryInBackground({
+        type: 'Entity Edit',
+        description: `Location changed${
+          entity.locationId ? ` from ${entity.location.name}` : ``
+        } to ${newLocation.name}.`,
+        entityId,
+      });
+    }
+    for (const assignment of removedAssignments) {
+      await this.createEntityHistoryInBackground({
+        type: 'User Unassigned',
+        description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
+        entityId: entityId,
+      });
+    }
+    for (const assignment of newAssignments) {
+      await this.createEntityHistoryInBackground({
+        type: 'User Assign',
+        description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
+        entityId: entityId,
+      });
+    }
+  }
 
   //** Get all entity status count*/
   async getAllEntityStatusCount(
