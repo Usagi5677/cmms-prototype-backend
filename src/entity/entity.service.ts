@@ -173,7 +173,7 @@ export class EntityService {
   //** Delete entity. */
   async deleteEntity(id: number, user: User) {
     try {
-      const users = await this.getUserIds(id, user.id);
+      const users = await this.getEntityAssignmentIds(id, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -315,7 +315,7 @@ export class EntityService {
         });
       }
 
-      const users = await this.getUserIds(id, user.id);
+      const users = await this.getEntityAssignmentIds(id, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -372,7 +372,7 @@ export class EntityService {
         entityId: entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(entityId, user.id);
+      const users = await this.getEntityAssignmentIds(entityId, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -435,7 +435,7 @@ export class EntityService {
             items: true,
           },
         },
-        assignees: { include: { user: true } },
+        assignees: { include: { user: true }, where: { removedAt: null } },
         type: true,
         location: true,
       },
@@ -623,7 +623,7 @@ export class EntityService {
         entityId: entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(
+      const users = await this.getEntityAssignmentIds(
         periodicMaintenance.entityId,
         user.id
       );
@@ -704,7 +704,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(
+      const users = await this.getEntityAssignmentIds(
         periodicMaintenance.entityId,
         user.id
       );
@@ -749,7 +749,7 @@ export class EntityService {
       ['MODIFY_PERIODIC_MAINTENANCE']
     );
     try {
-      const users = await this.getUserIds(
+      const users = await this.getEntityAssignmentIds(
         periodicMaintenance.entityId,
         user.id
       );
@@ -822,7 +822,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(
+      const users = await this.getEntityAssignmentIds(
         periodicMaintenance.entityId,
         user.id
       );
@@ -888,7 +888,7 @@ export class EntityService {
         entityId: entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(entityId, user.id);
+      const users = await this.getEntityAssignmentIds(entityId, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1019,7 +1019,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(repair.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(repair.entityId, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1071,7 +1071,7 @@ export class EntityService {
         entityId: repair.entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(repair.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(repair.entityId, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1118,7 +1118,7 @@ export class EntityService {
         entityId: entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(entityId, user.id);
+      const users = await this.getEntityAssignmentIds(entityId, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1189,7 +1189,10 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(sparePR.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        sparePR.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1231,7 +1234,10 @@ export class EntityService {
         entityId: sparePR.entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(sparePR.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        sparePR.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1282,7 +1288,10 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(sparePR.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        sparePR.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1334,7 +1343,7 @@ export class EntityService {
         entityId: entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(entityId, user.id);
+      const users = await this.getEntityAssignmentIds(entityId, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1406,7 +1415,10 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(breakdown.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        breakdown.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1448,7 +1460,10 @@ export class EntityService {
         entityId: breakdown.entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(breakdown.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        breakdown.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -1514,7 +1529,10 @@ export class EntityService {
           entityId: breakdown.entityId,
           completedById: user.id,
         });
-        const users = await this.getUserIds(breakdown.entityId, user.id);
+        const users = await this.getEntityAssignmentIds(
+          breakdown.entityId,
+          user.id
+        );
         for (let index = 0; index < users.length; index++) {
           await this.notificationService.createInBackground({
             userId: users[index],
@@ -1827,30 +1845,44 @@ export class EntityService {
     if (!entity) {
       throw new BadRequestException('Invalid entity.');
     }
+
+    // Filter out existing assignments of type
+    const existingAssignmentIds = await this.getEntityAssignmentIds(
+      entityId,
+      undefined,
+      type
+    );
+    const newIds = userIds.filter((id) => !existingAssignmentIds.includes(id));
+    const newAssignments = await this.prisma.user.findMany({
+      where: {
+        id: { in: newIds },
+      },
+      select: {
+        id: true,
+        fullName: true,
+        rcno: true,
+        email: true,
+      },
+    });
+    if (newAssignments.length === 0) {
+      throw new BadRequestException('No new users assigned.');
+    }
     try {
-      const entityUserIds = await this.getUserIds(entityId, user.id, type);
-      const entityUsersExceptNewAssignments = entityUserIds.filter(
-        (id) => !userIds.includes(id)
-      );
-      const newAssignments = await this.prisma.user.findMany({
-        where: {
-          id: { in: userIds },
-        },
-        select: {
-          id: true,
-          fullName: true,
-          rcno: true,
-          email: true,
-        },
-      });
       await this.prisma.entityAssignment.createMany({
-        data: userIds.map((userId) => ({
+        data: newIds.map((userId) => ({
           entityId,
           userId,
           type,
         })),
       });
 
+      const entityUserIds = await this.getEntityAssignmentIds(
+        entityId,
+        user.id
+      );
+      const entityUsersExceptNewAssignments = entityUserIds.filter(
+        (id) => !userIds.includes(id)
+      );
       // Text format new assignments into a readable list with commas and 'and'
       // at the end.
       const newAssignmentsFormatted = newAssignments
@@ -1940,8 +1972,9 @@ export class EntityService {
           rcno: true,
         },
       });
-      await this.prisma.entityAssignment.deleteMany({
-        where: { entityId, userId, type },
+      await this.prisma.entityAssignment.updateMany({
+        where: { entityId, userId, type, removedAt: null },
+        data: { removedAt: new Date() },
       });
       await this.createEntityHistoryInBackground({
         type: 'User Unassigned',
@@ -2114,7 +2147,10 @@ export class EntityService {
         entityId: attachment.entityId,
         completedById: user.id,
       });
-      const users = await this.getUserIds(attachment.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        attachment.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -2150,7 +2186,10 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      const users = await this.getUserIds(attachment.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        attachment.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -2169,7 +2208,7 @@ export class EntityService {
   }
 
   // Get unique array of ids of entity assigned users
-  async getUserIds(
+  async getEntityAssignmentIds(
     entityId: number,
     removeUserId?: number,
     type?: string
@@ -2178,6 +2217,7 @@ export class EntityService {
       where: {
         entityId,
         type: type ?? undefined,
+        removedAt: null,
       },
     });
 
@@ -2227,6 +2267,7 @@ export class EntityService {
           const users = await this.prisma.entityAssignment.findMany({
             where: {
               entityId: periodicMaintenance[index].entityId,
+              removedAt: null,
             },
           });
           for (let index = 0; index < users.length; index++) {
@@ -2252,6 +2293,7 @@ export class EntityService {
         const users = await this.prisma.entityAssignment.findMany({
           where: {
             entityId: periodicMaintenance[index].entityId,
+            removedAt: null,
           },
         });
         for (let index = 0; index < users.length; index++) {
@@ -2330,6 +2372,7 @@ export class EntityService {
           const users = await this.prisma.entityAssignment.findMany({
             where: {
               entityId: breakdown[index].entityId,
+              removedAt: null,
             },
           });
 
@@ -2385,7 +2428,7 @@ export class EntityService {
         entityId: entity.id,
         completedById: user.id,
       });
-      const users = await this.getUserIds(entity.id, user.id);
+      const users = await this.getEntityAssignmentIds(entity.id, user.id);
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -2611,7 +2654,10 @@ export class EntityService {
           : { verifiedById: null, verifiedAt: null },
       });
 
-      const users = await this.getUserIds(checklist.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        checklist.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -2923,7 +2969,7 @@ export class EntityService {
   //   );
   //   try {
   //     if (entity.location != location) {
-  //       const users = await this.getUserIds(id, user.id);
+  //       const users = await this.getEntityAssignmentIds(id, user.id);
   //       for (let index = 0; index < users.length; index++) {
   //         await this.notificationService.createInBackground({
   //           userId: users[index],
@@ -3088,6 +3134,7 @@ export class EntityService {
           entityId,
           userId,
           type: assignments.length === 0 ? undefined : { in: assignments },
+          removedAt: null,
         },
       });
       if (currentAssignments.length === 0) hasAssignment = false;
@@ -3119,7 +3166,7 @@ export class EntityService {
     assignments: ('User' | 'Engineer' | 'Admin')[]
   ) {
     const userAssignments = await this.prisma.entityAssignment.count({
-      where: { userId, type: { in: assignments } },
+      where: { userId, type: { in: assignments }, removedAt: null },
     });
     if (userAssignments === 0) {
       throw new ForbiddenException('You do not have access to this resource');
@@ -3148,7 +3195,10 @@ export class EntityService {
           : { approverId: null, approvedAt: null },
       });
 
-      const users = await this.getUserIds(repairRequest.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        repairRequest.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],
@@ -3193,7 +3243,10 @@ export class EntityService {
           : { repairedById: null, repairedAt: null },
       });
 
-      const users = await this.getUserIds(repairRequest.entityId, user.id);
+      const users = await this.getEntityAssignmentIds(
+        repairRequest.entityId,
+        user.id
+      );
       for (let index = 0; index < users.length; index++) {
         await this.notificationService.createInBackground({
           userId: users[index],

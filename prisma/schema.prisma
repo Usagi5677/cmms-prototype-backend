@@ -249,16 +249,15 @@ enum EntityStatus {
 }
 
 model EntityAssignment {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  type      String   @default("User")
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  removedAt DateTime?
+  type      String    @default("User")
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   entityId  Int
-  entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, entityId, type])
+  entity    Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
 }
 
 model EntityPeriodicMaintenance {
