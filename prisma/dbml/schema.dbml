@@ -100,7 +100,6 @@ Table Location {
   active Boolean [not null, default: true]
   entities Entity [not null]
   histories EntityHistory [not null]
-  repairRequests EntityRepairRequest [not null]
   user User [not null]
 }
 
@@ -300,8 +299,7 @@ Table EntityRepairRequest {
   entity Entity [not null]
   internal Boolean [not null, default: true]
   projectName String
-  locationId Int
-  location Location
+  location String
   reason String
   additionalInfo String
   attendInfo String
@@ -449,8 +447,6 @@ Ref: EntityHistory.completedById > User.id
 Ref: EntityHistory.locationId > Location.id
 
 Ref: EntityRepairRequest.entityId > Entity.id
-
-Ref: EntityRepairRequest.locationId > Location.id
 
 Ref: EntityRepairRequest.repairedById > User.id
 

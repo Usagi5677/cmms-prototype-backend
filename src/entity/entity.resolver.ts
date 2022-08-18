@@ -245,7 +245,7 @@ export class EntityResolver {
     @Args('entityId') entityId: number,
     @Args('internal', { nullable: true }) internal: boolean,
     @Args('projectName', { nullable: true }) projectName: string,
-    @Args('locationId', { nullable: true }) locationId: number,
+    @Args('location', { nullable: true }) location: string,
     @Args('reason', { nullable: true }) reason: string,
     @Args('additionalInfo', { nullable: true }) additionalInfo: string,
     @Args('attendInfo', { nullable: true }) attendInfo: string,
@@ -258,7 +258,7 @@ export class EntityResolver {
       entityId,
       internal,
       projectName,
-      locationId,
+      location,
       reason,
       additionalInfo,
       attendInfo,
@@ -276,7 +276,7 @@ export class EntityResolver {
     @Args('id') id: number,
     @Args('internal', { nullable: true }) internal: boolean,
     @Args('projectName', { nullable: true }) projectName: string,
-    @Args('locationId', { nullable: true }) locationId: number,
+    @Args('location', { nullable: true }) location: string,
     @Args('reason', { nullable: true }) reason: string,
     @Args('additionalInfo', { nullable: true }) additionalInfo: string,
     @Args('attendInfo', { nullable: true }) attendInfo: string,
@@ -289,7 +289,7 @@ export class EntityResolver {
       id,
       internal,
       projectName,
-      locationId,
+      location,
       reason,
       additionalInfo,
       attendInfo,
@@ -719,5 +719,33 @@ export class EntityResolver {
     @UserEntity() user: User
   ): Promise<entityChecklistAndPMSummary> {
     return this.entityService.getAllEntityChecklistAndPMSummary(user);
+  }
+
+  @Mutation(() => String)
+  async toggleCompleteEntityRepairRequest(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.entityService.toggleCompleteEntityRepairRequest(
+      user,
+      id,
+      complete
+    );
+    return `Repair request completion updated.`;
+  }
+
+  @Mutation(() => String)
+  async toggleApproveEntityRepairRequest(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('approve') approve: boolean
+  ): Promise<string> {
+    await this.entityService.toggleApproveEntityRepairRequest(
+      user,
+      id,
+      approve
+    );
+    return `Repair request approval updated.`;
   }
 }

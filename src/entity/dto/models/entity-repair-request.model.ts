@@ -1,4 +1,5 @@
 import { ObjectType } from '@nestjs/graphql';
+import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from 'src/models/base.model';
 import { User } from 'src/models/user.model';
 

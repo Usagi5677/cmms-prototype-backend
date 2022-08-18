@@ -101,17 +101,16 @@ model Type {
 }
 
 model Location {
-  id             Int                   @id @default(autoincrement())
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  name           String
-  createdById    Int?
-  createdBy      User?                 @relation(name: "locationCreated", fields: [createdById], references: [id])
-  active         Boolean               @default(true)
-  entities       Entity[]
-  histories      EntityHistory[]
-  repairRequests EntityRepairRequest[]
-  user           User[]
+  id          Int             @id @default(autoincrement())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  name        String
+  createdById Int?
+  createdBy   User?           @relation(name: "locationCreated", fields: [createdById], references: [id])
+  active      Boolean         @default(true)
+  entities    Entity[]
+  histories   EntityHistory[]
+  user        User[]
 }
 
 enum SparePRStatus {
@@ -337,8 +336,7 @@ model EntityRepairRequest {
   entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
   internal         Boolean   @default(true)
   projectName      String?
-  locationId       Int?
-  location         Location? @relation(fields: [locationId], references: [id])
+  location         String?
   reason           String?
   additionalInfo   String?
   attendInfo       String?

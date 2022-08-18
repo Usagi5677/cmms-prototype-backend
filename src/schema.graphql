@@ -532,7 +532,7 @@ type Mutation {
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
   addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
-  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
+  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   addEntitySparePR(description: String!, entityId: Int!, requestedDate: Date!, title: String!): String!
   addRole(name: String!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
@@ -553,7 +553,7 @@ type Mutation {
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, locationId: Int, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
+  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
   editRole(id: Int!, name: String!): String!
   editUserLocation(id: Int!, locationId: Int): String!
@@ -573,7 +573,9 @@ type Mutation {
   setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setEntitySparePRStatus(id: Int!, status: SparePRStatus!): String!
   setEntityStatus(entityId: Int!, status: EntityStatus!): String!
+  toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
+  toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
   toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
