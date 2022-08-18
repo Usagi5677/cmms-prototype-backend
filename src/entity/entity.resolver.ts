@@ -46,11 +46,13 @@ export class EntityResolver {
 
   @Query(() => [Entity], { name: 'searchEntity' })
   search(
-    @Args('query') query: string,
+    @Args('query', { nullable: true }) query: string,
+    @Args('entityIds', { nullable: true, type: () => [Int] })
+    entityIds: number[],
     @Args('limit', { nullable: true }) limit: number,
     @Args('entityType', { nullable: true }) entityType: string
   ) {
-    return this.entityService.search(query, limit, entityType);
+    return this.entityService.search(query, entityIds, limit, entityType);
   }
 
   @Permissions('ADD_ENTITY')
@@ -678,17 +680,6 @@ export class EntityResolver {
   async allEntityPMStatusCount(): Promise<maintenanceStatusCount> {
     return this.entityService.getAllEntityPMStatusCount();
   }
-
-  // // Permission checked in service
-  // @Mutation(() => String)
-  // async editEntityLocation(
-  //   @UserEntity() user: User,
-  //   @Args('id') id: number,
-  //   @Args('location') location: string
-  // ): Promise<String> {
-  //   await this.entityService.editEntityLocation(user, id, location);
-  //   return `Location updated.`;
-  // }
 
   @Query(() => PaginatedEntity)
   async getAllAssignedEntity(

@@ -1042,7 +1042,7 @@ type Query {
   redisGet(key: String!): String
   redisKeys: [String!]!
   searchAPSUsers(query: String!): [User!]!
-  searchEntity(entityType: String, limit: Int, query: String!): [Entity!]!
+  searchEntity(entityIds: [Int!], entityType: String, limit: Int, query: String): [Entity!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
   type(id: Int!): Type!
   types(

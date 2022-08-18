@@ -84,13 +84,23 @@ export class EntityService {
     return entity;
   }
 
-  async search(query: string, limit?: number, entityType?: string) {
+  async search(
+    query?: string,
+    entityIds?: number[],
+    limit?: number,
+    entityType?: string
+  ) {
     if (!limit) limit = 10;
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     if (query) {
       where.AND.push({
         machineNumber: { contains: query, mode: 'insensitive' },
+      });
+    }
+    if (entityIds) {
+      where.AND.push({
+        id: { in: entityIds },
       });
     }
     if (entityType) {
