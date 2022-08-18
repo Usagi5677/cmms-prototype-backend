@@ -2970,69 +2970,74 @@ export class EntityService {
   }: EntityTransferInput) {
     const entity = await this.findOne(entityId, true);
     const newLocation = await this.locationService.findOne(newLocationId);
-    for (const u of users) {
-      u.user = await this.authService.validateUser(u.userUuid);
-      if (!ENTITY_ASSIGNMENT_TYPES.includes(u.type)) {
-        throw new BadRequestException(`Invalid assignment type: ${u.type}`);
-      }
-    }
-    // Remove duplicates
-    users = users.filter(
-      (value, index, self) =>
-        index ===
-        self.findIndex(
-          (t) => t.user.id === value.user.id && t.type === value.type
-        )
-    );
-
-    // Find current assignments to find assignments to be created/removed
-    const currentAssignments = await this.prisma.entityAssignment.findMany({
-      where: { entityId, removedAt: null },
-      include: { user: true },
-    });
-    const newAssignments: EntityTransferUserInput[] = [];
-    for (const u of users) {
-      let exists = false;
-      for (const assignment of currentAssignments) {
-        if (u.type === assignment.type && u.user.id === assignment.userId) {
-          exists = true;
-          break;
-        }
-      }
-      if (!exists) {
-        newAssignments.push(u);
-      }
-    }
-    const removedAssignments = [];
-    for (const assignment of currentAssignments) {
-      let exists = false;
-      for (const u of users) {
-        if (u.type === assignment.type && u.user.id === assignment.userId) {
-          exists = true;
-          break;
-        }
-      }
-      if (!exists) {
-        removedAssignments.push(assignment);
-      }
-    }
-    const transactions = [
+    const transactions: any = [
       this.prisma.entity.update({
         where: { id: entityId },
         data: { locationId: newLocationId },
       }),
-      this.prisma.entityAssignment.updateMany({
-        where: { id: { in: removedAssignments.map((a) => a.id) } },
-        data: { removedAt: new Date() },
-      }),
-      this.prisma.entityAssignment.createMany({
-        data: newAssignments.map((a) => ({
-          entityId,
-          type: a.type,
-          userId: a.user.id,
-        })),
-      }),
     ];
+    const removedAssignments = [];
+    const newAssignments: EntityTransferUserInput[] = [];
+    if (users) {
+      for (const u of users) {
+        u.user = await this.authService.validateUser(u.userUuid);
+        if (!ENTITY_ASSIGNMENT_TYPES.includes(u.type)) {
+          throw new BadRequestException(`Invalid assignment type: ${u.type}`);
+        }
+      }
+      // Remove duplicates
+      users = users.filter(
+        (value, index, self) =>
+          index ===
+          self.findIndex(
+            (t) => t.user.id === value.user.id && t.type === value.type
+          )
+      );
+
+      // Find current assignments to find assignments to be created/removed
+      const currentAssignments = await this.prisma.entityAssignment.findMany({
+        where: { entityId, removedAt: null },
+        include: { user: true },
+      });
+      for (const u of users) {
+        let exists = false;
+        for (const assignment of currentAssignments) {
+          if (u.type === assignment.type && u.user.id === assignment.userId) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          newAssignments.push(u);
+        }
+      }
+      for (const assignment of currentAssignments) {
+        let exists = false;
+        for (const u of users) {
+          if (u.type === assignment.type && u.user.id === assignment.userId) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          removedAssignments.push(assignment);
+        }
+      }
+      transactions.push(
+        this.prisma.entityAssignment.updateMany({
+          where: { id: { in: removedAssignments.map((a) => a.id) } },
+          data: { removedAt: new Date() },
+        }),
+        this.prisma.entityAssignment.createMany({
+          data: newAssignments.map((a) => ({
+            entityId,
+            type: a.type,
+            userId: a.user.id,
+          })),
+        })
+      );
+    }
+
     await this.prisma.$transaction(transactions);
     if (entity.locationId != newLocationId) {
       await this.createEntityHistoryInBackground({
@@ -3043,19 +3048,21 @@ export class EntityService {
         entityId,
       });
     }
-    for (const assignment of removedAssignments) {
-      await this.createEntityHistoryInBackground({
-        type: 'User Unassigned',
-        description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
-        entityId: entityId,
-      });
-    }
-    for (const assignment of newAssignments) {
-      await this.createEntityHistoryInBackground({
-        type: 'User Assign',
-        description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
-        entityId: entityId,
-      });
+    if (users) {
+      for (const assignment of removedAssignments) {
+        await this.createEntityHistoryInBackground({
+          type: 'User Unassigned',
+          description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
+          entityId: entityId,
+        });
+      }
+      for (const assignment of newAssignments) {
+        await this.createEntityHistoryInBackground({
+          type: 'User Assign',
+          description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
+          entityId: entityId,
+        });
+      }
     }
   }
 

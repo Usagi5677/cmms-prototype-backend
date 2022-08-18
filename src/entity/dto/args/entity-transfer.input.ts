@@ -20,7 +20,7 @@ export class EntityTransferInput {
   @Field()
   entityId: number;
 
-  @Field(() => [EntityTransferUserInputGQL])
+  @Field(() => [EntityTransferUserInputGQL], { nullable: true })
   users: EntityTransferUserInput[];
 
   @Field()

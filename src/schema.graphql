@@ -491,7 +491,7 @@ enum EntityStatus {
 input EntityTransferInput {
   entityId: Int!
   newLocationId: Int!
-  users: [EntityTransferUserInputGQL!]!
+  users: [EntityTransferUserInputGQL!]
 }
 
 input EntityTransferUserInputGQL {
