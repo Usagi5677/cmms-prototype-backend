@@ -8,7 +8,7 @@ const config: Config = {
     enabled: true,
   },
   graphql: {
-    playgroundEnabled: true,
+    playgroundEnabled: process.env.GQL_PLAYGROUND === 'true',
     debug: true,
     schemaDestination: './src/schema.graphql',
     sortSchema: true,
