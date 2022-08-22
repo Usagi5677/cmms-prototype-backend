@@ -28,6 +28,8 @@ export class NotificationService {
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub
   ) {
     this.transporter = this.nodemailer.createTransport({
+      pool: true,
+      maxConnections: 3,
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT),
       secure: process.env.SMTP_SECURE === 'true',
@@ -62,12 +64,24 @@ export class NotificationService {
     //const to = [...((options.to as any[]) ?? [])];
     //return;
     if (options.to.length > 0) {
-      await this.transporter.sendMail({
-        ...options,
-        from: `"cmms" <no-reply@mtcc.com.mv>`,
-        //to: options.to,
-        //subject: options.subject ? `Helpdesk: ${options.subject}` : undefined,
-      });
+      // Retries 5 times if email fails. 10 second interval between each retry.
+      let count = 0;
+      const maxTries = 5;
+      while (true) {
+        try {
+          await this.transporter.sendMail({
+            ...options,
+            from: `"CMMS" <no-reply@mtcc.com.mv>`,
+          });
+          break;
+        } catch (err) {
+          this.logger.error(err);
+          count += 1;
+          if (count === maxTries) break;
+          this.logger.verbose('Retrying...');
+          await new Promise((resolve) => setTimeout(resolve, 10000));
+        }
+      }
     }
   }
 
