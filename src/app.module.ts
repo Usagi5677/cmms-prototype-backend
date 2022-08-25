@@ -20,6 +20,7 @@ import { EntityModule } from './entity/entity.module';
 import { TypeModule } from './type/type.module';
 import { PermissionModule } from './permission/permission.module';
 import { LocationModule } from './location/location.module';
+import { PeriodicMaintenanceModule } from './periodic-maintenance/periodic-maintenance.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { LocationModule } from './location/location.module';
     TypeModule,
     PermissionModule,
     LocationModule,
+    PeriodicMaintenanceModule,
   ],
   providers: [DateScalar, InitService],
 })

@@ -3399,49 +3399,59 @@ export class EntityService {
     try {
       const key = `allEntityChecklistAndPMSummary`;
       let checklistAndPMSummary = await this.redisCacheService.get(key);
+      const todayStart = moment().startOf('day');
+      const todayEnd = moment().endOf('day');
 
       if (!checklistAndPMSummary) {
         checklistAndPMSummary = '';
 
-        const pm = await this.prisma.entityPeriodicMaintenanceTask.findMany({
+        const pm = await this.prisma.periodicMaintenance.findMany({
           where: {
-            completedAt: null,
-            periodicMaintenance: {
-              entity: {
-                assignees: { some: { userId: user.id } },
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+            entity: {
+              assignees: { some: { userId: user.id } },
+            },
+            tasks: {
+              some: {
+                completedAt: null,
+                subTasks: {
+                  some: {
+                    completedAt: null,
+                    subTasks: {
+                      some: { completedAt: null },
+                    },
+                  },
+                },
               },
             },
           },
           include: {
-            periodicMaintenance: {
+            entity: {
               include: {
-                entity: {
-                  include: {
-                    type: true,
-                  },
-                },
+                type: true,
               },
             },
           },
         });
 
-        const checklist = await this.prisma.checklistItem.findMany({
+        const checklist = await this.prisma.checklist.findMany({
           where: {
-            completedAt: null,
-            checklist: {
-              entity: {
-                assignees: { some: { userId: user.id } },
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+            entity: {
+              assignees: { some: { userId: user.id } },
+            },
+            items: {
+              some: {
+                completedAt: null,
               },
             },
           },
           include: {
-            checklist: {
+            entity: {
               include: {
-                entity: {
-                  include: {
-                    type: true,
-                  },
-                },
+                type: true,
               },
             },
           },
@@ -3454,15 +3464,11 @@ export class EntityService {
         let vehicleChecklistComplete = false;
         let vesselChecklistComplete = false;
         for (const p of pm) {
-          if (p.periodicMaintenance.entity.type.entityType === 'Machine') {
+          if (p.entity.type.entityType === 'Machine') {
             machineTaskComplete = true;
-          } else if (
-            p.periodicMaintenance.entity.type.entityType === 'Vehicle'
-          ) {
+          } else if (p.entity.type.entityType === 'Vehicle') {
             vehicleTaskComplete = true;
-          } else if (
-            p.periodicMaintenance.entity.type.entityType === 'Vessel'
-          ) {
+          } else if (p.entity.type.entityType === 'Vessel') {
             vesselTaskComplete = true;
           } else if (
             machineTaskComplete &&
@@ -3473,11 +3479,11 @@ export class EntityService {
           }
         }
         for (const ck of checklist) {
-          if (ck.checklist.entity.type.entityType === 'Machine') {
+          if (ck.entity.type.entityType === 'Machine') {
             machineChecklistComplete = true;
-          } else if (ck.checklist.entity.type.entityType === 'Vehicle') {
+          } else if (ck.entity.type.entityType === 'Vehicle') {
             vehicleChecklistComplete = true;
-          } else if (ck.checklist.entity.type.entityType === 'Vessel') {
+          } else if (ck.entity.type.entityType === 'Vessel') {
             vesselChecklistComplete = true;
           } else if (
             machineChecklistComplete &&
@@ -3488,11 +3494,9 @@ export class EntityService {
           }
         }
 
-        const pmUnique = [
-          ...new Set(pm.map((m) => m.periodicMaintenance.entityId)),
-        ];
+        const pmUnique = [...new Set(pm.map((m) => m.entityId))];
         const pmChecklistUnique = [
-          ...new Set(checklist.map((m) => m.checklist.entityId)),
+          ...new Set(checklist.map((m) => m.entityId)),
         ];
 
         checklistAndPMSummary = {

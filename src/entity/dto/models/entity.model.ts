@@ -4,6 +4,7 @@ import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from 'src/models/base.model';
 import { ChecklistItem } from 'src/models/checklist-item.model';
 import { User } from 'src/models/user.model';
+import { PeriodicMaintenance } from 'src/periodic-maintenance/dto/models/periodic-maintenance.model';
 import { Type } from 'src/type/entities/type.entity';
 import { EntityAssign } from './entity-assign.model';
 import { EntityBreakdown } from './entity-breakdown.model';
@@ -38,4 +39,5 @@ export class Entity extends BaseModel {
   breakdowns?: EntityBreakdown[];
   sparePRs?: EntitySparePR[];
   histories?: EntityHistory[];
+  periodicMaintenances?: PeriodicMaintenance[];
 }

@@ -34,6 +34,9 @@ Table User {
   entityRepairRequestApprovedBy EntityRepairRequest [not null]
   entityRepairRequestRepairedBy EntityRepairRequest [not null]
   locationsCreated Location [not null]
+  periodicMaintenanceTask PeriodicMaintenanceTask [not null]
+  periodicMaintenanceComment PeriodicMaintenanceComment [not null]
+  verifiedPeriodicMaintenance PeriodicMaintenance [not null]
 }
 
 Table Notification {
@@ -208,6 +211,7 @@ Table Entity {
   repairs EntityRepairRequest [not null]
   breakdowns EntityBreakdown [not null]
   sparePRs EntitySparePR [not null]
+  periodicMaintenances PeriodicMaintenance [not null]
 }
 
 Table EntityAssignment {
@@ -349,6 +353,76 @@ Table EntitySparePR {
   status SparePRStatus [not null, default: 'Pending']
 }
 
+Table PeriodicMaintenanceTask {
+  id Int [pk, increment]
+  periodicMaintenanceId Int [not null]
+  periodicMaintenance PeriodicMaintenance [not null]
+  parentTaskId Int
+  name String [not null]
+  completedById Int
+  completedBy User
+  completedAt DateTime
+  parentTask PeriodicMaintenanceTask
+  subTasks PeriodicMaintenanceTask [not null]
+  remarks PeriodicMaintenanceComment [not null]
+}
+
+Table PeriodicMaintenanceComment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  taskId Int
+  task PeriodicMaintenanceTask
+  type String [not null, default: 'Remark']
+  description String [not null]
+  userId Int
+  user User
+  periodicMaintenance PeriodicMaintenance
+  periodicMaintenanceId Int
+}
+
+Table PeriodicMaintenance {
+  id Int [pk, increment, unique]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  from DateTime
+  to DateTime
+  name String [not null]
+  originId Int
+  originPeriodicMaintenance PeriodicMaintenance
+  measurement String
+  value Int
+  previousMeterReading Int [default: 0]
+  currentMeterReading Int
+  type String
+  verifiedById Int
+  verifiedBy User
+  verifiedAt DateTime
+  tasks PeriodicMaintenanceTask [not null]
+  comments PeriodicMaintenanceComment [not null]
+  entity Entity
+  entityId Int
+  periodicMaintenance PeriodicMaintenance [not null]
+  notificationReminder Reminder [not null]
+
+  indexes {
+    (entityId, from, to, measurement, type) [unique]
+  }
+}
+
+Table Reminder {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  type String [not null]
+  measurement String
+  previousValue Int
+  value Int
+  trigger Boolean
+  notificationPeriodicMaintenanceId Int
+  notificationPeriodicMaintenance PeriodicMaintenance
+}
+
 Enum SparePRStatus {
   Done
   Pending
@@ -467,3 +541,23 @@ Ref: EntityBreakdown.completedById > User.id
 Ref: EntitySparePR.entityId > Entity.id
 
 Ref: EntitySparePR.completedById > User.id
+
+Ref: PeriodicMaintenanceTask.periodicMaintenanceId > PeriodicMaintenance.id
+
+Ref: PeriodicMaintenanceTask.completedById > User.id
+
+Ref: PeriodicMaintenanceTask.parentTaskId - PeriodicMaintenanceTask.id
+
+Ref: PeriodicMaintenanceComment.taskId > PeriodicMaintenanceTask.id
+
+Ref: PeriodicMaintenanceComment.userId > User.id
+
+Ref: PeriodicMaintenanceComment.periodicMaintenanceId > PeriodicMaintenance.id
+
+Ref: PeriodicMaintenance.originId - PeriodicMaintenance.id
+
+Ref: PeriodicMaintenance.verifiedById > User.id
+
+Ref: PeriodicMaintenance.entityId > Entity.id
+
+Ref: Reminder.notificationPeriodicMaintenanceId > PeriodicMaintenance.id
