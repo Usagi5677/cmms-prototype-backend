@@ -495,38 +495,18 @@ export class EntityService {
       department,
       isAssigned,
       typeId,
+      zone,
+      brand,
+      engine,
+      measurement,
+      lteCurrentRunning,
+      gteCurrentRunning,
+      lteLastService,
+      gteLastService,
     } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
-    if (createdById) {
-      where.AND.push({ createdById });
-    }
-    if (assignedToId || !hasViewAll) {
-      where.AND.push({
-        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
-      });
-    }
-
-    if (status) {
-      where.AND.push({ status });
-    }
-
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-
-    if (department?.length > 0) {
-      where.AND.push({
-        department: {
-          in: department,
-        },
-      });
-    }
 
     if (search) {
       const or: any = [
@@ -539,6 +519,49 @@ export class EntityService {
       }
       where.AND.push({
         OR: or,
+      });
+    }
+
+    if (createdById) {
+      where.AND.push({ createdById });
+    }
+    if (assignedToId || !hasViewAll) {
+      where.AND.push({
+        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+      });
+    }
+
+    if (status?.length > 0) {
+      where.AND.push({
+        status: { in: status },
+      });
+    }
+
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        locationId: {
+          in: locationIds,
+        },
+      });
+    }
+
+    if (zone?.length > 0) {
+      where.AND.push({
+        zone: { in: zone },
+      });
+    }
+
+    if (brand?.length > 0) {
+      where.AND.push({
+        brand: { in: brand },
+      });
+    }
+
+    if (department?.length > 0) {
+      where.AND.push({
+        department: {
+          in: department,
+        },
       });
     }
 
@@ -558,11 +581,72 @@ export class EntityService {
       });
     }
 
-    if (typeId) {
+    if (typeId?.length > 0) {
       where.AND.push({
-        typeId,
+        typeId: { in: typeId },
       });
     }
+
+    if (engine?.length > 0) {
+      where.AND.push({
+        engine: { in: engine },
+      });
+    }
+
+    if (measurement?.length > 0) {
+      where.AND.push({
+        measurement: { in: measurement },
+      });
+    }
+
+    if (gteCurrentRunning.replace(/\D/g, '')) {
+      where.AND.push({
+        currentRunning: { gte: parseInt(gteCurrentRunning.replace(/\D/g, '')) },
+      });
+    }
+
+    if (lteCurrentRunning.replace(/\D/g, '')) {
+      where.AND.push({
+        currentRunning: { lte: parseInt(lteCurrentRunning.replace(/\D/g, '')) },
+      });
+    }
+
+    if (
+      gteCurrentRunning.replace(/\D/g, '') &&
+      lteCurrentRunning.replace(/\D/g, '')
+    ) {
+      where.AND.push({
+        currentRunning: {
+          gte: parseInt(gteCurrentRunning.replace(/\D/g, '')),
+          lte: parseInt(lteCurrentRunning.replace(/\D/g, '')),
+        },
+      });
+    }
+
+    if (gteLastService.replace(/\D/g, '')) {
+      where.AND.push({
+        lastService: { gte: parseInt(gteLastService.replace(/\D/g, '')) },
+      });
+    }
+
+    if (lteLastService.replace(/\D/g, '')) {
+      where.AND.push({
+        lastService: { lte: parseInt(lteLastService.replace(/\D/g, '')) },
+      });
+    }
+
+    if (
+      gteLastService.replace(/\D/g, '') &&
+      lteLastService.replace(/\D/g, '')
+    ) {
+      where.AND.push({
+        lastService: {
+          gte: parseInt(gteLastService.replace(/\D/g, '')),
+          lte: parseInt(lteLastService.replace(/\D/g, '')),
+        },
+      });
+    }
+
     const entities = await this.prisma.entity.findMany({
       skip: offset,
       take: limitPlusOne,
@@ -579,6 +663,7 @@ export class EntityService {
         type: true,
         location: true,
       },
+      orderBy: [{ id: 'asc' }],
     });
     for (const entity of entities) {
       const reading = await this.getLatestReading(entity);

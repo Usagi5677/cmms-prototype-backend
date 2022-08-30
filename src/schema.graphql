@@ -858,22 +858,29 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    brand: [String!]
     createdById: Int
     createdByUserId: String
     department: [String!]
+    engine: [String!]
     entityType: String
 
     """Paginate first"""
     first: Int
+    gteCurrentRunning: String
+    gteLastService: String
     isAssigned: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
+    lteCurrentRunning: String
+    lteLastService: String
+    measurement: [String!]
     search: String
-    self: Boolean
-    status: EntityStatus
-    typeId: Int
+    status: [EntityStatus!]
+    typeId: [Int!]
+    zone: [String!]
   ): PaginatedEntity!
   breakdownCount: BreakdownNotif!
   checklist(input: ChecklistInput!): Checklist
@@ -918,22 +925,29 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    brand: [String!]
     createdById: Int
     createdByUserId: String
     department: [String!]
+    engine: [String!]
     entityType: String
 
     """Paginate first"""
     first: Int
+    gteCurrentRunning: String
+    gteLastService: String
     isAssigned: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
+    lteCurrentRunning: String
+    lteLastService: String
+    measurement: [String!]
     search: String
-    self: Boolean
-    status: EntityStatus
-    typeId: Int
+    status: [EntityStatus!]
+    typeId: [Int!]
+    zone: [String!]
   ): PaginatedEntity!
   getAllBreakdownOfEntity(
     """Paginate after opaque cursor"""
@@ -957,22 +971,29 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    brand: [String!]
     createdById: Int
     createdByUserId: String
     department: [String!]
+    engine: [String!]
     entityType: String
 
     """Paginate first"""
     first: Int
+    gteCurrentRunning: String
+    gteLastService: String
     isAssigned: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
+    lteCurrentRunning: String
+    lteLastService: String
+    measurement: [String!]
     search: String
-    self: Boolean
-    status: EntityStatus
-    typeId: Int
+    status: [EntityStatus!]
+    typeId: [Int!]
+    zone: [String!]
   ): PaginatedEntity!
   getAllEntityChecklistAndPMSummary: entityChecklistAndPMSummary!
   getAllEntityPeriodicMaintenance(
@@ -1020,22 +1041,29 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    brand: [String!]
     createdById: Int
     createdByUserId: String
     department: [String!]
+    engine: [String!]
     entityType: String
 
     """Paginate first"""
     first: Int
+    gteCurrentRunning: String
+    gteLastService: String
     isAssigned: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
+    lteCurrentRunning: String
+    lteLastService: String
+    measurement: [String!]
     search: String
-    self: Boolean
-    status: EntityStatus
-    typeId: Int
+    status: [EntityStatus!]
+    typeId: [Int!]
+    zone: [String!]
   ): PaginatedEntity!
   getAllHistoryOfEntity(
     """Paginate after opaque cursor"""

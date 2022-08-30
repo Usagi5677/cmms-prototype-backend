@@ -6,13 +6,20 @@ import ConnectionArgs from '../../../common/pagination/connection-args';
 export class EntityConnectionArgs extends ConnectionArgs {
   search?: string;
   createdById?: number;
-  self?: boolean;
-  assignedToId?: number;
   createdByUserId?: string;
   entityType?: string;
-  status?: EntityStatus;
+  status?: EntityStatus[];
   locationIds?: number[];
   department?: string[];
+  assignedToId?: number;
   isAssigned?: boolean;
-  typeId?: number;
+  typeId?: number[];
+  zone?: string[];
+  brand?: string[];
+  engine?: string[];
+  measurement?: string[];
+  lteCurrentRunning?: string;
+  gteCurrentRunning?: string;
+  lteLastService?: string;
+  gteLastService?: string;
 }
