@@ -479,10 +479,10 @@ export class EntityService {
     user: User,
     args: EntityConnectionArgs
   ): Promise<PaginatedEntity> {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    //const userPermissions = await this.userService.getUserRolesPermissionsList(
+    //  user.id
+    //);
+    //const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const {
@@ -525,12 +525,16 @@ export class EntityService {
     if (createdById) {
       where.AND.push({ createdById });
     }
-    if (assignedToId || !hasViewAll) {
+    //if (assignedToId || !hasViewAll) {
+    //  where.AND.push({
+    //    assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+    //  });
+    //}
+    if (assignedToId) {
       where.AND.push({
-        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+        assignees: { some: { userId: assignedToId } },
       });
     }
-
     if (status?.length > 0) {
       where.AND.push({
         status: { in: status },
@@ -669,6 +673,7 @@ export class EntityService {
       const reading = await this.getLatestReading(entity);
       entity.currentRunning = reading;
     }
+    //console.log(entities);
     const count = await this.prisma.entity.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       entities.slice(0, limit),
