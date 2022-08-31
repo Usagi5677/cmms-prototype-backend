@@ -50,10 +50,11 @@ type Checklist {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
-  entity: [Entity!]
+  entity: Entity
   from: Date!
   id: Int!
   items: [ChecklistItem!]!
+  summary: ChecklistSummary
   to: Date!
   type: String!
 
@@ -67,6 +68,7 @@ type ChecklistComment {
   createdAt: Date!
   description: String!
   id: Int!
+  type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -100,13 +102,14 @@ type ChecklistSummary {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
-  entity: [Entity!]
+  entity: Entity
   from: Date!
   hasComments: Boolean!
   hasIssues: Boolean!
   id: Int!
   itemCompletion: String!
   items: [ChecklistItem!]!
+  summary: ChecklistSummary
   to: Date!
   type: String!
 
@@ -512,6 +515,22 @@ type EntityUsageHistory {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   workingHour: Float
+}
+
+input IncompleteChecklistInput {
+  date: Date!
+  type: String!
+}
+
+type IncompleteChecklistSummary {
+  count: Int!
+  date: Date!
+}
+
+input IncompleteChecklistSummaryInput {
+  from: Date!
+  to: Date!
+  type: String!
 }
 
 type Location {
@@ -1170,6 +1189,9 @@ type Query {
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!
   getUsersWithPermission(permissions: [String!]!): [User!]!
+  incompleteChecklistSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
+  incompleteChecklists(input: IncompleteChecklistInput!): [Checklist!]
+  incompleteChecklistsPastTwoDays: [Int!]
   location(id: Int!): Location!
   locations(
     """Paginate after opaque cursor"""
