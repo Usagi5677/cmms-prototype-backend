@@ -599,21 +599,21 @@ export class EntityService {
       });
     }
 
-    if (gteCurrentRunning.replace(/\D/g, '')) {
+    if (gteCurrentRunning?.replace(/\D/g, '')) {
       where.AND.push({
         currentRunning: { gte: parseInt(gteCurrentRunning.replace(/\D/g, '')) },
       });
     }
 
-    if (lteCurrentRunning.replace(/\D/g, '')) {
+    if (lteCurrentRunning?.replace(/\D/g, '')) {
       where.AND.push({
         currentRunning: { lte: parseInt(lteCurrentRunning.replace(/\D/g, '')) },
       });
     }
 
     if (
-      gteCurrentRunning.replace(/\D/g, '') &&
-      lteCurrentRunning.replace(/\D/g, '')
+      gteCurrentRunning?.replace(/\D/g, '') &&
+      lteCurrentRunning?.replace(/\D/g, '')
     ) {
       where.AND.push({
         currentRunning: {
@@ -623,21 +623,21 @@ export class EntityService {
       });
     }
 
-    if (gteLastService.replace(/\D/g, '')) {
+    if (gteLastService?.replace(/\D/g, '')) {
       where.AND.push({
         lastService: { gte: parseInt(gteLastService.replace(/\D/g, '')) },
       });
     }
 
-    if (lteLastService.replace(/\D/g, '')) {
+    if (lteLastService?.replace(/\D/g, '')) {
       where.AND.push({
         lastService: { lte: parseInt(lteLastService.replace(/\D/g, '')) },
       });
     }
 
     if (
-      gteLastService.replace(/\D/g, '') &&
-      lteLastService.replace(/\D/g, '')
+      gteLastService?.replace(/\D/g, '') &&
+      lteLastService?.replace(/\D/g, '')
     ) {
       where.AND.push({
         lastService: {
