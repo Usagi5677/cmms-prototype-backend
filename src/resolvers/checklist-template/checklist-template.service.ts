@@ -103,8 +103,8 @@ export class ChecklistTemplateService {
       where: { id },
       include: {
         items: true,
-        entitiesDaily: true,
-        entitiesWeekly: true,
+        entitiesDaily: { include: { type: true } },
+        entitiesWeekly: { include: { type: true } },
       },
     });
   }

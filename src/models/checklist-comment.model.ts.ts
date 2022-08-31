@@ -6,4 +6,5 @@ import { User } from './user.model';
 export class ChecklistComment extends BaseModel {
   description: string;
   user?: User;
+  type: string;
 }

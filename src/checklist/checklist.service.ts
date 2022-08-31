@@ -16,6 +16,9 @@ import { ChecklistSummaryInput } from './dto/checklist-summary.input';
 import { ChecklistSummary } from './dto/checklist-summary';
 import { EntityService } from 'src/entity/entity.service';
 import { ForbiddenError } from 'apollo-server-express';
+import { IncompleteChecklistSummaryInput } from './dto/incomplete-checklist-summary.input';
+import { Entity } from 'src/entity/dto/models/entity.model';
+import { IncompleteChecklistInput } from './dto/incomplete-checklist.input';
 
 @Injectable()
 export class ChecklistService {
@@ -138,6 +141,108 @@ export class ChecklistService {
       where: { id },
       data: { currentMeterReading: reading, workingHour: null },
     });
+  }
+
+  async incompleteChecklists(
+    user: User,
+    { date, type }: IncompleteChecklistInput
+  ): Promise<Checklist[] | null> {
+    const assignments = await this.prisma.entityAssignment.findMany({
+      where: {
+        removedAt: null,
+        userId: user.id,
+        type: { in: ['Admin', 'User'] },
+      },
+    });
+    if (assignments.length === 0) return null;
+    let from;
+    let to;
+    if (type === 'Daily') {
+      from = moment(date).startOf('day').toDate();
+      to = moment(date).endOf('day').toDate();
+    } else {
+      from = moment(date).startOf('week').toDate();
+      to = moment(date).endOf('week').toDate();
+    }
+    const checklists = await this.prisma.checklist.findMany({
+      where: {
+        type,
+        entityId: { in: assignments.map((a) => a.entityId) },
+        from: { gte: from },
+        to: { lte: to },
+        OR: [
+          { items: { some: { completedAt: null } } },
+          { currentMeterReading: null, workingHour: null, type: 'Daily' },
+        ],
+      },
+      include: {
+        entity: { include: { type: true, location: true } },
+        items: true,
+        comments: true,
+      },
+    });
+    return checklists;
+  }
+
+  async incompleteChecklistSummary(
+    user: User,
+    { type, from, to }: IncompleteChecklistSummaryInput
+  ) {
+    const assignments = await this.prisma.entityAssignment.findMany({
+      where: {
+        removedAt: null,
+        userId: user.id,
+        type: { in: ['Admin', 'User'] },
+      },
+    });
+    if (assignments.length === 0) return null;
+    const start = moment(from);
+    const end = moment(to);
+    const checklists = await this.prisma.checklist.findMany({
+      where: {
+        type,
+        entityId: { in: assignments.map((a) => a.entityId) },
+        from: { gte: start.startOf('day').toDate() },
+        to: { lte: end.endOf(type === 'Daily' ? 'day' : 'week').toDate() },
+        OR: [
+          { items: { some: { completedAt: null } } },
+          { currentMeterReading: null, workingHour: null, type: 'Daily' },
+        ],
+      },
+    });
+    if (type === 'Daily') {
+      const checklistByDay = [];
+      const days = end.diff(start, 'day') + 1;
+      for (let i = 0; i < days; i++) {
+        const checklistStart = moment(from).add(i, 'day').startOf('day');
+        const checklistEnd = moment(from).add(i, 'day').endOf('day');
+        checklistByDay.push({
+          date: checklistStart.toISOString(),
+          count: checklists.filter(
+            (checklist) =>
+              moment(checklist.from).isSame(checklistStart) &&
+              moment(checklist.to).isSame(checklistEnd)
+          ).length,
+        });
+      }
+      return checklistByDay;
+    } else {
+      const checklistByWeek = [];
+      const weeks = end.diff(start, 'week') + 1;
+      for (let i = 0; i < weeks; i++) {
+        const checklistStart = moment(from).add(i, 'week').startOf('week');
+        const checklistEnd = moment(from).add(i, 'week').endOf('week');
+        checklistByWeek.push({
+          date: checklistStart,
+          count: checklists.filter(
+            (checklist) =>
+              moment(checklist.from).isSame(checklistStart) &&
+              moment(checklist.to).isSame(checklistEnd)
+          ).length,
+        });
+      }
+      return checklistByWeek;
+    }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)

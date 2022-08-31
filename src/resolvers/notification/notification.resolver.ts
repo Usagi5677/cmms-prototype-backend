@@ -59,6 +59,6 @@ export class NotificationResolver {
   })
   // eslint-disable-next-line
   async notificationCreated(@Args('userId') userId: number) {
-    return this.pubSub.asyncIterator('notificationCreated');
+    return this.pubSub.asyncIterator('cmms-notificationCreated');
   }
 }

@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { ChecklistService } from './checklist.service';
 import { Checklist } from '../models/checklist.model';
 import { ChecklistInput } from './dto/checklist.input';
@@ -8,6 +8,10 @@ import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
 import { ChecklistSummary } from './dto/checklist-summary';
 import { ChecklistSummaryInput } from './dto/checklist-summary.input';
+import * as moment from 'moment';
+import { IncompleteChecklistSummaryInput } from './dto/incomplete-checklist-summary.input';
+import { IncompleteChecklistInput } from './dto/incomplete-checklist.input';
+import { IncompleteChecklistSummary } from './dto/incomplete-checklist-summary';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => Checklist)
@@ -15,8 +19,34 @@ export class ChecklistResolver {
   constructor(private readonly checklistService: ChecklistService) {}
 
   @Query(() => Checklist, { name: 'checklist', nullable: true })
-  findOne(@Args('input') input: ChecklistInput) {
-    return this.checklistService.findOne(input);
+  async findOne(@Args('input') input: ChecklistInput) {
+    return await this.checklistService.findOne(input);
+  }
+
+  @Query(() => [Checklist], { nullable: true })
+  async incompleteChecklists(
+    @UserEntity() user: User,
+    @Args('input') input: IncompleteChecklistInput
+  ) {
+    return await this.checklistService.incompleteChecklists(user, input);
+  }
+
+  @Query(() => [IncompleteChecklistSummary], { nullable: true })
+  async incompleteChecklistSummary(
+    @UserEntity() user: User,
+    @Args('input') input: IncompleteChecklistSummaryInput
+  ) {
+    return await this.checklistService.incompleteChecklistSummary(user, input);
+  }
+
+  @Query(() => [Int, Int], { nullable: true })
+  async incompleteChecklistsPastTwoDays(@UserEntity() user: User) {
+    const yesterday = moment().subtract(1, 'day').startOf('day').toDate();
+    const summary = await this.checklistService.incompleteChecklistSummary(
+      user,
+      { type: 'Daily', from: yesterday, to: new Date() }
+    );
+    return [summary[1].count, summary[0].count];
   }
 
   @Mutation(() => String)
