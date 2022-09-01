@@ -25,4 +25,4 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
-        run: bash /home/vuica/actions-runner/magic-cmmsapi.sh
+        run: bash /home/ghulha/actions-runner/magic-cmmsapi.sh
