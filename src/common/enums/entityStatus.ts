@@ -2,7 +2,7 @@ import { registerEnumType } from '@nestjs/graphql';
 
 export enum EntityStatus {
   Working = 'Working',
-  Idle = 'Idle',
+  Critical = 'Critical',
   Breakdown = 'Breakdown',
   Dispose = 'Dispose',
 }

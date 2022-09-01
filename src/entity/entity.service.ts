@@ -2187,7 +2187,8 @@ export class EntityService {
     let idleHour = 0;
     let breakdownHour = 0;
 
-    if (entity.status === 'Idle') {
+    //previously it was Idle. Idle status is no longer required so this function needs to change.
+    if (entity.status === 'Critical') {
       const fromDate = await this.prisma.entityHistory.findFirst({
         where: {
           entityStatus: 'Working',
@@ -3197,10 +3198,10 @@ export class EntityService {
               },
             });
 
-        const idle = isAssigned
+        const critical = isAssigned
           ? await this.prisma.entity.findMany({
               where: {
-                status: 'Idle',
+                status: 'Critical',
                 assignees: { some: {} },
                 type: {
                   entityType: {
@@ -3211,7 +3212,7 @@ export class EntityService {
             })
           : await this.prisma.entity.findMany({
               where: {
-                status: 'Idle',
+                status: 'Critical',
                 type: {
                   entityType: {
                     in: entityType,
@@ -3268,7 +3269,7 @@ export class EntityService {
 
         statusCount = {
           working: working.length ?? 0,
-          idle: idle.length ?? 0,
+          critical: critical.length ?? 0,
           breakdown: breakdown.length ?? 0,
           dispose: dispose.length ?? 0,
         };

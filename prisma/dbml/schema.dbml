@@ -447,7 +447,7 @@ Enum PeriodicMaintenanceStatus {
 
 Enum EntityStatus {
   Working
-  Idle
+  Critical
   Breakdown
   Dispose
 }

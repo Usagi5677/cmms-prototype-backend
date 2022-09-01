@@ -246,7 +246,7 @@ model Entity {
 
 enum EntityStatus {
   Working
-  Idle
+  Critical
   Breakdown
   Dispose
 }
