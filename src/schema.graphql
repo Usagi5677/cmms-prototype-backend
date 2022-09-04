@@ -211,7 +211,7 @@ type Entity {
   registeredDate: Date
   repairs: [EntityRepairRequest!]
   sparePRs: [EntitySparePR!]
-  status: EntityStatus
+  status: String
   statusChangedAt: Date
   type: Type
 
@@ -312,7 +312,7 @@ type EntityHistory {
   createdAt: Date!
   description: String!
   entityId: Int
-  entityStatus: EntityStatus
+  entityStatus: String
   entityType: String
   id: Int!
   idleHour: Float
@@ -484,14 +484,6 @@ type EntitySparePRPageInfo {
   startCursor: String
 }
 
-"""Entity statuses."""
-enum EntityStatus {
-  Breakdown
-  Critical
-  Dispose
-  Working
-}
-
 input EntityTransferInput {
   entityId: Int!
   newLocationId: Int!
@@ -612,7 +604,7 @@ type Mutation {
   setEntityBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setEntitySparePRStatus(id: Int!, status: SparePRStatus!): String!
-  setEntityStatus(entityId: Int!, status: EntityStatus!): String!
+  setEntityStatus(entityId: Int!, status: String!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
@@ -897,7 +889,7 @@ type Query {
     lteLastService: String
     measurement: [String!]
     search: String
-    status: [EntityStatus!]
+    status: [String!]
     typeId: [Int!]
     zone: [String!]
   ): PaginatedEntity!
@@ -964,7 +956,7 @@ type Query {
     lteLastService: String
     measurement: [String!]
     search: String
-    status: [EntityStatus!]
+    status: [String!]
     typeId: [Int!]
     zone: [String!]
   ): PaginatedEntity!
@@ -1010,7 +1002,7 @@ type Query {
     lteLastService: String
     measurement: [String!]
     search: String
-    status: [EntityStatus!]
+    status: [String!]
     typeId: [Int!]
     zone: [String!]
   ): PaginatedEntity!
@@ -1080,7 +1072,7 @@ type Query {
     lteLastService: String
     measurement: [String!]
     search: String
-    status: [EntityStatus!]
+    status: [String!]
     typeId: [Int!]
     zone: [String!]
   ): PaginatedEntity!

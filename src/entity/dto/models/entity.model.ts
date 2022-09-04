@@ -1,5 +1,4 @@
 import { ObjectType } from '@nestjs/graphql';
-import { EntityStatus } from 'src/common/enums/entityStatus';
 import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from 'src/models/base.model';
 import { ChecklistItem } from 'src/models/checklist-item.model';
@@ -30,7 +29,7 @@ export class Entity extends BaseModel {
   brand?: string;
   isDeleted?: boolean;
   deletedAt?: Date;
-  status?: EntityStatus;
+  status?: string;
   statusChangedAt?: Date;
   assignees?: EntityAssign[];
   checklistItems?: ChecklistItem[];

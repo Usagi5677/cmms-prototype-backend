@@ -8,7 +8,6 @@ import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { User } from 'src/models/user.model';
-import { EntityStatus } from 'src/common/enums/entityStatus';
 import { PaginatedEntity } from './dto/paginations/entity-connection.model';
 import { EntityConnectionArgs } from './dto/args/entity-connection.args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
@@ -143,8 +142,8 @@ export class EntityResolver {
   async setEntityStatus(
     @UserEntity() user: User,
     @Args('entityId') entityId: number,
-    @Args('status', { type: () => EntityStatus })
-    status: EntityStatus
+    @Args('status', { type: () => String })
+    status: string
   ): Promise<String> {
     await this.entityService.setEntityStatus(user, entityId, status);
     return `Entity status set to ${status}.`;

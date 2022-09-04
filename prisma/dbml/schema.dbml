@@ -192,8 +192,7 @@ Table Entity {
   department String
   engine String
   brand String
-  status EntityStatus [not null, default: 'Working']
-  entityStatus String
+  status String [default: 'Working']
   statusChangedAt DateTime
   measurement String [default: 'km']
   isDeleted Boolean
@@ -287,8 +286,7 @@ Table EntityHistory {
   completedBy User
   type String [not null]
   description String [not null]
-  status String
-  entityStatus EntityStatus
+  entityStatus String
   entityType String
   workingHour Float
   idleHour Float
@@ -445,13 +443,6 @@ Enum PeriodicMaintenanceStatus {
   Done
   Pending
   Missed
-}
-
-Enum EntityStatus {
-  Working
-  Critical
-  Breakdown
-  Dispose
 }
 
 Ref: User.locationId - Location.id

@@ -222,8 +222,7 @@ model Entity {
   department                String?
   engine                    String?
   brand                     String?
-  status                    EntityStatus                @default(Working)
-  entityStatus              String?
+  status                    String?                     @default("Working")
   statusChangedAt           DateTime?
   measurement               String?                     @default("km")
   isDeleted                 Boolean?
@@ -243,13 +242,6 @@ model Entity {
   breakdowns                EntityBreakdown[]
   sparePRs                  EntitySparePR[]
   periodicMaintenances      PeriodicMaintenance[]
-}
-
-enum EntityStatus {
-  Working
-  Critical
-  Breakdown
-  Dispose
 }
 
 model EntityAssignment {
@@ -315,23 +307,22 @@ model EntityPeriodicMaintenanceTask {
 }
 
 model EntityHistory {
-  id            Int           @id @default(autoincrement())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   entityId      Int
-  entity        Entity        @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  entity        Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
   completedById Int?
-  completedBy   User?         @relation(fields: [completedById], references: [id])
+  completedBy   User?     @relation(fields: [completedById], references: [id])
   type          String
   description   String
-  status        String?
-  entityStatus  EntityStatus?
+  entityStatus  String?
   entityType    String?
   workingHour   Float?
   idleHour      Float?
   breakdownHour Float?
   locationId    Int?
-  location      Location?     @relation(fields: [locationId], references: [id])
+  location      Location? @relation(fields: [locationId], references: [id])
 }
 
 model EntityRepairRequest {

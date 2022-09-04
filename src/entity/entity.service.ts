@@ -15,7 +15,6 @@ import { ChecklistTemplateService } from 'src/resolvers/checklist-template/check
 import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';
 import * as moment from 'moment';
-import { EntityStatus } from 'src/common/enums/entityStatus';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { EntityConnectionArgs } from './dto/args/entity-connection.args';
 import { PaginatedEntity } from './dto/paginations/entity-connection.model';
@@ -55,7 +54,7 @@ export interface EntityHistoryInterface {
   workingHour?: number;
   idleHour?: number;
   breakdownHour?: number;
-  entityStatus?: EntityStatus;
+  entityStatus?: string;
 }
 
 @Injectable()
@@ -367,7 +366,7 @@ export class EntityService {
   }
 
   //** Set entity status. */
-  async setEntityStatus(user: User, entityId: number, status: EntityStatus) {
+  async setEntityStatus(user: User, entityId: number, status: string) {
     // Check if admin of entity or has permission
     await this.checkEntityAssignmentOrPermission(
       entityId,

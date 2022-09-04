@@ -1,5 +1,4 @@
 import { ArgsType } from '@nestjs/graphql';
-import { EntityStatus } from 'src/common/enums/entityStatus';
 import ConnectionArgs from '../../../common/pagination/connection-args';
 
 @ArgsType()
@@ -8,7 +7,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   createdById?: number;
   createdByUserId?: string;
   entityType?: string;
-  status?: EntityStatus[];
+  status?: string[];
   locationIds?: number[];
   department?: string[];
   assignedToId?: number;
