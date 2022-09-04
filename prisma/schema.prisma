@@ -204,44 +204,45 @@ model ChecklistComment {
 }
 
 model Entity {
-  id                           Int                         @id @default(autoincrement())
-  createdAt                    DateTime                    @default(now())
-  updatedAt                    DateTime                    @updatedAt
-  createdById                  Int
-  createdBy                    User                        @relation(fields: [createdById], references: [id])
-  machineNumber                String?
-  registeredDate               DateTime?
-  model                        String?
-  typeId                       Int?
-  type                         Type?                       @relation(fields: [typeId], references: [id])
-  zone                         String?
-  locationId                   Int?
-  location                     Location?                   @relation(fields: [locationId], references: [id])
-  currentRunning               Int?
-  lastService                  Int?
-  department                   String?
-  engine                       String?
-  brand                        String?
-  status                       EntityStatus                @default(Working)
-  statusChangedAt              DateTime?
-  measurement                  String?                     @default("km")
-  isDeleted                    Boolean?
-  deletedAt                    DateTime?
-  deletedById                  Int?
-  deletedBy                    User?                       @relation(name: "deletedByE", fields: [deletedById], references: [id])
-  dailyChecklistTemplateId     Int?
-  dailyChecklistTemplate       ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
-  weeklyChecklistTemplateId    Int?
-  weeklyChecklistTemplate      ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
-  checklists                   Checklist[]
-  assignees                    EntityAssignment[]
-  periodicMaintenancePlans     EntityPeriodicMaintenance[]
-  histories                    EntityHistory[]
-  attachments                  EntityAttachment[]
-  repairs                      EntityRepairRequest[]
-  breakdowns                   EntityBreakdown[]
-  sparePRs                     EntitySparePR[]
-  periodicMaintenances         PeriodicMaintenance[]
+  id                        Int                         @id @default(autoincrement())
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  createdById               Int
+  createdBy                 User                        @relation(fields: [createdById], references: [id])
+  machineNumber             String?
+  registeredDate            DateTime?
+  model                     String?
+  typeId                    Int?
+  type                      Type?                       @relation(fields: [typeId], references: [id])
+  zone                      String?
+  locationId                Int?
+  location                  Location?                   @relation(fields: [locationId], references: [id])
+  currentRunning            Int?
+  lastService               Int?
+  department                String?
+  engine                    String?
+  brand                     String?
+  status                    EntityStatus                @default(Working)
+  entityStatus              String?
+  statusChangedAt           DateTime?
+  measurement               String?                     @default("km")
+  isDeleted                 Boolean?
+  deletedAt                 DateTime?
+  deletedById               Int?
+  deletedBy                 User?                       @relation(name: "deletedByE", fields: [deletedById], references: [id])
+  dailyChecklistTemplateId  Int?
+  dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
+  weeklyChecklistTemplateId Int?
+  weeklyChecklistTemplate   ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
+  checklists                Checklist[]
+  assignees                 EntityAssignment[]
+  periodicMaintenancePlans  EntityPeriodicMaintenance[]
+  histories                 EntityHistory[]
+  attachments               EntityAttachment[]
+  repairs                   EntityRepairRequest[]
+  breakdowns                EntityBreakdown[]
+  sparePRs                  EntitySparePR[]
+  periodicMaintenances      PeriodicMaintenance[]
 }
 
 enum EntityStatus {
@@ -323,6 +324,7 @@ model EntityHistory {
   completedBy   User?         @relation(fields: [completedById], references: [id])
   type          String
   description   String
+  status        String?
   entityStatus  EntityStatus?
   entityType    String?
   workingHour   Float?

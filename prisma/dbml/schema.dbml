@@ -193,6 +193,7 @@ Table Entity {
   engine String
   brand String
   status EntityStatus [not null, default: 'Working']
+  entityStatus String
   statusChangedAt DateTime
   measurement String [default: 'km']
   isDeleted Boolean
@@ -286,6 +287,7 @@ Table EntityHistory {
   completedBy User
   type String [not null]
   description String [not null]
+  status String
   entityStatus EntityStatus
   entityType String
   workingHour Float
