@@ -29,7 +29,7 @@ interface FileOptions {
 export class AttachmentService {
   private readonly logger = new Logger(AttachmentService.name);
   private readonly siteUrl = `https://${process.env.SP_URL}/sites/${process.env.SP_SITE_NAME}`;
-  private readonly serverRelativeUrlToFolder = 'Shared Documents/Test';
+  private readonly serverRelativeUrlToFolder = `Shared Documents/${process.env.SP_FOLDER}`;
   private readonly SP_TOKEN_KEY = 'SHAREPOINT_ACCESS_TOKEN';
 
   constructor(
