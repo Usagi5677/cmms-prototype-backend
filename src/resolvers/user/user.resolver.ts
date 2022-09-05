@@ -39,7 +39,16 @@ export class UserResolver {
             },
           },
         },
-        entityAssignment: { include: { entity: { include: { type: true } } } },
+        entityAssignment: {
+          where: { removedAt: null },
+          include: {
+            entity: {
+              include: {
+                type: true,
+              },
+            },
+          },
+        },
         location: true,
       },
     });
