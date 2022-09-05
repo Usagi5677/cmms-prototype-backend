@@ -881,6 +881,7 @@ type Query {
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
+    isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
@@ -948,6 +949,7 @@ type Query {
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
+    isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
@@ -994,6 +996,7 @@ type Query {
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
+    isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
@@ -1064,6 +1067,7 @@ type Query {
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
+    isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int

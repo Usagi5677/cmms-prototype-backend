@@ -502,10 +502,13 @@ export class EntityService {
       gteCurrentRunning,
       lteLastService,
       gteLastService,
+      isIncompleteChecklistTask,
     } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+    const todayStart = moment().startOf('day');
+    const todayEnd = moment().endOf('day');
 
     if (search) {
       const or: any = [
@@ -642,6 +645,22 @@ export class EntityService {
         lastService: {
           gte: parseInt(gteLastService.replace(/\D/g, '')),
           lte: parseInt(lteLastService.replace(/\D/g, '')),
+        },
+      });
+    }
+
+    if (isIncompleteChecklistTask) {
+      where.AND.push({
+        checklists: {
+          some: {
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+            items: {
+              some: {
+                completedAt: null,
+              },
+            },
+          },
         },
       });
     }

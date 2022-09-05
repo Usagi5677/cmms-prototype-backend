@@ -21,4 +21,5 @@ export class EntityConnectionArgs extends ConnectionArgs {
   gteCurrentRunning?: string;
   lteLastService?: string;
   gteLastService?: string;
+  isIncompleteChecklistTask?: boolean;
 }
