@@ -19,7 +19,7 @@ import * as moment from 'moment';
 import { extname } from 'path';
 import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
 import { EntityService } from 'src/entity/entity.service';
-import { IMAGE_CACHE_DURATION } from 'src/constants';
+import { ATTACHMENT_CACHE_DURATION } from 'src/constants';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -119,7 +119,7 @@ export class AttachmentController {
         attachment.originalName ?? attachment.sharepointFileName
       }`,
       'Content-Type': attachment.mimeType ?? null,
-      'Cache-Control': `max-age=${IMAGE_CACHE_DURATION}, public`,
+      'Cache-Control': `max-age=${ATTACHMENT_CACHE_DURATION}, public`,
     });
     res.end(fileData);
   }
