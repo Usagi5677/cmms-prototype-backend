@@ -650,17 +650,46 @@ export class EntityService {
     }
 
     if (isIncompleteChecklistTask) {
-      where.AND.push({
-        checklists: {
-          some: {
-            from: todayStart.toDate(),
-            to: todayEnd.toDate(),
-            items: {
-              some: {
-                completedAt: null,
-              },
-            },
+      const checklist = await this.prisma.checklist.findMany({
+        where: {
+          NOT: [{ entityId: null }],
+          from: todayStart.toDate(),
+          to: todayEnd.toDate(),
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const checklistIds = checklist.map((id) => id.id);
+
+      const checklistItem = await this.prisma.checklistItem.findMany({
+        where: {
+          checklistId: {
+            in: checklistIds,
           },
+          completedAt: null,
+        },
+        select: {
+          checklistId: true,
+        },
+      });
+      const checklistItemIds = checklistItem.map((id) => id.checklistId);
+
+      const entity = await this.prisma.checklist.findMany({
+        where: {
+          id: {
+            in: checklistItemIds,
+          },
+        },
+        select: {
+          entityId: true,
+        },
+      });
+      const entityIds = entity.map((id) => id.entityId);
+      where.AND.push({
+        id: {
+          in: entityIds,
         },
       });
     }
@@ -683,6 +712,7 @@ export class EntityService {
       },
       orderBy: [{ id: 'asc' }],
     });
+
     for (const entity of entities) {
       const reading = await this.getLatestReading(entity);
       entity.currentRunning = reading;
