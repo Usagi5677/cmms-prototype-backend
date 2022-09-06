@@ -778,8 +778,7 @@ export class PeriodicMaintenanceService {
       select: { id: true },
     });
     const originIds = periodicMaintenance.map((m) => m.id);
-    //console.log(originIds);
-    // Daily
+
     const todayStart = moment().startOf('day');
     const todayEnd = moment().endOf('day');
 
@@ -802,7 +801,6 @@ export class PeriodicMaintenanceService {
     const notGeneratedPeriodicMaintenanceOriginIds = originIds.filter(
       (id) => !todayPeriodicMaintenanceOriginIds.includes(id)
     );
-    //console.log(notGeneratedPeriodicMaintenanceOriginIds);
     //get all template periodic maintenance
     const templatePM = await this.prisma.periodicMaintenance.findMany({
       where: {
@@ -812,6 +810,7 @@ export class PeriodicMaintenanceService {
       },
       include: {
         verifiedBy: true,
+        entity: true,
         notificationReminder: true,
         tasks: {
           where: { parentTaskId: null },
@@ -834,17 +833,26 @@ export class PeriodicMaintenanceService {
       if (pm.measurement === 'Hour') {
         const previousReading = pm.previousMeterReading;
         const currentReading = pm.currentMeterReading;
+        const computedReading = await this.entityService.getLatestReading(
+          pm.entity
+        );
         const readingDiff = Math.abs(currentReading - previousReading);
-        const flag = readingDiff >= pm.value;
+        const computedReadingDiff = Math.abs(computedReading - previousReading);
+        //if difference is more than or equal it means it's ready to be made
+        const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
         if (flag) {
           this.createPM(pm);
         }
       } else if (pm.measurement === 'Kilometer') {
         const previousReading = pm.previousMeterReading;
         const currentReading = pm.currentMeterReading;
+        const computedReading = await this.entityService.getLatestReading(
+          pm.entity
+        );
         const readingDiff = Math.abs(currentReading - previousReading);
+        const computedReadingDiff = Math.abs(computedReading - previousReading);
         //if difference is more than or equal it means it's ready to be made
-        const flag = readingDiff >= pm.value;
+        const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
         if (flag) {
           this.createPM(pm);
         }
