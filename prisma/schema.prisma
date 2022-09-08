@@ -49,6 +49,7 @@ model User {
   periodicMaintenanceTask              PeriodicMaintenanceTask[]
   periodicMaintenanceComment           PeriodicMaintenanceComment[]
   verifiedPeriodicMaintenance          PeriodicMaintenance[]           @relation(name: "verifiedBy")
+  zonesCreated                         Zone[]
 }
 
 model Notification {
@@ -111,9 +112,20 @@ model Location {
   createdById Int?
   createdBy   User?           @relation(name: "locationCreated", fields: [createdById], references: [id])
   active      Boolean         @default(true)
+  zoneId      Int?
   entities    Entity[]
   histories   EntityHistory[]
   user        User[]
+}
+
+model Zone {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  active      Boolean  @default(true)
+  createdById Int?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
 }
 
 enum SparePRStatus {

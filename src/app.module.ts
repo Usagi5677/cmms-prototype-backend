@@ -38,6 +38,7 @@ import { PeriodicMaintenanceModule } from './periodic-maintenance/periodic-maint
             graphqlConfig.schemaDestination || './src/schema.graphql',
           debug: graphqlConfig.debug,
           playground: graphqlConfig.playgroundEnabled,
+          introspection: graphqlConfig.playgroundEnabled,
           context: ({ req }) => ({ req }),
           subscriptions: {
             'subscriptions-transport-ws': {

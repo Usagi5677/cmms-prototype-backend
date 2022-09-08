@@ -109,6 +109,6 @@ export const CHECKLIST_TYPES = ['Daily', 'Weekly'];
 
 // In seconds the duration which browsers cache images
 // 12,960,000 seconds in a month
-export const IMAGE_CACHE_DURATION = 12960000;
+export const ATTACHMENT_CACHE_DURATION = 12960000;
 
 export const ENTITY_ASSIGNMENT_TYPES = ['User', 'Engineer', 'Admin'];
