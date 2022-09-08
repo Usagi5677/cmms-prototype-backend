@@ -1,10 +1,7 @@
 import { InputType, Field } from '@nestjs/graphql';
 
 @InputType()
-export class CreateLocationInput {
+export class CreateZoneInput {
   @Field()
   name: string;
-
-  @Field({ nullable: true })
-  zoneId: number;
 }

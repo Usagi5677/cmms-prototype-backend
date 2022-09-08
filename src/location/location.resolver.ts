@@ -21,9 +21,9 @@ export class LocationResolver {
   @Mutation(() => String)
   async createLocation(
     @UserEntity() user: User,
-    @Args('createLocationInput') createLocationInput: CreateLocationInput
+    @Args('input') input: CreateLocationInput
   ) {
-    await this.locationService.create(user, createLocationInput);
+    await this.locationService.create(user, input);
     return `Successfully created location.`;
   }
 
@@ -39,17 +39,15 @@ export class LocationResolver {
 
   @Permissions('MODIFY_LOCATIONS')
   @Mutation(() => String)
-  async updateLocation(
-    @Args('updateLocationInput') updateLocationInput: UpdateLocationInput
-  ) {
-    await this.locationService.update(updateLocationInput);
-    return 'Successfully updated type.';
+  async updateLocation(@Args('input') input: UpdateLocationInput) {
+    await this.locationService.update(input);
+    return 'Successfully updated location.';
   }
 
   @Permissions('MODIFY_LOCATIONS')
   @Mutation(() => String)
   async removeLocation(@Args('id', { type: () => Int }) id: number) {
     await this.locationService.remove(id);
-    return 'Successfully removed type.';
+    return 'Successfully removed location.';
   }
 }

@@ -113,19 +113,21 @@ model Location {
   createdBy   User?           @relation(name: "locationCreated", fields: [createdById], references: [id])
   active      Boolean         @default(true)
   zoneId      Int?
+  zone        Zone?           @relation(fields: [zoneId], references: [id])
   entities    Entity[]
   histories   EntityHistory[]
   user        User[]
 }
 
 model Zone {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   name        String
-  active      Boolean  @default(true)
+  active      Boolean    @default(true)
   createdById Int?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdBy   User?      @relation(fields: [createdById], references: [id])
+  locations   Location[]
 }
 
 enum SparePRStatus {

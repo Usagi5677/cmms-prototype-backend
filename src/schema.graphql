@@ -6,7 +6,9 @@ type AllEntityUsageHistory {
   breakdownHour: Float
   breakdownPercentage: Float
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   date: Date!
   id: Int!
@@ -14,7 +16,9 @@ type AllEntityUsageHistory {
   idlePercentage: Float
   totalHour: Float
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   workingHour: Float
   workingPercentage: Float
@@ -23,15 +27,21 @@ type AllEntityUsageHistory {
 type BreakdownNotif {
   count: Int
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
-"""Breakdown statuses."""
+"""
+Breakdown statuses.
+"""
 enum BreakdownStatus {
   Breakdown
   Done
@@ -47,7 +57,9 @@ type Checklist {
   attachments: [EntityAttachment!]!
   comments: [ChecklistComment!]!
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   currentMeterReading: Int
   entity: Entity
@@ -58,19 +70,25 @@ type Checklist {
   to: Date!
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   workingHour: Int
 }
 
 type ChecklistComment {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   id: Int!
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   user: User
 }
@@ -85,13 +103,17 @@ type ChecklistItem {
   completedAt: Date
   completedBy: User
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   id: Int!
   issues: [ChecklistComment!]!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -99,7 +121,9 @@ type ChecklistSummary {
   attachments: [EntityAttachment!]!
   comments: [ChecklistComment!]!
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   currentMeterReading: Int
   entity: Entity
@@ -113,7 +137,9 @@ type ChecklistSummary {
   to: Date!
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   workingHour: Int
 }
@@ -126,7 +152,9 @@ input ChecklistSummaryInput {
 }
 
 type ChecklistTemplate {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   entitiesDaily: [Entity!]
   entitiesWeekly: [Entity!]
@@ -135,7 +163,9 @@ type ChecklistTemplate {
   name: String
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -150,12 +180,16 @@ type ChecklistTemplateEdge {
 }
 
 type ChecklistTemplateItem {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   name: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -175,6 +209,7 @@ input CreateChecklistTemplateInput {
 
 input CreateLocationInput {
   name: String!
+  zoneId: Int
 }
 
 input CreateTypeInput {
@@ -182,7 +217,13 @@ input CreateTypeInput {
   name: String!
 }
 
-"""Date custom scalar type"""
+input CreateZoneInput {
+  name: String!
+}
+
+"""
+Date custom scalar type
+"""
 scalar Date
 
 type Entity {
@@ -191,7 +232,9 @@ type Entity {
   breakdowns: [EntityBreakdown!]
   checklistItems: [ChecklistItem!]
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   createdBy: User
   currentRunning: Int
@@ -215,27 +258,35 @@ type Entity {
   statusChangedAt: Date
   type: Type
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   zone: String
 }
 
 type EntityAssign {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   entity: Entity
   entityId: Int!
   id: Int!
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   user: User
   userId: Int!
 }
 
 type EntityAttachment {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   entityId: Int!
@@ -245,7 +296,9 @@ type EntityAttachment {
   originalName: String
   sharepointFileName: String
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   user: User
 }
@@ -267,7 +320,9 @@ type EntityBreakdown {
   completedAt: Date
   completedBy: User
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   entityId: Int!
@@ -276,7 +331,9 @@ type EntityBreakdown {
   status: BreakdownStatus!
   title: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -308,7 +365,9 @@ type EntityHistory {
   completedBy: User
   completedById: Int
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   entityId: Int
@@ -319,7 +378,9 @@ type EntityHistory {
   location: Location
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   workingHour: Float
 }
@@ -341,7 +402,9 @@ type EntityPMTask {
   completedAt: Date
   completedBy: User
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   name: String
@@ -351,7 +414,9 @@ type EntityPMTask {
   periodicMaintenanceId: Int
   subTasks: [EntityPMTask!]
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -380,7 +445,9 @@ type EntityPeriodicMaintenance {
   completedAt: Date
   completedBy: User
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   entity: Entity!
   entityId: Int!
@@ -391,7 +458,9 @@ type EntityPeriodicMaintenance {
   status: PeriodicMaintenanceStatus!
   title: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   value: Int
   verifiedAt: Date
@@ -418,7 +487,9 @@ type EntityRepairRequest {
   approverId: Int
   attendInfo: String
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   entityId: Int!
   id: Int!
@@ -437,7 +508,9 @@ type EntityRepairRequest {
   supervisor: User
   supervisorId: Int
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -458,7 +531,9 @@ type EntitySparePR {
   completedAt: Date
   completedBy: User
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   entityId: Int!
@@ -467,7 +542,9 @@ type EntitySparePR {
   status: SparePRStatus!
   title: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -498,13 +575,17 @@ input EntityTransferUserInputGQL {
 type EntityUsageHistory {
   breakdownHour: Float
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   date: Date!
   id: Int!
   idleHour: Float
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   workingHour: Float
 }
@@ -526,13 +607,18 @@ input IncompleteChecklistSummaryInput {
 }
 
 type Location {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   name: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
+  zone: Zone
 }
 
 type LocationEdge {
@@ -553,24 +639,86 @@ type Mutation {
   addChecklistComment(checklistId: Int!, comment: String!): String!
   addChecklistIssue(checklistId: Int!, comment: String!, itemId: Int!): String!
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
-  addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
-  addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
-  addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
-  addEntitySparePR(description: String!, entityId: Int!, requestedDate: Date!, title: String!): String!
-  addPeriodicMaintenanceComment(periodicMaintenanceId: Int!, taskId: Int, text: String!, type: String!): String!
+  addEntityBreakdown(
+    description: String!
+    entityId: Int!
+    title: String!
+  ): String!
+  addEntityPeriodicMaintenance(
+    entityId: Int!
+    measurement: String!
+    startDate: Date!
+    tasks: [String!]
+    title: String!
+    value: Int!
+  ): String!
+  addEntityRepairRequest(
+    additionalInfo: String
+    attendInfo: String
+    entityId: Int!
+    internal: Boolean
+    location: String
+    operatorId: Int
+    projectManagerId: Int
+    projectName: String
+    reason: String
+    supervisorId: Int
+  ): String!
+  addEntitySparePR(
+    description: String!
+    entityId: Int!
+    requestedDate: Date!
+    title: String!
+  ): String!
+  addPeriodicMaintenanceComment(
+    periodicMaintenanceId: Int!
+    taskId: Int
+    text: String!
+    type: String!
+  ): String!
   addRole(name: String!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
-  createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
-  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
-  createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
-  createLocation(createLocationInput: CreateLocationInput!): String!
-  createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, previousMeterReading: Int, value: Int!): String!
-  createPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
+  createChecklistTemplate(
+    createChecklistTemplateInput: CreateChecklistTemplateInput!
+  ): String!
+  createEntity(
+    brand: String
+    currentRunning: Int
+    department: String
+    engine: String
+    lastService: Int
+    locationId: Int
+    machineNumber: String
+    measurement: String
+    model: String
+    registeredDate: Date
+    typeId: Int
+    zone: String
+  ): String!
+  createEntityPeriodicMaintenanceTask(
+    name: String!
+    parentTaskId: Int
+    periodicMaintenanceId: Int!
+  ): String!
+  createLocation(input: CreateLocationInput!): String!
+  createPeriodicMaintenance(
+    currentMeterReading: Int
+    measurement: String!
+    name: String!
+    previousMeterReading: Int
+    value: Int!
+  ): String!
+  createPeriodicMaintenanceTask(
+    name: String!
+    parentTaskId: Int
+    periodicMaintenanceId: Int!
+  ): String!
   createType(createTypeInput: CreateTypeInput!): String!
+  createZone(input: CreateZoneInput!): String!
   deleteEntityBreakdown(id: Int!): String!
   deleteEntityPMTask(id: Int!): String!
   deleteEntityPeriodicMaintenance(id: Int!): String!
@@ -578,13 +726,59 @@ type Mutation {
   deleteEntitySparePR(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
-  editEntity(brand: String, department: String, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
+  editEntity(
+    brand: String
+    department: String
+    engine: String
+    id: Int!
+    locationId: Int
+    machineNumber: String
+    measurement: String
+    model: String
+    registeredDate: Date
+    typeId: Int
+    zone: String
+  ): String!
   editEntityAttachment(description: String!, id: Int!): String!
-  editEntityBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
-  editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
-  editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
-  editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
-  editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, previousMeterReading: Int, value: Int): String!
+  editEntityBreakdown(
+    description: String!
+    estimatedDateOfRepair: Date!
+    id: Int!
+    title: String!
+  ): String!
+  editEntityPeriodicMaintenance(
+    id: Int!
+    measurement: String!
+    startDate: Date!
+    title: String!
+    value: Int!
+  ): String!
+  editEntityRepairRequest(
+    additionalInfo: String
+    attendInfo: String
+    id: Int!
+    internal: Boolean
+    location: String
+    operatorId: Int
+    projectManagerId: Int
+    projectName: String
+    reason: String
+    supervisorId: Int
+  ): String!
+  editEntitySparePR(
+    description: String!
+    id: Int!
+    requestedDate: Date!
+    title: String!
+  ): String!
+  editPeriodicMaintenance(
+    currentMeterReading: Int
+    id: Int!
+    measurement: String
+    name: String!
+    previousMeterReading: Int
+    value: Int
+  ): String!
   editRole(id: Int!, name: String!): String!
   editUserLocation(id: Int!, locationId: Int): String!
   entityTransfer(input: EntityTransferInput!): String!
@@ -601,8 +795,12 @@ type Mutation {
   removeRole(id: Int!): String!
   removeType(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
+  removeZone(id: Int!): String!
   setEntityBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
-  setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
+  setEntityPeriodicMaintenanceStatus(
+    id: Int!
+    status: PeriodicMaintenanceStatus!
+  ): String!
   setEntitySparePRStatus(id: Int!, status: SparePRStatus!): String!
   setEntityStatus(entityId: Int!, status: String!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
@@ -610,7 +808,11 @@ type Mutation {
   toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   togglePeriodicMaintenanceTask(complete: Boolean!, id: Int!): String!
-  togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
+  togglePermission(
+    complete: Boolean!
+    permission: String!
+    roleId: Int!
+  ): String!
   toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
@@ -619,25 +821,40 @@ type Mutation {
   Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.
   """
   updateAllEntityChecklists: String!
-  updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
-  updateLocation(updateLocationInput: UpdateLocationInput!): String!
+  updateChecklistTemplate(
+    updateChecklistTemplateInput: UpdateChecklistTemplateInput!
+  ): String!
+  updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
-  upsertPMNotificationReminder(day: Int, hour: Int, kilometer: Int, month: Int, periodicMaintenanceId: Int, type: String, week: Int): String!
+  updateZone(input: UpdateZoneInput!): String!
+  upsertPMNotificationReminder(
+    day: Int
+    hour: Int
+    kilometer: Int
+    month: Int
+    periodicMaintenanceId: Int
+    type: String
+    week: Int
+  ): String!
 }
 
 type Notification {
   body: String!
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   link: String
   readAt: Date
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   user: User!
   userId: Int!
@@ -708,10 +925,17 @@ type PaginatedUsers {
   pageInfo: UserPageInfo
 }
 
+type PaginatedZone {
+  edges: [ZoneEdge!]
+  pageInfo: ZonePageInfo
+}
+
 type PeriodicMaintenance {
   comments: [PeriodicMaintenanceComment!]
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   currentMeterReading: Int
   entity: Entity
@@ -727,7 +951,9 @@ type PeriodicMaintenance {
   to: Date
   type: String
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   value: Int
   verifiedAt: Date
@@ -735,13 +961,17 @@ type PeriodicMaintenance {
 }
 
 type PeriodicMaintenanceComment {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   description: String!
   id: Int!
   type: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   user: User
 }
@@ -763,7 +993,9 @@ input PeriodicMaintenanceInput {
 }
 
 type PeriodicMaintenanceNotification {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   measurement: String
@@ -772,7 +1004,9 @@ type PeriodicMaintenanceNotification {
   previousValue: Int
   type: String
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   value: Int
 }
@@ -785,7 +1019,9 @@ type PeriodicMaintenancePageInfo {
   startCursor: String
 }
 
-"""Periodic Maintenance statuses."""
+"""
+Periodic Maintenance statuses.
+"""
 enum PeriodicMaintenanceStatus {
   Done
   Missed
@@ -795,7 +1031,9 @@ enum PeriodicMaintenanceStatus {
 type PeriodicMaintenanceSummary {
   comments: [PeriodicMaintenanceComment!]
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   currentMeterReading: Int
   entity: Entity
@@ -815,7 +1053,9 @@ type PeriodicMaintenanceSummary {
   to: Date
   type: String
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   value: Int
   verifiedAt: Date
@@ -826,7 +1066,9 @@ type PeriodicMaintenanceTask {
   completedAt: Date
   completedBy: User
 
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   name: String
@@ -837,18 +1079,24 @@ type PeriodicMaintenanceTask {
   remarks: [PeriodicMaintenanceComment!]
   subTasks: [PeriodicMaintenanceTask!]
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
 type PermissionRole {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   permission: String!
   roleId: Int!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -877,15 +1125,22 @@ type Query {
   allEntityBreakdownCount: entityBreakdownCount!
   allEntityPMStatusCount: maintenanceStatusCount!
   allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
-  allEntityStatusCount(entityType: String, isAssigned: Boolean): entityStatusCount!
+  allEntityStatusCount(
+    entityType: String
+    isAssigned: Boolean
+  ): entityStatusCount!
   allEntityUsageHistory(from: Date!, to: Date!): [AllEntityUsageHistory!]!
   appUsers: [User!]!
   assignedEntities(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     brand: [String!]
     createdById: Int
@@ -894,14 +1149,18 @@ type Query {
     engine: [String!]
     entityType: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     locationIds: [Int!]
     lteCurrentRunning: String
@@ -917,43 +1176,65 @@ type Query {
   checklistSummary(input: ChecklistSummaryInput!): [ChecklistSummary!]!
   checklistTemplate(id: Int!): ChecklistTemplate!
   checklistTemplates(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
     type: String
   ): ChecklistTemplateConnection!
   entityAttachment(id: Int!): EntityAttachment!
   entityAttachments(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     entityId: Int!
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
   ): PaginatedEntityAttachment!
-  entityChecklistTemplate(input: EntityChecklistTemplateInput!): ChecklistTemplate!
+  entityChecklistTemplate(
+    input: EntityChecklistTemplateInput!
+  ): ChecklistTemplate!
   getAllAssignedEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     brand: [String!]
     createdById: Int
@@ -962,14 +1243,18 @@ type Query {
     engine: [String!]
     entityType: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     locationIds: [Int!]
     lteCurrentRunning: String
@@ -981,26 +1266,38 @@ type Query {
     zone: [String!]
   ): PaginatedEntity!
   getAllBreakdownOfEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     entityId: Int!
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
   ): PaginatedEntityBreakdown!
   getAllEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     brand: [String!]
     createdById: Int
@@ -1009,14 +1306,18 @@ type Query {
     engine: [String!]
     entityType: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     locationIds: [Int!]
     lteCurrentRunning: String
@@ -1029,49 +1330,69 @@ type Query {
   ): PaginatedEntity!
   getAllEntityChecklistAndPMSummary: entityChecklistAndPMSummary!
   getAllEntityPeriodicMaintenance(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     complete: Boolean
     entityId: Int
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     location: [String!]
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!
   getAllEntityPeriodicMaintenanceTask(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     complete: Boolean
     entityId: Int
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     location: [String!]
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenanceTask!
   getAllEntityUtilization(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     brand: [String!]
     createdById: Int
@@ -1080,14 +1401,18 @@ type Query {
     engine: [String!]
     entityType: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
     gteCurrentRunning: String
     gteLastService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     locationIds: [Int!]
     lteCurrentRunning: String
@@ -1099,102 +1424,150 @@ type Query {
     zone: [String!]
   ): PaginatedEntity!
   getAllHistoryOfEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     entityId: Int!
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
     from: Date
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     locationIds: [Int!]
     search: String
     to: Date
   ): PaginatedEntityHistory!
   getAllPeriodicMaintenanceOfEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     assignedToId: Int
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     complete: Boolean
     entityId: Int
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     location: [String!]
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!
   getAllRepairRequestOfEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
     approve: Boolean
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     complete: Boolean
     entityId: Int!
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
   ): PaginatedEntityRepair!
   getAllRoles(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     createdById: Int
     createdByUserId: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
   ): PaginatedPermissionRole!
   getAllSparePROfEntity(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     entityId: Int!
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
   ): PaginatedEntitySparePR!
   getAllTemplatesOfOriginPM(id: Int!): [PeriodicMaintenance!]!
   getAllUsers(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
   ): PaginatedUsers!
@@ -1203,41 +1576,65 @@ type Query {
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!
   getUsersWithPermission(permissions: [String!]!): [User!]!
-  incompleteChecklistSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
+  incompleteChecklistSummary(
+    input: IncompleteChecklistSummaryInput!
+  ): [IncompleteChecklistSummary!]
   incompleteChecklists(input: IncompleteChecklistInput!): [Checklist!]
   incompleteChecklistsPastTwoDays: [Int!]
   location(id: Int!): Location!
   locations(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     name: String
+    showOnlyUnzoned: Boolean
+    zoneId: Int
   ): PaginatedLocation!
   me: UserWithRoles!
   notifications: [Notification!]!
   periodicMaintenance(input: PeriodicMaintenanceInput!): PeriodicMaintenance
-  periodicMaintenanceSummary(entityId: Int!, from: Date!, to: Date!): [PeriodicMaintenanceSummary!]!
+  periodicMaintenanceSummary(
+    entityId: Int!
+    from: Date!
+    to: Date!
+  ): [PeriodicMaintenanceSummary!]!
   periodicMaintenances(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     entityId: Int
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
     from: Date
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     search: String
     to: Date
@@ -1248,35 +1645,79 @@ type Query {
   redisGet(key: String!): String
   redisKeys: [String!]!
   searchAPSUsers(query: String!): [User!]!
-  searchEntity(entityIds: [Int!], entityType: String, limit: Int, query: String): [Entity!]!
-  singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
+  searchEntity(
+    entityIds: [Int!]
+    entityType: String
+    limit: Int
+    query: String
+  ): [Entity!]!
+  singleEntityUsageHistory(
+    entityId: Int!
+    from: Date!
+    to: Date!
+  ): [EntityUsageHistory!]!
   type(id: Int!): Type!
   types(
-    """Paginate after opaque cursor"""
+    """
+    Paginate after opaque cursor
+    """
     after: String
 
-    """Paginate before opaque cursor"""
+    """
+    Paginate before opaque cursor
+    """
     before: String
     entityType: String
 
-    """Paginate first"""
+    """
+    Paginate first
+    """
     first: Int
 
-    """Paginate last"""
+    """
+    Paginate last
+    """
     last: Int
     name: String
   ): PaginatedType!
+  zone(id: Int!): Zone!
+  zones(
+    """
+    Paginate after opaque cursor
+    """
+    after: String
+
+    """
+    Paginate before opaque cursor
+    """
+    before: String
+
+    """
+    Paginate first
+    """
+    first: Int
+
+    """
+    Paginate last
+    """
+    last: Int
+    name: String
+  ): PaginatedZone!
 }
 
 type Roles {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   createdBy: User!
   id: Int!
   name: String!
   permissionRoles: [PermissionRole!]!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -1293,7 +1734,9 @@ type RolesPageInfo {
   startCursor: String
 }
 
-"""Spare pr statuses."""
+"""
+Spare pr statuses.
+"""
 enum SparePRStatus {
   Done
   Pending
@@ -1304,13 +1747,17 @@ type Subscription {
 }
 
 type Type {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   entityType: String!
   id: Int!
   name: String!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
 }
 
@@ -1337,6 +1784,7 @@ input UpdateChecklistTemplateInput {
 input UpdateLocationInput {
   id: Int!
   name: String
+  zoneId: Int
 }
 
 input UpdateTypeInput {
@@ -1345,8 +1793,15 @@ input UpdateTypeInput {
   name: String
 }
 
+input UpdateZoneInput {
+  id: Int!
+  name: String
+}
+
 type User {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   email: String!
   fullName: String!
@@ -1356,7 +1811,9 @@ type User {
   rcno: Int!
   roles: [UserRoles!]
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   userId: String!
 }
@@ -1375,13 +1832,17 @@ type UserPageInfo {
 }
 
 type UserRoles {
-  """Identifies the date and time when the object was created."""
+  """
+  Identifies the date and time when the object was created.
+  """
   createdAt: Date!
   id: Int!
   role: Roles
   roleId: Int!
 
-  """Identifies the date and time when the object was last updated."""
+  """
+  Identifies the date and time when the object was last updated.
+  """
   updatedAt: Date!
   userId: Int!
 }
@@ -1395,6 +1856,33 @@ type UserWithRoles {
   rcno: Int!
   roles: [UserRoles!]
   userId: String!
+}
+
+type Zone {
+  """
+  Identifies the date and time when the object was created.
+  """
+  createdAt: Date!
+  id: Int!
+  name: String!
+
+  """
+  Identifies the date and time when the object was last updated.
+  """
+  updatedAt: Date!
+}
+
+type ZoneEdge {
+  cursor: String
+  node: Zone
+}
+
+type ZonePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type entityBreakdownCount {

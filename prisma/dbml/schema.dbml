@@ -103,6 +103,7 @@ Table Location {
   createdBy User
   active Boolean [not null, default: true]
   zoneId Int
+  zone Zone
   entities Entity [not null]
   histories EntityHistory [not null]
   user User [not null]
@@ -116,6 +117,7 @@ Table Zone {
   active Boolean [not null, default: true]
   createdById Int
   createdBy User
+  locations Location [not null]
 }
 
 Table ChecklistTemplate {
@@ -472,6 +474,8 @@ Ref: UserRole.roleId > Role.id
 Ref: PermissionRole.roleId > Role.id
 
 Ref: Location.createdById - User.id
+
+Ref: Location.zoneId > Zone.id
 
 Ref: Zone.createdById > User.id
 

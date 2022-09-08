@@ -2,8 +2,6 @@ import { ArgsType } from '@nestjs/graphql';
 import ConnectionArgs from '../../common/pagination/connection-args';
 
 @ArgsType()
-export class LocationConnectionArgs extends ConnectionArgs {
+export class ZoneConnectionArgs extends ConnectionArgs {
   name?: string;
-  zoneId?: number;
-  showOnlyUnzoned?: boolean;
 }

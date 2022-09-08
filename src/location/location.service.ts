@@ -14,29 +14,37 @@ import { UpdateLocationInput } from './dto/update-location.input';
 export class LocationService {
   constructor(private prisma: PrismaService) {}
 
-  async create(user: User, { name }: CreateLocationInput) {
+  async create(user: User, { name, zoneId }: CreateLocationInput) {
     const existing = await this.prisma.location.findFirst({
       where: { name, active: true },
     });
     if (existing) {
       throw new BadRequestException(`${name} already exists.`);
     }
-    await this.prisma.location.create({ data: { name, createdById: user.id } });
+    await this.prisma.location.create({
+      data: { name, zoneId, createdById: user.id },
+    });
   }
 
   async findAll(args: LocationConnectionArgs): Promise<PaginatedLocation> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { name } = args;
+    const { name, zoneId, showOnlyUnzoned } = args;
     const where: any = { AND: [{ active: true }] };
     if (name) {
       where.AND.push({ name: { contains: name, mode: 'insensitive' } });
+    }
+    if (zoneId) {
+      where.AND.push({ zoneId });
+    } else if (showOnlyUnzoned) {
+      where.AND.push({ zoneId: null });
     }
     const locations = await this.prisma.location.findMany({
       skip: offset,
       take: limitPlusOne,
       where,
       orderBy: { name: 'asc' },
+      include: { zone: true },
     });
     const count = await this.prisma.location.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
@@ -66,8 +74,11 @@ export class LocationService {
     return location;
   }
 
-  async update({ id, name }: UpdateLocationInput) {
-    await this.prisma.location.update({ where: { id }, data: { name } });
+  async update({ id, name, zoneId }: UpdateLocationInput) {
+    await this.prisma.location.update({
+      where: { id },
+      data: { name, zoneId: zoneId ?? null },
+    });
   }
 
   async remove(id: number) {

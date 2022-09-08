@@ -88,7 +88,7 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
   {
     name: 'MODIFY_LOCATIONS',
     type: 'Config',
-    description: 'Create, edit and delete locations.',
+    description: 'Create, edit and delete locations and zones.',
   },
   {
     name: 'VIEW_TEMPLATES',

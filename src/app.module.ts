@@ -21,6 +21,7 @@ import { TypeModule } from './type/type.module';
 import { PermissionModule } from './permission/permission.module';
 import { LocationModule } from './location/location.module';
 import { PeriodicMaintenanceModule } from './periodic-maintenance/periodic-maintenance.module';
+import { ZoneModule } from './zone/zone.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { PeriodicMaintenanceModule } from './periodic-maintenance/periodic-maint
     PermissionModule,
     LocationModule,
     PeriodicMaintenanceModule,
+    ZoneModule,
   ],
   providers: [DateScalar, InitService],
 })
