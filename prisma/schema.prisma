@@ -439,14 +439,16 @@ model PeriodicMaintenance {
 }
 
 model Reminder {
-  id                                Int                  @id @default(autoincrement())
-  createdAt                         DateTime             @default(now())
-  updatedAt                         DateTime             @updatedAt
-  type                              String
-  measurement                       String?
-  previousValue                     Int?
-  value                             Int?
-  trigger                           Boolean?
-  notificationPeriodicMaintenanceId Int?
-  notificationPeriodicMaintenance   PeriodicMaintenance? @relation("notificationPM", fields: [notificationPeriodicMaintenanceId], references: [id])
+  id                    Int                  @id @default(autoincrement())
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  originId              Int?
+  origin                Reminder?            @relation("originReminder", fields: [originId], references: [id], onDelete: Cascade)
+  type                  String?
+  measurement           String?
+  previousValue         Int?
+  value                 Int?
+  periodicMaintenanceId Int?
+  periodicMaintenance   PeriodicMaintenance? @relation("notificationPM", fields: [periodicMaintenanceId], references: [id])
+  Reminder              Reminder[]           @relation("originReminder")
 }

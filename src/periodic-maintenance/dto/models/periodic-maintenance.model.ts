@@ -3,6 +3,7 @@ import { Entity } from 'src/entity/dto/models/entity.model';
 import { BaseModel } from 'src/models/base.model';
 import { User } from 'src/models/user.model';
 import { PeriodicMaintenanceComment } from './periodic-maintenance-comment.model';
+import { PeriodicMaintenanceNotification } from './periodic-maintenance-notification.model';
 import { PeriodicMaintenanceTask } from './periodic-maintenance-task.model';
 
 @ObjectType()
@@ -22,4 +23,5 @@ export class PeriodicMaintenance extends BaseModel {
   verifiedAt?: Date;
   entity?: Entity;
   comments?: PeriodicMaintenanceComment[];
+  notificationReminder?: PeriodicMaintenanceNotification[];
 }

@@ -414,13 +414,15 @@ Table Reminder {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  type String [not null]
+  originId Int
+  origin Reminder
+  type String
   measurement String
   previousValue Int
   value Int
-  trigger Boolean
-  notificationPeriodicMaintenanceId Int
-  notificationPeriodicMaintenance PeriodicMaintenance
+  periodicMaintenanceId Int
+  periodicMaintenance PeriodicMaintenance
+  Reminder Reminder [not null]
 }
 
 Enum SparePRStatus {
@@ -553,4 +555,6 @@ Ref: PeriodicMaintenance.verifiedById > User.id
 
 Ref: PeriodicMaintenance.entityId > Entity.id
 
-Ref: Reminder.notificationPeriodicMaintenanceId > PeriodicMaintenance.id
+Ref: Reminder.originId - Reminder.id
+
+Ref: Reminder.periodicMaintenanceId > PeriodicMaintenance.id

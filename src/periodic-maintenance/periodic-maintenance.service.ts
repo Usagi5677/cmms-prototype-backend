@@ -107,6 +107,7 @@ export class PeriodicMaintenanceService {
       take: limitPlusOne,
       where,
       include: {
+        notificationReminder: true,
         tasks: {
           where: { parentTaskId: null },
           include: {
@@ -205,7 +206,7 @@ export class PeriodicMaintenanceService {
     currentMeterReading?: number
   ) {
     try {
-      await this.prisma.periodicMaintenance.create({
+      const pm = await this.prisma.periodicMaintenance.create({
         data: {
           name,
           measurement,
@@ -526,7 +527,7 @@ export class PeriodicMaintenanceService {
     );
 
     try {
-      await this.prisma.periodicMaintenance.create({
+      const newPM = await this.prisma.periodicMaintenance.create({
         data: {
           from: pm.from,
           to: pm.to,
@@ -547,6 +548,22 @@ export class PeriodicMaintenanceService {
             },
           },
         },
+      });
+
+      const reminder = await this.prisma.reminder.findMany({
+        where: {
+          periodicMaintenanceId: pm.id,
+        },
+      });
+      await this.prisma.reminder.createMany({
+        data: reminder.map((rm) => ({
+          type: 'Template',
+          measurement: rm.measurement,
+          value: rm.value,
+          previousValue:
+            entity?.measurement === 'day' ? rm.value : entity.currentRunning,
+          periodicMaintenanceId: newPM.id,
+        })),
       });
 
       //run generate again so copies will be made
@@ -761,6 +778,437 @@ export class PeriodicMaintenanceService {
     return summaries;
   }
 
+  //update or create reminder
+  async upsertPMNotificationReminder(
+    user?: User,
+    periodicMaintenanceId?: number,
+    type?: string,
+    hour?: number,
+    kilometer?: number,
+    day?: number,
+    week?: number,
+    month?: number
+  ) {
+    try {
+      //if value exist do the following, else it null
+      if (hour) {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Hour' },
+        });
+        //update if it does exist. else create it
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: hour },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true, notificationReminder: true },
+          });
+          for (const p of pm) {
+            const reading = await this.entityService.getLatestReading(p.entity);
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Hour') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: reading, value: hour },
+                });
+              }
+            }
+          }
+        } else {
+          const r = await this.prisma.reminder.create({
+            data: {
+              periodicMaintenanceId,
+              type,
+              value: hour,
+              measurement: 'Hour',
+            },
+          });
+          //create template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true },
+          });
+          for (const p of pm) {
+            const reading = await this.entityService.getLatestReading(p.entity);
+            await this.prisma.reminder.create({
+              data: {
+                periodicMaintenanceId: p.id,
+                type: 'Template',
+                value: hour,
+                measurement: 'Hour',
+                previousValue: reading,
+                originId: r.id,
+              },
+            });
+          }
+        }
+      } else {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Hour' },
+        });
+        //update if it does exist. else create it
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: null },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Hour') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: null, value: null },
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (kilometer) {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Kilometer' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: kilometer },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true, notificationReminder: true },
+          });
+          for (const p of pm) {
+            const reading = await this.entityService.getLatestReading(p.entity);
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Kilometer') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: reading, value: kilometer },
+                });
+              }
+            }
+          }
+        } else {
+          const r = await this.prisma.reminder.create({
+            data: {
+              periodicMaintenanceId,
+              type,
+              value: kilometer,
+              measurement: 'Kilometer',
+            },
+          });
+          //create template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true },
+          });
+          for (const p of pm) {
+            const reading = await this.entityService.getLatestReading(p.entity);
+            await this.prisma.reminder.create({
+              data: {
+                periodicMaintenanceId: p.id,
+                type: 'Template',
+                value: kilometer,
+                measurement: 'Kilometer',
+                previousValue: reading,
+                originId: r.id,
+              },
+            });
+          }
+        }
+      } else {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Kilometer' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: null },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Kilometer') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: null, value: null },
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (day) {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Day' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: day },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            const todayStart = moment().startOf('day');
+            const createdAtStart = moment(p.createdAt).startOf('day');
+            const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Day') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: diff, value: day },
+                });
+              }
+            }
+          }
+        } else {
+          const r = await this.prisma.reminder.create({
+            data: {
+              periodicMaintenanceId,
+              type,
+              value: day,
+              measurement: 'Day',
+            },
+          });
+          //create template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true },
+          });
+          for (const p of pm) {
+            const todayStart = moment().startOf('day');
+            const createdAtStart = moment(p.createdAt).startOf('day');
+            const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+            await this.prisma.reminder.create({
+              data: {
+                periodicMaintenanceId: p.id,
+                type: 'Template',
+                value: day,
+                measurement: 'Day',
+                previousValue: diff,
+                originId: r.id,
+              },
+            });
+          }
+        }
+      } else {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Day' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: null },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Day') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: null, value: null },
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (week) {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Week' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: week },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            const todayStart = moment().startOf('day');
+            const createdAtStart = moment(p.createdAt).startOf('day');
+            const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Week') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: diff, value: week },
+                });
+              }
+            }
+          }
+        } else {
+          const r = await this.prisma.reminder.create({
+            data: {
+              periodicMaintenanceId,
+              type,
+              value: week,
+              measurement: 'Week',
+            },
+          });
+          //create template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true },
+          });
+          for (const p of pm) {
+            const todayStart = moment().startOf('day');
+            const createdAtStart = moment(p.createdAt).startOf('day');
+            const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+            await this.prisma.reminder.create({
+              data: {
+                periodicMaintenanceId: p.id,
+                type: 'Template',
+                value: week,
+                measurement: 'Week',
+                previousValue: diff,
+                originId: r.id,
+              },
+            });
+          }
+        }
+      } else {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Week' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: null },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Week') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: null, value: null },
+                });
+              }
+            }
+          }
+        }
+      }
+      if (month) {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Month' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: month },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            const todayStart = moment().startOf('day');
+            const createdAtStart = moment(p.createdAt).startOf('day');
+            const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Month') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: diff, value: month },
+                });
+              }
+            }
+          }
+        } else {
+          const r = await this.prisma.reminder.create({
+            data: {
+              periodicMaintenanceId,
+              type,
+              value: month,
+              measurement: 'Month',
+            },
+          });
+          //create template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { entity: true },
+          });
+          for (const p of pm) {
+            const todayStart = moment().startOf('day');
+            const createdAtStart = moment(p.createdAt).startOf('day');
+            const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+            await this.prisma.reminder.create({
+              data: {
+                periodicMaintenanceId: p.id,
+                type: 'Template',
+                value: month,
+                measurement: 'Month',
+                previousValue: diff,
+                originId: r.id,
+              },
+            });
+          }
+        }
+      } else {
+        const rm = await this.prisma.reminder.findFirst({
+          where: { periodicMaintenanceId, measurement: 'Month' },
+        });
+        if (rm) {
+          await this.prisma.reminder.update({
+            where: { id: rm.id },
+            data: { value: null },
+          });
+          //update template pm's notification reminder
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: { originId: periodicMaintenanceId },
+            include: { notificationReminder: true },
+          });
+          for (const p of pm) {
+            for (const r of p.notificationReminder) {
+              if (r.measurement === 'Month') {
+                await this.prisma.reminder.update({
+                  where: { id: r.id },
+                  data: { previousValue: null, value: null },
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async generatePeriodicMaintenancesCron() {
     this.logger.verbose('Periodic Maintenance generation cron job started');
@@ -885,6 +1333,147 @@ export class PeriodicMaintenanceService {
       }
     }
     this.logger.verbose('Periodic Maintenance generation complete');
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async notificationReminderCrons() {
+    this.logger.verbose('Notification reminder cron job started');
+    await this.notificationReminder();
+  }
+
+  async notificationReminder() {
+    // Get ids of all pm template
+    const templatePeriodicMaintenance =
+      await this.prisma.periodicMaintenance.findMany({
+        where: { type: 'Template' },
+        include: { entity: true, notificationReminder: true },
+      });
+
+    //check if fulfills the requirement and then trigger it
+    for (const pm of templatePeriodicMaintenance) {
+      for (const rm of pm.notificationReminder) {
+        if (rm.measurement === 'Hour') {
+          const previousValue = rm.previousValue;
+          const computedReading = await this.entityService.getLatestReading(
+            pm.entity
+          );
+          const computedReadingDiff = Math.abs(computedReading - previousValue);
+          //if difference is more than or equal it means it's ready to be triggered
+          const flag = computedReadingDiff >= rm.value;
+          if (flag) {
+            const users = await this.entityService.getEntityAssignmentIds(
+              pm.entityId
+            );
+            for (let index = 0; index < users.length; index++) {
+              await this.notificationService.createInBackground({
+                userId: users[index],
+                body: `Periodic maintenance (${pm.id}) notification reminder (${rm.id}) on entity(${pm.entityId})`,
+                link: `/entity/${pm.entityId}`,
+              });
+            }
+            //after triggering, need to update the values
+            await this.prisma.reminder.update({
+              where: { id: rm.id },
+              data: { previousValue: computedReading + rm.value },
+            });
+          }
+        } else if (rm.measurement === 'Kilometer') {
+          const previousValue = rm.previousValue;
+          const computedReading = await this.entityService.getLatestReading(
+            pm.entity
+          );
+          const computedReadingDiff = Math.abs(computedReading - previousValue);
+          const flag = computedReadingDiff >= rm.value;
+          if (flag) {
+            const users = await this.entityService.getEntityAssignmentIds(
+              pm.entityId
+            );
+            for (let index = 0; index < users.length; index++) {
+              await this.notificationService.createInBackground({
+                userId: users[index],
+                body: `Periodic maintenance (${pm.id}) notification reminder (${rm.id}) on entity(${pm.entityId})`,
+                link: `/entity/${pm.entityId}`,
+              });
+            }
+            await this.prisma.reminder.update({
+              where: { id: rm.id },
+              data: { previousValue: computedReading + rm.value },
+            });
+          }
+        } else if (rm.measurement === 'Day') {
+          const todayStart = moment().startOf('day');
+          const createdAtStart = moment(rm.createdAt).startOf('day');
+          const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+          const flag = diff % pm.value;
+
+          if (flag == 0) {
+            const users = await this.entityService.getEntityAssignmentIds(
+              pm.entityId
+            );
+            for (let index = 0; index < users.length; index++) {
+              await this.notificationService.createInBackground({
+                userId: users[index],
+                body: `Periodic maintenance (${pm.id}) notification reminder (${rm.id}) on entity(${pm.entityId})`,
+                link: `/entity/${pm.entityId}`,
+              });
+            }
+            //not sure if this will work
+            await this.prisma.reminder.update({
+              where: { id: rm.id },
+              data: { previousValue: diff + rm.value },
+            });
+          }
+        } else if (rm.measurement === 'Week') {
+          const todayStart = moment().startOf('day');
+          const createdAtStart = moment(pm.createdAt).startOf('day');
+          const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+          //multiplying by 7 since a week has 7 days
+          const flag = diff % (pm.value * 7);
+
+          if (flag == 0) {
+            const users = await this.entityService.getEntityAssignmentIds(
+              pm.entityId
+            );
+            for (let index = 0; index < users.length; index++) {
+              await this.notificationService.createInBackground({
+                userId: users[index],
+                body: `Periodic maintenance (${pm.id}) notification reminder (${rm.id}) on entity(${pm.entityId})`,
+                link: `/entity/${pm.entityId}`,
+              });
+            }
+            //not sure if this will work
+            await this.prisma.reminder.update({
+              where: { id: rm.id },
+              data: { previousValue: diff + rm.value },
+            });
+          }
+        } else if (rm.measurement === 'Month') {
+          const todayStart = moment().startOf('day');
+          const createdAtStart = moment(pm.createdAt).startOf('day');
+          const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+          //multiplying by 30 since a month has 30 days
+          const flag = diff % (pm.value * 30);
+          if (flag == 0) {
+            const users = await this.entityService.getEntityAssignmentIds(
+              pm.entityId
+            );
+            for (let index = 0; index < users.length; index++) {
+              await this.notificationService.createInBackground({
+                userId: users[index],
+                body: `Periodic maintenance (${pm.id}) notification reminder (${rm.id}) on entity(${pm.entityId})`,
+                link: `/entity/${pm.entityId}`,
+              });
+            }
+            //not sure if this will work
+            await this.prisma.reminder.update({
+              where: { id: rm.id },
+              data: { previousValue: diff + rm.value },
+            });
+          }
+        }
+      }
+    }
+    this.logger.verbose('Notification Reminder Complete');
   }
 
   async createPM(pm: PeriodicMaintenanceWithTasks) {

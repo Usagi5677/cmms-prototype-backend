@@ -222,4 +222,29 @@ export class PeriodicMaintenanceResolver {
       to
     );
   }
+
+  @Mutation(() => String)
+  async upsertPMNotificationReminder(
+    @UserEntity() user: User,
+    @Args('periodicMaintenanceId', { nullable: true })
+    periodicMaintenanceId?: number,
+    @Args('type', { nullable: true }) type?: string,
+    @Args('hour', { nullable: true }) hour?: number,
+    @Args('kilometer', { nullable: true }) kilometer?: number,
+    @Args('day', { nullable: true }) day?: number,
+    @Args('week', { nullable: true }) week?: number,
+    @Args('month', { nullable: true }) month?: number
+  ): Promise<string> {
+    await this.periodicMaintenanceService.upsertPMNotificationReminder(
+      user,
+      periodicMaintenanceId,
+      type,
+      hour,
+      kilometer,
+      day,
+      week,
+      month
+    );
+    return `Periodic maintenance notification reminder upserted.`;
+  }
 }

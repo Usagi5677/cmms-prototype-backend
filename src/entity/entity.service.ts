@@ -569,7 +569,11 @@ export class EntityService {
 
     if (isAssigned) {
       where.AND.push({
-        assignees: { some: {} },
+        assignees: {
+          some: {
+            removedAt: null,
+          },
+        },
       });
     }
 
@@ -2390,76 +2394,6 @@ export class EntityService {
     return unique.filter((id) => {
       return id != removeUserId;
     });
-  }
-
-  //check periodic maintenance every hour. notify based on the notification hour
-  //set status to Missed based on period
-  @Cron(CronExpression.EVERY_HOUR)
-  async updatePeriodicMaintenanceStatus() {
-    const now = moment();
-    const periodicMaintenance =
-      await this.prisma.entityPeriodicMaintenance.findMany({
-        include: {
-          entity: {
-            select: {
-              currentRunning: true,
-            },
-          },
-        },
-      });
-
-    for (let index = 0; index < periodicMaintenance.length; index++) {
-      const value = periodicMaintenance[index].value;
-
-      //const fixedDate = moment(periodicMaintenance[index].fixedDate);
-      const notifDate = moment(periodicMaintenance[index].startDate);
-      if (periodicMaintenance[index].measurement === 'hour') {
-        notifDate.add(value, 'h');
-      } else if (periodicMaintenance[index].measurement === 'day') {
-        notifDate.add(value, 'd');
-      } else if (periodicMaintenance[index].measurement === 'km') {
-        if (value >= periodicMaintenance[index].entity.currentRunning) {
-          const users = await this.prisma.entityAssignment.findMany({
-            where: {
-              entityId: periodicMaintenance[index].entityId,
-              removedAt: null,
-            },
-          });
-          for (let index = 0; index < users.length; index++) {
-            await this.notificationService.createInBackground({
-              userId: users[index].userId,
-              body: `Periodic maintenance (${periodicMaintenance[index].id}) on entity ${periodicMaintenance[index].entityId} km reminder`,
-              link: `/entity/${periodicMaintenance[index].entityId}`,
-            });
-          }
-          await this.prisma.entityPeriodicMaintenance.update({
-            where: {
-              id: periodicMaintenance[index].id,
-            },
-            data: {
-              startDate: moment(notifDate).toDate(),
-            },
-          });
-        }
-      }
-      //notifDate.add(notifHour, 'h');
-
-      if (notifDate.isSame(now)) {
-        const users = await this.prisma.entityAssignment.findMany({
-          where: {
-            entityId: periodicMaintenance[index].entityId,
-            removedAt: null,
-          },
-        });
-        for (let index = 0; index < users.length; index++) {
-          await this.notificationService.createInBackground({
-            userId: users[index].userId,
-            body: `Periodic maintenance (${periodicMaintenance[index].id}) on entity ${periodicMaintenance[index].entityId} reminder`,
-            link: `/entity/${periodicMaintenance[index].entityId}`,
-          });
-        }
-      }
-    }
   }
 
   //** Get entity usage */

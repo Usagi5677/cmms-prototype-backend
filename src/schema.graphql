@@ -625,6 +625,7 @@ type Mutation {
   updateReading(id: Int!, reading: Int!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
+  upsertPMNotificationReminder(day: Int, hour: Int, kilometer: Int, month: Int, periodicMaintenanceId: Int, type: String, week: Int): String!
 }
 
 type Notification {
@@ -719,6 +720,7 @@ type PeriodicMaintenance {
   id: Int!
   measurement: String
   name: String
+  notificationReminder: [PeriodicMaintenanceNotification!]
   originId: Int
   previousMeterReading: Int
   tasks: [PeriodicMaintenanceTask!]
@@ -760,6 +762,21 @@ input PeriodicMaintenanceInput {
   to: Date!
 }
 
+type PeriodicMaintenanceNotification {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  measurement: String
+  originId: Int
+  periodicMaintenanceId: Int
+  previousValue: Int
+  type: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  value: Int
+}
+
 type PeriodicMaintenancePageInfo {
   count: Int!
   endCursor: String
@@ -790,6 +807,7 @@ type PeriodicMaintenanceSummary {
   id: Int!
   measurement: String
   name: String
+  notificationReminder: [PeriodicMaintenanceNotification!]
   originId: Int
   previousMeterReading: Int
   taskCompletion: String!
