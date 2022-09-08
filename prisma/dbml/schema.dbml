@@ -37,6 +37,7 @@ Table User {
   periodicMaintenanceTask PeriodicMaintenanceTask [not null]
   periodicMaintenanceComment PeriodicMaintenanceComment [not null]
   verifiedPeriodicMaintenance PeriodicMaintenance [not null]
+  zonesCreated Zone [not null]
 }
 
 Table Notification {
@@ -101,9 +102,20 @@ Table Location {
   createdById Int
   createdBy User
   active Boolean [not null, default: true]
+  zoneId Int
   entities Entity [not null]
   histories EntityHistory [not null]
   user User [not null]
+}
+
+Table Zone {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  active Boolean [not null, default: true]
+  createdById Int
+  createdBy User
 }
 
 Table ChecklistTemplate {
@@ -458,6 +470,8 @@ Ref: UserRole.roleId > Role.id
 Ref: PermissionRole.roleId > Role.id
 
 Ref: Location.createdById - User.id
+
+Ref: Zone.createdById > User.id
 
 Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
 
