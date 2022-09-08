@@ -493,7 +493,7 @@ export class EntityService {
       locationIds,
       department,
       isAssigned,
-      typeId,
+      typeIds,
       zoneIds,
       brand,
       engine,
@@ -585,9 +585,9 @@ export class EntityService {
       });
     }
 
-    if (typeId?.length > 0) {
+    if (typeIds?.length > 0) {
       where.AND.push({
-        typeId: { in: typeId },
+        typeId: { in: typeIds },
       });
     }
 
