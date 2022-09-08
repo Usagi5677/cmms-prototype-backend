@@ -494,7 +494,7 @@ export class EntityService {
       department,
       isAssigned,
       typeId,
-      zone,
+      zoneIds,
       brand,
       engine,
       measurement,
@@ -547,10 +547,8 @@ export class EntityService {
       });
     }
 
-    if (zone?.length > 0) {
-      where.AND.push({
-        zone: { in: zone },
-      });
+    if (zoneIds?.length > 0) {
+      where.AND.push({ location: { zoneId: { in: zoneIds } } });
     }
 
     if (brand?.length > 0) {

@@ -1169,7 +1169,7 @@ type Query {
     search: String
     status: [String!]
     typeId: [Int!]
-    zone: [String!]
+    zoneIds: [Int!]!
   ): PaginatedEntity!
   breakdownCount: BreakdownNotif!
   checklist(input: ChecklistInput!): Checklist
@@ -1263,7 +1263,7 @@ type Query {
     search: String
     status: [String!]
     typeId: [Int!]
-    zone: [String!]
+    zoneIds: [Int!]!
   ): PaginatedEntity!
   getAllBreakdownOfEntity(
     """
@@ -1326,7 +1326,7 @@ type Query {
     search: String
     status: [String!]
     typeId: [Int!]
-    zone: [String!]
+    zoneIds: [Int!]!
   ): PaginatedEntity!
   getAllEntityChecklistAndPMSummary: entityChecklistAndPMSummary!
   getAllEntityPeriodicMaintenance(
@@ -1421,7 +1421,7 @@ type Query {
     search: String
     status: [String!]
     typeId: [Int!]
-    zone: [String!]
+    zoneIds: [Int!]!
   ): PaginatedEntity!
   getAllHistoryOfEntity(
     """

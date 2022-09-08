@@ -13,7 +13,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   assignedToId?: number;
   isAssigned?: boolean;
   typeId?: number[];
-  zone?: string[];
+  zoneIds: number[];
   brand?: string[];
   engine?: string[];
   measurement?: string[];
