@@ -66,6 +66,13 @@ export class LocationService {
     };
   }
 
+  async findEvery() {
+    return await this.prisma.location.findMany({
+      where: { active: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async findOne(id: number) {
     const location = await this.prisma.location.findFirst({ where: { id } });
     if (!location) {

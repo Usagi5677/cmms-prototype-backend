@@ -145,7 +145,7 @@ export class EntityResolver {
     @Args('status', { type: () => String })
     status: string
   ): Promise<String> {
-    await this.entityService.setEntityStatus(user, entityId, status);
+    await this.entityService.setEntityStatus(entityId, status, user);
     return `Entity status set to ${status}.`;
   }
 
@@ -710,13 +710,6 @@ export class EntityResolver {
     @UserEntity() user: User
   ): Promise<entityChecklistAndPMSummary> {
     return this.entityService.getAllEntityChecklistAndPMSummary(user);
-  }
-  @Mutation(() => String)
-  async entityTransfer(
-    @Args('input') input: EntityTransferInput
-  ): Promise<string> {
-    await this.entityService.entityTransfer(input);
-    return `Entity transfer complete.`;
   }
 
   @Mutation(() => String)

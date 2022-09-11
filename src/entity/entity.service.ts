@@ -44,6 +44,7 @@ import {
 } from './dto/args/entity-transfer.input';
 import { LocationService } from 'src/location/location.service';
 import { AuthService } from 'src/services/auth.service';
+import { UnassignExternalInput } from './dto/args/unassign-external.input';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -366,15 +367,25 @@ export class EntityService {
   }
 
   //** Set entity status. */
-  async setEntityStatus(user: User, entityId: number, status: string) {
-    // Check if admin of entity or has permission
-    await this.checkEntityAssignmentOrPermission(
-      entityId,
-      user.id,
-      undefined,
-      ['Admin', 'Engineer'],
-      ['EDIT_ENTITY']
-    );
+  async setEntityStatus(
+    entityId: number,
+    status: string,
+    user?: User,
+    requestingUserUuid?: string
+  ) {
+    if (!user) {
+      user = await this.authService.validateUser(requestingUserUuid);
+    }
+    if (!requestingUserUuid) {
+      // Check if admin of entity or has permission
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['EDIT_ENTITY']
+      );
+    }
     try {
       if (status === 'Working') {
         await this.prisma.entityBreakdown.updateMany({
@@ -388,7 +399,7 @@ export class EntityService {
       });
       await this.createEntityHistoryInBackground({
         type: 'Entity Status Change',
-        description: `(${entityId}) Set status to ${status}`,
+        description: `Status changed to ${status}`,
         entityId: entityId,
         completedById: user.id,
       });
@@ -2104,6 +2115,38 @@ export class EntityService {
     }
   }
 
+  async unassignFromEntityExternal({
+    requestingUserUuid,
+    entityId,
+    userUuid,
+    type,
+  }: UnassignExternalInput) {
+    const user = await this.authService.validateUser(requestingUserUuid);
+    if (!user) {
+      throw new BadRequestException('Invalid requesting user.');
+    }
+    const unassign = await this.prisma.user.findFirst({
+      where: {
+        userId: userUuid,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        rcno: true,
+      },
+    });
+    await this.prisma.entityAssignment.updateMany({
+      where: { entityId, userId: unassign.id, type, removedAt: null },
+      data: { removedAt: new Date() },
+    });
+    await this.createEntityHistoryInBackground({
+      type: 'User Unassigned',
+      description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
+      entityId: entityId,
+      completedById: user.id,
+    });
+  }
+
   //** unassign user from entity. */
   async unassignUserFromEntity(
     user: User,
@@ -3040,12 +3083,14 @@ export class EntityService {
   }
 
   async entityTransfer({
+    requestingUserUuid,
     entityId,
     users,
     newLocationId,
   }: EntityTransferInput) {
     const entity = await this.findOne(entityId, true);
     const newLocation = await this.locationService.findOne(newLocationId);
+    const user = await this.authService.validateUser(requestingUserUuid);
     const transactions: any = [
       this.prisma.entity.update({
         where: { id: entityId },
@@ -3122,6 +3167,7 @@ export class EntityService {
           entity.locationId ? ` from ${entity.location.name}` : ``
         } to ${newLocation.name}.`,
         entityId,
+        completedById: user.id,
       });
     }
     if (users) {
@@ -3130,6 +3176,7 @@ export class EntityService {
           type: 'User Unassigned',
           description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
           entityId: entityId,
+          completedById: user.id,
         });
       }
       for (const assignment of newAssignments) {
@@ -3137,6 +3184,7 @@ export class EntityService {
           type: 'User Assign',
           description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
           entityId: entityId,
+          completedById: user.id,
         });
       }
     }

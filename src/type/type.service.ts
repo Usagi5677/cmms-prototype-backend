@@ -59,6 +59,13 @@ export class TypeService {
     };
   }
 
+  async findEvery() {
+    return await this.prisma.type.findMany({
+      where: { active: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async findOne(id: number) {
     const type = await this.prisma.type.findFirst({ where: { id } });
     if (!type) {

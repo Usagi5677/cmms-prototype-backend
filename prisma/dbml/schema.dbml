@@ -38,6 +38,7 @@ Table User {
   periodicMaintenanceComment PeriodicMaintenanceComment [not null]
   verifiedPeriodicMaintenance PeriodicMaintenance [not null]
   zonesCreated Zone [not null]
+  keysCreated ApiKey [not null]
 }
 
 Table Notification {
@@ -439,6 +440,28 @@ Table Reminder {
   Reminder Reminder [not null]
 }
 
+Table ApiKey {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  apiKeyStart String [not null]
+  hash String [not null]
+  calls Int [not null, default: 0]
+  permissions ApiKeyPermission [not null]
+  createdById Int
+  createdBy User
+  active Boolean [not null, default: true]
+  expiresAt DateTime
+}
+
+Table ApiKeyPermission {
+  id Int [pk, increment]
+  apiKeyId Int [not null]
+  apiKey ApiKey [not null]
+  permission String [not null]
+}
+
 Enum SparePRStatus {
   Done
   Pending
@@ -576,3 +599,7 @@ Ref: PeriodicMaintenance.entityId > Entity.id
 Ref: Reminder.originId - Reminder.id
 
 Ref: Reminder.periodicMaintenanceId > PeriodicMaintenance.id
+
+Ref: ApiKey.createdById > User.id
+
+Ref: ApiKeyPermission.apiKeyId > ApiKey.id

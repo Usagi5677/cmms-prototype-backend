@@ -50,6 +50,7 @@ model User {
   periodicMaintenanceComment           PeriodicMaintenanceComment[]
   verifiedPeriodicMaintenance          PeriodicMaintenance[]           @relation(name: "verifiedBy")
   zonesCreated                         Zone[]
+  keysCreated                          ApiKey[]
 }
 
 model Notification {
@@ -465,4 +466,26 @@ model Reminder {
   periodicMaintenanceId Int?
   periodicMaintenance   PeriodicMaintenance? @relation("notificationPM", fields: [periodicMaintenanceId], references: [id])
   Reminder              Reminder[]           @relation("originReminder")
+}
+
+model ApiKey {
+  id          Int                @id @default(autoincrement())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  name        String
+  apiKeyStart String
+  hash        String
+  calls       Int                @default(0)
+  permissions ApiKeyPermission[]
+  createdById Int?
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  active      Boolean            @default(true)
+  expiresAt   DateTime?
+}
+
+model ApiKeyPermission {
+  id         Int    @id @default(autoincrement())
+  apiKeyId   Int
+  apiKey     ApiKey @relation(fields: [apiKeyId], references: [id])
+  permission String
 }

@@ -22,6 +22,7 @@ import { PermissionModule } from './permission/permission.module';
 import { LocationModule } from './location/location.module';
 import { PeriodicMaintenanceModule } from './periodic-maintenance/periodic-maintenance.module';
 import { ZoneModule } from './zone/zone.module';
+import { ApiKeyModule } from './api-key/api-key.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ZoneModule } from './zone/zone.module';
     LocationModule,
     PeriodicMaintenanceModule,
     ZoneModule,
+    ApiKeyModule,
   ],
   providers: [DateScalar, InitService],
 })
