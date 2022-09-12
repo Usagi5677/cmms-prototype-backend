@@ -33,7 +33,6 @@ import { entityStatusCount } from './dto/models/entityStatusCount.model';
 import { Entity } from './dto/models/entity.model';
 import { entityBreakdownCount } from './dto/models/entityBreakdownCount.model';
 import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSummary.model';
-import { EntityTransferInput } from './dto/args/entity-transfer.input';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)

@@ -40,7 +40,11 @@ export class EntityController {
   @Header('Content-Type', 'application/json')
   async entity(@Param() params): Promise<Object> {
     const id = parseInt(params.id);
-    const results = await this.entityService.findOne(id);
+    const results = await this.entityService.findOne(id, {
+      location: true,
+      type: true,
+      assignees: { include: { user: true } },
+    });
     return JSON.stringify(results, null, '\t');
   }
 

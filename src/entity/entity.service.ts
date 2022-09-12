@@ -45,6 +45,7 @@ import {
 import { LocationService } from 'src/location/location.service';
 import { AuthService } from 'src/services/auth.service';
 import { UnassignExternalInput } from './dto/args/unassign-external.input';
+import { Location } from 'src/location/entities/location.entity';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -73,10 +74,10 @@ export class EntityService {
     private readonly authService: AuthService
   ) {}
 
-  async findOne(id: number, includeLocation?: boolean) {
+  async findOne(id: number, include?: any) {
     const entity = await this.prisma.entity.findFirst({
       where: { id },
-      include: { location: includeLocation ? true : false },
+      include: include ?? undefined,
     });
     if (!entity) {
       throw new BadRequestException('Entity not found.');
@@ -3088,7 +3089,11 @@ export class EntityService {
     users,
     newLocationId,
   }: EntityTransferInput) {
-    const entity = await this.findOne(entityId, true);
+    const entity = (await this.findOne(entityId, {
+      location: true,
+    })) as Entity & {
+      location: Location;
+    };
     const newLocation = await this.locationService.findOne(newLocationId);
     const user = await this.authService.validateUser(requestingUserUuid);
     const transactions: any = [
