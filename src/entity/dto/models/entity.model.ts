@@ -1,4 +1,5 @@
 import { ObjectType } from '@nestjs/graphql';
+import { EntityAssignment } from 'src/assignment/entities/entity-assign.model';
 import { Breakdown } from 'src/breakdown/entities/breakdown.entity';
 import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from 'src/models/base.model';
@@ -6,8 +7,6 @@ import { ChecklistItem } from 'src/models/checklist-item.model';
 import { User } from 'src/models/user.model';
 import { PeriodicMaintenance } from 'src/periodic-maintenance/dto/models/periodic-maintenance.model';
 import { Type } from 'src/type/entities/type.entity';
-import { EntityAssign } from './entity-assign.model';
-import { EntityBreakdown } from './entity-breakdown.model';
 import { EntityHistory } from './entity-history.model';
 import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
 import { EntityRepairRequest } from './entity-repair-request.model';
