@@ -29,7 +29,7 @@ import { EntitySparePRConnectionArgs } from './dto/args/entity-sparePR-connectio
 import { PaginatedEntitySparePR } from './dto/paginations/entity-sparePR-connection.model';
 import { EntityHistoryConnectionArgs } from './dto/args/entity-history-connection.args';
 import { PaginatedEntityHistory } from './dto/paginations/entity-history-connection.model';
-import { Entity, Prisma } from '@prisma/client';
+import { Entity, Prisma, PrismaPromise } from '@prisma/client';
 import { EntityPeriodicMaintenanceConnectionArgs } from './dto/args/entity-periodic-maintenance-connection.args';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
 import { PaginatedEntityPeriodicMaintenanceTask } from './dto/paginations/entity-pm-tasks-connection.model';
@@ -40,6 +40,8 @@ import {
 } from './dto/args/entity-transfer.input';
 import { LocationService } from 'src/location/location.service';
 import { AuthService } from 'src/services/auth.service';
+import { UnassignExternalInput } from './dto/args/unassign-external.input';
+import { Location } from 'src/location/entities/location.entity';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -68,10 +70,10 @@ export class EntityService {
     private readonly authService: AuthService
   ) {}
 
-  async findOne(id: number, includeLocation?: boolean) {
+  async findOne(id: number, include?: any) {
     const entity = await this.prisma.entity.findFirst({
       where: { id },
-      include: { location: includeLocation ? true : false },
+      include: include ?? undefined,
     });
     if (!entity) {
       throw new BadRequestException('Entity not found.');
@@ -362,15 +364,25 @@ export class EntityService {
   }
 
   //** Set entity status. */
-  async setEntityStatus(user: User, entityId: number, status: string) {
-    // Check if admin of entity or has permission
-    await this.checkEntityAssignmentOrPermission(
-      entityId,
-      user.id,
-      undefined,
-      ['Admin', 'Engineer'],
-      ['EDIT_ENTITY']
-    );
+  async setEntityStatus(
+    entityId: number,
+    status: string,
+    user?: User,
+    requestingUserUuid?: string
+  ) {
+    if (!user) {
+      user = await this.authService.validateUser(requestingUserUuid);
+    }
+    if (!requestingUserUuid) {
+      // Check if admin of entity or has permission
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['EDIT_ENTITY']
+      );
+    }
     try {
       await this.prisma.entity.update({
         where: { id: entityId },
@@ -378,7 +390,7 @@ export class EntityService {
       });
       await this.createEntityHistoryInBackground({
         type: 'Entity Status Change',
-        description: `(${entityId}) Set status to ${status}`,
+        description: `Status changed to ${status}`,
         entityId: entityId,
         completedById: user.id,
       });
@@ -1661,6 +1673,110 @@ export class EntityService {
     };
   }
 
+  //** Assign 'user' to entity and return transactions. Meant to be used with the bulk assign function in assignment.service */
+  async assignUserToEntityTransactions(
+    user: User,
+    entityId: number,
+    type: string,
+    userIds: number[]
+  ): Promise<
+    [PrismaPromise<Prisma.BatchPayload>, Promise<void>[], Promise<void>[]]
+  > {
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: entityId },
+      include: { type: true },
+    });
+    if (!entity) {
+      throw new BadRequestException('Invalid entity.');
+    }
+
+    // Filter out existing assignments of type
+    const existingAssignmentIds = await this.getEntityAssignmentIds(
+      entityId,
+      undefined,
+      type
+    );
+    const newIds = userIds.filter((id) => !existingAssignmentIds.includes(id));
+    if (newIds.length === 0) {
+      return [null, [], []];
+    }
+    const newAssignments = await this.prisma.user.findMany({
+      where: {
+        id: { in: newIds },
+      },
+      select: {
+        id: true,
+        fullName: true,
+        rcno: true,
+        email: true,
+      },
+    });
+
+    const assignPromise = this.prisma.entityAssignment.createMany({
+      data: newIds.map((userId) => ({
+        entityId,
+        userId,
+        type,
+      })),
+    });
+
+    const entityUserIds = await this.getEntityAssignmentIds(entityId, user.id);
+    const entityUsersExceptNewAssignments = entityUserIds.filter(
+      (id) => !userIds.includes(id)
+    );
+
+    const entityHistory: Promise<void>[] = [];
+    // Text format new assignments into a readable list with commas and 'and'
+    // at the end.
+    const newAssignmentsFormatted = newAssignments
+      .map((a) => `${a.fullName} (${a.rcno})`)
+      .join(', ')
+      .replace(/, ([^,]*)$/, ' and $1');
+
+    entityHistory.push(
+      this.createEntityHistoryInBackground({
+        type: 'User Assign',
+        description: `${newAssignmentsFormatted} assigned as ${type}.`,
+        entityId: entityId,
+        completedById: user.id,
+      })
+    );
+
+    const notifications: Promise<void>[] = [];
+    // Notification to entity assigned users except new assignments
+    for (const id of entityUsersExceptNewAssignments) {
+      notifications.push(
+        this.notificationService.createInBackground({
+          userId: id,
+          body: `${user.fullName} (${
+            user.rcno
+          }) assigned ${newAssignmentsFormatted} to ${
+            `${entity.type?.name} ` ?? ''
+          }${entity.machineNumber} as ${type}.`,
+          link: `/entity/${entityId}`,
+        })
+      );
+    }
+
+    // Notification to new assignments
+    const newAssignmentsWithoutCurrentUser = newAssignments.filter(
+      (na) => na.id !== user.id
+    );
+    const emailBody = `You have been assigned to ${
+      `${entity.type?.name} ` ?? ''
+    }${entity.machineNumber} as ${type}.`;
+    for (const newAssignment of newAssignmentsWithoutCurrentUser) {
+      notifications.push(
+        this.notificationService.createInBackground({
+          userId: newAssignment.id,
+          body: emailBody,
+          link: `/entity/${entityId}`,
+        })
+      );
+    }
+    return [assignPromise, notifications, entityHistory];
+  }
+
   //** Assign 'user' to entity. */
   async assignUserToEntity(
     user: User,
@@ -1693,6 +1809,9 @@ export class EntityService {
       type
     );
     const newIds = userIds.filter((id) => !existingAssignmentIds.includes(id));
+    if (newIds.length === 0) {
+      throw new BadRequestException('No new users assigned.');
+    }
     const newAssignments = await this.prisma.user.findMany({
       where: {
         id: { in: newIds },
@@ -1704,9 +1823,6 @@ export class EntityService {
         email: true,
       },
     });
-    if (newAssignments.length === 0) {
-      throw new BadRequestException('No new users assigned.');
-    }
     try {
       await this.prisma.entityAssignment.createMany({
         data: newIds.map((userId) => ({
@@ -1730,6 +1846,14 @@ export class EntityService {
         .join(', ')
         .replace(/, ([^,]*)$/, ' and $1');
 
+      // Create entity history entries
+      await this.createEntityHistoryInBackground({
+        type: 'User Assign',
+        description: `${newAssignmentsFormatted} assigned as ${type}.`,
+        entityId: entityId,
+        completedById: user.id,
+      });
+
       // Notification to entity assigned users except new assignments
       for (const id of entityUsersExceptNewAssignments) {
         await this.notificationService.createInBackground({
@@ -1740,16 +1864,6 @@ export class EntityService {
             `${entity.type?.name} ` ?? ''
           }${entity.machineNumber} as ${type}.`,
           link: `/entity/${entityId}`,
-        });
-        await this.createEntityHistoryInBackground({
-          type: 'User Assign',
-          description: `${user.fullName} (${
-            user.rcno
-          }) assigned ${newAssignmentsFormatted} to ${
-            `${entity.type?.name} ` ?? ''
-          }${entity.machineNumber} as ${type}.`,
-          entityId: entityId,
-          completedById: user.id,
         });
       }
 
@@ -1766,12 +1880,6 @@ export class EntityService {
           body: emailBody,
           link: `/entity/${entityId}`,
         });
-        await this.createEntityHistoryInBackground({
-          type: 'User Assign',
-          description: `${newAssignment.fullName} (${newAssignment.rcno}) assigned as ${type}.`,
-          entityId: entityId,
-          completedById: user.id,
-        });
       }
     } catch (e) {
       if (
@@ -1786,6 +1894,38 @@ export class EntityService {
         throw new InternalServerErrorException('Unexpected error occured.');
       }
     }
+  }
+
+  async unassignFromEntityExternal({
+    requestingUserUuid,
+    entityId,
+    userUuid,
+    type,
+  }: UnassignExternalInput) {
+    const user = await this.authService.validateUser(requestingUserUuid);
+    if (!user) {
+      throw new BadRequestException('Invalid requesting user.');
+    }
+    const unassign = await this.prisma.user.findFirst({
+      where: {
+        userId: userUuid,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        rcno: true,
+      },
+    });
+    await this.prisma.entityAssignment.updateMany({
+      where: { entityId, userId: unassign.id, type, removedAt: null },
+      data: { removedAt: new Date() },
+    });
+    await this.createEntityHistoryInBackground({
+      type: 'User Unassigned',
+      description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
+      entityId: entityId,
+      completedById: user.id,
+    });
   }
 
   //** unassign user from entity. */
@@ -2689,12 +2829,18 @@ export class EntityService {
   }
 
   async entityTransfer({
+    requestingUserUuid,
     entityId,
     users,
     newLocationId,
   }: EntityTransferInput) {
-    const entity = await this.findOne(entityId, true);
+    const entity = (await this.findOne(entityId, {
+      location: true,
+    })) as Entity & {
+      location: Location;
+    };
     const newLocation = await this.locationService.findOne(newLocationId);
+    const user = await this.authService.validateUser(requestingUserUuid);
     const transactions: any = [
       this.prisma.entity.update({
         where: { id: entityId },
@@ -2771,6 +2917,7 @@ export class EntityService {
           entity.locationId ? ` from ${entity.location.name}` : ``
         } to ${newLocation.name}.`,
         entityId,
+        completedById: user.id,
       });
     }
     if (users) {
@@ -2779,6 +2926,7 @@ export class EntityService {
           type: 'User Unassigned',
           description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
           entityId: entityId,
+          completedById: user.id,
         });
       }
       for (const assignment of newAssignments) {
@@ -2786,6 +2934,7 @@ export class EntityService {
           type: 'User Assign',
           description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
           entityId: entityId,
+          completedById: user.id,
         });
       }
     }

@@ -11,7 +11,7 @@ import {
 } from 'src/common/pagination/connection-args';
 import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-connection.args';
 import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-connection.model';
-import { permissions as PERMISSIONS } from 'src/constants';
+import { PERMISSIONS } from 'src/constants';
 import { User } from 'src/models/user.model';
 
 @Injectable()

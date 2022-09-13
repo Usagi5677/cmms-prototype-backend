@@ -9,6 +9,7 @@ import { ChecklistTemplateModule } from 'src/resolvers/checklist-template/checkl
 import { EntityConsumer } from './entity.consumer';
 import { LocationModule } from 'src/location/location.module';
 import { AuthModule } from 'src/resolvers/auth/auth.module';
+import { EntityController } from './entity.controller';
 
 @Module({
   imports: [
@@ -24,5 +25,6 @@ import { AuthModule } from 'src/resolvers/auth/auth.module';
   ],
   providers: [EntityResolver, EntityService, EntityConsumer],
   exports: [EntityService],
+  controllers: [EntityController],
 })
 export class EntityModule {}

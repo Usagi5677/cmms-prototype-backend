@@ -20,6 +20,40 @@ type AllEntityUsageHistory {
   workingPercentage: Float
 }
 
+type ApiKey {
+  active: Boolean!
+  apiKeyStart: String!
+  calls: Int!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User
+  expiresAt: Date
+  id: Int!
+  name: String!
+  permissions: [ApiKeyPermission!]
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type ApiKeyEdge {
+  cursor: String
+  node: ApiKey
+}
+
+type ApiKeyPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type ApiKeyPermission {
+  permission: String!
+}
+
 type Breakdown {
   comments: [BreakdownComment!]
 
@@ -87,6 +121,12 @@ type BreakdownPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+input BulkAssignInput {
+  entityIds: [Int!]!
+  type: String!
+  userIds: [Int!]!
 }
 
 input ChangeChecklistTemplateInput {
@@ -218,6 +258,12 @@ type ChecklistTemplatePageInfo {
   startCursor: String
 }
 
+input CreateApiKeyInput {
+  expiresAt: Date
+  name: String!
+  permissions: [String!]!
+}
+
 input CreateBreakdownCommentInput {
   breakdownId: Int
   description: String!
@@ -272,8 +318,14 @@ input CreateZoneInput {
 """Date custom scalar type"""
 scalar Date
 
+input EditApiKeyInput {
+  keyId: Int!
+  name: String
+  permissions: [String!]
+}
+
 type Entity {
-  assignees: [EntityAssign!]
+  assignees: [EntityAssignment!]
   brand: String
   breakdowns: [Breakdown!]
   checklistItems: [ChecklistItem!]
@@ -307,18 +359,32 @@ type Entity {
   zone: String
 }
 
-type EntityAssign {
+type EntityAssignment {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   entity: Entity
   entityId: Int!
   id: Int!
+  removedAt: Date
   type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   user: User
   userId: Int!
+}
+
+type EntityAssignmentEdge {
+  cursor: String
+  node: EntityAssignment
+}
+
+type EntityAssignmentPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type EntityAttachment {
@@ -541,17 +607,6 @@ type EntitySparePRPageInfo {
   startCursor: String
 }
 
-input EntityTransferInput {
-  entityId: Int!
-  newLocationId: Int!
-  users: [EntityTransferUserInputGQL!]
-}
-
-input EntityTransferUserInputGQL {
-  type: String!
-  userUuid: String!
-}
-
 type EntityUsageHistory {
   breakdownHour: Float
 
@@ -623,7 +678,9 @@ type Mutation {
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
+  bulkAssign(input: BulkAssignInput!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
+  createApiKey(input: CreateApiKeyInput!): String!
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
@@ -634,6 +691,7 @@ type Mutation {
   createRepair(createRepairInput: CreateRepairInput!): String!
   createType(createTypeInput: CreateTypeInput!): String!
   createZone(input: CreateZoneInput!): String!
+  deactivateApiKey(id: Int!): String!
   deleteEntityPMTask(id: Int!): String!
   deleteEntityPeriodicMaintenance(id: Int!): String!
   deleteEntityRepairRequest(id: Int!): String!
@@ -645,10 +703,10 @@ type Mutation {
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
+  editKey(input: EditApiKeyInput!): String!
   editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, previousMeterReading: Int, value: Int): String!
   editRole(id: Int!, name: String!): String!
   editUserLocation(id: Int!, locationId: Int): String!
-  entityTransfer(input: EntityTransferInput!): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
@@ -715,6 +773,16 @@ type Notification {
 type PMTaskStatusCount {
   done: Int
   pending: Int
+}
+
+type PaginatedApiKey {
+  edges: [ApiKeyEdge!]
+  pageInfo: ApiKeyPageInfo
+}
+
+type PaginatedAssignment {
+  edges: [EntityAssignmentEdge!]
+  pageInfo: EntityAssignmentPageInfo
 }
 
 type PaginatedBreakdown {
@@ -958,6 +1026,20 @@ type Query {
   allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allEntityStatusCount(entityType: String, isAssigned: Boolean): entityStatusCount!
   allEntityUsageHistory(from: Date!, to: Date!): [AllEntityUsageHistory!]!
+  apiKeys(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedApiKey!
   appUsers: [User!]!
   assignedEntities(
     """Paginate after opaque cursor"""
@@ -991,6 +1073,23 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): PaginatedEntity!
+  assignments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    current: Boolean!
+    entityIds: [Int!]!
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    type: String
+    userIds: [Int!]!
+  ): PaginatedAssignment!
   breakdown(id: Int!): Breakdown!
   breakdownCount: BreakdownNotif!
   breakdowns(
@@ -1282,7 +1381,7 @@ type Query {
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!
-  getUsersWithPermission(permissions: [String!]!): [User!]!
+  getUsersWithPermission(permissions: [String!]!, search: String): [User!]!
   incompleteChecklistSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
   incompleteChecklists(input: IncompleteChecklistInput!): [Checklist!]
   incompleteChecklistsPastTwoDays: [Int!]
@@ -1562,7 +1661,7 @@ type UserRoles {
 
 type UserWithRoles {
   email: String!
-  entityAssignment: [EntityAssign!]
+  entityAssignment: [EntityAssignment!]
   fullName: String!
   id: Int!
   location: Location

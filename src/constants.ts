@@ -101,9 +101,24 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'Create, edit and delete templates.',
   },
   { name: 'VIEW_DASHBOARD', type: 'Misc', description: 'View dashboard.' },
+  {
+    name: 'MODIFY_DEVELOPER_PERMISSIONS',
+    type: 'Developer',
+    description: 'View and edit developer permissions under role permissions.',
+  },
+  {
+    name: 'VIEW_KEYS',
+    type: 'Developer',
+    description: 'View API keys for this app.',
+  },
+  {
+    name: 'MODIFY_KEYS',
+    type: 'Developer',
+    description: 'Create, edit and delete API keys for this app.',
+  },
 ];
 
-export const permissions = PERMISSION_DESCRIPTIONS.map((d) => d.name);
+export const PERMISSIONS = PERMISSION_DESCRIPTIONS.map((d) => d.name);
 
 export const CHECKLIST_TYPES = ['Daily', 'Weekly'];
 

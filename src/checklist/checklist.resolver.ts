@@ -46,7 +46,7 @@ export class ChecklistResolver {
       user,
       { type: 'Daily', from: yesterday, to: new Date() }
     );
-    return [summary[1].count, summary[0].count];
+    return [summary[1]?.count ?? 0, summary[0]?.count ?? 0];
   }
 
   @Mutation(() => String)
