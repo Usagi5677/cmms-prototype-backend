@@ -72,6 +72,12 @@ enum BreakdownStatus {
   Pending
 }
 
+input BulkAssignInput {
+  entityIds: [Int!]!
+  type: String!
+  userIds: [Int!]!
+}
+
 input ChangeChecklistTemplateInput {
   entityId: Int!
   newChecklistId: Int!
@@ -237,7 +243,7 @@ input EditApiKeyInput {
 }
 
 type Entity {
-  assignees: [EntityAssign!]
+  assignees: [EntityAssignment!]
   brand: String
   breakdowns: [EntityBreakdown!]
   checklistItems: [ChecklistItem!]
@@ -271,18 +277,32 @@ type Entity {
   zone: String
 }
 
-type EntityAssign {
+type EntityAssignment {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   entity: Entity
   entityId: Int!
   id: Int!
+  removedAt: Date
   type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   user: User
   userId: Int!
+}
+
+type EntityAssignmentEdge {
+  cursor: String
+  node: EntityAssignment
+}
+
+type EntityAssignmentPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type EntityAttachment {
@@ -604,6 +624,7 @@ type Mutation {
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
+  bulkAssign(input: BulkAssignInput!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createApiKey(input: CreateApiKeyInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
@@ -697,6 +718,11 @@ type PMTaskStatusCount {
 type PaginatedApiKey {
   edges: [ApiKeyEdge!]
   pageInfo: ApiKeyPageInfo
+}
+
+type PaginatedAssignment {
+  edges: [EntityAssignmentEdge!]
+  pageInfo: EntityAssignmentPageInfo
 }
 
 type PaginatedEntity {
@@ -982,6 +1008,23 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): PaginatedEntity!
+  assignments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    current: Boolean!
+    entityIds: [Int!]!
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    type: String
+    userIds: [Int!]!
+  ): PaginatedAssignment!
   breakdownCount: BreakdownNotif!
   checklist(input: ChecklistInput!): Checklist
   checklistSummary(input: ChecklistSummaryInput!): [ChecklistSummary!]!
@@ -1272,7 +1315,7 @@ type Query {
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!
-  getUsersWithPermission(permissions: [String!]!): [User!]!
+  getUsersWithPermission(permissions: [String!]!, search: String): [User!]!
   incompleteChecklistSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
   incompleteChecklists(input: IncompleteChecklistInput!): [Checklist!]
   incompleteChecklistsPastTwoDays: [Int!]
@@ -1481,7 +1524,7 @@ type UserRoles {
 
 type UserWithRoles {
   email: String!
-  entityAssignment: [EntityAssign!]
+  entityAssignment: [EntityAssignment!]
   fullName: String!
   id: Int!
   location: Location

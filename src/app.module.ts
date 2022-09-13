@@ -23,6 +23,7 @@ import { LocationModule } from './location/location.module';
 import { PeriodicMaintenanceModule } from './periodic-maintenance/periodic-maintenance.module';
 import { ZoneModule } from './zone/zone.module';
 import { ApiKeyModule } from './api-key/api-key.module';
+import { AssignmentModule } from './assignment/assignment.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { ApiKeyModule } from './api-key/api-key.module';
     PeriodicMaintenanceModule,
     ZoneModule,
     ApiKeyModule,
+    AssignmentModule,
   ],
   providers: [DateScalar, InitService],
 })

@@ -137,7 +137,8 @@ export class UserResolver {
   /** find users with permission. */
   @Query(() => [User])
   async getUsersWithPermission(
-    @Args('permissions', { type: () => [String] }) permissions: string[]
+    @Args('permissions', { type: () => [String] }) permissions: string[],
+    @Args('search', { nullable: true }) search: string
   ): Promise<User[]> {
     try {
       //get all role ids which have permission
@@ -166,11 +167,30 @@ export class UserResolver {
       //unique users only
       const uniqueUserIds = [...new Set(cleanUserIds)];
 
+      let where: any = {
+        AND: [
+          {
+            id: { in: uniqueUserIds },
+          },
+        ],
+      };
+
+      if (search) {
+        const or: any = [
+          { fullName: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the rcno as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ rcno: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+
       //find unique users
       const users = await this.prisma.user.findMany({
-        where: {
-          id: { in: uniqueUserIds },
-        },
+        where,
       });
       return users;
     } catch (e) {

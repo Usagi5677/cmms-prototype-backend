@@ -5,7 +5,7 @@ import { ChecklistItem } from 'src/models/checklist-item.model';
 import { User } from 'src/models/user.model';
 import { PeriodicMaintenance } from 'src/periodic-maintenance/dto/models/periodic-maintenance.model';
 import { Type } from 'src/type/entities/type.entity';
-import { EntityAssign } from './entity-assign.model';
+import { EntityAssignment } from '../../../assignment/entities/entity-assign.model';
 import { EntityBreakdown } from './entity-breakdown.model';
 import { EntityHistory } from './entity-history.model';
 import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
@@ -31,7 +31,7 @@ export class Entity extends BaseModel {
   deletedAt?: Date;
   status?: string;
   statusChangedAt?: Date;
-  assignees?: EntityAssign[];
+  assignees?: EntityAssignment[];
   checklistItems?: ChecklistItem[];
   periodicMaintenancePlans?: EntityPeriodicMaintenance[];
   repairs?: EntityRepairRequest[];
