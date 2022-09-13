@@ -20,6 +20,56 @@ type AllEntityUsageHistory {
   workingPercentage: Float
 }
 
+type Breakdown {
+  comments: [BreakdownComment!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  details: [BreakdownDetail!]
+  entity: Entity!
+  estimatedDateOfRepair: Date
+  id: Int!
+  name: String!
+  repairs: [Repair!]
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type BreakdownComment {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User
+  description: String!
+  id: Int!
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type BreakdownDetail {
+  breakdown: Breakdown!
+  comments: [BreakdownComment!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  description: String!
+  entity: Entity!
+  id: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type BreakdownEdge {
+  cursor: String
+  node: Breakdown
+}
+
 type BreakdownNotif {
   count: Int
 
@@ -31,11 +81,12 @@ type BreakdownNotif {
   updatedAt: Date!
 }
 
-"""Breakdown statuses."""
-enum BreakdownStatus {
-  Breakdown
-  Done
-  Pending
+type BreakdownPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 input ChangeChecklistTemplateInput {
@@ -167,6 +218,25 @@ type ChecklistTemplatePageInfo {
   startCursor: String
 }
 
+input CreateBreakdownCommentInput {
+  breakdownId: Int
+  description: String!
+  detailId: Int
+  type: String!
+}
+
+input CreateBreakdownDetailInput {
+  breakdownId: Int
+  description: String!
+}
+
+input CreateBreakdownInput {
+  entityId: Int!
+  estimatedDateOfRepair: Date
+  name: String!
+  type: String!
+}
+
 input CreateChecklistTemplateInput {
   items: [String!]!
   name: String!
@@ -176,6 +246,18 @@ input CreateChecklistTemplateInput {
 input CreateLocationInput {
   name: String!
   zoneId: Int
+}
+
+input CreateRepairCommentInput {
+  description: String!
+  repairId: Int!
+  type: String!
+}
+
+input CreateRepairInput {
+  breakdownId: Int
+  entityId: Int!
+  name: String!
 }
 
 input CreateTypeInput {
@@ -193,7 +275,7 @@ scalar Date
 type Entity {
   assignees: [EntityAssign!]
   brand: String
-  breakdowns: [EntityBreakdown!]
+  breakdowns: [Breakdown!]
   checklistItems: [ChecklistItem!]
 
   """Identifies the date and time when the object was created."""
@@ -261,36 +343,6 @@ type EntityAttachmentEdge {
 }
 
 type EntityAttachmentPageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
-type EntityBreakdown {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  entityId: Int!
-  estimatedDateOfRepair: Date
-  id: Int!
-  status: BreakdownStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
-}
-
-type EntityBreakdownEdge {
-  cursor: String
-  node: EntityBreakdown
-}
-
-type EntityBreakdownPageInfo {
   count: Int!
   endCursor: String
   hasNextPage: Boolean!
@@ -556,29 +608,32 @@ type LocationPageInfo {
 
 type Mutation {
   addAppUser(roles: [Int!]!, userId: String!): String!
+  addBreakdownComment(createBreakdownCommentInput: CreateBreakdownCommentInput!): String!
+  addBreakdownDetail(createBreakdownDetailInput: CreateBreakdownDetailInput!): String!
   addChecklistComment(checklistId: Int!, comment: String!): String!
   addChecklistIssue(checklistId: Int!, comment: String!, itemId: Int!): String!
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
-  addEntityBreakdown(description: String!, entityId: Int!, title: String!): String!
   addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   addEntitySparePR(description: String!, entityId: Int!, requestedDate: Date!, title: String!): String!
-  addPeriodicMaintenanceComment(periodicMaintenanceId: Int!, taskId: Int, text: String!, type: String!): String!
+  addPeriodicMaintenanceComment(description: String!, periodicMaintenanceId: Int!, taskId: Int, type: String!): String!
+  addRepairComment(createRepairCommentInput: CreateRepairCommentInput!): String!
   addRole(name: String!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
+  createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createLocation(input: CreateLocationInput!): String!
   createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, previousMeterReading: Int, value: Int!): String!
   createPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
+  createRepair(createRepairInput: CreateRepairInput!): String!
   createType(createTypeInput: CreateTypeInput!): String!
   createZone(input: CreateZoneInput!): String!
-  deleteEntityBreakdown(id: Int!): String!
   deleteEntityPMTask(id: Int!): String!
   deleteEntityPeriodicMaintenance(id: Int!): String!
   deleteEntityRepairRequest(id: Int!): String!
@@ -587,7 +642,6 @@ type Mutation {
   deletePeriodicMaintenanceTask(id: Int!): String!
   editEntity(brand: String, department: String, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
   editEntityAttachment(description: String!, id: Int!): String!
-  editEntityBreakdown(description: String!, estimatedDateOfRepair: Date!, id: Int!, title: String!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editEntitySparePR(description: String!, id: Int!, requestedDate: Date!, title: String!): String!
@@ -598,6 +652,9 @@ type Mutation {
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
+  removeBreakdown(id: Int!): String!
+  removeBreakdownComment(id: Int!): String!
+  removeBreakdownDetail(id: Int!): String!
   removeChecklistComment(id: Int!): String!
   removeChecklistTemplate(id: Int!): String!
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
@@ -605,11 +662,12 @@ type Mutation {
   removeEntityAttachment(id: Int!): String!
   removeLocation(id: Int!): String!
   removePeriodicMaintenanceComment(id: Int!): String!
+  removeRepair(id: Int!): String!
+  removeRepairComment(id: Int!): String!
   removeRole(id: Int!): String!
   removeType(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
   removeZone(id: Int!): String!
-  setEntityBreakdownStatus(id: Int!, status: BreakdownStatus!): String!
   setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setEntitySparePRStatus(id: Int!, status: SparePRStatus!): String!
   setEntityStatus(entityId: Int!, status: String!): String!
@@ -627,10 +685,12 @@ type Mutation {
   Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.
   """
   updateAllEntityChecklists: String!
+  updateBreakdown(updateBreakdownInput: UpdateBreakdownInput!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
+  updateRepair(updateRepairInput: UpdateRepairInput!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
   updateZone(input: UpdateZoneInput!): String!
@@ -657,6 +717,11 @@ type PMTaskStatusCount {
   pending: Int
 }
 
+type PaginatedBreakdown {
+  edges: [BreakdownEdge!]
+  pageInfo: BreakdownPageInfo
+}
+
 type PaginatedEntity {
   edges: [EntityEdge!]
   pageInfo: EntityPageInfo
@@ -665,11 +730,6 @@ type PaginatedEntity {
 type PaginatedEntityAttachment {
   edges: [EntityAttachmentEdge!]
   pageInfo: EntityAttachmentPageInfo
-}
-
-type PaginatedEntityBreakdown {
-  edges: [EntityBreakdownEdge!]
-  pageInfo: EntityBreakdownPageInfo
 }
 
 type PaginatedEntityHistory {
@@ -705,6 +765,11 @@ type PaginatedLocation {
 type PaginatedPermissionRole {
   edges: [RolesEdge!]
   pageInfo: RolesPageInfo
+}
+
+type PaginatedRepair {
+  edges: [RepairEdge!]
+  pageInfo: RepairPageInfo
 }
 
 type PaginatedType {
@@ -751,13 +816,13 @@ type PeriodicMaintenance {
 type PeriodicMaintenanceComment {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
+  createdBy: User
   description: String!
   id: Int!
   type: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  user: User
 }
 
 type PeriodicMaintenanceConnection {
@@ -926,7 +991,23 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): PaginatedEntity!
+  breakdown(id: Int!): Breakdown!
   breakdownCount: BreakdownNotif!
+  breakdowns(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedBreakdown!
   checklist(input: ChecklistInput!): Checklist
   checklistSummary(input: ChecklistSummaryInput!): [ChecklistSummary!]!
   checklistTemplate(id: Int!): ChecklistTemplate!
@@ -994,21 +1075,6 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): PaginatedEntity!
-  getAllBreakdownOfEntity(
-    """Paginate after opaque cursor"""
-    after: String
-
-    """Paginate before opaque cursor"""
-    before: String
-    entityId: Int!
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    search: String
-  ): PaginatedEntityBreakdown!
   getAllEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -1263,6 +1329,22 @@ type Query {
   profile: Profile!
   redisGet(key: String!): String
   redisKeys: [String!]!
+  repair(id: Int!): Repair!
+  repairs(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    search: String
+  ): PaginatedRepair!
   searchAPSUsers(query: String!): [User!]!
   searchEntity(entityIds: [Int!], entityType: String, limit: Int, query: String): [Entity!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
@@ -1297,6 +1379,46 @@ type Query {
     last: Int
     name: String
   ): PaginatedZone!
+}
+
+type Repair {
+  breakdown: Breakdown
+  comments: [RepairComment!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  entity: Entity!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type RepairComment {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User
+  description: String!
+  id: Int!
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type RepairEdge {
+  cursor: String
+  node: Repair
+}
+
+type RepairPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type Roles {
@@ -1358,6 +1480,14 @@ type TypePageInfo {
   startCursor: String
 }
 
+input UpdateBreakdownInput {
+  entityId: Int
+  estimatedDateOfRepair: Date
+  id: Int!
+  name: String
+  type: String
+}
+
 input UpdateChecklistTemplateInput {
   id: Int!
   items: [String!]
@@ -1369,6 +1499,13 @@ input UpdateLocationInput {
   id: Int!
   name: String
   zoneId: Int
+}
+
+input UpdateRepairInput {
+  breakdownId: Int
+  entityId: Int
+  id: Int!
+  name: String!
 }
 
 input UpdateTypeInput {

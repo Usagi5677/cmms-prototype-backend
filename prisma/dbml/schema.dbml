@@ -24,7 +24,6 @@ Table User {
   entityAttachment EntityAttachment [not null]
   entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
   entityHistory EntityHistory [not null]
-  entityBreakdown EntityBreakdown [not null]
   entitySparePR EntitySparePR [not null]
   entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
   entityRepairRequestOperator EntityRepairRequest [not null]
@@ -38,6 +37,11 @@ Table User {
   periodicMaintenanceComment PeriodicMaintenanceComment [not null]
   verifiedPeriodicMaintenance PeriodicMaintenance [not null]
   zonesCreated Zone [not null]
+  breakdownComments BreakdownComment [not null]
+  repairComments RepairComment [not null]
+  breakdownDetails BreakdownDetail [not null]
+  repairCreated Repair [not null]
+  breakdownCreated Breakdown [not null]
 }
 
 Table Notification {
@@ -223,9 +227,10 @@ Table Entity {
   histories EntityHistory [not null]
   attachments EntityAttachment [not null]
   repairs EntityRepairRequest [not null]
-  breakdowns EntityBreakdown [not null]
   sparePRs EntitySparePR [not null]
   periodicMaintenances PeriodicMaintenance [not null]
+  breakdowns Breakdown [not null]
+  repair Repair [not null]
 }
 
 Table EntityAssignment {
@@ -337,21 +342,6 @@ Table EntityRepairRequest {
   approvedAt DateTime
 }
 
-Table EntityBreakdown {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  entityId Int [not null]
-  entity Entity [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  estimatedDateOfRepair DateTime
-  status BreakdownStatus [not null, default: 'Breakdown']
-}
-
 Table EntitySparePR {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
@@ -389,8 +379,8 @@ Table PeriodicMaintenanceComment {
   task PeriodicMaintenanceTask
   type String [not null, default: 'Remark']
   description String [not null]
-  userId Int
-  user User
+  createdById Int
+  createdBy User
   periodicMaintenance PeriodicMaintenance
   periodicMaintenanceId Int
 }
@@ -437,6 +427,74 @@ Table Reminder {
   periodicMaintenanceId Int
   periodicMaintenance PeriodicMaintenance
   Reminder Reminder [not null]
+}
+
+Table Repair {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  breakdownId Int
+  name String [not null]
+  createdById Int
+  createdBy User
+  entity Entity
+  breakdown Breakdown
+  comments RepairComment [not null]
+}
+
+Table RepairComment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  type String [not null, default: 'Remark']
+  description String [not null]
+  repairId Int
+  repair Repair
+  createdById Int
+  createdBy User
+}
+
+Table Breakdown {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entityId Int [not null]
+  name String [not null]
+  type String [not null]
+  estimatedDateOfRepair DateTime
+  entity Entity
+  createdById Int
+  createdBy User
+  details BreakdownDetail [not null]
+  comments BreakdownComment [not null]
+  repairs Repair [not null]
+}
+
+Table BreakdownDetail {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  breakdownId Int [not null]
+  breakdown Breakdown [not null]
+  description String [not null]
+  createdById Int
+  createdBy User
+  comments BreakdownComment [not null]
+}
+
+Table BreakdownComment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  type String [not null, default: 'Remark']
+  description String [not null]
+  breakdownId Int
+  breakdown Breakdown
+  detailId Int
+  detail BreakdownDetail
+  createdById Int
+  createdBy User
 }
 
 Enum SparePRStatus {
@@ -547,10 +605,6 @@ Ref: EntityRepairRequest.requestorId > User.id
 
 Ref: EntityRepairRequest.approverId > User.id
 
-Ref: EntityBreakdown.entityId > Entity.id
-
-Ref: EntityBreakdown.completedById > User.id
-
 Ref: EntitySparePR.entityId > Entity.id
 
 Ref: EntitySparePR.completedById > User.id
@@ -563,7 +617,7 @@ Ref: PeriodicMaintenanceTask.parentTaskId - PeriodicMaintenanceTask.id
 
 Ref: PeriodicMaintenanceComment.taskId > PeriodicMaintenanceTask.id
 
-Ref: PeriodicMaintenanceComment.userId > User.id
+Ref: PeriodicMaintenanceComment.createdById > User.id
 
 Ref: PeriodicMaintenanceComment.periodicMaintenanceId > PeriodicMaintenance.id
 
@@ -576,3 +630,27 @@ Ref: PeriodicMaintenance.entityId > Entity.id
 Ref: Reminder.originId - Reminder.id
 
 Ref: Reminder.periodicMaintenanceId > PeriodicMaintenance.id
+
+Ref: Repair.createdById > User.id
+
+Ref: Repair.entityId > Entity.id
+
+Ref: Repair.breakdownId > Breakdown.id
+
+Ref: RepairComment.repairId > Repair.id
+
+Ref: RepairComment.createdById > User.id
+
+Ref: Breakdown.entityId > Entity.id
+
+Ref: Breakdown.createdById > User.id
+
+Ref: BreakdownDetail.breakdownId > Breakdown.id
+
+Ref: BreakdownDetail.createdById > User.id
+
+Ref: BreakdownComment.breakdownId > Breakdown.id
+
+Ref: BreakdownComment.detailId > BreakdownDetail.id
+
+Ref: BreakdownComment.createdById > User.id

@@ -15,7 +15,6 @@ import { ChecklistTemplateService } from 'src/resolvers/checklist-template/check
 import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';
 import * as moment from 'moment';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { EntityConnectionArgs } from './dto/args/entity-connection.args';
 import { PaginatedEntity } from './dto/paginations/entity-connection.model';
 import {
@@ -24,11 +23,8 @@ import {
 } from 'src/common/pagination/connection-args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
-import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
 import { PaginatedEntityRepair } from './dto/paginations/entity-repair-connection.model';
-import { EntityBreakdownConnectionArgs } from './dto/args/entity-breakdown-connection.args';
-import { PaginatedEntityBreakdown } from './dto/paginations/entity-breakdown-connection.model';
 import { EntitySparePRConnectionArgs } from './dto/args/entity-sparePR-connection.args';
 import { PaginatedEntitySparePR } from './dto/paginations/entity-sparePR-connection.model';
 import { EntityHistoryConnectionArgs } from './dto/args/entity-history-connection.args';
@@ -376,12 +372,6 @@ export class EntityService {
       ['EDIT_ENTITY']
     );
     try {
-      if (status === 'Working') {
-        await this.prisma.entityBreakdown.updateMany({
-          where: { entityId },
-          data: { status: 'Done' },
-        });
-      }
       await this.prisma.entity.update({
         where: { id: entityId },
         data: { status, statusChangedAt: new Date() },
@@ -703,7 +693,7 @@ export class EntityService {
       include: {
         createdBy: true,
         sparePRs: { orderBy: { id: 'desc' } },
-        breakdowns: { orderBy: { id: 'desc' } },
+        breakdowns: { orderBy: { id: 'desc' }, include: { createdBy: true } },
         assignees: {
           include: {
             user: true,
@@ -1467,254 +1457,6 @@ export class EntityService {
     }
   }
 
-  //** Create entity breakdown. */
-  async createEntityBreakdown(
-    user: User,
-    entityId: number,
-    title: string,
-    description: string
-  ) {
-    await this.checkEntityAssignmentOrPermission(
-      entityId,
-      user.id,
-      undefined,
-      ['Admin', 'Engineer'],
-      ['MODIFY_BREAKDOWN']
-    );
-    try {
-      const breakdown = await this.prisma.entityBreakdown.create({
-        data: {
-          entityId,
-          title,
-          description,
-        },
-      });
-      await this.prisma.entity.update({
-        where: { id: entityId },
-        data: { status: 'Breakdown' },
-      });
-      await this.createEntityHistoryInBackground({
-        type: 'Add Breakdown',
-        description: `Added breakdown (${breakdown.id})`,
-        entityId: entityId,
-        completedById: user.id,
-      });
-      const users = await this.getEntityAssignmentIds(entityId, user.id);
-      for (let index = 0; index < users.length; index++) {
-        await this.notificationService.createInBackground({
-          userId: users[index],
-          body: `${user.fullName} (${user.rcno}) added new breakdown on entity ${entityId}`,
-          link: `/entity/${entityId}`,
-        });
-      }
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Edit entity breakdown. */
-  async editEntityBreakdown(
-    user: User,
-    id: number,
-    title: string,
-    description: string,
-    estimatedDateOfRepair: Date
-  ) {
-    const breakdown = await this.prisma.entityBreakdown.findFirst({
-      where: { id },
-      select: {
-        id: true,
-        entityId: true,
-        title: true,
-        description: true,
-        estimatedDateOfRepair: true,
-      },
-    });
-    await this.checkEntityAssignmentOrPermission(
-      breakdown.entityId,
-      user.id,
-      undefined,
-      ['Admin', 'Engineer'],
-      ['MODIFY_BREAKDOWN']
-    );
-    try {
-      if (breakdown.title != title) {
-        await this.createEntityHistoryInBackground({
-          type: 'Breakdown Edit',
-          description: `(${id}) Title changed from ${breakdown.title} to ${title}.`,
-          entityId: breakdown.entityId,
-          completedById: user.id,
-        });
-      }
-      if (breakdown.description != description) {
-        await this.createEntityHistoryInBackground({
-          type: 'Breakdown Edit',
-          description: `(${id}) Description changed from ${breakdown.description} to ${description}.`,
-          entityId: breakdown.entityId,
-          completedById: user.id,
-        });
-      }
-      if (
-        moment(breakdown.estimatedDateOfRepair).format(
-          'DD MMMM YYYY HH:mm:ss'
-        ) != moment(estimatedDateOfRepair).format('DD MMMM YYYY HH:mm:ss')
-      ) {
-        await this.createEntityHistoryInBackground({
-          type: 'Breakdown Edit',
-          description: `Estimated date of repair changed from ${moment(
-            breakdown.estimatedDateOfRepair
-          ).format('DD MMMM YYYY')} to ${moment(estimatedDateOfRepair).format(
-            'DD MMMM YYYY'
-          )}.`,
-          entityId: id,
-          completedById: user.id,
-        });
-      }
-      const users = await this.getEntityAssignmentIds(
-        breakdown.entityId,
-        user.id
-      );
-      for (let index = 0; index < users.length; index++) {
-        await this.notificationService.createInBackground({
-          userId: users[index],
-          body: `${user.fullName} (${user.rcno}) edited breakdown (${breakdown.id}) on entity ${breakdown.entityId}`,
-          link: `/entity/${breakdown.entityId}`,
-        });
-      }
-      await this.prisma.entityBreakdown.update({
-        where: { id },
-        data: { title, description, estimatedDateOfRepair },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Delete entity breakdown. */
-  async deleteEntityBreakdown(user: User, id: number) {
-    const breakdown = await this.prisma.entityBreakdown.findFirst({
-      where: { id },
-      select: {
-        id: true,
-        entityId: true,
-        title: true,
-      },
-    });
-    await this.checkEntityAssignmentOrPermission(
-      breakdown.entityId,
-      user.id,
-      undefined,
-      ['Admin', 'Engineer'],
-      ['MODIFY_BREAKDOWN']
-    );
-    try {
-      await this.createEntityHistoryInBackground({
-        type: 'Breakdown Delete',
-        description: `(${id}) Breakdown (${breakdown.title}) deleted.`,
-        entityId: breakdown.entityId,
-        completedById: user.id,
-      });
-      const users = await this.getEntityAssignmentIds(
-        breakdown.entityId,
-        user.id
-      );
-      for (let index = 0; index < users.length; index++) {
-        await this.notificationService.createInBackground({
-          userId: users[index],
-          body: `${user.fullName} (${user.rcno}) deleted breakdown (${breakdown.id}) on entity ${breakdown.entityId}`,
-          link: `/entity/${breakdown.entityId}`,
-        });
-      }
-      await this.prisma.entityBreakdown.delete({
-        where: { id },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** Set entity breakdown status. */
-  async setEntityBreakdownStatus(
-    user: User,
-    id: number,
-    status: BreakdownStatus
-  ) {
-    let completedFlag = false;
-    let entityStatus;
-    const breakdown = await this.prisma.entityBreakdown.findFirst({
-      where: { id },
-      select: {
-        entityId: true,
-      },
-    });
-    await this.checkEntityAssignmentOrPermission(
-      breakdown.entityId,
-      user.id,
-      undefined,
-      ['Admin', 'Engineer'],
-      ['MODIFY_BREAKDOWN']
-    );
-    try {
-      if (status == 'Done') {
-        completedFlag = true;
-        entityStatus = 'Working';
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Status',
-          description: `(${id}) Set status to ${status}.`,
-          entityId: breakdown.entityId,
-          completedById: user.id,
-        });
-      }
-      if (status == 'Pending') {
-        entityStatus = 'Pending';
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Status',
-          description: `(${id}) Set status to ${status}.`,
-          entityId: breakdown.entityId,
-          completedById: user.id,
-        });
-      }
-      if (status == 'Breakdown') {
-        entityStatus = 'Breakdown';
-        await this.createEntityHistoryInBackground({
-          type: 'Repair Status',
-          description: `(${id}) Set status to ${status}.`,
-          entityId: breakdown.entityId,
-          completedById: user.id,
-        });
-        const users = await this.getEntityAssignmentIds(
-          breakdown.entityId,
-          user.id
-        );
-        for (let index = 0; index < users.length; index++) {
-          await this.notificationService.createInBackground({
-            userId: users[index],
-            body: `${user.fullName} (${user.rcno}) set breakdown status to (${status}) on entity ${breakdown.entityId}`,
-            link: `/entity/${breakdown.entityId}`,
-          });
-        }
-        //set entity status
-        await this.prisma.entity.update({
-          where: { id: breakdown.entityId },
-          data: { status: entityStatus },
-        });
-      }
-
-      await this.prisma.entityBreakdown.update({
-        where: { id },
-        data: completedFlag
-          ? { completedById: user.id, completedAt: new Date(), status }
-          : { completedById: null, completedAt: null, status },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
   //** Get entity Repair Request. Results are paginated. User cursor argument to go forward/backward. */
   async getEntityRepairRequestWithPagination(
     user: User,
@@ -1769,64 +1511,6 @@ export class EntityService {
     const count = await this.prisma.entityRepairRequest.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       repair.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
-  }
-
-  //** Get entityBreakdown. Results are paginated. User cursor argument to go forward/backward. */
-  async getEntityBreakdownWithPagination(
-    user: User,
-    args: EntityBreakdownConnectionArgs
-  ): Promise<PaginatedEntityBreakdown> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { entityId, search } = args;
-
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    if (entityId) {
-      where.AND.push({ entityId });
-    }
-    //for now these only
-    if (search) {
-      const or: any = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const breakdown = await this.prisma.entityBreakdown.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        completedBy: true,
-      },
-      orderBy: { id: 'desc' },
-    });
-
-    const count = await this.prisma.entityBreakdown.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      breakdown.slice(0, limit),
       args,
       {
         arrayLength: count,
@@ -2442,41 +2126,6 @@ export class EntityService {
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //check entity every week. notify assigned users if breakdown exists
-  @Cron(CronExpression.EVERY_WEEK)
-  async checkEntityBreakdownExist() {
-    const breakdown = await this.prisma.entityBreakdown.findMany();
-    const now = moment().startOf('day');
-
-    for (let index = 0; index < breakdown.length; index++) {
-      if (breakdown[index].status === 'Breakdown') {
-        const end = moment(breakdown[index].createdAt).endOf('day');
-
-        if (moment.duration(end.diff(now)).asDays() >= 7) {
-          const users = await this.prisma.entityAssignment.findMany({
-            where: {
-              entityId: breakdown[index].entityId,
-              removedAt: null,
-            },
-          });
-
-          for (let index = 0; index < users.length; index++) {
-            await this.notificationService.createInBackground({
-              userId: users[index].userId,
-              body: `Reminder: Entity ${breakdown[index].entityId} has been broken for 1 week`,
-              link: `/entity/${breakdown[index].entityId}`,
-            });
-          }
-          await this.createEntityHistoryInBackground({
-            type: 'Breakdown',
-            description: `(${breakdown[index].id}) breakdown has been notified to all assigned users.`,
-            entityId: breakdown[index].entityId,
-          });
-        }
-      }
     }
   }
 

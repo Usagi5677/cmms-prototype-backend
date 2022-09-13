@@ -12,15 +12,12 @@ import { PaginatedEntity } from './dto/paginations/entity-connection.model';
 import { EntityConnectionArgs } from './dto/args/entity-connection.args';
 import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
 import { SparePRStatus } from 'src/common/enums/sparePRStatus';
-import { BreakdownStatus } from 'src/common/enums/breakdownStatus';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
 import { EntityPeriodicMaintenanceConnectionArgs } from './dto/args/entity-periodic-maintenance-connection.args';
 import { PaginatedEntitySparePR } from './dto/paginations/entity-sparePR-connection.model';
 import { EntitySparePRConnectionArgs } from './dto/args/entity-sparePR-connection.args';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
 import { PaginatedEntityRepair } from './dto/paginations/entity-repair-connection.model';
-import { EntityBreakdownConnectionArgs } from './dto/args/entity-breakdown-connection.args';
-import { PaginatedEntityBreakdown } from './dto/paginations/entity-breakdown-connection.model';
 import { EntityHistoryConnectionArgs } from './dto/args/entity-history-connection.args';
 import { PaginatedEntityHistory } from './dto/paginations/entity-history-connection.model';
 import { BreakdownNotif } from 'src/models/breakdownNotif.model';
@@ -372,64 +369,6 @@ export class EntityResolver {
     return `Spare PR status updated.`;
   }
 
-  // Permission checked in service
-  @Mutation(() => String)
-  async addEntityBreakdown(
-    @UserEntity() user: User,
-    @Args('entityId') entityId: number,
-    @Args('title') title: string,
-    @Args('description') description: string
-  ): Promise<String> {
-    await this.entityService.createEntityBreakdown(
-      user,
-      entityId,
-      title,
-      description
-    );
-    return `Added Breakdown to entity.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async editEntityBreakdown(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('title') title: string,
-    @Args('description') description: string,
-    @Args('estimatedDateOfRepair') estimatedDateOfRepair: Date
-  ): Promise<String> {
-    await this.entityService.editEntityBreakdown(
-      user,
-      id,
-      title,
-      description,
-      estimatedDateOfRepair
-    );
-    return `Breakdown updated.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async deleteEntityBreakdown(
-    @UserEntity() user: User,
-    @Args('id') id: number
-  ): Promise<String> {
-    await this.entityService.deleteEntityBreakdown(user, id);
-    return `Breakdown deleted.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async setEntityBreakdownStatus(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('status', { type: () => BreakdownStatus })
-    status: BreakdownStatus
-  ): Promise<String> {
-    await this.entityService.setEntityBreakdownStatus(user, id, status);
-    return `Breakdown status updated.`;
-  }
-
   @Query(() => PaginatedEntityPeriodicMaintenance)
   async getAllPeriodicMaintenanceOfEntity(
     @UserEntity() user: User,
@@ -455,17 +394,6 @@ export class EntityResolver {
     @Args() args: EntityRepairConnectionArgs
   ): Promise<PaginatedEntityRepair> {
     return await this.entityService.getEntityRepairRequestWithPagination(
-      user,
-      args
-    );
-  }
-
-  @Query(() => PaginatedEntityBreakdown)
-  async getAllBreakdownOfEntity(
-    @UserEntity() user: User,
-    @Args() args: EntityBreakdownConnectionArgs
-  ): Promise<PaginatedEntityBreakdown> {
-    return await this.entityService.getEntityBreakdownWithPagination(
       user,
       args
     );

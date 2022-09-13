@@ -172,14 +172,14 @@ export class PeriodicMaintenanceResolver {
     @Args('periodicMaintenanceId') periodicMaintenanceId: number,
     @Args('type') type: string,
     @Args('taskId', { nullable: true }) taskId: number,
-    @Args('text') text: string
+    @Args('description') description: string
   ): Promise<string> {
     await this.periodicMaintenanceService.addPeriodicMaintenanceComment(
       user,
       type,
       periodicMaintenanceId,
       taskId,
-      text
+      description
     );
     return `Periodic maintenance comment type ${type} added.`;
   }

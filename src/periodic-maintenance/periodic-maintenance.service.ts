@@ -22,7 +22,6 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { NotificationService } from 'src/services/notification.service';
-import { PeriodicMaintenanceTask } from './dto/models/periodic-maintenance-task.model';
 import { PeriodicMaintenanceWithTasks } from './dto/models/periodic-maintenance-with-tasks.model';
 import { ForbiddenError } from 'apollo-server-express';
 import { PeriodicMaintenanceSummary } from './dto/models/periodic-maintenance-summary.model';
@@ -52,13 +51,16 @@ export class PeriodicMaintenanceService {
       },
       include: {
         tasks: {
-          include: { completedBy: true, remarks: { include: { user: true } } },
+          include: {
+            completedBy: true,
+            remarks: { include: { createdBy: true } },
+          },
           orderBy: { id: 'asc' },
         },
         comments: {
           where: { type: 'Comment' },
           include: {
-            user: true,
+            createdBy: true,
           },
           orderBy: { id: 'desc' },
         },
@@ -118,7 +120,7 @@ export class PeriodicMaintenanceService {
                     completedBy: true,
                     remarks: {
                       include: {
-                        user: true,
+                        createdBy: true,
                       },
                     },
                   },
@@ -126,7 +128,7 @@ export class PeriodicMaintenanceService {
                 completedBy: true,
                 remarks: {
                   include: {
-                    user: true,
+                    createdBy: true,
                   },
                 },
               },
@@ -135,7 +137,7 @@ export class PeriodicMaintenanceService {
             completedBy: true,
             remarks: {
               include: {
-                user: true,
+                createdBy: true,
               },
             },
           },
@@ -144,7 +146,7 @@ export class PeriodicMaintenanceService {
         verifiedBy: true,
         comments: {
           include: {
-            user: true,
+            createdBy: true,
           },
         },
       },
@@ -641,7 +643,7 @@ export class PeriodicMaintenanceService {
     type: string,
     periodicMaintenanceId: number,
     taskId: number,
-    text: string
+    description: string
   ) {
     const pm = await this.prisma.periodicMaintenance.findFirst({
       where: { id: periodicMaintenanceId },
@@ -655,8 +657,8 @@ export class PeriodicMaintenanceService {
           periodicMaintenanceId,
           taskId,
           type: 'Remark',
-          description: text,
-          userId: user.id,
+          description,
+          createdById: user.id,
         },
       });
     } else if (type === 'Observation') {
@@ -664,8 +666,8 @@ export class PeriodicMaintenanceService {
         data: {
           periodicMaintenanceId,
           type: 'Observation',
-          description: text,
-          userId: user.id,
+          description,
+          createdById: user.id,
         },
       });
     }
@@ -674,9 +676,9 @@ export class PeriodicMaintenanceService {
   async removePeriodicMaintenanceComment(user: User, id: number) {
     const comment = await this.prisma.periodicMaintenanceComment.findFirst({
       where: { id },
-      select: { userId: true },
+      select: { createdById: true },
     });
-    if (comment.userId !== user.id) {
+    if (comment.createdById !== user.id) {
       throw new ForbiddenError("Cannot delete other user's comments.");
     }
     await this.prisma.periodicMaintenanceComment.delete({ where: { id } });
@@ -719,7 +721,7 @@ export class PeriodicMaintenanceService {
                       completedBy: true,
                       remarks: {
                         include: {
-                          user: true,
+                          createdBy: true,
                         },
                       },
                     },
@@ -727,7 +729,7 @@ export class PeriodicMaintenanceService {
                   completedBy: true,
                   remarks: {
                     include: {
-                      user: true,
+                      createdBy: true,
                     },
                   },
                 },
@@ -736,7 +738,7 @@ export class PeriodicMaintenanceService {
               completedBy: true,
               remarks: {
                 include: {
-                  user: true,
+                  createdBy: true,
                 },
               },
             },
@@ -745,7 +747,7 @@ export class PeriodicMaintenanceService {
           verifiedBy: true,
           comments: {
             include: {
-              user: true,
+              createdBy: true,
             },
           },
         },

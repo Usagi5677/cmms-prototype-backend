@@ -36,7 +36,6 @@ model User {
   entityAttachment                     EntityAttachment[]
   entityPeriodicMaintenanceTasks       EntityPeriodicMaintenanceTask[]
   entityHistory                        EntityHistory[]
-  entityBreakdown                      EntityBreakdown[]
   entitySparePR                        EntitySparePR[]
   entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance[]     @relation(name: "entityVerifiedBy")
   entityRepairRequestOperator          EntityRepairRequest[]           @relation(name: "operator")
@@ -50,6 +49,11 @@ model User {
   periodicMaintenanceComment           PeriodicMaintenanceComment[]
   verifiedPeriodicMaintenance          PeriodicMaintenance[]           @relation(name: "verifiedBy")
   zonesCreated                         Zone[]
+  breakdownComments                    BreakdownComment[]
+  repairComments                       RepairComment[]
+  breakdownDetails                     BreakdownDetail[]
+  repairCreated                        Repair[]
+  breakdownCreated                     Breakdown[]
 }
 
 model Notification {
@@ -253,9 +257,10 @@ model Entity {
   histories                 EntityHistory[]
   attachments               EntityAttachment[]
   repairs                   EntityRepairRequest[]
-  breakdowns                EntityBreakdown[]
   sparePRs                  EntitySparePR[]
   periodicMaintenances      PeriodicMaintenance[]
+  breakdowns                Breakdown[]
+  repair                    Repair[]
 }
 
 model EntityAssignment {
@@ -367,21 +372,6 @@ model EntityRepairRequest {
   approvedAt       DateTime?
 }
 
-model EntityBreakdown {
-  id                    Int             @id @default(autoincrement())
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  entityId              Int
-  entity                Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title                 String
-  description           String
-  completedById         Int?
-  completedBy           User?           @relation(fields: [completedById], references: [id])
-  completedAt           DateTime?
-  estimatedDateOfRepair DateTime?
-  status                BreakdownStatus @default(Breakdown)
-}
-
 model EntitySparePR {
   id            Int           @id @default(autoincrement())
   createdAt     DateTime      @default(now())
@@ -419,8 +409,8 @@ model PeriodicMaintenanceComment {
   task                  PeriodicMaintenanceTask? @relation(fields: [taskId], references: [id], onDelete: Cascade)
   type                  String                   @default("Remark")
   description           String
-  userId                Int?
-  user                  User?                    @relation(fields: [userId], references: [id])
+  createdById           Int?
+  createdBy             User?                    @relation(fields: [createdById], references: [id])
   periodicMaintenance   PeriodicMaintenance?     @relation(fields: [periodicMaintenanceId], references: [id])
   periodicMaintenanceId Int?
 }
@@ -465,4 +455,72 @@ model Reminder {
   periodicMaintenanceId Int?
   periodicMaintenance   PeriodicMaintenance? @relation("notificationPM", fields: [periodicMaintenanceId], references: [id])
   Reminder              Reminder[]           @relation("originReminder")
+}
+
+model Repair {
+  id          Int             @id @default(autoincrement())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  entityId    Int
+  breakdownId Int?
+  name        String
+  createdById Int?
+  createdBy   User?           @relation(fields: [createdById], references: [id])
+  entity      Entity?         @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  breakdown   Breakdown?      @relation(fields: [breakdownId], references: [id], onDelete: Cascade)
+  comments    RepairComment[]
+}
+
+model RepairComment {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  type        String   @default("Remark")
+  description String
+  repairId    Int?
+  repair      Repair?  @relation(fields: [repairId], references: [id])
+  createdById Int?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+}
+
+model Breakdown {
+  id                    Int                @id @default(autoincrement())
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  entityId              Int
+  name                  String
+  type                  String
+  estimatedDateOfRepair DateTime?
+  entity                Entity?            @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  createdById           Int?
+  createdBy             User?              @relation(fields: [createdById], references: [id])
+  details               BreakdownDetail[]
+  comments              BreakdownComment[]
+  repairs               Repair[]
+}
+
+model BreakdownDetail {
+  id          Int                @id @default(autoincrement())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  breakdownId Int
+  breakdown   Breakdown          @relation(fields: [breakdownId], references: [id], onDelete: Cascade)
+  description String
+  createdById Int?
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  comments    BreakdownComment[]
+}
+
+model BreakdownComment {
+  id          Int              @id @default(autoincrement())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  type        String           @default("Remark")
+  description String
+  breakdownId Int?
+  breakdown   Breakdown?       @relation(fields: [breakdownId], references: [id])
+  detailId    Int?
+  detail      BreakdownDetail? @relation(fields: [detailId], references: [id], onDelete: Cascade)
+  createdById Int?
+  createdBy   User?            @relation(fields: [createdById], references: [id])
 }

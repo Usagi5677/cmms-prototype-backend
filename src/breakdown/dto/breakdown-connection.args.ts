@@ -2,7 +2,7 @@ import { ArgsType } from '@nestjs/graphql';
 import ConnectionArgs from 'src/common/pagination/connection-args';
 
 @ArgsType()
-export class EntityBreakdownConnectionArgs extends ConnectionArgs {
+export class BreakdownConnectionArgs extends ConnectionArgs {
   search?: string;
-  entityId: number;
+  entityId?: number;
 }

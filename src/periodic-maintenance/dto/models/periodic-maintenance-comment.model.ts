@@ -6,5 +6,5 @@ import { User } from 'src/models/user.model';
 export class PeriodicMaintenanceComment extends BaseModel {
   type: string;
   description: string;
-  user?: User;
+  createdBy?: User;
 }
