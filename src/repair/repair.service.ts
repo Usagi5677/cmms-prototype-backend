@@ -4,8 +4,10 @@ import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
+import { EntityService } from 'src/entity/entity.service';
 import { User } from 'src/models/user.model';
 import { RedisCacheService } from 'src/redisCache.service';
+import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';
 import { CreateRepairCommentInput } from './dto/create-repair-comment.input';
 import { CreateRepairInput } from './dto/create-repair.input';
@@ -18,17 +20,38 @@ export class RepairService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private readonly redisCacheService: RedisCacheService
+    private readonly redisCacheService: RedisCacheService,
+    private entityService: EntityService,
+    private notificationService: NotificationService
   ) {}
   async create(user: User, { entityId, breakdownId, name }: CreateRepairInput) {
     try {
-      await this.prisma.repair.create({
+      const repair = await this.prisma.repair.create({
         data: {
           entityId,
           createdById: user.id,
           breakdownId,
           name,
         },
+        include: { breakdown: true },
+      });
+      const users = await this.entityService.getEntityAssignmentIds(
+        entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: breakdownId
+            ? `${user.fullName} (${user.rcno}) added repair in ${repair.breakdown.type} (${breakdownId}).`
+            : `${user.fullName} (${user.rcno}) added repair.`,
+          link: `/entity/${entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: `Repair added`,
+        description: `${user.fullName} (${user.rcno}) added repair.`,
+        entityId: entityId,
       });
     } catch (e) {
       console.log(e);
@@ -123,12 +146,34 @@ export class RepairService {
 
   async update(user: User, { id, name }: UpdateRepairInput) {
     try {
+      const before = await this.prisma.repair.findFirst({
+        where: { id },
+      });
+      if (name && before.name != name) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: 'Repair Edit',
+          description: `Name changed from ${before.name} to ${name}.`,
+          entityId: before.entityId,
+          completedById: user.id,
+        });
+      }
       await this.prisma.repair.update({
         where: { id },
         data: {
           name,
         },
       });
+      const users = await this.entityService.getEntityAssignmentIds(
+        before.entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) updated Repair (${id}).`,
+          link: `/entity/${before.entityId}`,
+        });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -137,7 +182,23 @@ export class RepairService {
 
   async remove(user: User, id: number) {
     try {
-      await this.prisma.repair.delete({ where: { id } });
+      const repair = await this.prisma.repair.delete({ where: { id } });
+      const users = await this.entityService.getEntityAssignmentIds(
+        repair.entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) deleted Repair (${id}).`,
+          link: `/entity/${repair.entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: `Repair deleted`,
+        description: `${user.fullName} (${user.rcno}) deleted Repair (${id}).`,
+        entityId: repair.entityId,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -149,13 +210,30 @@ export class RepairService {
     { repairId, type, description }: CreateRepairCommentInput
   ) {
     try {
-      await this.prisma.repairComment.create({
+      const repair = await this.prisma.repairComment.create({
         data: {
           createdById: user.id,
           repairId,
           type,
           description,
         },
+        include: { repair: true },
+      });
+      const users = await this.entityService.getEntityAssignmentIds(
+        repair.repair.entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) added ${type} in Repair (${repairId}).`,
+          link: `/entity/${repair.repair.entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: `${type} added`,
+        description: `${user.fullName} (${user.rcno}) added ${type} in Repair (${repairId}).`,
+        entityId: repair.repair.entityId,
       });
     } catch (e) {
       console.log(e);
@@ -164,7 +242,26 @@ export class RepairService {
   }
   async removeRepairComment(user: User, id: number) {
     try {
-      await this.prisma.repairComment.delete({ where: { id } });
+      const repair = await this.prisma.repairComment.delete({
+        where: { id },
+        include: { repair: true },
+      });
+      const users = await this.entityService.getEntityAssignmentIds(
+        repair.repair.entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) deleted ${repair.type} (${repair.id}) in Repair (${repair.repair.id}).`,
+          link: `/entity/${repair.repair.entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: `${repair.type} deleted`,
+        description: `${user.fullName} (${user.rcno}) deleted ${repair.type} (${repair.id}) in Repair (${repair.repair.id}).`,
+        entityId: repair.repair.entityId,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
