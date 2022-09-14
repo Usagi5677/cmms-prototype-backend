@@ -36,7 +36,6 @@ model User {
   entityAttachment                     EntityAttachment[]
   entityPeriodicMaintenanceTasks       EntityPeriodicMaintenanceTask[]
   entityHistory                        EntityHistory[]
-  entitySparePR                        EntitySparePR[]
   entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance[]     @relation(name: "entityVerifiedBy")
   entityRepairRequestOperator          EntityRepairRequest[]           @relation(name: "operator")
   entityRepairRequestSupervisor        EntityRepairRequest[]           @relation(name: "supervisor")
@@ -55,6 +54,7 @@ model User {
   breakdownDetails                     BreakdownDetail[]
   repairCreated                        Repair[]
   breakdownCreated                     Breakdown[]
+  sparePRCreated                       SparePR[]
 }
 
 model Notification {
@@ -259,7 +259,7 @@ model Entity {
   histories                 EntityHistory[]
   attachments               EntityAttachment[]
   repairs                   EntityRepairRequest[]
-  sparePRs                  EntitySparePR[]
+  sparePRs                  SparePR[]
   periodicMaintenances      PeriodicMaintenance[]
   breakdowns                Breakdown[]
   repair                    Repair[]
@@ -374,19 +374,16 @@ model EntityRepairRequest {
   approvedAt       DateTime?
 }
 
-model EntitySparePR {
-  id            Int           @id @default(autoincrement())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+model SparePR {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   entityId      Int
-  entity        Entity        @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  entity        Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
   requestedDate DateTime
-  title         String
-  description   String
-  completedById Int?
-  completedBy   User?         @relation(fields: [completedById], references: [id])
-  completedAt   DateTime?
-  status        SparePRStatus @default(Pending)
+  name          String
+  createdById   Int?
+  createdBy     User?    @relation(fields: [createdById], references: [id])
 }
 
 model PeriodicMaintenanceTask {

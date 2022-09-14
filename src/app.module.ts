@@ -26,6 +26,7 @@ import { ApiKeyModule } from './api-key/api-key.module';
 import { AssignmentModule } from './assignment/assignment.module';
 import { BreakdownModule } from './breakdown/breakdown.module';
 import { RepairModule } from './repair/repair.module';
+import { SparePrModule } from './spare-pr/spare-pr.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { RepairModule } from './repair/repair.module';
     RepairModule,
     ApiKeyModule,
     AssignmentModule,
+    SparePrModule,
   ],
   providers: [DateScalar, InitService],
 })

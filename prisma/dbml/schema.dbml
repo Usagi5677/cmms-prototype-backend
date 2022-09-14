@@ -24,7 +24,6 @@ Table User {
   entityAttachment EntityAttachment [not null]
   entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
   entityHistory EntityHistory [not null]
-  entitySparePR EntitySparePR [not null]
   entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
   entityRepairRequestOperator EntityRepairRequest [not null]
   entityRepairRequestSupervisor EntityRepairRequest [not null]
@@ -43,6 +42,7 @@ Table User {
   breakdownDetails BreakdownDetail [not null]
   repairCreated Repair [not null]
   breakdownCreated Breakdown [not null]
+  sparePRCreated SparePR [not null]
 }
 
 Table Notification {
@@ -229,7 +229,7 @@ Table Entity {
   histories EntityHistory [not null]
   attachments EntityAttachment [not null]
   repairs EntityRepairRequest [not null]
-  sparePRs EntitySparePR [not null]
+  sparePRs SparePR [not null]
   periodicMaintenances PeriodicMaintenance [not null]
   breakdowns Breakdown [not null]
   repair Repair [not null]
@@ -344,19 +344,16 @@ Table EntityRepairRequest {
   approvedAt DateTime
 }
 
-Table EntitySparePR {
+Table SparePR {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   entityId Int [not null]
   entity Entity [not null]
   requestedDate DateTime [not null]
-  title String [not null]
-  description String [not null]
-  completedById Int
-  completedBy User
-  completedAt DateTime
-  status SparePRStatus [not null, default: 'Pending']
+  name String [not null]
+  createdById Int
+  createdBy User
 }
 
 Table PeriodicMaintenanceTask {
@@ -629,9 +626,9 @@ Ref: EntityRepairRequest.requestorId > User.id
 
 Ref: EntityRepairRequest.approverId > User.id
 
-Ref: EntitySparePR.entityId > Entity.id
+Ref: SparePR.entityId > Entity.id
 
-Ref: EntitySparePR.completedById > User.id
+Ref: SparePR.createdById > User.id
 
 Ref: PeriodicMaintenanceTask.periodicMaintenanceId > PeriodicMaintenance.id
 

@@ -15,7 +15,6 @@ import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { PaginatedEntityPeriodicMaintenance } from './dto/paginations/entity-periodic-maintenance-connection.model';
 import { EntityPeriodicMaintenanceConnectionArgs } from './dto/args/entity-periodic-maintenance-connection.args';
 import { PaginatedEntitySparePR } from './dto/paginations/entity-sparePR-connection.model';
-import { EntitySparePRConnectionArgs } from './dto/args/entity-sparePR-connection.args';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
 import { PaginatedEntityRepair } from './dto/paginations/entity-repair-connection.model';
 import { EntityHistoryConnectionArgs } from './dto/args/entity-history-connection.args';
@@ -308,66 +307,6 @@ export class EntityResolver {
     return `Repair request deleted.`;
   }
 
-  // Permission checked in service
-  @Mutation(() => String)
-  async addEntitySparePR(
-    @UserEntity() user: User,
-    @Args('entityId') entityId: number,
-    @Args('requestedDate') requestedDate: Date,
-    @Args('title') title: string,
-    @Args('description') description: string
-  ): Promise<String> {
-    await this.entityService.createEntitySparePR(
-      user,
-      entityId,
-      requestedDate,
-      title,
-      description
-    );
-    return `Added Spare PR.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async editEntitySparePR(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('requestedDate') requestedDate: Date,
-    @Args('title') title: string,
-    @Args('description') description: string
-  ): Promise<String> {
-    await this.entityService.editEntitySparePR(
-      user,
-      id,
-      requestedDate,
-      title,
-      description
-    );
-    return `Spare PR updated.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async deleteEntitySparePR(
-    @UserEntity() user: User,
-    @Args('id') id: number
-  ): Promise<String> {
-    await this.entityService.deleteEntitySparePR(user, id);
-    return `Spare PR deleted.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async setEntitySparePRStatus(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('status', { type: () => SparePRStatus })
-    status: SparePRStatus
-  ): Promise<String> {
-    await this.entityService.setEntitySparePRStatus(user, id, status);
-    return `Spare PR status updated.`;
-  }
-
   @Query(() => PaginatedEntityPeriodicMaintenance)
   async getAllPeriodicMaintenanceOfEntity(
     @UserEntity() user: User,
@@ -377,14 +316,6 @@ export class EntityResolver {
       user,
       args
     );
-  }
-
-  @Query(() => PaginatedEntitySparePR)
-  async getAllSparePROfEntity(
-    @UserEntity() user: User,
-    @Args() args: EntitySparePRConnectionArgs
-  ): Promise<PaginatedEntitySparePR> {
-    return await this.entityService.getEntitySparePRWithPagination(user, args);
   }
 
   @Query(() => PaginatedEntityRepair)
