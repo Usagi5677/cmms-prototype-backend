@@ -10,7 +10,7 @@ import { Type } from 'src/type/entities/type.entity';
 import { EntityHistory } from './entity-history.model';
 import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
 import { EntityRepairRequest } from './entity-repair-request.model';
-import { EntitySparePR } from './entity-sparePR.model';
+import { SparePr } from 'src/spare-pr/entities/spare-pr.entity';
 
 @ObjectType()
 export class Entity extends BaseModel {
@@ -36,7 +36,7 @@ export class Entity extends BaseModel {
   periodicMaintenancePlans?: EntityPeriodicMaintenance[];
   repairs?: EntityRepairRequest[];
   breakdowns?: Breakdown[];
-  sparePRs?: EntitySparePR[];
+  sparePRs?: SparePr[];
   histories?: EntityHistory[];
   periodicMaintenances?: PeriodicMaintenance[];
 }

@@ -355,7 +355,7 @@ type Entity {
   periodicMaintenances: [PeriodicMaintenance!]
   registeredDate: Date
   repairs: [EntityRepairRequest!]
-  sparePRs: [EntitySparePR!]
+  sparePRs: [SparePr!]
   status: String
   statusChangedAt: Date
   type: Type
@@ -581,23 +581,6 @@ type EntityRepairRequestPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
-}
-
-type EntitySparePR {
-  completedAt: Date
-  completedBy: User
-
-  """Identifies the date and time when the object was created."""
-  createdAt: Date!
-  description: String!
-  entityId: Int!
-  id: Int!
-  requestedDate: Date!
-  status: SparePRStatus!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: Date!
 }
 
 type EntityUsageHistory {
@@ -1536,12 +1519,6 @@ type RolesPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
-}
-
-"""Spare pr statuses."""
-enum SparePRStatus {
-  Done
-  Pending
 }
 
 type SparePr {
