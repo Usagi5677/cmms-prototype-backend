@@ -185,6 +185,7 @@ model Checklist {
   to                  DateTime
   type                String             @default("Daily")
   currentMeterReading Int?
+  dailyReading        Int?
   workingHour         Int?
   items               ChecklistItem[]
   comments            ChecklistComment[]
@@ -458,7 +459,6 @@ model Reminder {
   Reminder              Reminder[]           @relation("originReminder")
 }
 
-
 model Repair {
   id          Int             @id @default(autoincrement())
   createdAt   DateTime        @default(now())
@@ -514,17 +514,17 @@ model BreakdownDetail {
 }
 
 model BreakdownComment {
-  id          Int                @id @default(autoincrement())
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  type        String             @default("Remark")
+  id          Int              @id @default(autoincrement())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  type        String           @default("Remark")
   description String
   breakdownId Int?
-  breakdown   Breakdown?         @relation(fields: [breakdownId], references: [id])
+  breakdown   Breakdown?       @relation(fields: [breakdownId], references: [id])
   detailId    Int?
-  detail      BreakdownDetail?   @relation(fields: [detailId], references: [id], onDelete: Cascade)
+  detail      BreakdownDetail? @relation(fields: [detailId], references: [id], onDelete: Cascade)
   createdById Int?
-  createdBy   User?              @relation(fields: [createdById], references: [id])
+  createdBy   User?            @relation(fields: [createdById], references: [id])
 }
 
 model ApiKey {
