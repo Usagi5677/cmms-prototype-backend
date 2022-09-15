@@ -30,7 +30,6 @@ model User {
   checklistComments                    ChecklistComment[]
   roleCreated                          Role[]
   entityCreated                        Entity[]
-  entityDeleted                        Entity[]                        @relation(name: "deletedByE")
   entityAssignment                     EntityAssignment[]
   entityPeriodicMaintenances           EntityPeriodicMaintenance[]
   entityAttachment                     EntityAttachment[]
@@ -245,10 +244,7 @@ model Entity {
   status                    String?                     @default("Working")
   statusChangedAt           DateTime?
   measurement               String?                     @default("km")
-  isDeleted                 Boolean?
   deletedAt                 DateTime?
-  deletedById               Int?
-  deletedBy                 User?                       @relation(name: "deletedByE", fields: [deletedById], references: [id])
   dailyChecklistTemplateId  Int?
   dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
   weeklyChecklistTemplateId Int?

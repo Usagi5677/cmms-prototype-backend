@@ -256,7 +256,7 @@ export class ChecklistService {
   async generateChecklists() {
     // Get ids of all entities that are working
     const entities = await this.prisma.entity.findMany({
-      where: { status: 'Working' },
+      where: { status: 'Working', deletedAt: null },
       select: { id: true },
     });
     const entityIds = entities.map((m) => m.id);

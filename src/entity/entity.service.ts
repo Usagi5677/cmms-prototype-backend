@@ -88,6 +88,10 @@ export class EntityService {
     if (!limit) limit = 10;
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+
+    where.AND.push({
+      deletedAt: null,
+    });
     if (query) {
       where.AND.push({
         machineNumber: { contains: query, mode: 'insensitive' },
@@ -197,11 +201,10 @@ export class EntityService {
           link: `/entity/${id}`,
         });
       }
+      //use soft delete middleware later
       await this.prisma.entity.update({
         where: { id },
         data: {
-          isDeleted: true,
-          deletedById: user.id,
           deletedAt: new Date(),
         },
       });
@@ -384,10 +387,10 @@ export class EntityService {
     try {
       await this.prisma.entity.update({
         where: { id: entityId },
-        data: { status, statusChangedAt: new Date() },
+        data: { status, statusChangedAt: new Date(), deletedAt: null },
       });
       await this.createEntityHistoryInBackground({
-        type: 'Entity Status Change',
+        type: 'Status Change',
         description: `Status changed to ${status}`,
         entityId: entityId,
         completedById: user.id,
@@ -509,6 +512,10 @@ export class EntityService {
     let where: any = { AND: [] };
     const todayStart = moment().startOf('day');
     const todayEnd = moment().endOf('day');
+
+    where.AND.push({
+      deletedAt: null,
+    });
 
     if (search) {
       const or: any = [
@@ -2095,6 +2102,9 @@ export class EntityService {
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+    });
     if (createdById) {
       where.AND.push({ createdById });
     }
@@ -2674,6 +2684,7 @@ export class EntityService {
           ? await this.prisma.entity.findMany({
               where: {
                 status: 'Working',
+                deletedAt: null,
                 assignees: { some: {} },
                 type: {
                   entityType: {
@@ -2685,6 +2696,7 @@ export class EntityService {
           : await this.prisma.entity.findMany({
               where: {
                 status: 'Working',
+                deletedAt: null,
                 type: {
                   entityType: {
                     in: entityType,
@@ -2697,6 +2709,7 @@ export class EntityService {
           ? await this.prisma.entity.findMany({
               where: {
                 status: 'Critical',
+                deletedAt: null,
                 assignees: { some: {} },
                 type: {
                   entityType: {
@@ -2708,6 +2721,7 @@ export class EntityService {
           : await this.prisma.entity.findMany({
               where: {
                 status: 'Critical',
+                deletedAt: null,
                 type: {
                   entityType: {
                     in: entityType,
@@ -2720,6 +2734,7 @@ export class EntityService {
           ? await this.prisma.entity.findMany({
               where: {
                 status: 'Breakdown',
+                deletedAt: null,
                 assignees: { some: {} },
                 type: {
                   entityType: {
@@ -2731,6 +2746,7 @@ export class EntityService {
           : await this.prisma.entity.findMany({
               where: {
                 status: 'Breakdown',
+                deletedAt: null,
                 type: {
                   entityType: {
                     in: entityType,
@@ -2743,6 +2759,7 @@ export class EntityService {
           ? await this.prisma.entity.findMany({
               where: {
                 status: 'Dispose',
+                deletedAt: null,
                 assignees: { some: {} },
                 type: {
                   entityType: {
@@ -2754,6 +2771,7 @@ export class EntityService {
           : await this.prisma.entity.findMany({
               where: {
                 status: 'Dispose',
+                deletedAt: null,
                 type: {
                   entityType: {
                     in: entityType,
@@ -2941,6 +2959,7 @@ export class EntityService {
         const machine = await this.prisma.entity.findMany({
           where: {
             status: 'Breakdown',
+            deletedAt: null,
             type: {
               entityType: 'Machine',
             },
@@ -2949,6 +2968,7 @@ export class EntityService {
         const vehicle = await this.prisma.entity.findMany({
           where: {
             status: 'Breakdown',
+            deletedAt: null,
             type: {
               entityType: 'Vehicle',
             },
@@ -2957,6 +2977,7 @@ export class EntityService {
         const vessel = await this.prisma.entity.findMany({
           where: {
             status: 'Breakdown',
+            deletedAt: null,
             type: {
               entityType: 'Vessel',
             },

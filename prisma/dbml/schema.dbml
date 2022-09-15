@@ -18,7 +18,6 @@ Table User {
   checklistComments ChecklistComment [not null]
   roleCreated Role [not null]
   entityCreated Entity [not null]
-  entityDeleted Entity [not null]
   entityAssignment EntityAssignment [not null]
   entityPeriodicMaintenances EntityPeriodicMaintenance [not null]
   entityAttachment EntityAttachment [not null]
@@ -215,10 +214,7 @@ Table Entity {
   status String [default: 'Working']
   statusChangedAt DateTime
   measurement String [default: 'km']
-  isDeleted Boolean
   deletedAt DateTime
-  deletedById Int
-  deletedBy User
   dailyChecklistTemplateId Int
   dailyChecklistTemplate ChecklistTemplate
   weeklyChecklistTemplateId Int
@@ -577,8 +573,6 @@ Ref: Entity.createdById > User.id
 Ref: Entity.typeId > Type.id
 
 Ref: Entity.locationId > Location.id
-
-Ref: Entity.deletedById > User.id
 
 Ref: Entity.dailyChecklistTemplateId > ChecklistTemplate.id
 
