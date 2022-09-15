@@ -27,7 +27,6 @@ export class Entity extends BaseModel {
   lastService?: number;
   measurement?: string;
   brand?: string;
-  isDeleted?: boolean;
   deletedAt?: Date;
   status?: string;
   statusChangedAt?: Date;

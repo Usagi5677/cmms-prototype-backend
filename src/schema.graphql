@@ -345,7 +345,6 @@ type Entity {
   engine: String
   histories: [EntityHistory!]
   id: Int!
-  isDeleted: Boolean
   lastService: Int
   location: Location
   machineNumber: String
