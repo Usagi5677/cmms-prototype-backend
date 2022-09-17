@@ -409,7 +409,7 @@ export class EntityService {
     }
   }
 
-  async getLatestReading(entity: any): Promise<number> {
+  async getLatestReading(entity: any, untill?: Date): Promise<number> {
     let reading = entity.currentRunning;
     const latestDailyChecklistWithReading =
       await this.prisma.checklist.findFirst({
@@ -433,6 +433,7 @@ export class EntityService {
           ? { gt: latestDailyChecklistWithReading.from }
           : undefined,
         workingHour: { not: null },
+        to: untill ? { lt: untill } : undefined,
       },
       select: { workingHour: true },
     });
@@ -1943,54 +1944,73 @@ export class EntityService {
   }
 
   //** Get entity usage */
-  async getEntityUsage(user: User, entityId: number, from: Date, to: Date) {
-    try {
-      const fromDate = moment(from).startOf('day');
-      const toDate = moment(to).endOf('day');
-      const key = `entityUsageHistoryByDate-${entityId}-${fromDate.format(
-        'DD-MMMM-YYYY'
-      )}-${toDate.format('DD-MMMM-YYYY')}`;
-      let usageHistoryByDate = await this.redisCacheService.get(key);
-      if (!usageHistoryByDate) {
-        usageHistoryByDate = [];
-        //get all usage of entity between date
-        const usageHistoryArray = await this.prisma.entityHistory.findMany({
+  async getEntityUsage(
+    user: User,
+    entityId: number,
+    from: Date,
+    to: Date,
+    entity?: Entity
+  ) {
+    // Start one day earlier to build up cumulative hours
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
+    const entityFromCheck = await this.checkEntityAssignmentOrPermission(
+      entityId,
+      user.id,
+      entity ?? undefined,
+      [],
+      ['VIEW_ALL_ENTITY']
+    );
+    if (!entity) {
+      entity = entityFromCheck;
+    }
+    const key = `usage_${entityId}_${fromDate.toISOString()}_${toDate.toISOString()}`;
+    let usage = await this.redisCacheService.get(key);
+    if (!usage) {
+      usage = [];
+      const days = toDate.diff(fromDate, 'days') + 1;
+      let cumulative = 0;
+      if (entity.measurement === 'hr') {
+        cumulative += await this.getLatestReading(entity, fromDate.toDate());
+      }
+      for (let i = 0; i < days; i++) {
+        const day = fromDate.clone().add(i, 'day');
+        const dayStart = day.clone().startOf('day');
+        const dayEnd = day.clone().endOf('day');
+        const checklist = await this.prisma.checklist.findFirst({
           where: {
             entityId,
-            createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
-          },
-          orderBy: {
-            id: 'desc',
+            type: 'Daily',
+            from: dayStart.toDate(),
+            to: dayEnd.toDate(),
           },
         });
-        const days = toDate.diff(fromDate, 'days') + 1;
-        for (let i = 0; i < days; i++) {
-          const day = fromDate.clone().add(i, 'day');
-          const workingHour =
-            usageHistoryArray.find((usage) =>
-              moment(usage.createdAt).isSame(day, 'day')
-            )?.workingHour ?? 0;
-          const idleHour =
-            usageHistoryArray.find((usage) =>
-              moment(usage.createdAt).isSame(day, 'day')
-            )?.idleHour ?? 0;
-          const breakdownHour =
-            usageHistoryArray.find((usage) =>
-              moment(usage.createdAt).isSame(day, 'day')
-            )?.breakdownHour ?? 0;
-          usageHistoryByDate.push({
-            date: day.toDate(),
-            workingHour,
-            idleHour,
-            breakdownHour,
-          });
+        let workingHour = 0;
+        if (checklist) {
+          if (entity.measurement === 'hr') {
+            if (checklist.workingHour) {
+              workingHour = checklist.workingHour;
+            } else if (checklist.currentMeterReading) {
+              workingHour = checklist.currentMeterReading - cumulative;
+            }
+          } else {
+            if (checklist.dailyUsageHours) {
+              workingHour = checklist?.dailyUsageHours;
+            }
+          }
         }
+        cumulative += workingHour;
+        const finalWorking =
+          workingHour <= 24 && workingHour >= 0 ? workingHour : 0;
+        usage.push({
+          date: day.toDate(),
+          workingHour: finalWorking,
+          // idleHour: 24 - finalWorking,
+        });
       }
-      return usageHistoryByDate;
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
+      await this.redisCacheService.setForHour(key, usage);
     }
+    return usage;
   }
 
   //** Create entity periodic maintenance Sub task. */
@@ -2178,61 +2198,30 @@ export class EntityService {
 
   //** Get all entity usage*/
   async getAllEntityUsage(user: User, from: Date, to: Date) {
-    try {
-      const fromDate = moment(from).startOf('day');
-      const toDate = moment(to).endOf('day');
-      const key = `allEntityUsageHistoryByDate-${fromDate.format(
-        'DD-MMMM-YYYY'
-      )}-${toDate.format('DD-MMMM-YYYY')}`;
-      let usageHistoryByDate = await this.redisCacheService.get(key);
-      if (!usageHistoryByDate) {
-        usageHistoryByDate = [];
-        //get all usage of entity between date
-        const entityUsageHistoryArray =
-          await this.prisma.entityHistory.findMany({
-            where: {
-              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
-            },
-            orderBy: {
-              id: 'desc',
-            },
-          });
-        const days = toDate.diff(fromDate, 'days') + 1;
-        for (let i = 0; i < days; i++) {
-          const day = fromDate.clone().add(i, 'day');
-          const workingHour =
-            entityUsageHistoryArray.find((usage) =>
-              moment(usage.createdAt).isSame(day, 'day')
-            )?.workingHour ?? 0;
-          const idleHour =
-            entityUsageHistoryArray.find((usage) =>
-              moment(usage.createdAt).isSame(day, 'day')
-            )?.idleHour ?? 0;
-          const breakdownHour =
-            entityUsageHistoryArray.find((usage) =>
-              moment(usage.createdAt).isSame(day, 'day')
-            )?.breakdownHour ?? 0;
-          const totalHour = workingHour + idleHour + breakdownHour;
-          const workingPercentage = (workingHour / totalHour) * 100;
-          const idlePercentage = (idleHour / totalHour) * 100;
-          const breakdownPercentage = (breakdownHour / totalHour) * 100;
-          usageHistoryByDate.push({
-            date: day.toDate(),
-            workingHour,
-            idleHour,
-            breakdownHour,
-            totalHour,
-            workingPercentage: workingPercentage ? workingPercentage : 0,
-            idlePercentage: idlePercentage ? idlePercentage : 0,
-            breakdownPercentage: breakdownPercentage ? breakdownPercentage : 0,
-          });
+    const usageHistoryByDate = [];
+    const allEntities = await this.prisma.entity.findMany({
+      where: { deletedAt: null },
+    });
+    for (const [i, entity] of allEntities.entries()) {
+      const entityUsage = await this.getEntityUsage(
+        user,
+        entity.id,
+        from,
+        to,
+        entity
+      );
+      for (const dayUsage of entityUsage) {
+        if (i === 0) {
+          usageHistoryByDate.push(dayUsage);
+        } else {
+          const day = usageHistoryByDate.find(
+            (a) => a.date.getTime() === dayUsage.date.getTime()
+          );
+          day.workingHour += dayUsage.workingHour;
         }
       }
-      return usageHistoryByDate;
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
     }
+    return usageHistoryByDate;
   }
 
   //** Set periodic maintenance as verified or unverified. */
@@ -2801,7 +2790,7 @@ export class EntityService {
     entity?: Entity,
     assignments?: ('User' | 'Engineer' | 'Admin')[],
     permissions?: string[]
-  ) {
+  ): Promise<Entity> {
     if (!entity) {
       entity = await this.findOne(entityId);
     }
@@ -2836,6 +2825,7 @@ export class EntityService {
     if (!hasAssignment && !hasPermission) {
       throw new ForbiddenException('You do not have access to this resource.');
     }
+    return entity;
   }
 
   // Throw an error if user does not have assignment to any entity.

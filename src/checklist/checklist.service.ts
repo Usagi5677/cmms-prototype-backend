@@ -143,6 +143,23 @@ export class ChecklistService {
     });
   }
 
+  async updateDailyUsage(user: User, id: number, hours: number) {
+    const checklist = await this.prisma.checklist.findFirst({
+      where: { id },
+      select: { entityId: true },
+    });
+    await this.entityService.checkEntityAssignmentOrPermission(
+      checklist.entityId,
+      user.id,
+      undefined,
+      []
+    );
+    await this.prisma.checklist.update({
+      where: { id },
+      data: { dailyUsageHours: hours },
+    });
+  }
+
   async incompleteChecklists(
     user: User,
     { date, type }: IncompleteChecklistInput

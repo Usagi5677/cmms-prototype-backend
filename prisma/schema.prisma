@@ -184,7 +184,7 @@ model Checklist {
   to                  DateTime
   type                String             @default("Daily")
   currentMeterReading Int?
-  dailyReading        Int?
+  dailyUsageHours     Int?
   workingHour         Int?
   items               ChecklistItem[]
   comments            ChecklistComment[]
