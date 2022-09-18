@@ -97,4 +97,14 @@ export class BreakdownResolver {
     await this.breakdownService.removeBreakdownDetail(user, id);
     return `Breakdown detail deleted.`;
   }
+
+  @Mutation(() => String)
+  async toggleComplete(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.breakdownService.toggleComplete(user, id, complete);
+    return `Breakdown completion updated.`;
+  }
 }

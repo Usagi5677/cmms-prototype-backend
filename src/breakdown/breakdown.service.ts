@@ -334,6 +334,11 @@ export class BreakdownService {
         },
         include: { breakdown: true },
       });
+      //if new detail is added, update the completedAt to null
+      await this.prisma.breakdown.update({
+        where: { id: breakdownId },
+        data: { completedAt: null },
+      });
       const users = await this.entityService.getEntityAssignmentIds(
         breakdown.breakdown.entityId,
         user.id
@@ -376,6 +381,41 @@ export class BreakdownService {
         type: `Breakdown detail deleted`,
         description: `${user.fullName} (${user.rcno}) deleted breakdown detail (${id}) in ${breakdown.breakdown.type} (${breakdown.breakdown.id}).`,
         entityId: breakdown.breakdown.entityId,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** toggle completedAt. */
+  async toggleComplete(user: User, id: number, complete: boolean) {
+    try {
+      console.log(complete);
+      const breakdown = await this.prisma.breakdown.update({
+        where: { id },
+        data: complete ? { completedAt: new Date() } : { completedAt: null },
+      });
+
+      const users = await this.entityService.getEntityAssignmentIds(
+        breakdown.entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno})${
+            complete ? 'Completed' : 'Incompleted'
+          } breakdown (${id}) in entity ${breakdown.entityId}`,
+          link: `/entity/${breakdown.entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: `Breakdown ${complete ? 'completed' : 'incompleted'} `,
+        description: complete
+          ? `Breakdown (${id}) has been completed.`
+          : `Breakdown (${id}) has been incompleted.`,
+        entityId: breakdown.entityId,
       });
     } catch (e) {
       console.log(e);

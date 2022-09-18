@@ -486,6 +486,7 @@ model Breakdown {
   name                  String
   type                  String
   estimatedDateOfRepair DateTime?
+  completedAt           DateTime?
   entity                Entity?            @relation(fields: [entityId], references: [id], onDelete: Cascade)
   createdById           Int?
   createdBy             User?              @relation(fields: [createdById], references: [id])

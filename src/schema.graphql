@@ -56,6 +56,7 @@ type ApiKeyPermission {
 
 type Breakdown {
   comments: [BreakdownComment!]
+  completedAt: Date
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -704,6 +705,7 @@ type Mutation {
   setEntityStatus(entityId: Int!, status: String!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
+  toggleComplete(complete: Boolean!, id: Int!): String!
   toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   togglePeriodicMaintenanceTask(complete: Boolean!, id: Int!): String!

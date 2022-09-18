@@ -11,6 +11,7 @@ export class Breakdown extends BaseModel {
   name: string;
   type: string;
   estimatedDateOfRepair?: Date;
+  completedAt?: Date;
   createdBy: User;
   entity: Entity;
   details?: BreakdownDetail[];

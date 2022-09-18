@@ -458,6 +458,7 @@ Table Breakdown {
   name String [not null]
   type String [not null]
   estimatedDateOfRepair DateTime
+  completedAt DateTime
   entity Entity
   createdById Int
   createdBy User

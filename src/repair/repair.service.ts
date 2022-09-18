@@ -35,6 +35,12 @@ export class RepairService {
         },
         include: { breakdown: true },
       });
+      if (breakdownId) {
+        await this.prisma.breakdown.update({
+          where: { id: breakdownId },
+          data: { completedAt: new Date() },
+        });
+      }
       const users = await this.entityService.getEntityAssignmentIds(
         entityId,
         user.id
@@ -43,7 +49,7 @@ export class RepairService {
         await this.notificationService.createInBackground({
           userId: users[index],
           body: breakdownId
-            ? `${user.fullName} (${user.rcno}) added repair in ${repair.breakdown.type} (${breakdownId}).`
+            ? `Breakdown completed. ${user.fullName} (${user.rcno}) added repair in ${repair.breakdown.type} (${breakdownId}).`
             : `${user.fullName} (${user.rcno}) added repair.`,
           link: `/entity/${entityId}`,
         });
@@ -183,6 +189,18 @@ export class RepairService {
   async remove(user: User, id: number) {
     try {
       const repair = await this.prisma.repair.delete({ where: { id } });
+      //if all repairs get deleted then update breakdown's completedAt to null
+      const otherRepairsExist = await this.prisma.breakdown.findFirst({
+        where: { id: repair.breakdownId },
+        include: { repairs: true },
+      });
+      if (otherRepairsExist.repairs.length <= 0) {
+        await this.prisma.breakdown.update({
+          where: { id: repair.breakdownId },
+          data: { completedAt: null },
+        });
+      }
+
       const users = await this.entityService.getEntityAssignmentIds(
         repair.entityId,
         user.id
