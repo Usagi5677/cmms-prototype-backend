@@ -391,7 +391,6 @@ export class BreakdownService {
   //** toggle completedAt. */
   async toggleComplete(user: User, id: number, complete: boolean) {
     try {
-      console.log(complete);
       const breakdown = await this.prisma.breakdown.update({
         where: { id },
         data: complete ? { completedAt: new Date() } : { completedAt: null },
