@@ -142,6 +142,7 @@ type Checklist {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
+  dailyUsageHours: Int
   entity: Entity
   from: Date!
   id: Int!
@@ -194,6 +195,7 @@ type ChecklistSummary {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
+  dailyUsageHours: Int
   entity: Entity
   from: Date!
   hasComments: Boolean!
@@ -720,6 +722,7 @@ type Mutation {
   updateAllEntityChecklists: String!
   updateBreakdown(updateBreakdownInput: UpdateBreakdownInput!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
+  updateDailyUsage(hours: Int!, id: Int!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!

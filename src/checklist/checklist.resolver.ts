@@ -80,6 +80,16 @@ export class ChecklistResolver {
   }
 
   @Mutation(() => String)
+  async updateDailyUsage(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('hours') hours: number
+  ): Promise<string> {
+    await this.checklistService.updateDailyUsage(user, id, hours);
+    return `Checklist updated.`;
+  }
+
+  @Mutation(() => String)
   async addChecklistComment(
     @UserEntity() user: User,
     @Args('checklistId') checklistId: number,

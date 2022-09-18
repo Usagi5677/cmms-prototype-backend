@@ -152,7 +152,7 @@ Table Checklist {
   to DateTime [not null]
   type String [not null, default: 'Daily']
   currentMeterReading Int
-  dailyReading Int
+  dailyUsageHours Int
   workingHour Int
   items ChecklistItem [not null]
   comments ChecklistComment [not null]

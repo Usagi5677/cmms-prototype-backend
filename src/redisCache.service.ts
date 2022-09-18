@@ -42,6 +42,11 @@ export class RedisCacheService {
     await this.set(key, value, 10);
   }
 
+  async setForHour(key, value) {
+    const secondsInHour = 60 * 60;
+    await this.set(key, value, secondsInHour);
+  }
+
   async setForDay(key, value) {
     const secondsInDay = 24 * 60 * 60;
     await this.set(key, value, secondsInDay);

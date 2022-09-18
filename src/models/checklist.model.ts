@@ -13,6 +13,7 @@ export class Checklist extends BaseModel {
   type: string;
   currentMeterReading?: number;
   workingHour?: number;
+  dailyUsageHours?: number;
   items: ChecklistItem[];
   comments: ChecklistComment[];
   attachments: EntityAttachment[];
