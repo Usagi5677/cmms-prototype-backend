@@ -8,6 +8,6 @@ export class EntityPeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   entityId?: number;
   status?: PeriodicMaintenanceStatus;
   complete?: boolean;
-  location?: string[];
+  locationIds?: number[];
   assignedToId?: number;
 }

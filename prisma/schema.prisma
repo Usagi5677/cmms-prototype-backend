@@ -233,7 +233,6 @@ model Entity {
   model                     String?
   typeId                    Int?
   type                      Type?                       @relation(fields: [typeId], references: [id])
-  zone                      String?
   locationId                Int?
   location                  Location?                   @relation(fields: [locationId], references: [id])
   currentRunning            Int?

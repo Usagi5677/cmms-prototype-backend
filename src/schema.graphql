@@ -531,19 +531,6 @@ type EntityPeriodicMaintenance {
   verifiedBy: User
 }
 
-type EntityPeriodicMaintenanceEdge {
-  cursor: String
-  node: EntityPeriodicMaintenance
-}
-
-type EntityPeriodicMaintenancePageInfo {
-  count: Int!
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
-
 type EntityRepairRequest {
   additionalInfo: String
   approvedAt: Date
@@ -662,7 +649,7 @@ type Mutation {
   createApiKey(input: CreateApiKeyInput!): String!
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
-  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
+  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createLocation(input: CreateLocationInput!): String!
   createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, previousMeterReading: Int, value: Int!): String!
@@ -677,7 +664,7 @@ type Mutation {
   deleteEntityRepairRequest(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
-  editEntity(brand: String, department: String, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int, zone: String): String!
+  editEntity(brand: String, department: String, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
@@ -787,8 +774,8 @@ type PaginatedEntityHistory {
 }
 
 type PaginatedEntityPeriodicMaintenance {
-  edges: [EntityPeriodicMaintenanceEdge!]
-  pageInfo: EntityPeriodicMaintenancePageInfo
+  edges: [PeriodicMaintenanceEdge!]
+  pageInfo: PeriodicMaintenancePageInfo
 }
 
 type PaginatedEntityPeriodicMaintenanceTask {
@@ -1203,7 +1190,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!
@@ -1222,7 +1209,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenanceTask!
@@ -1291,7 +1278,7 @@ type Query {
 
     """Paginate last"""
     last: Int
-    location: [String!]
+    locationIds: [Int!]
     search: String
     status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!

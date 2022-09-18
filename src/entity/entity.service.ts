@@ -129,7 +129,6 @@ export class EntityService {
     typeId: number,
     machineNumber: string,
     model: string,
-    zone: string,
     locationId: number,
     department: string,
     engine: string,
@@ -155,7 +154,6 @@ export class EntityService {
           typeId,
           machineNumber,
           model,
-          zone,
           locationId,
           department,
           engine,
@@ -221,7 +219,6 @@ export class EntityService {
     typeId: number,
     machineNumber: string,
     model: string,
-    zone: string,
     locationId: number,
     department: string,
     engine: string,
@@ -348,7 +345,6 @@ export class EntityService {
           typeId: typeId ?? undefined,
           machineNumber,
           model,
-          zone,
           locationId: locationId ?? undefined,
           department,
           engine,
@@ -461,7 +457,7 @@ export class EntityService {
         },
         assignees: { include: { user: true }, where: { removedAt: null } },
         type: true,
-        location: true,
+        location: { include: { zone: true } },
       },
     });
     await this.checkEntityAssignmentOrPermission(
@@ -718,7 +714,7 @@ export class EntityService {
           },
         },
         type: true,
-        location: true,
+        location: { include: { zone: true } },
       },
       orderBy: [{ id: 'asc' }],
     });
@@ -2172,7 +2168,9 @@ export class EntityService {
           },
         },
         type: true,
-        location: true,
+        location: {
+          include: { zone: true },
+        },
       },
     });
 
@@ -2279,27 +2277,27 @@ export class EntityService {
   ): Promise<PaginatedEntityPeriodicMaintenance> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, status, location } = args;
+    const { search, status, locationIds } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
+
+    where.createdAt = { gte: moment().toDate(), lte: moment().toDate() };
 
     if (status) {
       where.AND.push({ status });
     }
 
-    if (location.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
-        entity: {
-          location: {
-            in: location,
-          },
+        locationId: {
+          in: locationIds,
         },
       });
     }
 
     if (search) {
-      const or: any = [{ title: { contains: search, mode: 'insensitive' } }];
+      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
       // If search contains all numbers, search the machine ids as well
       if (/^(0|[1-9]\d*)$/.test(search)) {
         or.push({ id: parseInt(search) });
@@ -2308,22 +2306,56 @@ export class EntityService {
         OR: or,
       });
     }
-    const periodicMaintenance =
-      await this.prisma.entityPeriodicMaintenance.findMany({
-        skip: offset,
-        take: limitPlusOne,
-        where,
-        include: {
-          entity: {
-            include: {
-              type: true,
+    const periodicMaintenance = await this.prisma.periodicMaintenance.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        notificationReminder: true,
+        tasks: {
+          where: { parentTaskId: null },
+          include: {
+            subTasks: {
+              include: {
+                subTasks: {
+                  include: {
+                    completedBy: true,
+                    remarks: {
+                      include: {
+                        createdBy: true,
+                      },
+                    },
+                  },
+                },
+                completedBy: true,
+                remarks: {
+                  include: {
+                    createdBy: true,
+                  },
+                },
+              },
+              orderBy: { id: 'asc' },
+            },
+            completedBy: true,
+            remarks: {
+              include: {
+                createdBy: true,
+              },
             },
           },
+          orderBy: { id: 'asc' },
         },
-        orderBy: { id: 'desc' },
-      });
+        verifiedBy: true,
+        comments: {
+          include: {
+            createdBy: true,
+          },
+        },
+      },
+      orderBy: { id: 'desc' },
+    });
 
-    const count = await this.prisma.entityPeriodicMaintenance.count({
+    const count = await this.prisma.periodicMaintenance.count({
       where,
     });
     const { edges, pageInfo } = connectionFromArraySlice(
@@ -2352,7 +2384,7 @@ export class EntityService {
   ): Promise<PaginatedEntityPeriodicMaintenanceTask> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, complete, location, status, assignedToId } = args;
+    const { search, complete, locationIds, status, assignedToId } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -2367,12 +2399,12 @@ export class EntityService {
       });
     }
 
-    if (location?.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
         periodicMaintenance: {
           entity: {
-            location: {
-              in: location,
+            locationId: {
+              in: locationIds,
             },
           },
         },
@@ -2404,7 +2436,7 @@ export class EntityService {
       });
     }
     const periodicMaintenanceTask =
-      await this.prisma.entityPeriodicMaintenanceTask.findMany({
+      await this.prisma.periodicMaintenanceTask.findMany({
         skip: offset,
         take: limitPlusOne,
         where,
@@ -2427,7 +2459,7 @@ export class EntityService {
         orderBy: { id: 'desc' },
       });
 
-    const count = await this.prisma.entityPeriodicMaintenanceTask.count({
+    const count = await this.prisma.periodicMaintenanceTask.count({
       where,
     });
     const { edges, pageInfo } = connectionFromArraySlice(

@@ -188,7 +188,7 @@ export class PeriodicMaintenanceService {
           entity: {
             include: {
               type: true,
-              location: true,
+              location: { include: { zone: true } },
             },
           },
         },

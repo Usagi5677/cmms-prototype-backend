@@ -203,7 +203,6 @@ Table Entity {
   model String
   typeId Int
   type Type
-  zone String
   locationId Int
   location Location
   currentRunning Int
