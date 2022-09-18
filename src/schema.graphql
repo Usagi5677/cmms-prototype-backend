@@ -95,6 +95,7 @@ type BreakdownDetail {
   description: String!
   entity: Entity!
   id: Int!
+  repairs: [Repair!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -304,6 +305,7 @@ input CreateRepairCommentInput {
 }
 
 input CreateRepairInput {
+  breakdownDetailId: Int
   breakdownId: Int
   entityId: Int!
   name: String!
@@ -1462,6 +1464,7 @@ type Query {
 
 type Repair {
   breakdown: Breakdown
+  breakdownDetail: BreakdownDetail
   comments: [RepairComment!]
 
   """Identifies the date and time when the object was created."""
@@ -1601,6 +1604,7 @@ input UpdateLocationInput {
 }
 
 input UpdateRepairInput {
+  breakdownDetailId: Int
   breakdownId: Int
   entityId: Int
   id: Int!

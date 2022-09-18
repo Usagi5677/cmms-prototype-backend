@@ -109,12 +109,14 @@ export class BreakdownService {
               comments: {
                 include: { createdBy: true },
               },
+              repairs: true,
             },
           },
           repairs: {
             include: {
               comments: { include: { createdBy: true } },
               createdBy: true,
+              breakdownDetail: true,
             },
           },
         },

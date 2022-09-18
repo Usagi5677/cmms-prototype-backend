@@ -430,11 +430,13 @@ Table Repair {
   updatedAt DateTime [not null]
   entityId Int [not null]
   breakdownId Int
+  breakdownDetailId Int
   name String [not null]
   createdById Int
   createdBy User
   entity Entity
   breakdown Breakdown
+  breakdownDetail BreakdownDetail
   comments RepairComment [not null]
 }
 
@@ -477,6 +479,7 @@ Table BreakdownDetail {
   createdById Int
   createdBy User
   comments BreakdownComment [not null]
+  repairs Repair [not null]
 }
 
 Table BreakdownComment {
@@ -652,6 +655,8 @@ Ref: Repair.createdById > User.id
 Ref: Repair.entityId > Entity.id
 
 Ref: Repair.breakdownId > Breakdown.id
+
+Ref: Repair.breakdownDetailId > BreakdownDetail.id
 
 Ref: RepairComment.repairId > Repair.id
 

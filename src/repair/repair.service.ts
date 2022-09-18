@@ -24,13 +24,17 @@ export class RepairService {
     private entityService: EntityService,
     private notificationService: NotificationService
   ) {}
-  async create(user: User, { entityId, breakdownId, name }: CreateRepairInput) {
+  async create(
+    user: User,
+    { entityId, breakdownId, breakdownDetailId, name }: CreateRepairInput
+  ) {
     try {
       const repair = await this.prisma.repair.create({
         data: {
           entityId,
           createdById: user.id,
           breakdownId,
+          breakdownDetailId,
           name,
         },
         include: { breakdown: true },
