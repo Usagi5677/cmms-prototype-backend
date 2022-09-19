@@ -2696,125 +2696,244 @@ export class EntityService {
   }
 
   //** Get all entity status count*/
-  async getAllEntityStatusCount(
-    user: User,
-    isAssigned?: boolean,
-    entityType?: string
-  ) {
+  async getAllEntityStatusCount(user: User, args: EntityConnectionArgs) {
     try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const {
+        createdById,
+        search,
+        assignedToId,
+        entityType,
+        status,
+        locationIds,
+        department,
+        isAssigned,
+        typeIds,
+        zoneIds,
+        brand,
+        engine,
+        measurement,
+        lteCurrentRunning,
+        gteCurrentRunning,
+        lteLastService,
+        gteLastService,
+        isIncompleteChecklistTask,
+      } = args;
+
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      const todayStart = moment().startOf('day');
+      const todayEnd = moment().endOf('day');
+
+      where.AND.push({
+        deletedAt: null,
+      });
+
+      if (search) {
+        const or: any = [
+          { model: { contains: search, mode: 'insensitive' } },
+          { machineNumber: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+
+      if (createdById) {
+        where.AND.push({ createdById });
+      }
+      if (assignedToId || !hasViewAll) {
+        where.AND.push({
+          assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+        });
+      }
+
+      if (status?.length > 0) {
+        where.AND.push({
+          status: { in: status },
+        });
+      }
+
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
+
+      if (brand?.length > 0) {
+        where.AND.push({
+          brand: { in: brand },
+        });
+      }
+
+      if (department?.length > 0) {
+        where.AND.push({
+          department: {
+            in: department,
+          },
+        });
+      }
+
+      if (isAssigned) {
+        where.AND.push({
+          assignees: {
+            some: {
+              removedAt: null,
+            },
+          },
+        });
+      }
+
+      if (entityType) {
+        where.AND.push({
+          type: {
+            entityType: {
+              in: entityType,
+            },
+          },
+        });
+      }
+
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
+        });
+      }
+
+      if (engine?.length > 0) {
+        where.AND.push({
+          engine: { in: engine },
+        });
+      }
+
+      if (measurement?.length > 0) {
+        where.AND.push({
+          measurement: { in: measurement },
+        });
+      }
+
+      if (gteCurrentRunning?.replace(/\D/g, '')) {
+        where.AND.push({
+          currentRunning: {
+            gte: parseInt(gteCurrentRunning.replace(/\D/g, '')),
+          },
+        });
+      }
+
+      if (lteCurrentRunning?.replace(/\D/g, '')) {
+        where.AND.push({
+          currentRunning: {
+            lte: parseInt(lteCurrentRunning.replace(/\D/g, '')),
+          },
+        });
+      }
+
+      if (
+        gteCurrentRunning?.replace(/\D/g, '') &&
+        lteCurrentRunning?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          currentRunning: {
+            gte: parseInt(gteCurrentRunning.replace(/\D/g, '')),
+            lte: parseInt(lteCurrentRunning.replace(/\D/g, '')),
+          },
+        });
+      }
+
+      if (gteLastService?.replace(/\D/g, '')) {
+        where.AND.push({
+          lastService: { gte: parseInt(gteLastService.replace(/\D/g, '')) },
+        });
+      }
+
+      if (lteLastService?.replace(/\D/g, '')) {
+        where.AND.push({
+          lastService: { lte: parseInt(lteLastService.replace(/\D/g, '')) },
+        });
+      }
+
+      if (
+        gteLastService?.replace(/\D/g, '') &&
+        lteLastService?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          lastService: {
+            gte: parseInt(gteLastService.replace(/\D/g, '')),
+            lte: parseInt(lteLastService.replace(/\D/g, '')),
+          },
+        });
+      }
+
+      if (isIncompleteChecklistTask) {
+        const checklist = await this.prisma.checklist.findMany({
+          where: {
+            NOT: [{ entityId: null }],
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        const checklistIds = checklist.map((id) => id.id);
+
+        const checklistItem = await this.prisma.checklistItem.findMany({
+          where: {
+            checklistId: {
+              in: checklistIds,
+            },
+            completedAt: null,
+          },
+          select: {
+            checklistId: true,
+          },
+        });
+        const checklistItemIds = checklistItem.map((id) => id.checklistId);
+
+        const entity = await this.prisma.checklist.findMany({
+          where: {
+            id: {
+              in: checklistItemIds,
+            },
+          },
+          select: {
+            entityId: true,
+          },
+        });
+        const entityIds = entity.map((id) => id.entityId);
+        where.AND.push({
+          id: {
+            in: entityIds,
+          },
+        });
+      }
+      //use cache later
       const key = `allEntityStatusCount`;
       let statusCount = await this.redisCacheService.get(key);
 
-      if (!statusCount) {
-        statusCount = '';
+      const entities = await this.prisma.entity.findMany({
+        where,
+      });
 
-        const working = isAssigned
-          ? await this.prisma.entity.findMany({
-              where: {
-                status: 'Working',
-                deletedAt: null,
-                assignees: { some: {} },
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            })
-          : await this.prisma.entity.findMany({
-              where: {
-                status: 'Working',
-                deletedAt: null,
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            });
-
-        const critical = isAssigned
-          ? await this.prisma.entity.findMany({
-              where: {
-                status: 'Critical',
-                deletedAt: null,
-                assignees: { some: {} },
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            })
-          : await this.prisma.entity.findMany({
-              where: {
-                status: 'Critical',
-                deletedAt: null,
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            });
-
-        const breakdown = isAssigned
-          ? await this.prisma.entity.findMany({
-              where: {
-                status: 'Breakdown',
-                deletedAt: null,
-                assignees: { some: {} },
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            })
-          : await this.prisma.entity.findMany({
-              where: {
-                status: 'Breakdown',
-                deletedAt: null,
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            });
-
-        const dispose = isAssigned
-          ? await this.prisma.entity.findMany({
-              where: {
-                status: 'Dispose',
-                deletedAt: null,
-                assignees: { some: {} },
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            })
-          : await this.prisma.entity.findMany({
-              where: {
-                status: 'Dispose',
-                deletedAt: null,
-                type: {
-                  entityType: {
-                    in: entityType,
-                  },
-                },
-              },
-            });
-
-        statusCount = {
-          working: working.length ?? 0,
-          critical: critical.length ?? 0,
-          breakdown: breakdown.length ?? 0,
-          dispose: dispose.length ?? 0,
-        };
-      }
+      statusCount = {
+        working: entities.filter((e) => e.status === 'Working').length ?? 0,
+        critical: entities.filter((e) => e.status === 'Critical').length ?? 0,
+        breakdown: entities.filter((e) => e.status === 'Breakdown').length ?? 0,
+        dispose: entities.filter((e) => e.status === 'Dispose').length ?? 0,
+      };
       return statusCount;
     } catch (e) {
       console.log(e);

@@ -992,7 +992,38 @@ type Query {
   allEntityBreakdownCount: entityBreakdownCount!
   allEntityPMStatusCount: maintenanceStatusCount!
   allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
-  allEntityStatusCount(entityType: String, isAssigned: Boolean): entityStatusCount!
+  allEntityStatusCount(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    brand: [String!]
+    createdById: Int
+    createdByUserId: String
+    department: [String!]
+    engine: [String!]
+    entityType: String
+
+    """Paginate first"""
+    first: Int
+    gteCurrentRunning: String
+    gteLastService: String
+    isAssigned: Boolean
+    isIncompleteChecklistTask: Boolean
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteCurrentRunning: String
+    lteLastService: String
+    measurement: [String!]
+    search: String
+    status: [String!]
+    typeIds: [Int!]
+    zoneIds: [Int!]
+  ): entityStatusCount!
   allEntityUsageHistory(from: Date!, locationIds: [Int!], to: Date!): [AllEntityUsageHistory!]!
   apiKeys(
     """Paginate after opaque cursor"""

@@ -547,14 +547,9 @@ export class EntityResolver {
   @Query(() => entityStatusCount)
   async allEntityStatusCount(
     @UserEntity() user: User,
-    @Args('isAssigned', { nullable: true }) isAssigned?: boolean,
-    @Args('entityType', { nullable: true }) entityType?: string
+    @Args() args: EntityConnectionArgs
   ): Promise<entityStatusCount> {
-    return this.entityService.getAllEntityStatusCount(
-      user,
-      isAssigned,
-      entityType
-    );
+    return this.entityService.getAllEntityStatusCount(user, args);
   }
   @Query(() => entityBreakdownCount)
   async allEntityBreakdownCount(): Promise<entityBreakdownCount> {
