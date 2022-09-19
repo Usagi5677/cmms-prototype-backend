@@ -2295,16 +2295,12 @@ export class EntityService {
   ): Promise<PaginatedEntityPeriodicMaintenance> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, status, locationIds } = args;
+    const { search, locationIds } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
 
     where.createdAt = { gte: moment().toDate(), lte: moment().toDate() };
-
-    if (status) {
-      where.AND.push({ status });
-    }
 
     if (locationIds?.length > 0) {
       where.AND.push({
@@ -2402,7 +2398,7 @@ export class EntityService {
   ): Promise<PaginatedEntityPeriodicMaintenanceTask> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, complete, locationIds, status, assignedToId } = args;
+    const { search, complete, locationIds, assignedToId } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -2425,14 +2421,6 @@ export class EntityService {
               in: locationIds,
             },
           },
-        },
-      });
-    }
-
-    if (status) {
-      where.AND.push({
-        periodicMaintenance: {
-          status: status,
         },
       });
     }
@@ -2469,6 +2457,7 @@ export class EntityService {
                     },
                   },
                   type: true,
+                  location: { include: { zone: true } },
                 },
               },
             },

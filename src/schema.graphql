@@ -1192,7 +1192,6 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
-    status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!
   getAllEntityPeriodicMaintenanceTask(
     """Paginate after opaque cursor"""
@@ -1211,7 +1210,6 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
-    status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenanceTask!
   getAllEntityUtilization(
     """Paginate after opaque cursor"""
@@ -1280,7 +1278,6 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
-    status: PeriodicMaintenanceStatus
   ): PaginatedEntityPeriodicMaintenance!
   getAllRepairRequestOfEntity(
     """Paginate after opaque cursor"""
