@@ -993,7 +993,7 @@ type Query {
   allEntityPMStatusCount: maintenanceStatusCount!
   allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
   allEntityStatusCount(entityType: String, isAssigned: Boolean): entityStatusCount!
-  allEntityUsageHistory(from: Date!, to: Date!): [AllEntityUsageHistory!]!
+  allEntityUsageHistory(from: Date!, locationIds: [Int!], to: Date!): [AllEntityUsageHistory!]!
   apiKeys(
     """Paginate after opaque cursor"""
     after: String

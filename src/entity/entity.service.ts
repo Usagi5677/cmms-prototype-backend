@@ -1945,7 +1945,8 @@ export class EntityService {
     entityId: number,
     from: Date,
     to: Date,
-    entity?: Entity
+    entity?: Entity,
+    locationIds?: number[]
   ) {
     // Start one day earlier to build up cumulative hours
     const fromDate = moment(from).startOf('day');
@@ -1960,7 +1961,7 @@ export class EntityService {
     if (!entity) {
       entity = entityFromCheck;
     }
-    const key = `usage_${entityId}_${fromDate.toISOString()}_${toDate.toISOString()}`;
+    const key = `usage_${entityId}_${locationIds}_${fromDate.toISOString()}_${toDate.toISOString()}`;
     let usage = await this.redisCacheService.get(key);
     if (!usage) {
       usage = [];
@@ -1973,13 +1974,23 @@ export class EntityService {
         const day = fromDate.clone().add(i, 'day');
         const dayStart = day.clone().startOf('day');
         const dayEnd = day.clone().endOf('day');
+        // eslint-disable-next-line prefer-const
+        let where: any = { AND: [] };
+        where.AND.push({ entityId });
+        where.AND.push({ type: 'Daily' });
+        where.AND.push({ from: dayStart.toDate() });
+        where.AND.push({ to: dayEnd.toDate() });
+        if (locationIds?.length > 0) {
+          where.AND.push({
+            entity: {
+              locationId: {
+                in: locationIds,
+              },
+            },
+          });
+        }
         const checklist = await this.prisma.checklist.findFirst({
-          where: {
-            entityId,
-            type: 'Daily',
-            from: dayStart.toDate(),
-            to: dayEnd.toDate(),
-          },
+          where,
         });
         let workingHour = 0;
         if (checklist) {
@@ -2135,7 +2146,7 @@ export class EntityService {
       where.AND.push({ status });
     }
 
-    if (locationIds.length > 0) {
+    if (locationIds?.length > 0) {
       where.AND.push({
         locationId: {
           in: locationIds,
@@ -2195,7 +2206,12 @@ export class EntityService {
   }
 
   //** Get all entity usage*/
-  async getAllEntityUsage(user: User, from: Date, to: Date) {
+  async getAllEntityUsage(
+    user: User,
+    from: Date,
+    to: Date,
+    locationIds: number[]
+  ) {
     const usageHistoryByDate = [];
     const allEntities = await this.prisma.entity.findMany({
       where: { deletedAt: null },
@@ -2206,7 +2222,8 @@ export class EntityService {
         entity.id,
         from,
         to,
-        entity
+        entity,
+        locationIds
       );
       for (const dayUsage of entityUsage) {
         if (i === 0) {

@@ -480,9 +480,11 @@ export class EntityResolver {
   async allEntityUsageHistory(
     @UserEntity() user: User,
     @Args('from') from: Date,
-    @Args('to') to: Date
+    @Args('to') to: Date,
+    @Args('locationIds', { nullable: true, type: () => [Int] })
+    locationIds: number[]
   ): Promise<AllEntityUsageHistory[]> {
-    return this.entityService.getAllEntityUsage(user, from, to);
+    return this.entityService.getAllEntityUsage(user, from, to, locationIds);
   }
 
   @Mutation(() => String)
