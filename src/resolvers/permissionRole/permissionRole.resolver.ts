@@ -21,6 +21,7 @@ export class PermissionRoleResolver {
     private prisma: PrismaService
   ) {}
 
+  @Permissions('VIEW_ROLES')
   @Query(() => PaginatedPermissionRole)
   async getAllRoles(
     @UserEntity() user: User,
@@ -32,6 +33,7 @@ export class PermissionRoleResolver {
     );
   }
 
+  @Permissions('ADD_ROLE')
   @Mutation(() => String)
   async addRole(
     @UserEntity() user: User,
@@ -41,6 +43,7 @@ export class PermissionRoleResolver {
     return `Added role.`;
   }
 
+  @Permissions('EDIT_ROLE')
   @Mutation(() => String)
   async editRole(
     @Args('id') id: number,
@@ -50,12 +53,14 @@ export class PermissionRoleResolver {
     return `Role updated.`;
   }
 
+  @Permissions('DELETE_ROLE')
   @Mutation(() => String)
   async removeRole(@Args('id') id: number): Promise<String> {
     await this.permissionRoleService.deleteRole(id);
     return `Role deleted.`;
   }
 
+  @Permissions('ASSIGN_PERMISSION')
   @Mutation(() => String)
   async assignPermission(
     @Args('roleId') roleId: number,
@@ -74,11 +79,13 @@ export class PermissionRoleResolver {
     return roles;
   }
 
+  @Permissions('VIEW_ROLES')
   @Query(() => RoleModel)
   async getRoleWithPermission(@Args('roleId') roleId: number) {
     return await this.permissionRoleService.getRoleWithPermission(roleId);
   }
 
+  @Permissions('ASSIGN_PERMISSION')
   @Mutation(() => String)
   async togglePermission(
     @Args('roleId') roleId: number,
