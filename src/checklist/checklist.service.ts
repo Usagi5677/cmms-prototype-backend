@@ -271,7 +271,7 @@ export class ChecklistService {
       where: {
         removedAt: null,
         userId: user.id,
-        type: { in: ['Engineer'] },
+        type: { in: ['Admin', 'Engineer'] },
       },
     });
     if (assignments.length === 0) return null;
@@ -310,7 +310,7 @@ export class ChecklistService {
       where: {
         removedAt: null,
         userId: user.id,
-        type: { in: ['Engineer'] },
+        type: { in: ['Admin', 'Engineer'] },
       },
     });
     if (assignments.length === 0) return null;
