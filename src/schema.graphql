@@ -1124,6 +1124,9 @@ type Query {
     search: String
     type: String
   ): ChecklistTemplateConnection!
+  checklistWithIssueSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
+  checklistsWithIssue(input: IncompleteChecklistInput!): [Checklist!]
+  checklistsWithIssuePastTwoDays: [Int!]
   entityAttachment(id: Int!): EntityAttachment!
   entityAttachments(
     """Paginate after opaque cursor"""

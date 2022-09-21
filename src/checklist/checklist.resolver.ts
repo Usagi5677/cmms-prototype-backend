@@ -49,6 +49,32 @@ export class ChecklistResolver {
     return [summary[1]?.count ?? 0, summary[0]?.count ?? 0];
   }
 
+  @Query(() => [Checklist], { nullable: true })
+  async checklistsWithIssue(
+    @UserEntity() user: User,
+    @Args('input') input: IncompleteChecklistInput
+  ) {
+    return await this.checklistService.checklistsWithIssue(user, input);
+  }
+
+  @Query(() => [IncompleteChecklistSummary], { nullable: true })
+  async checklistWithIssueSummary(
+    @UserEntity() user: User,
+    @Args('input') input: IncompleteChecklistSummaryInput
+  ) {
+    return await this.checklistService.checklistWithIssueSummary(user, input);
+  }
+
+  @Query(() => [Int, Int], { nullable: true })
+  async checklistsWithIssuePastTwoDays(@UserEntity() user: User) {
+    const yesterday = moment().subtract(1, 'day').startOf('day').toDate();
+    const summary = await this.checklistService.checklistWithIssueSummary(
+      user,
+      { type: 'Daily', from: yesterday, to: new Date() }
+    );
+    return [summary[1]?.count ?? 0, summary[0]?.count ?? 0];
+  }
+
   @Mutation(() => String)
   async toggleChecklistItem(
     @UserEntity() user: User,
