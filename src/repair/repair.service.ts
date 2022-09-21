@@ -29,6 +29,15 @@ export class RepairService {
     { entityId, breakdownId, breakdownDetailId, name }: CreateRepairInput
   ) {
     try {
+      // Check if admin, engineer of entity or has permission
+      //using repair request permission for now
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_REPAIR_REQUEST']
+      );
       const repair = await this.prisma.repair.create({
         data: {
           entityId,
@@ -154,8 +163,16 @@ export class RepairService {
     }
   }
 
-  async update(user: User, { id, name }: UpdateRepairInput) {
+  async update(user: User, { id, name, entityId }: UpdateRepairInput) {
     try {
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_REPAIR_REQUEST']
+      );
       const before = await this.prisma.repair.findFirst({
         where: { id },
       });
@@ -163,7 +180,7 @@ export class RepairService {
         await this.entityService.createEntityHistoryInBackground({
           type: 'Repair Edit',
           description: `Name changed from ${before.name} to ${name}.`,
-          entityId: before.entityId,
+          entityId: entityId,
           completedById: user.id,
         });
       }
@@ -181,7 +198,7 @@ export class RepairService {
         await this.notificationService.createInBackground({
           userId: users[index],
           body: `${user.fullName} (${user.rcno}) updated Repair (${id}).`,
-          link: `/entity/${before.entityId}`,
+          link: `/entity/${entityId}`,
         });
       }
     } catch (e) {
@@ -192,18 +209,34 @@ export class RepairService {
 
   async remove(user: User, id: number) {
     try {
-      const repair = await this.prisma.repair.delete({ where: { id } });
-      //if all repairs get deleted then update breakdown's completedAt to null
-      const otherRepairsExist = await this.prisma.breakdown.findFirst({
-        where: { id: repair.breakdownId },
-        include: { repairs: true },
+      const entity = await this.prisma.repair.findFirst({
+        where: { id },
+        select: { entityId: true, breakdownId: true },
       });
-      if (otherRepairsExist.repairs.length <= 0) {
-        await this.prisma.breakdown.update({
-          where: { id: repair.breakdownId },
-          data: { completedAt: null },
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entity.entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_REPAIR_REQUEST']
+      );
+
+      if (entity.breakdownId) {
+        //if all repairs get deleted then update breakdown's completedAt to null
+        const otherRepairsExist = await this.prisma.breakdown.findFirst({
+          where: { id: entity.breakdownId },
+          include: { repairs: true },
         });
+        if (otherRepairsExist.repairs.length <= 0) {
+          await this.prisma.breakdown.update({
+            where: { id: entity.breakdownId },
+            data: { completedAt: null },
+          });
+        }
       }
+
+      const repair = await this.prisma.repair.delete({ where: { id } });
 
       const users = await this.entityService.getEntityAssignmentIds(
         repair.entityId,
