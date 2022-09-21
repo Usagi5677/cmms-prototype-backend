@@ -371,13 +371,13 @@ export class EntityService {
       user = await this.authService.validateUser(requestingUserUuid);
     }
     if (!requestingUserUuid) {
-      // Check if admin of entity or has permission
+      // Check if admin, engineer of entity or has permission
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
         undefined,
         ['Admin', 'Engineer'],
-        ['EDIT_ENTITY']
+        ['MODIFY_BREAKDOWN']
       );
     }
     try {

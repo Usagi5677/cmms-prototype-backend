@@ -31,6 +31,14 @@ export class BreakdownService {
     { entityId, name, type, estimatedDateOfRepair }: CreateBreakdownInput
   ) {
     try {
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_BREAKDOWN']
+      );
       await this.prisma.breakdown.create({
         data: {
           entityId,
@@ -172,6 +180,14 @@ export class BreakdownService {
     { id, entityId, name, type, estimatedDateOfRepair }: UpdateBreakdownInput
   ) {
     try {
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_BREAKDOWN']
+      );
       const beforeBreakdown = await this.prisma.breakdown.findFirst({
         where: { id },
       });
@@ -236,6 +252,19 @@ export class BreakdownService {
 
   async remove(user: User, id: number) {
     try {
+      const entity = await this.prisma.breakdown.findFirst({
+        where: { id },
+        select: { entityId: true },
+      });
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entity.entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_BREAKDOWN']
+      );
+
       const breakdown = await this.prisma.breakdown.delete({ where: { id } });
       const users = await this.entityService.getEntityAssignmentIds(
         breakdown.entityId,
@@ -328,6 +357,18 @@ export class BreakdownService {
     { breakdownId, description }: CreateBreakdownDetailInput
   ) {
     try {
+      const entity = await this.prisma.breakdown.findFirst({
+        where: { id: breakdownId },
+        select: { entityId: true },
+      });
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entity.entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_BREAKDOWN']
+      );
       const breakdown = await this.prisma.breakdownDetail.create({
         data: {
           createdById: user.id,
@@ -364,6 +405,18 @@ export class BreakdownService {
   }
   async removeBreakdownDetail(user: User, id: number) {
     try {
+      const entity = await this.prisma.breakdownDetail.findFirst({
+        where: { id },
+        include: { breakdown: { select: { entityId: true } } },
+      });
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entity?.breakdown?.entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_BREAKDOWN']
+      );
       const breakdown = await this.prisma.breakdownDetail.delete({
         where: { id },
         include: { breakdown: true },
@@ -393,6 +446,18 @@ export class BreakdownService {
   //** toggle completedAt. */
   async toggleComplete(user: User, id: number, complete: boolean) {
     try {
+      const entity = await this.prisma.breakdown.findFirst({
+        where: { id },
+        select: { entityId: true },
+      });
+      // Check if admin, engineer of entity or has permission
+      await this.entityService.checkEntityAssignmentOrPermission(
+        entity?.entityId,
+        user.id,
+        undefined,
+        ['Admin', 'Engineer'],
+        ['MODIFY_BREAKDOWN']
+      );
       const breakdown = await this.prisma.breakdown.update({
         where: { id },
         data: complete ? { completedAt: new Date() } : { completedAt: null },
