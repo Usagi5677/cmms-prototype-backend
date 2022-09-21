@@ -1004,7 +1004,7 @@ type Query {
     createdByUserId: String
     department: [String!]
     engine: [String!]
-    entityType: String
+    entityType: [String!]
 
     """Paginate first"""
     first: Int
@@ -1052,7 +1052,7 @@ type Query {
     createdByUserId: String
     department: [String!]
     engine: [String!]
-    entityType: String
+    entityType: [String!]
 
     """Paginate first"""
     first: Int
@@ -1153,7 +1153,7 @@ type Query {
     createdByUserId: String
     department: [String!]
     engine: [String!]
-    entityType: String
+    entityType: [String!]
 
     """Paginate first"""
     first: Int
@@ -1185,7 +1185,7 @@ type Query {
     createdByUserId: String
     department: [String!]
     engine: [String!]
-    entityType: String
+    entityType: [String!]
 
     """Paginate first"""
     first: Int
@@ -1254,7 +1254,7 @@ type Query {
     createdByUserId: String
     department: [String!]
     engine: [String!]
-    entityType: String
+    entityType: [String!]
 
     """Paginate first"""
     first: Int

@@ -1,4 +1,4 @@
-import { ArgsType } from '@nestjs/graphql';
+import { ArgsType, Field } from '@nestjs/graphql';
 import ConnectionArgs from '../../../common/pagination/connection-args';
 
 @ArgsType()
@@ -6,7 +6,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   search?: string;
   createdById?: number;
   createdByUserId?: string;
-  entityType?: string;
+  entityType?: string[];
   status?: string[];
   locationIds?: number[];
   department?: string[];

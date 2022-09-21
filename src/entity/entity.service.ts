@@ -579,7 +579,7 @@ export class EntityService {
       });
     }
 
-    if (entityType) {
+    if (entityType?.length > 0) {
       where.AND.push({
         type: {
           entityType: {
@@ -2796,7 +2796,7 @@ export class EntityService {
         });
       }
 
-      if (entityType) {
+      if (entityType?.length > 0) {
         where.AND.push({
           type: {
             entityType: {
