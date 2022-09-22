@@ -6,4 +6,5 @@ export class CreateBreakdownInput {
   name: string;
   type: string;
   estimatedDateOfRepair?: Date;
+  details?: string[];
 }

@@ -29,7 +29,6 @@ export class SparePrService {
     user: User,
     { entityId, name, requestedDate, details }: CreateSparePrInput
   ) {
-    console.log(details);
     await this.prisma.sparePR.create({
       data: {
         entityId,

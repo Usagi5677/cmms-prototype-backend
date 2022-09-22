@@ -28,7 +28,13 @@ export class BreakdownService {
   ) {}
   async create(
     user: User,
-    { entityId, name, type, estimatedDateOfRepair }: CreateBreakdownInput
+    {
+      entityId,
+      name,
+      type,
+      estimatedDateOfRepair,
+      details,
+    }: CreateBreakdownInput
   ) {
     try {
       // Check if admin, engineer of entity or has permission
@@ -46,6 +52,14 @@ export class BreakdownService {
           name,
           type,
           estimatedDateOfRepair,
+          details: {
+            createMany: {
+              data: details.map((detail) => ({
+                createdById: user.id,
+                description: detail,
+              })),
+            },
+          },
         },
       });
       await this.prisma.entity.update({
