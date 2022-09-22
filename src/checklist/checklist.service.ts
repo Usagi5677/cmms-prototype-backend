@@ -327,11 +327,6 @@ export class ChecklistService {
       where: {
         id: { in: newChecklistIds },
       },
-      include: {
-        entity: { include: { type: true, location: true } },
-        items: true,
-        comments: true,
-      },
     });
     if (type === 'Daily') {
       const checklistByDay = [];
@@ -536,11 +531,6 @@ export class ChecklistService {
     const checklists = await this.prisma.checklist.findMany({
       where: {
         id: { in: newChecklistIds },
-      },
-      include: {
-        entity: { include: { type: true, location: true } },
-        items: true,
-        comments: true,
       },
     });
     if (type === 'Daily') {
