@@ -371,16 +371,8 @@ export class ChecklistService {
   //checklists with issue
   async checklistsWithIssue(
     user: User,
-    { date, type }: IncompleteChecklistInput
+    { date, type, isAssigned }: IncompleteChecklistInput
   ): Promise<Checklist[] | null> {
-    const assignments = await this.prisma.entityAssignment.findMany({
-      where: {
-        removedAt: null,
-        userId: user.id,
-        type: { in: ['Admin', 'Engineer'] },
-      },
-    });
-    if (assignments.length === 0) return null;
     let from;
     let to;
     if (type === 'Daily') {
@@ -390,13 +382,75 @@ export class ChecklistService {
       from = moment(date).startOf('week').toDate();
       to = moment(date).endOf('week').toDate();
     }
-    const checklists = await this.prisma.checklist.findMany({
+
+    const checklist = await this.prisma.checklist.findMany({
       where: {
         type,
-        entityId: { in: assignments.map((a) => a.entityId) },
+        NOT: [{ entityId: null }],
         from: { gte: from },
         to: { lte: to },
-        items: { some: { issues: { some: {} } } },
+        OR: { currentMeterReading: null, workingHour: null, type },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const checklistIds = checklist.map((id) => id.id);
+
+    const checklistComment = await this.prisma.checklistComment.findMany({
+      where: {
+        checklistId: {
+          in: checklistIds,
+        },
+        type: 'Issue',
+      },
+      select: {
+        checklistId: true,
+      },
+    });
+    const checklistCommentIds = checklistComment.map((id) => id.checklistId);
+
+    const newChecklist = await this.prisma.checklist.findMany({
+      where: {
+        id: {
+          in: checklistCommentIds,
+        },
+      },
+      select: {
+        id: true,
+        entityId: true,
+      },
+    });
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+      status: 'Working',
+    });
+    if (isAssigned) {
+      const assignments = await this.prisma.entityAssignment.findMany({
+        where: {
+          removedAt: null,
+          userId: user.id,
+          type: { in: ['Admin', 'User'] },
+        },
+      });
+      where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
+    }
+    const entities = await this.prisma.entity.findMany({
+      where,
+      select: { id: true },
+    });
+    const workingIds = newChecklist.filter((e) =>
+      entities.some((b) => e.entityId === b.id)
+    );
+
+    const newChecklistIds = workingIds.map((e) => e.id);
+
+    const checklists = await this.prisma.checklist.findMany({
+      where: {
+        id: { in: newChecklistIds },
       },
       include: {
         entity: { include: { type: true, location: true } },
@@ -410,25 +464,83 @@ export class ChecklistService {
   //summary of checklists with issue
   async checklistWithIssueSummary(
     user: User,
-    { type, from, to }: IncompleteChecklistSummaryInput
+    { type, from, to, isAssigned }: IncompleteChecklistSummaryInput
   ) {
-    const assignments = await this.prisma.entityAssignment.findMany({
-      where: {
-        removedAt: null,
-        userId: user.id,
-        type: { in: ['Admin', 'Engineer'] },
-      },
-    });
-    if (assignments.length === 0) return null;
     const start = moment(from);
     const end = moment(to);
-    const checklists = await this.prisma.checklist.findMany({
+    const checklist = await this.prisma.checklist.findMany({
       where: {
         type,
-        entityId: { in: assignments.map((a) => a.entityId) },
+        NOT: [{ entityId: null }],
         from: { gte: start.startOf('day').toDate() },
         to: { lte: end.endOf(type === 'Daily' ? 'day' : 'week').toDate() },
-        items: { some: { issues: { some: {} } } },
+        OR: { currentMeterReading: null, workingHour: null, type },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const checklistIds = checklist.map((id) => id.id);
+
+    const checklistComment = await this.prisma.checklistComment.findMany({
+      where: {
+        checklistId: {
+          in: checklistIds,
+        },
+        type: 'Issue',
+      },
+      select: {
+        checklistId: true,
+      },
+    });
+    const checklistCommentIds = checklistComment.map((id) => id.checklistId);
+
+    const newChecklist = await this.prisma.checklist.findMany({
+      where: {
+        id: {
+          in: checklistCommentIds,
+        },
+      },
+      select: {
+        id: true,
+        entityId: true,
+      },
+    });
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+      status: 'Working',
+    });
+    if (isAssigned) {
+      const assignments = await this.prisma.entityAssignment.findMany({
+        where: {
+          removedAt: null,
+          userId: user.id,
+          type: { in: ['Admin', 'User'] },
+        },
+      });
+      where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
+    }
+    const entities = await this.prisma.entity.findMany({
+      where,
+      select: { id: true },
+    });
+    const workingIds = newChecklist.filter((e) =>
+      entities.some((b) => e.entityId === b.id)
+    );
+
+    const newChecklistIds = workingIds.map((e) => e.id);
+
+    const checklists = await this.prisma.checklist.findMany({
+      where: {
+        id: { in: newChecklistIds },
+      },
+      include: {
+        entity: { include: { type: true, location: true } },
+        items: true,
+        comments: true,
       },
     });
     if (type === 'Daily') {

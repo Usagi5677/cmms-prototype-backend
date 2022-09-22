@@ -75,7 +75,7 @@ export class ChecklistResolver {
     const yesterday = moment().subtract(1, 'day').startOf('day').toDate();
     const summary = await this.checklistService.checklistWithIssueSummary(
       user,
-      { type: 'Daily', from: yesterday, to: new Date() }
+      { type: 'Daily', from: yesterday, to: new Date(), isAssigned: true }
     );
     return [summary[1]?.count ?? 0, summary[0]?.count ?? 0];
   }
