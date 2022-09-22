@@ -4,5 +4,6 @@ import { InputType } from '@nestjs/graphql';
 export class CreateSparePrInput {
   entityId: number;
   name: string;
-  requestedDate: Date;
+  requestedDate?: Date;
+  details?: string[];
 }

@@ -42,6 +42,7 @@ Table User {
   repairCreated Repair [not null]
   breakdownCreated Breakdown [not null]
   sparePRCreated SparePR [not null]
+  SparePRDetail SparePRDetail [not null]
 }
 
 Table Notification {
@@ -345,8 +346,21 @@ Table SparePR {
   updatedAt DateTime [not null]
   entityId Int [not null]
   entity Entity [not null]
-  requestedDate DateTime [not null]
+  requestedDate DateTime
+  completedAt DateTime
   name String [not null]
+  createdById Int
+  createdBy User
+  sparePRDetails SparePRDetail [not null]
+}
+
+Table SparePRDetail {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  sparePRId Int [not null]
+  sparePR SparePR [not null]
+  description String [not null]
   createdById Int
   createdBy User
 }
@@ -626,6 +640,10 @@ Ref: EntityRepairRequest.approverId > User.id
 Ref: SparePR.entityId > Entity.id
 
 Ref: SparePR.createdById > User.id
+
+Ref: SparePRDetail.sparePRId > SparePR.id
+
+Ref: SparePRDetail.createdById > User.id
 
 Ref: PeriodicMaintenanceTask.periodicMaintenanceId > PeriodicMaintenance.id
 

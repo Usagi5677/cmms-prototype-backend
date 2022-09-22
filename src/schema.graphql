@@ -311,10 +311,16 @@ input CreateRepairInput {
   name: String!
 }
 
+input CreateSparePRDetailInput {
+  description: String!
+  sparePRId: Int
+}
+
 input CreateSparePrInput {
+  details: [String!]
   entityId: Int!
   name: String!
-  requestedDate: Date!
+  requestedDate: Date
 }
 
 input CreateTypeInput {
@@ -642,6 +648,7 @@ type Mutation {
   addPeriodicMaintenanceComment(description: String!, periodicMaintenanceId: Int!, taskId: Int, type: String!): String!
   addRepairComment(createRepairCommentInput: CreateRepairCommentInput!): String!
   addRole(name: String!): String!
+  addSparePRDetail(createSparePRDetailInput: CreateSparePRDetailInput!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
@@ -691,6 +698,7 @@ type Mutation {
   removeRepairComment(id: Int!): String!
   removeRole(id: Int!): String!
   removeSparePR(id: Int!): String!
+  removeSparePRDetail(id: Int!): String!
   removeType(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
   removeZone(id: Int!): String!
@@ -703,6 +711,7 @@ type Mutation {
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   togglePeriodicMaintenanceTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
+  toggleSparePRComplete(complete: Boolean!, id: Int!): String!
   toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
@@ -1548,14 +1557,29 @@ type RolesPageInfo {
   startCursor: String
 }
 
+type SparePRDetail {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  createdBy: User!
+  description: String!
+  id: Int!
+  sparePR: SparePr!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
 type SparePr {
+  completedAt: Date
+
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   createdBy: User!
   entity: Entity!
   id: Int!
   name: String!
-  requestedDate: Date!
+  requestedDate: Date
+  sparePRDetails: [SparePRDetail!]
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -1632,6 +1656,7 @@ input UpdateRepairInput {
 }
 
 input UpdateSparePrInput {
+  details: [String!]
   entityId: Int
   id: Int!
   name: String

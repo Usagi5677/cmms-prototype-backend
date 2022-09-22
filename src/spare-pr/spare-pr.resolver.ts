@@ -9,6 +9,7 @@ import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
 import { UseGuards } from '@nestjs/common';
 import { PaginatedSparePR } from './dto/spare-pr-connection.model';
 import { SparePRConnectionArgs } from './dto/spare-pr-connection.args';
+import { CreateSparePRDetailInput } from './dto/create-spare-pr-detail.input';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => SparePr)
@@ -50,5 +51,34 @@ export class SparePrResolver {
   async removeSparePR(@UserEntity() user: User, @Args('id') id: number) {
     await this.sparePrService.remove(user, id);
     return `Spare PR deleted`;
+  }
+
+  @Mutation(() => String)
+  async addSparePRDetail(
+    @UserEntity() user: User,
+    @Args('createSparePRDetailInput')
+    createSparePRDetailInput: CreateSparePRDetailInput
+  ): Promise<string> {
+    await this.sparePrService.addSparePRDetail(user, createSparePRDetailInput);
+    return `Spare PR detail '${createSparePRDetailInput.description}' added.`;
+  }
+
+  @Mutation(() => String)
+  async removeSparePRDetail(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<string> {
+    await this.sparePrService.removeSparePRDetail(user, id);
+    return `Spare PR detail deleted.`;
+  }
+
+  @Mutation(() => String)
+  async toggleSparePRComplete(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.sparePrService.toggleSparePRComplete(user, id, complete);
+    return `Spare PR completion updated.`;
   }
 }

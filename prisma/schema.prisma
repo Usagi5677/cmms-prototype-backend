@@ -54,6 +54,7 @@ model User {
   repairCreated                        Repair[]
   breakdownCreated                     Breakdown[]
   sparePRCreated                       SparePR[]
+  SparePRDetail                        SparePRDetail[]
 }
 
 model Notification {
@@ -370,15 +371,28 @@ model EntityRepairRequest {
 }
 
 model SparePR {
-  id            Int      @id @default(autoincrement())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  entityId      Int
-  entity        Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  requestedDate DateTime
-  name          String
-  createdById   Int?
-  createdBy     User?    @relation(fields: [createdById], references: [id])
+  id             Int             @id @default(autoincrement())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  entityId       Int
+  entity         Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  requestedDate  DateTime?
+  completedAt    DateTime?
+  name           String
+  createdById    Int?
+  createdBy      User?           @relation(fields: [createdById], references: [id])
+  sparePRDetails SparePRDetail[]
+}
+
+model SparePRDetail {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sparePRId   Int
+  sparePR     SparePR  @relation(fields: [sparePRId], references: [id], onDelete: Cascade)
+  description String
+  createdById Int?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
 }
 
 model PeriodicMaintenanceTask {
