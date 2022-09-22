@@ -4,4 +4,5 @@ import { InputType } from '@nestjs/graphql';
 export class IncompleteChecklistInput {
   type: string;
   date: Date;
+  isAssigned?: boolean;
 }

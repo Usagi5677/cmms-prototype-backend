@@ -5,4 +5,5 @@ export class IncompleteChecklistSummaryInput {
   type: string;
   from: Date;
   to: Date;
+  isAssigned?: boolean;
 }
