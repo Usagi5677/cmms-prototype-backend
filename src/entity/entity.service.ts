@@ -708,6 +708,7 @@ export class EntityService {
         createdBy: true,
         sparePRs: {
           orderBy: { id: 'desc' },
+          where: { completedAt: null },
           include: { sparePRDetails: true },
         },
         breakdowns: {
