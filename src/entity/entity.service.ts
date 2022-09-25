@@ -712,6 +712,7 @@ export class EntityService {
         },
         breakdowns: {
           orderBy: { id: 'desc' },
+          where: { completedAt: null },
           include: {
             createdBy: true,
             details: { include: { repairs: true } },
