@@ -727,7 +727,11 @@ export class EntityService {
         },
         type: true,
         location: { include: { zone: true } },
-        repairs: true,
+        repairs: {
+          orderBy: { id: 'desc' },
+          where: { breakdownId: null, breakdownDetailId: null },
+          take: 10,
+        },
       },
       orderBy: [{ id: 'asc' }],
     });
