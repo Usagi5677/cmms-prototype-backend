@@ -706,8 +706,18 @@ export class EntityService {
       where,
       include: {
         createdBy: true,
-        sparePRs: { orderBy: { id: 'desc' } },
-        breakdowns: { orderBy: { id: 'desc' }, include: { createdBy: true } },
+        sparePRs: {
+          orderBy: { id: 'desc' },
+          include: { sparePRDetails: true },
+        },
+        breakdowns: {
+          orderBy: { id: 'desc' },
+          include: {
+            createdBy: true,
+            details: { include: { repairs: true } },
+            repairs: { include: { breakdownDetail: true } },
+          },
+        },
         assignees: {
           include: {
             user: true,
@@ -715,6 +725,7 @@ export class EntityService {
         },
         type: true,
         location: { include: { zone: true } },
+        repairs: true,
       },
       orderBy: [{ id: 'asc' }],
     });

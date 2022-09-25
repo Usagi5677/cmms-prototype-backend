@@ -224,11 +224,11 @@ Table Entity {
   periodicMaintenancePlans EntityPeriodicMaintenance [not null]
   histories EntityHistory [not null]
   attachments EntityAttachment [not null]
-  repairs EntityRepairRequest [not null]
+  repairsRequests EntityRepairRequest [not null]
   sparePRs SparePR [not null]
   periodicMaintenances PeriodicMaintenance [not null]
   breakdowns Breakdown [not null]
-  repair Repair [not null]
+  repairs Repair [not null]
 }
 
 Table EntityAssignment {

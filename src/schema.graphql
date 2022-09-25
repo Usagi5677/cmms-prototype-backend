@@ -365,7 +365,7 @@ type Entity {
   periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   periodicMaintenances: [PeriodicMaintenance!]
   registeredDate: Date
-  repairs: [EntityRepairRequest!]
+  repairs: [Repair!]
   sparePRs: [SparePr!]
   status: String
   statusChangedAt: Date

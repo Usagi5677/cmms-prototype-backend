@@ -254,11 +254,11 @@ model Entity {
   periodicMaintenancePlans  EntityPeriodicMaintenance[]
   histories                 EntityHistory[]
   attachments               EntityAttachment[]
-  repairs                   EntityRepairRequest[]
+  repairsRequests           EntityRepairRequest[]
   sparePRs                  SparePR[]
   periodicMaintenances      PeriodicMaintenance[]
   breakdowns                Breakdown[]
-  repair                    Repair[]
+  repairs                   Repair[]
 }
 
 model EntityAssignment {
