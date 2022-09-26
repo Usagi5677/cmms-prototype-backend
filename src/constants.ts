@@ -127,3 +127,8 @@ export const CHECKLIST_TYPES = ['Daily', 'Weekly'];
 export const ATTACHMENT_CACHE_DURATION = 12960000;
 
 export const ENTITY_ASSIGNMENT_TYPES = ['User', 'Engineer', 'Admin'];
+
+// 10 MB
+export const MAX_FILE_SIZE = 10 * 1000000;
+// 2 MB
+export const COMPRESS_IF_GREATER = 2 * 1000000;

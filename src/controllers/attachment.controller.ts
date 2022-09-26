@@ -19,7 +19,12 @@ import * as moment from 'moment';
 import { extname } from 'path';
 import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
 import { EntityService } from 'src/entity/entity.service';
-import { ATTACHMENT_CACHE_DURATION } from 'src/constants';
+import {
+  ATTACHMENT_CACHE_DURATION,
+  COMPRESS_IF_GREATER,
+  MAX_FILE_SIZE,
+} from 'src/constants';
+import * as sharp from 'sharp';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -45,10 +50,22 @@ export class AttachmentController {
       throw new BadRequestException('Not an image file.');
     }
 
+    // Compress image if greater than
+    if (attachment.size > COMPRESS_IF_GREATER) {
+      try {
+        const newBuffer = await sharp(attachment.buffer)
+          .resize(1000)
+          .toBuffer();
+        attachment.buffer = newBuffer;
+        attachment.size = Buffer.byteLength(newBuffer);
+      } catch (e) {
+        console.log(`Could not compress ${attachment.filename}: ${e}`);
+      }
+    }
+
     // Max allowed file size in bytes.
-    const maxFileSize = 2 * 1000000;
-    if (attachment.size > maxFileSize) {
-      throw new BadRequestException('File size cannot be greater than 2 MB.');
+    if (attachment.size > MAX_FILE_SIZE) {
+      throw new BadRequestException('File size cannot be greater than 10 MB.');
     }
     const mode = 'Public';
     let newAttachment: any;
