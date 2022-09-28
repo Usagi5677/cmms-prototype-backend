@@ -3,20 +3,22 @@
 # ------------------------------------------------------
 
 type AllEntityUsageHistory {
-  breakdownHour: Float
+  breakdownHour: Int
   breakdownPercentage: Float
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   date: Date!
   id: Int!
-  idleHour: Float
+  idleHour: Int
   idlePercentage: Float
+  machineNumber: String
+  na: Int
   totalHour: Float
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  workingHour: Float
+  workingHour: Int
   workingPercentage: Float
 }
 
@@ -1036,7 +1038,7 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): entityStatusCount!
-  allEntityUsageHistory(from: Date!, locationIds: [Int!], to: Date!): [AllEntityUsageHistory!]!
+  allEntityUsageHistory(from: Date!, locationIds: [Int!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [AllEntityUsageHistory!]!
   apiKeys(
     """Paginate after opaque cursor"""
     after: String
@@ -1289,6 +1291,38 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): PaginatedEntity!
+  getAllEntityWithoutPagination(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    brand: [String!]
+    createdById: Int
+    createdByUserId: String
+    department: [String!]
+    engine: [String!]
+    entityType: [String!]
+
+    """Paginate first"""
+    first: Int
+    gteCurrentRunning: String
+    gteLastService: String
+    isAssigned: Boolean
+    isIncompleteChecklistTask: Boolean
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteCurrentRunning: String
+    lteLastService: String
+    measurement: [String!]
+    search: String
+    status: [String!]
+    typeIds: [Int!]
+    zoneIds: [Int!]
+  ): [Entity!]!
   getAllHistoryOfEntity(
     """Paginate after opaque cursor"""
     after: String

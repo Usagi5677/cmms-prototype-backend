@@ -481,10 +481,31 @@ export class EntityResolver {
     @UserEntity() user: User,
     @Args('from') from: Date,
     @Args('to') to: Date,
+    @Args('search', { nullable: true, type: () => String }) search: string,
     @Args('locationIds', { nullable: true, type: () => [Int] })
-    locationIds: number[]
+    locationIds: number[],
+    @Args('zoneIds', { nullable: true, type: () => [Int] })
+    zoneIds: number[],
+    @Args('typeIds', { nullable: true, type: () => [Int] })
+    typeIds: number[]
   ): Promise<AllEntityUsageHistory[]> {
-    return this.entityService.getAllEntityUsage(user, from, to, locationIds);
+    return this.entityService.getAllEntityUsageNew(
+      user,
+      from,
+      to,
+      search,
+      locationIds,
+      zoneIds,
+      typeIds
+    );
+  }
+
+  @Query(() => [Entity])
+  async getAllEntityWithoutPagination(
+    @UserEntity() user: User,
+    @Args() args: EntityConnectionArgs
+  ): Promise<Entity[]> {
+    return await this.entityService.getAllEntityWithoutPagination(user, args);
   }
 
   @Mutation(() => String)

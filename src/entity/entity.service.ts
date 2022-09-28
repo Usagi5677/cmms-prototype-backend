@@ -1796,11 +1796,16 @@ export class EntityService {
     });
 
     const now = moment();
-    let idleHour = 0;
+    const workingHour = await this.getLatestReading(entity);
+    //rmd wants max to be 60
+
+    let idleHour = Math.abs(60 - workingHour);
+    if (idleHour > 60) {
+      idleHour = 60;
+    }
     let breakdownHour = 0;
 
-    //previously it was Idle. Idle status is no longer required so this function needs to change.
-    if (entity.status === 'Critical') {
+    if (entity.status === 'Breakdown' || entity.status === 'Critical') {
       const fromDate = await this.prisma.entityHistory.findFirst({
         where: {
           entityStatus: 'Working',
@@ -1810,20 +1815,16 @@ export class EntityService {
         },
       });
       const duration = moment.duration(now.diff(fromDate.createdAt));
-      idleHour = duration.asHours();
+      breakdownHour = parseInt(duration.asHours().toFixed(0));
+      if (breakdownHour > 60) {
+        breakdownHour = 60;
+      }
+      idleHour = Math.abs(60 - workingHour - breakdownHour);
+      if (idleHour > 60) {
+        idleHour = 60;
+      }
     }
-    if (entity.status === 'Breakdown') {
-      const fromDate = await this.prisma.entityHistory.findFirst({
-        where: {
-          entityStatus: 'Working',
-        },
-        orderBy: {
-          id: 'desc',
-        },
-      });
-      const duration = moment.duration(now.diff(fromDate.createdAt));
-      breakdownHour = duration.asHours();
-    }
+
     await this.prisma.entityHistory.create({
       data: {
         entityId: entityHistory.entityId,
@@ -3282,5 +3283,265 @@ export class EntityService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  //** Get all entity usage*/
+  async getAllEntityUsageNew(
+    user: User,
+    from: Date,
+    to: Date,
+    search: string,
+    locationIds: number[],
+    zoneIds: number[],
+    typeIds: number[]
+  ) {
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+      machineNumber: { not: null },
+    });
+    if (search) {
+      const or: any = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { machineNumber: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        locationId: {
+          in: locationIds,
+        },
+      });
+    }
+    if (zoneIds?.length > 0) {
+      where.AND.push({ location: { zoneId: { in: zoneIds } } });
+    }
+    if (typeIds?.length > 0) {
+      where.AND.push({
+        typeId: { in: typeIds },
+      });
+    }
+
+    const allEntities = await this.prisma.entity.findMany({
+      where,
+      orderBy: { machineNumber: 'asc' },
+    });
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
+    const usageHistoryByDate = [];
+    //working hours don't have max, while breakdown, idle, and na have 60 hr max
+    for (const entity of allEntities) {
+      const key = `usage_${
+        entity.id
+      }_${fromDate.toISOString()}_${toDate.toISOString()}`;
+      let usage = await this.redisCacheService.get(key);
+      if (!usage) {
+        usage = [];
+        const days = toDate.diff(fromDate, 'days') + 1;
+        let workingHour = 0;
+        let idleHour = 0;
+        let breakdownHour = 0;
+        let na = 0;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const dayStart = day.clone().startOf('day');
+          const dayEnd = day.clone().endOf('day');
+          const checklist = await this.prisma.checklist.findFirst({
+            orderBy: { id: 'desc' },
+            where: {
+              entityId: entity.id,
+              type: 'Daily',
+              from: dayStart.toDate(),
+              to: dayEnd.toDate(),
+            },
+          });
+          //each day max is 10
+          let tempWorkingHour = 0;
+          let tempCurrentMeterReading = 0;
+          let tempIdleHour = 0;
+          let tempBreakdownHour = 0;
+          na += 10;
+          if (checklist) {
+            if (entity.measurement === 'hr') {
+              if (checklist.workingHour) {
+                tempWorkingHour = checklist.workingHour;
+              } else if (checklist.currentMeterReading) {
+                tempCurrentMeterReading = checklist.currentMeterReading;
+              }
+            } else {
+              if (checklist.dailyUsageHours) {
+                tempWorkingHour = checklist?.dailyUsageHours;
+              }
+            }
+
+            if (tempWorkingHour > 0) {
+              na = 0;
+              tempIdleHour =
+                10 - tempWorkingHour > 0 ? 10 - tempWorkingHour : 0;
+            }
+          }
+
+          const now = moment();
+          if (entity.status === 'Breakdown' || entity.status === 'Critical') {
+            const fromDate = await this.prisma.entityHistory.findFirst({
+              where: {
+                entityStatus: 'Working',
+              },
+              orderBy: {
+                id: 'desc',
+              },
+            });
+            const duration = moment.duration(now.diff(fromDate.createdAt));
+            tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+
+            if (tempBreakdownHour >= 10) {
+              tempBreakdownHour = 10;
+              na = 0;
+            } else {
+              if (tempBreakdownHour > 0) {
+                tempIdleHour =
+                  10 - tempWorkingHour - tempBreakdownHour > 0
+                    ? 10 - tempWorkingHour - tempBreakdownHour
+                    : 0;
+              }
+            }
+          }
+          workingHour += tempWorkingHour;
+          if (tempCurrentMeterReading > 0) {
+            workingHour = tempCurrentMeterReading;
+          }
+          idleHour += tempIdleHour;
+          breakdownHour += tempBreakdownHour;
+        }
+        usage.push({
+          machineNumber: entity.machineNumber,
+          workingHour,
+          idleHour,
+          breakdownHour,
+          na,
+        });
+        await this.redisCacheService.setForHour(key, usage);
+      }
+      usageHistoryByDate.push({
+        machineNumber: usage[0].machineNumber,
+        workingHour: usage[0].workingHour,
+        idleHour: usage[0].idleHour,
+        breakdownHour: usage[0].breakdownHour,
+        na: usage[0]?.na,
+      });
+    }
+    return usageHistoryByDate;
+  }
+  //** Get all entity. */
+  async getAllEntityWithoutPagination(
+    user: User,
+    args: EntityConnectionArgs
+  ): Promise<Entity[]> {
+    const userPermissions = await this.userService.getUserRolesPermissionsList(
+      user.id
+    );
+    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const { search, assignedToId, locationIds, typeIds, zoneIds } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+      machineNumber: { not: null },
+    });
+
+    if (search) {
+      const or: any = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { machineNumber: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+
+    if (assignedToId || !hasViewAll) {
+      where.AND.push({
+        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+      });
+    }
+
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        locationId: {
+          in: locationIds,
+        },
+      });
+    }
+
+    if (zoneIds?.length > 0) {
+      where.AND.push({ location: { zoneId: { in: zoneIds } } });
+    }
+
+    if (typeIds?.length > 0) {
+      where.AND.push({
+        typeId: { in: typeIds },
+      });
+    }
+
+    const key = `usage_entities_${search}_${
+      assignedToId || !hasViewAll
+    }_${locationIds}_${zoneIds}_${typeIds}`;
+    const entitiesCache = await this.redisCacheService.get(key);
+    if (!entitiesCache) {
+      const entities = await this.prisma.entity.findMany({
+        where,
+        include: {
+          createdBy: true,
+          sparePRs: {
+            orderBy: { id: 'desc' },
+            where: { completedAt: null },
+            include: { sparePRDetails: true },
+          },
+          breakdowns: {
+            orderBy: { id: 'desc' },
+            where: { completedAt: null },
+            include: {
+              createdBy: true,
+              details: { include: { repairs: true } },
+              repairs: { include: { breakdownDetail: true } },
+            },
+          },
+          assignees: {
+            include: {
+              user: true,
+            },
+          },
+          type: true,
+          location: { include: { zone: true } },
+          repairs: {
+            orderBy: { id: 'desc' },
+            where: { breakdownId: null, breakdownDetailId: null },
+            take: 10,
+          },
+        },
+        orderBy: { machineNumber: 'asc' },
+      });
+      for (const entity of entities) {
+        const reading = await this.getLatestReading(entity);
+        entity.currentRunning = reading;
+      }
+      await this.redisCacheService.setForHour(key, entitiesCache);
+      return entities;
+    }
+
+    return entitiesCache;
   }
 }

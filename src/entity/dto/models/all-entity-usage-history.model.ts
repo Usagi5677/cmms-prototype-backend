@@ -1,16 +1,14 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { GraphQLFloat } from 'graphql';
+import { GraphQLFloat, GraphQLString } from 'graphql';
 import { BaseModel } from 'src/models/base.model';
 
 @ObjectType()
 export class AllEntityUsageHistory extends BaseModel {
   date: Date;
-  @Field(() => GraphQLFloat)
-  breakdownHour?: typeof GraphQLFloat;
-  @Field(() => GraphQLFloat)
-  idleHour?: typeof GraphQLFloat;
-  @Field(() => GraphQLFloat)
-  workingHour?: typeof GraphQLFloat;
+  workingHour?: number;
+  idleHour?: number;
+  breakdownHour?: number;
+  na?: number;
   @Field(() => GraphQLFloat)
   totalHour?: typeof GraphQLFloat;
   @Field(() => GraphQLFloat)
@@ -19,4 +17,6 @@ export class AllEntityUsageHistory extends BaseModel {
   idlePercentage?: typeof GraphQLFloat;
   @Field(() => GraphQLFloat)
   breakdownPercentage?: typeof GraphQLFloat;
+  @Field(() => GraphQLString)
+  machineNumber?: typeof GraphQLString;
 }
