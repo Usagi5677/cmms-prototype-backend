@@ -582,17 +582,18 @@ type EntityRepairRequestPageInfo {
 }
 
 type EntityUsageHistory {
-  breakdownHour: Float
+  breakdownHour: Int
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   date: Date!
   id: Int!
-  idleHour: Float
+  idleHour: Int
+  na: Int
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
-  workingHour: Float
+  workingHour: Int
 }
 
 input IncompleteChecklistInput {

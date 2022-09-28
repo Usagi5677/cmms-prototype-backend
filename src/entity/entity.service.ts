@@ -2001,6 +2001,9 @@ export class EntityService {
           },
         });
         let workingHour = 0;
+        let idleHour = 0;
+        let breakdownHour = 0;
+        let na = 10;
         if (checklist) {
           if (entity.measurement === 'hr') {
             if (checklist.workingHour) {
@@ -2015,12 +2018,48 @@ export class EntityService {
           }
         }
         cumulative += workingHour;
+        na += 10;
         const finalWorking =
           workingHour <= 24 && workingHour >= 0 ? workingHour : 0;
+        if (finalWorking > 0) {
+          na = 0;
+        }
+        if (finalWorking > 0 && finalWorking < 10) {
+          idleHour = 10 - finalWorking;
+          na = 0;
+        }
+        const now = moment();
+        if (entity.status === 'Breakdown' || entity.status === 'Critical') {
+          const fromDate = await this.prisma.entityHistory.findFirst({
+            where: {
+              entityStatus: 'Working',
+            },
+            orderBy: {
+              id: 'desc',
+            },
+          });
+          const duration = moment.duration(now.diff(fromDate.createdAt));
+          breakdownHour = parseInt(duration.asHours().toFixed(0));
+
+          if (breakdownHour >= 10) {
+            breakdownHour = 10;
+            na = 0;
+          } else {
+            if (breakdownHour > 0) {
+              na = 0;
+              idleHour =
+                10 - finalWorking - breakdownHour > 0
+                  ? 10 - finalWorking - breakdownHour
+                  : 0;
+            }
+          }
+        }
         usage.push({
           date: day.toDate(),
           workingHour: finalWorking,
-          // idleHour: 24 - finalWorking,
+          idleHour,
+          breakdownHour,
+          na,
         });
       }
       await this.redisCacheService.setForHour(key, usage);
