@@ -383,7 +383,6 @@ export class EntityResolver {
     return await this.entityService.getAllEntityWithPagination(user, args);
   }
 
-  @Permissions('DELETE_ENTITY_ATTACHMENT')
   @Mutation(() => String)
   async removeEntityAttachment(
     @Args('id') id: number,
@@ -398,7 +397,6 @@ export class EntityResolver {
     }
   }
 
-  @Permissions('EDIT_ENTITY_ATTACHMENT')
   @Mutation(() => String)
   async editEntityAttachment(
     @UserEntity() user: User,
