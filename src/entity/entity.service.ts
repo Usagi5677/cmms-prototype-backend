@@ -3412,6 +3412,7 @@ export class EntityService {
                     ? 10 - tempWorkingHour - tempBreakdownHour
                     : 0;
               }
+              na = 0;
             }
           }
           workingHour += tempWorkingHour;
