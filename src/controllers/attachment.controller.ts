@@ -82,7 +82,7 @@ export class AttachmentController {
           originalName: attachment.originalname,
           mimeType: attachment.mimetype,
           sharepointFileName,
-          checklistId: parseInt(checklistId) ?? null,
+          checklistId: parseInt(checklistId) ? parseInt(checklistId) : null,
         },
       });
       //add to history
