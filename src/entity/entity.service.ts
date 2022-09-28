@@ -3407,12 +3407,12 @@ export class EntityService {
               na = 0;
             } else {
               if (tempBreakdownHour > 0) {
+                na = 0;
                 tempIdleHour =
                   10 - tempWorkingHour - tempBreakdownHour > 0
                     ? 10 - tempWorkingHour - tempBreakdownHour
                     : 0;
               }
-              na = 0;
             }
           }
           workingHour += tempWorkingHour;
