@@ -111,6 +111,7 @@ export class RepairService {
           breakdown: {
             include: {
               createdBy: true,
+              details: true,
             },
           },
           createdBy: true,

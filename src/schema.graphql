@@ -63,11 +63,10 @@ type Breakdown {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   createdBy: User!
-  details: [BreakdownDetail!]
+  details: [BreakdownDetail!]!
   entity: Entity!
   estimatedDateOfRepair: Date
   id: Int!
-  name: String!
   repairs: [Repair!]
   type: String!
 
@@ -286,7 +285,6 @@ input CreateBreakdownInput {
   details: [String!]
   entityId: Int!
   estimatedDateOfRepair: Date
-  name: String!
   type: String!
 }
 
@@ -1666,7 +1664,6 @@ input UpdateBreakdownInput {
   entityId: Int
   estimatedDateOfRepair: Date
   id: Int!
-  name: String
   type: String
 }
 

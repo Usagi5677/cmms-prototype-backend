@@ -28,13 +28,7 @@ export class BreakdownService {
   ) {}
   async create(
     user: User,
-    {
-      entityId,
-      name,
-      type,
-      estimatedDateOfRepair,
-      details,
-    }: CreateBreakdownInput
+    { entityId, type, estimatedDateOfRepair, details }: CreateBreakdownInput
   ) {
     try {
       // Check if admin, engineer of entity or has permission
@@ -49,7 +43,6 @@ export class BreakdownService {
         data: {
           entityId,
           createdById: user.id,
-          name,
           type,
           estimatedDateOfRepair,
           details: {
@@ -104,7 +97,7 @@ export class BreakdownService {
       }
       //for now these only
       if (search) {
-        const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
+        const or: any = [{ type: { contains: search, mode: 'insensitive' } }];
         // If search contains all numbers, search the machine ids as well
         if (/^(0|[1-9]\d*)$/.test(search)) {
           or.push({ id: parseInt(search) });
@@ -191,7 +184,7 @@ export class BreakdownService {
 
   async update(
     user: User,
-    { id, entityId, name, type, estimatedDateOfRepair }: UpdateBreakdownInput
+    { id, entityId, type, estimatedDateOfRepair }: UpdateBreakdownInput
   ) {
     try {
       // Check if admin, engineer of entity or has permission
@@ -205,14 +198,6 @@ export class BreakdownService {
       const beforeBreakdown = await this.prisma.breakdown.findFirst({
         where: { id },
       });
-      if (name && beforeBreakdown.name != name) {
-        await this.entityService.createEntityHistoryInBackground({
-          type: 'Breakdown Edit',
-          description: `Name changed from ${beforeBreakdown.name} to ${name}.`,
-          entityId: entityId,
-          completedById: user.id,
-        });
-      }
       if (type && beforeBreakdown.type != type) {
         await this.entityService.createEntityHistoryInBackground({
           type: 'Breakdown Edit',
@@ -242,7 +227,6 @@ export class BreakdownService {
         where: { id },
         data: {
           entityId,
-          name,
           type,
           estimatedDateOfRepair,
         },
