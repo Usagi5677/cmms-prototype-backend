@@ -1796,14 +1796,13 @@ export class EntityService {
     });
 
     const now = moment();
-    const workingHour = await this.getLatestReading(entity);
-    //rmd wants max to be 60
-
-    let idleHour = Math.abs(60 - workingHour);
-    if (idleHour > 60) {
-      idleHour = 60;
-    }
+    //not using these anymore but coding it anyway
+    let workingHour = await this.getLatestReading(entity);
+    let idleHour = 0;
     let breakdownHour = 0;
+    if (workingHour < 60) {
+      idleHour = 60 - workingHour;
+    }
 
     if (entity.status === 'Breakdown' || entity.status === 'Critical') {
       const fromDate = await this.prisma.entityHistory.findFirst({
@@ -1816,12 +1815,14 @@ export class EntityService {
       });
       const duration = moment.duration(now.diff(fromDate.createdAt));
       breakdownHour = parseInt(duration.asHours().toFixed(0));
-      if (breakdownHour > 60) {
+      if (breakdownHour >= 60) {
         breakdownHour = 60;
-      }
-      idleHour = Math.abs(60 - workingHour - breakdownHour);
-      if (idleHour > 60) {
-        idleHour = 60;
+        workingHour = 0;
+        idleHour = 0;
+      } else {
+        if (workingHour < 60) {
+          idleHour = 60 - workingHour - breakdownHour;
+        }
       }
     }
 
