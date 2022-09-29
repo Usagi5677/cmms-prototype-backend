@@ -3344,8 +3344,13 @@ export class EntityService {
     search: string,
     locationIds: number[],
     zoneIds: number[],
-    typeIds: number[]
+    typeIds: number[],
+    measurement: string[]
   ) {
+    const userPermissions = await this.userService.getUserRolesPermissionsList(
+      user.id
+    );
+    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     where.AND.push({
@@ -3380,33 +3385,25 @@ export class EntityService {
         typeId: { in: typeIds },
       });
     }
-
+    if (!hasViewAll) {
+      where.AND.push({
+        assignees: { some: { userId: user.id } },
+      });
+    }
     const allEntities = await this.prisma.entity.findMany({
       where,
       orderBy: { machineNumber: 'asc' },
     });
     const fromDate = moment(from).startOf('day');
     const toDate = moment(to).endOf('day');
-    const usageHistoryByDate = [];
-    //working hours don't have max, while breakdown, idle, and na have 60 hr max
-    for (let entity of allEntities) {
-      const key = `usage_${
-        entity.id
-      }_${fromDate.toISOString()}_${toDate.toISOString()}`;
-      let usage = await this.redisCacheService.get(key);
-      if (!usage) {
-        usage = [];
+
+    const key = `usage_${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+    let usage = await this.redisCacheService.get(key);
+    if (!usage) {
+      usage = [];
+      //working hours don't have max, while breakdown, idle, and na have 60 hr max
+      for (const entity of allEntities) {
         const days = toDate.diff(fromDate, 'days') + 1;
-        const entityFromCheck = await this.checkEntityAssignmentOrPermission(
-          entity.id,
-          user.id,
-          entity ?? undefined,
-          [],
-          ['VIEW_ALL_ENTITY']
-        );
-        if (!entity) {
-          entity = entityFromCheck;
-        }
         let cumulative = 0;
         if (entity.measurement === 'hr') {
           cumulative += await this.getLatestReading(entity, fromDate.toDate());
@@ -3504,22 +3501,16 @@ export class EntityService {
         }
         usage.push({
           machineNumber: entity.machineNumber,
-          workingHour,
-          idleHour,
-          breakdownHour,
-          na,
+          workingHour: workingHour,
+          idleHour: idleHour,
+          breakdownHour: breakdownHour,
+          na: na,
         });
-        await this.redisCacheService.setForHour(key, usage);
       }
-      usageHistoryByDate.push({
-        machineNumber: usage[0].machineNumber,
-        workingHour: usage[0].workingHour,
-        idleHour: usage[0].idleHour,
-        breakdownHour: usage[0].breakdownHour,
-        na: usage[0]?.na,
-      });
+      await this.redisCacheService.setForHour(key, usage);
     }
-    return usageHistoryByDate;
+
+    return usage;
   }
   //** Get all entity. */
   async getAllEntityWithoutPagination(
@@ -3530,7 +3521,8 @@ export class EntityService {
       user.id
     );
     const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const { search, assignedToId, locationIds, typeIds, zoneIds } = args;
+    const { search, assignedToId, locationIds, typeIds, zoneIds, measurement } =
+      args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -3577,9 +3569,15 @@ export class EntityService {
       });
     }
 
+    if (measurement?.length > 0) {
+      where.AND.push({
+        measurement: { in: measurement },
+      });
+    }
+
     const key = `usage_entities_${search}_${
       assignedToId || !hasViewAll
-    }_${locationIds}_${zoneIds}_${typeIds}`;
+    }_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
     const entitiesCache = await this.redisCacheService.get(key);
     if (!entitiesCache) {
       const entities = await this.prisma.entity.findMany({

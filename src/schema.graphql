@@ -1037,7 +1037,7 @@ type Query {
     typeIds: [Int!]
     zoneIds: [Int!]
   ): entityStatusCount!
-  allEntityUsageHistory(from: Date!, locationIds: [Int!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [AllEntityUsageHistory!]!
+  allEntityUsageHistory(from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [AllEntityUsageHistory!]!
   apiKeys(
     """Paginate after opaque cursor"""
     after: String

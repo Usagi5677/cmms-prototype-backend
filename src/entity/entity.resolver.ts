@@ -485,7 +485,9 @@ export class EntityResolver {
     @Args('zoneIds', { nullable: true, type: () => [Int] })
     zoneIds: number[],
     @Args('typeIds', { nullable: true, type: () => [Int] })
-    typeIds: number[]
+    typeIds: number[],
+    @Args('measurement', { nullable: true, type: () => [String] })
+    measurement: string[]
   ): Promise<AllEntityUsageHistory[]> {
     return this.entityService.getAllEntityUsageNew(
       user,
@@ -494,7 +496,8 @@ export class EntityResolver {
       search,
       locationIds,
       zoneIds,
-      typeIds
+      typeIds,
+      measurement
     );
   }
 
