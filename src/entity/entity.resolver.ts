@@ -548,9 +548,9 @@ export class EntityResolver {
   @Query(() => PMTaskStatusCount)
   async allEntityPMTaskStatusCount(
     @UserEntity() user: User,
-    @Args('assignedToId', { nullable: true }) assignedToId?: number
+    @Args() args: EntityPeriodicMaintenanceConnectionArgs
   ): Promise<PMTaskStatusCount> {
-    return this.entityService.getAllEntityPMTaskStatusCount(user, assignedToId);
+    return this.entityService.getAllEntityPMTaskStatusCount(user, args);
   }
 
   @Query(() => maintenanceStatusCount)

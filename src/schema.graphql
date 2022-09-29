@@ -752,8 +752,8 @@ type Notification {
 }
 
 type PMTaskStatusCount {
-  done: Int
-  pending: Int
+  complete: Int
+  ongoing: Int
 }
 
 type PaginatedApiKey {
@@ -1004,7 +1004,25 @@ type Profile {
 type Query {
   allEntityBreakdownCount: entityBreakdownCount!
   allEntityPMStatusCount: maintenanceStatusCount!
-  allEntityPMTaskStatusCount(assignedToId: Int): PMTaskStatusCount!
+  allEntityPMTaskStatusCount(
+    """Paginate after opaque cursor"""
+    after: String
+    assignedToId: Int
+
+    """Paginate before opaque cursor"""
+    before: String
+    complete: Boolean
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    search: String
+    zoneIds: [Int!]
+  ): PMTaskStatusCount!
   allEntityStatusCount(
     """Paginate after opaque cursor"""
     after: String
@@ -1239,6 +1257,7 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
+    zoneIds: [Int!]
   ): PaginatedEntityPeriodicMaintenance!
   getAllEntityPeriodicMaintenanceTask(
     """Paginate after opaque cursor"""
@@ -1257,6 +1276,7 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
+    zoneIds: [Int!]
   ): PaginatedEntityPeriodicMaintenanceTask!
   getAllEntityUtilization(
     """Paginate after opaque cursor"""
@@ -1357,6 +1377,7 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
+    zoneIds: [Int!]
   ): PaginatedEntityPeriodicMaintenance!
   getAllRepairRequestOfEntity(
     """Paginate after opaque cursor"""

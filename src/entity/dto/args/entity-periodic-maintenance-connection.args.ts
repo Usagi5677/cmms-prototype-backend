@@ -7,5 +7,6 @@ export class EntityPeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   entityId?: number;
   complete?: boolean;
   locationIds?: number[];
+  zoneIds?: number[];
   assignedToId?: number;
 }
