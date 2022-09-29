@@ -2003,31 +2003,38 @@ export class EntityService {
         let workingHour = 0;
         let idleHour = 0;
         let breakdownHour = 0;
-        let na = 10;
+        let na = 0;
         if (checklist) {
           if (entity.measurement === 'hr') {
             if (checklist.workingHour) {
               workingHour = checklist.workingHour;
             } else if (checklist.currentMeterReading) {
               workingHour = checklist.currentMeterReading - cumulative;
+            } else {
+              workingHour = null;
             }
           } else {
             if (checklist.dailyUsageHours) {
               workingHour = checklist?.dailyUsageHours;
+            } else {
+              workingHour = null;
             }
           }
+        } else {
+          workingHour = null;
+          idleHour = null;
+          breakdownHour = null;
         }
-        cumulative += workingHour;
-        na += 10;
-        const finalWorking =
-          workingHour <= 24 && workingHour >= 0 ? workingHour : 0;
-        if (finalWorking > 0) {
-          na = 0;
+        if (workingHour !== null) {
+          cumulative += workingHour;
+          workingHour = workingHour <= 24 && workingHour >= 0 ? workingHour : 0;
+          if (workingHour >= 0 && workingHour <= 10) {
+            idleHour = 10 - workingHour;
+          }
+        } else {
+          na += 10;
         }
-        if (finalWorking > 0 && finalWorking < 10) {
-          idleHour = 10 - finalWorking;
-          na = 0;
-        }
+
         const now = moment();
         if (entity.status === 'Breakdown' || entity.status === 'Critical') {
           const fromDate = await this.prisma.entityHistory.findFirst({
@@ -2047,16 +2054,20 @@ export class EntityService {
           } else {
             if (breakdownHour > 0) {
               na = 0;
-              idleHour =
-                10 - finalWorking - breakdownHour > 0
-                  ? 10 - finalWorking - breakdownHour
-                  : 0;
+              if (workingHour >= 0 && workingHour < 10) {
+                idleHour =
+                  10 - workingHour - breakdownHour > 0
+                    ? 10 - workingHour - breakdownHour
+                    : 0;
+              } else {
+                idleHour = 10 - breakdownHour > 0 ? 10 - breakdownHour : 0;
+              }
             }
           }
         }
         usage.push({
           date: day.toDate(),
-          workingHour: finalWorking,
+          workingHour,
           idleHour,
           breakdownHour,
           na,
@@ -3386,6 +3397,10 @@ export class EntityService {
       if (!usage) {
         usage = [];
         const days = toDate.diff(fromDate, 'days') + 1;
+        let cumulative = 0;
+        if (entity.measurement === 'hr') {
+          cumulative += await this.getLatestReading(entity, fromDate.toDate());
+        }
         let workingHour = 0;
         let idleHour = 0;
         let breakdownHour = 0;
@@ -3403,30 +3418,43 @@ export class EntityService {
               to: dayEnd.toDate(),
             },
           });
-          //each day max is 10
+
+          //each day max is 10 except for working hr
           let tempWorkingHour = 0;
-          let tempCurrentMeterReading = 0;
           let tempIdleHour = 0;
           let tempBreakdownHour = 0;
-          na += 10;
           if (checklist) {
             if (entity.measurement === 'hr') {
-              if (checklist.workingHour) {
+              if (checklist.workingHour !== null) {
                 tempWorkingHour = checklist.workingHour;
-              } else if (checklist.currentMeterReading) {
-                tempCurrentMeterReading = checklist.currentMeterReading;
+              } else if (checklist.currentMeterReading !== null) {
+                tempWorkingHour = checklist.currentMeterReading - cumulative;
+              } else {
+                tempWorkingHour = null;
               }
             } else {
-              if (checklist.dailyUsageHours) {
+              if (checklist.dailyUsageHours !== null) {
                 tempWorkingHour = checklist?.dailyUsageHours;
+              } else {
+                tempWorkingHour = null;
               }
             }
-
-            if (tempWorkingHour > 0) {
-              na = 0;
-              tempIdleHour =
-                10 - tempWorkingHour > 0 ? 10 - tempWorkingHour : 0;
+          } else {
+            tempWorkingHour = null;
+            tempIdleHour = null;
+            tempBreakdownHour = null;
+          }
+          if (tempWorkingHour !== null) {
+            cumulative += tempWorkingHour;
+            tempWorkingHour =
+              tempWorkingHour <= 24 && tempWorkingHour >= 0
+                ? tempWorkingHour
+                : 0;
+            if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
+              tempIdleHour = 10 - tempWorkingHour;
             }
+          } else {
+            na += 10;
           }
 
           const now = moment();
@@ -3448,17 +3476,19 @@ export class EntityService {
             } else {
               if (tempBreakdownHour > 0) {
                 na = 0;
-                tempIdleHour =
-                  10 - tempWorkingHour - tempBreakdownHour > 0
-                    ? 10 - tempWorkingHour - tempBreakdownHour
-                    : 0;
+                if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
+                  tempIdleHour =
+                    10 - tempWorkingHour - tempBreakdownHour > 0
+                      ? 10 - tempWorkingHour - tempBreakdownHour
+                      : 0;
+                } else {
+                  tempIdleHour =
+                    10 - tempBreakdownHour > 0 ? 10 - tempBreakdownHour : 0;
+                }
               }
             }
           }
           workingHour += tempWorkingHour;
-          if (tempCurrentMeterReading > 0) {
-            workingHour = tempCurrentMeterReading;
-          }
           idleHour += tempIdleHour;
           breakdownHour += tempBreakdownHour;
         }
