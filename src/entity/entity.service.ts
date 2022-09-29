@@ -3389,7 +3389,7 @@ export class EntityService {
     const toDate = moment(to).endOf('day');
     const usageHistoryByDate = [];
     //working hours don't have max, while breakdown, idle, and na have 60 hr max
-    for (const entity of allEntities) {
+    for (let entity of allEntities) {
       const key = `usage_${
         entity.id
       }_${fromDate.toISOString()}_${toDate.toISOString()}`;
@@ -3397,6 +3397,16 @@ export class EntityService {
       if (!usage) {
         usage = [];
         const days = toDate.diff(fromDate, 'days') + 1;
+        const entityFromCheck = await this.checkEntityAssignmentOrPermission(
+          entity.id,
+          user.id,
+          entity ?? undefined,
+          [],
+          ['VIEW_ALL_ENTITY']
+        );
+        if (!entity) {
+          entity = entityFromCheck;
+        }
         let cumulative = 0;
         if (entity.measurement === 'hr') {
           cumulative += await this.getLatestReading(entity, fromDate.toDate());
