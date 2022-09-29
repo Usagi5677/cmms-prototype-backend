@@ -2037,30 +2037,33 @@ export class EntityService {
 
         const now = moment();
         if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-          const fromDate = await this.prisma.entityHistory.findFirst({
+          const fromDate = await this.prisma.breakdown.findFirst({
             where: {
-              entityStatus: 'Working',
+              entityId: entity.id,
+              completedAt: null,
             },
             orderBy: {
               id: 'desc',
             },
           });
-          const duration = moment.duration(now.diff(fromDate.createdAt));
-          breakdownHour = parseInt(duration.asHours().toFixed(0));
+          if (fromDate) {
+            const duration = moment.duration(now.diff(fromDate.createdAt));
+            breakdownHour = parseInt(duration.asHours().toFixed(0));
 
-          if (breakdownHour >= 10) {
-            breakdownHour = 10;
-            na = 0;
-          } else {
-            if (breakdownHour > 0) {
+            if (breakdownHour >= 10) {
+              breakdownHour = 10;
               na = 0;
-              if (workingHour >= 0 && workingHour < 10) {
-                idleHour =
-                  10 - workingHour - breakdownHour > 0
-                    ? 10 - workingHour - breakdownHour
-                    : 0;
-              } else {
-                idleHour = 10 - breakdownHour > 0 ? 10 - breakdownHour : 0;
+            } else {
+              if (breakdownHour > 0) {
+                na = 0;
+                if (workingHour >= 0 && workingHour < 10) {
+                  idleHour =
+                    10 - workingHour - breakdownHour > 0
+                      ? 10 - workingHour - breakdownHour
+                      : 0;
+                } else {
+                  idleHour = 10 - breakdownHour > 0 ? 10 - breakdownHour : 0;
+                }
               }
             }
           }
@@ -3499,31 +3502,34 @@ export class EntityService {
 
           const now = moment();
           if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-            const fromDate = await this.prisma.entityHistory.findFirst({
+            const fromDate = await this.prisma.breakdown.findFirst({
               where: {
-                entityStatus: 'Working',
+                entityId: entity.id,
+                completedAt: null,
               },
               orderBy: {
                 id: 'desc',
               },
             });
-            const duration = moment.duration(now.diff(fromDate.createdAt));
-            tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+            if (fromDate) {
+              const duration = moment.duration(now.diff(fromDate.createdAt));
+              tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
 
-            if (tempBreakdownHour >= 10) {
-              tempBreakdownHour = 10;
-              na = 0;
-            } else {
-              if (tempBreakdownHour > 0) {
+              if (tempBreakdownHour >= 10) {
+                tempBreakdownHour = 10;
                 na = 0;
-                if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
-                  tempIdleHour =
-                    10 - tempWorkingHour - tempBreakdownHour > 0
-                      ? 10 - tempWorkingHour - tempBreakdownHour
-                      : 0;
-                } else {
-                  tempIdleHour =
-                    10 - tempBreakdownHour > 0 ? 10 - tempBreakdownHour : 0;
+              } else {
+                if (tempBreakdownHour > 0) {
+                  na = 0;
+                  if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
+                    tempIdleHour =
+                      10 - tempWorkingHour - tempBreakdownHour > 0
+                        ? 10 - tempWorkingHour - tempBreakdownHour
+                        : 0;
+                  } else {
+                    tempIdleHour =
+                      10 - tempBreakdownHour > 0 ? 10 - tempBreakdownHour : 0;
+                  }
                 }
               }
             }
