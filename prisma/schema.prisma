@@ -245,6 +245,9 @@ model Entity {
   statusChangedAt           DateTime?
   measurement               String?                     @default("km")
   deletedAt                 DateTime?
+  parentEntityId            Int?
+  parentEntity              Entity?                     @relation("entityLink", fields: [parentEntityId], references: [id], onDelete: Cascade)
+  subEntities               Entity[]                    @relation("entityLink")
   dailyChecklistTemplateId  Int?
   dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
   weeklyChecklistTemplateId Int?

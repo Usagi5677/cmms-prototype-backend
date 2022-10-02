@@ -63,7 +63,8 @@ export class EntityResolver {
     @Args('currentRunning', { nullable: true }) currentRunning: number,
     @Args('lastService', { nullable: true }) lastService: number,
     @Args('brand', { nullable: true }) brand: string,
-    @Args('registeredDate', { nullable: true }) registeredDate: Date
+    @Args('registeredDate', { nullable: true }) registeredDate: Date,
+    @Args('parentEntityId', { nullable: true }) parentEntityId: number
   ): Promise<String> {
     await this.entityService.createEntity(
       user,
@@ -77,7 +78,8 @@ export class EntityResolver {
       currentRunning,
       lastService,
       brand,
-      registeredDate
+      registeredDate,
+      parentEntityId
     );
     return `Successfully created entity.`;
   }
@@ -86,10 +88,10 @@ export class EntityResolver {
   @Mutation(() => String)
   async removeEntity(
     @UserEntity() user: User,
-    @Args('entityId') entityId: number
+    @Args('id') id: number
   ): Promise<String> {
     try {
-      await this.entityService.deleteEntity(entityId, user);
+      await this.entityService.deleteEntity(id, user);
       return `Entity removed.`;
     } catch (e) {
       console.log(e);

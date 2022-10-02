@@ -215,6 +215,9 @@ Table Entity {
   statusChangedAt DateTime
   measurement String [default: 'km']
   deletedAt DateTime
+  parentEntityId Int
+  parentEntity Entity
+  subEntities Entity [not null]
   dailyChecklistTemplateId Int
   dailyChecklistTemplate ChecklistTemplate
   weeklyChecklistTemplateId Int
@@ -589,6 +592,8 @@ Ref: Entity.createdById > User.id
 Ref: Entity.typeId > Type.id
 
 Ref: Entity.locationId > Location.id
+
+Ref: Entity.parentEntityId - Entity.id
 
 Ref: Entity.dailyChecklistTemplateId > ChecklistTemplate.id
 

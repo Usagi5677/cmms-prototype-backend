@@ -136,7 +136,8 @@ export class EntityService {
     currentRunning: number,
     lastService: number,
     brand: string,
-    registeredDate: Date
+    registeredDate: Date,
+    parentEntityId: number
   ) {
     try {
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
@@ -147,7 +148,14 @@ export class EntityService {
         data: { type: 'Weekly' },
         include: { items: true },
       });
-
+      if (parentEntityId) {
+        const parent = await this.prisma.entity.findFirst({
+          where: { id: parentEntityId },
+        });
+        registeredDate = parent?.registeredDate;
+        department = parent?.department;
+        locationId = parent.locationId;
+      }
       const entity = await this.prisma.entity.create({
         data: {
           createdById: user.id,
@@ -164,6 +172,7 @@ export class EntityService {
           registeredDate,
           dailyChecklistTemplateId: newDailyTemplate.id,
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
+          parentEntityId,
         },
       });
       await this.checklistTemplateService.updateEntityChecklists(
@@ -458,6 +467,9 @@ export class EntityService {
         assignees: { include: { user: true }, where: { removedAt: null } },
         type: true,
         location: { include: { zone: true } },
+        subEntities: {
+          where: { deletedAt: null },
+        },
       },
     });
     await this.checkEntityAssignmentOrPermission(
@@ -512,6 +524,7 @@ export class EntityService {
 
     where.AND.push({
       deletedAt: null,
+      parentEntityId: null,
     });
 
     if (search) {
@@ -2834,6 +2847,7 @@ export class EntityService {
 
       where.AND.push({
         deletedAt: null,
+        parentEntityId: null,
       });
 
       if (search) {
@@ -3568,6 +3582,7 @@ export class EntityService {
     where.AND.push({
       deletedAt: null,
       machineNumber: { not: null },
+      parentEntityId: null,
     });
 
     if (search) {

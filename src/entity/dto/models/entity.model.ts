@@ -9,7 +9,6 @@ import { PeriodicMaintenance } from 'src/periodic-maintenance/dto/models/periodi
 import { Type } from 'src/type/entities/type.entity';
 import { EntityHistory } from './entity-history.model';
 import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
-import { EntityRepairRequest } from './entity-repair-request.model';
 import { SparePr } from 'src/spare-pr/entities/spare-pr.entity';
 import { Repair } from 'src/repair/entities/repair.entity';
 
@@ -39,4 +38,6 @@ export class Entity extends BaseModel {
   sparePRs?: SparePr[];
   histories?: EntityHistory[];
   periodicMaintenances?: PeriodicMaintenance[];
+  parentEntityId?: number;
+  subEntities?: Entity[];
 }

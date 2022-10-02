@@ -362,6 +362,7 @@ type Entity {
   machineNumber: String
   measurement: String
   model: String
+  parentEntityId: Int
   periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   periodicMaintenances: [PeriodicMaintenance!]
   registeredDate: Date
@@ -369,6 +370,7 @@ type Entity {
   sparePRs: [SparePr!]
   status: String
   statusChangedAt: Date
+  subEntities: [Entity!]
   type: Type
 
   """Identifies the date and time when the object was last updated."""
@@ -660,7 +662,7 @@ type Mutation {
   createApiKey(input: CreateApiKeyInput!): String!
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
-  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
+  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createLocation(input: CreateLocationInput!): String!
   createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, previousMeterReading: Int, value: Int!): String!
@@ -692,7 +694,7 @@ type Mutation {
   removeChecklistComment(id: Int!): String!
   removeChecklistTemplate(id: Int!): String!
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
-  removeEntity(entityId: Int!): String!
+  removeEntity(id: Int!): String!
   removeEntityAttachment(id: Int!): String!
   removeLocation(id: Int!): String!
   removePeriodicMaintenanceComment(id: Int!): String!
