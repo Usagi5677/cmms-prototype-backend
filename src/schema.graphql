@@ -1041,16 +1041,14 @@ type Query {
 
     """Paginate first"""
     first: Int
-    gteCurrentRunning: String
-    gteLastService: String
+    gteInterService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
-    lteCurrentRunning: String
-    lteLastService: String
+    lteInterService: String
     measurement: [String!]
     search: String
     status: [String!]
@@ -1089,16 +1087,14 @@ type Query {
 
     """Paginate first"""
     first: Int
-    gteCurrentRunning: String
-    gteLastService: String
+    gteInterService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
-    lteCurrentRunning: String
-    lteLastService: String
+    lteInterService: String
     measurement: [String!]
     search: String
     status: [String!]
@@ -1193,16 +1189,14 @@ type Query {
 
     """Paginate first"""
     first: Int
-    gteCurrentRunning: String
-    gteLastService: String
+    gteInterService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
-    lteCurrentRunning: String
-    lteLastService: String
+    lteInterService: String
     measurement: [String!]
     search: String
     status: [String!]
@@ -1225,16 +1219,14 @@ type Query {
 
     """Paginate first"""
     first: Int
-    gteCurrentRunning: String
-    gteLastService: String
+    gteInterService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
-    lteCurrentRunning: String
-    lteLastService: String
+    lteInterService: String
     measurement: [String!]
     search: String
     status: [String!]
@@ -1296,16 +1288,14 @@ type Query {
 
     """Paginate first"""
     first: Int
-    gteCurrentRunning: String
-    gteLastService: String
+    gteInterService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
-    lteCurrentRunning: String
-    lteLastService: String
+    lteInterService: String
     measurement: [String!]
     search: String
     status: [String!]
@@ -1328,16 +1318,14 @@ type Query {
 
     """Paginate first"""
     first: Int
-    gteCurrentRunning: String
-    gteLastService: String
+    gteInterService: String
     isAssigned: Boolean
     isIncompleteChecklistTask: Boolean
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
-    lteCurrentRunning: String
-    lteLastService: String
+    lteInterService: String
     measurement: [String!]
     search: String
     status: [String!]

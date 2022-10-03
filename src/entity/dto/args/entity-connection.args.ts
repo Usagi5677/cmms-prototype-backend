@@ -17,9 +17,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   brand?: string[];
   engine?: string[];
   measurement?: string[];
-  lteCurrentRunning?: string;
-  gteCurrentRunning?: string;
-  lteLastService?: string;
-  gteLastService?: string;
+  lteInterService?: string;
+  gteInterService?: string;
   isIncompleteChecklistTask?: boolean;
 }

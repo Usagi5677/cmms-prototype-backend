@@ -508,12 +508,9 @@ export class EntityService {
       typeIds,
       zoneIds,
       brand,
-      engine,
       measurement,
-      lteCurrentRunning,
-      gteCurrentRunning,
-      lteLastService,
-      gteLastService,
+      lteInterService,
+      gteInterService,
       isIncompleteChecklistTask,
     } = args;
 
@@ -608,63 +605,9 @@ export class EntityService {
       });
     }
 
-    if (engine?.length > 0) {
-      where.AND.push({
-        engine: { in: engine },
-      });
-    }
-
     if (measurement?.length > 0) {
       where.AND.push({
         measurement: { in: measurement },
-      });
-    }
-
-    if (gteCurrentRunning?.replace(/\D/g, '')) {
-      where.AND.push({
-        currentRunning: { gte: parseInt(gteCurrentRunning.replace(/\D/g, '')) },
-      });
-    }
-
-    if (lteCurrentRunning?.replace(/\D/g, '')) {
-      where.AND.push({
-        currentRunning: { lte: parseInt(lteCurrentRunning.replace(/\D/g, '')) },
-      });
-    }
-
-    if (
-      gteCurrentRunning?.replace(/\D/g, '') &&
-      lteCurrentRunning?.replace(/\D/g, '')
-    ) {
-      where.AND.push({
-        currentRunning: {
-          gte: parseInt(gteCurrentRunning.replace(/\D/g, '')),
-          lte: parseInt(lteCurrentRunning.replace(/\D/g, '')),
-        },
-      });
-    }
-
-    if (gteLastService?.replace(/\D/g, '')) {
-      where.AND.push({
-        lastService: { gte: parseInt(gteLastService.replace(/\D/g, '')) },
-      });
-    }
-
-    if (lteLastService?.replace(/\D/g, '')) {
-      where.AND.push({
-        lastService: { lte: parseInt(lteLastService.replace(/\D/g, '')) },
-      });
-    }
-
-    if (
-      gteLastService?.replace(/\D/g, '') &&
-      lteLastService?.replace(/\D/g, '')
-    ) {
-      where.AND.push({
-        lastService: {
-          gte: parseInt(gteLastService.replace(/\D/g, '')),
-          lte: parseInt(lteLastService.replace(/\D/g, '')),
-        },
       });
     }
 
@@ -749,13 +692,37 @@ export class EntityService {
       orderBy: [{ id: 'asc' }],
     });
 
+    let newEntities: any = [];
     for (const entity of entities) {
       const reading = await this.getLatestReading(entity);
       entity.currentRunning = reading;
+      const interService = entity.currentRunning - entity.lastService;
+      if (
+        gteInterService?.replace(/\D/g, '') &&
+        lteInterService?.replace(/\D/g, '')
+      ) {
+        if (
+          interService >= parseInt(gteInterService.replace(/\D/g, '')) &&
+          interService <= parseInt(lteInterService.replace(/\D/g, ''))
+        ) {
+          newEntities.push(entity);
+        }
+      } else if (gteInterService?.replace(/\D/g, '')) {
+        if (interService >= parseInt(gteInterService.replace(/\D/g, ''))) {
+          newEntities.push(entity);
+        }
+      } else if (lteInterService?.replace(/\D/g, '')) {
+        if (interService <= parseInt(lteInterService.replace(/\D/g, ''))) {
+          newEntities.push(entity);
+        }
+      } else {
+        newEntities = entities;
+      }
     }
-    const count = await this.prisma.entity.count({ where });
+    const count = newEntities.length;
+
     const { edges, pageInfo } = connectionFromArraySlice(
-      entities.slice(0, limit),
+      newEntities.slice(0, limit),
       args,
       {
         arrayLength: count,
@@ -2831,12 +2798,9 @@ export class EntityService {
         typeIds,
         zoneIds,
         brand,
-        engine,
         measurement,
-        lteCurrentRunning,
-        gteCurrentRunning,
-        lteLastService,
-        gteLastService,
+        lteInterService,
+        gteInterService,
         isIncompleteChecklistTask,
       } = args;
 
@@ -2931,67 +2895,9 @@ export class EntityService {
         });
       }
 
-      if (engine?.length > 0) {
-        where.AND.push({
-          engine: { in: engine },
-        });
-      }
-
       if (measurement?.length > 0) {
         where.AND.push({
           measurement: { in: measurement },
-        });
-      }
-
-      if (gteCurrentRunning?.replace(/\D/g, '')) {
-        where.AND.push({
-          currentRunning: {
-            gte: parseInt(gteCurrentRunning.replace(/\D/g, '')),
-          },
-        });
-      }
-
-      if (lteCurrentRunning?.replace(/\D/g, '')) {
-        where.AND.push({
-          currentRunning: {
-            lte: parseInt(lteCurrentRunning.replace(/\D/g, '')),
-          },
-        });
-      }
-
-      if (
-        gteCurrentRunning?.replace(/\D/g, '') &&
-        lteCurrentRunning?.replace(/\D/g, '')
-      ) {
-        where.AND.push({
-          currentRunning: {
-            gte: parseInt(gteCurrentRunning.replace(/\D/g, '')),
-            lte: parseInt(lteCurrentRunning.replace(/\D/g, '')),
-          },
-        });
-      }
-
-      if (gteLastService?.replace(/\D/g, '')) {
-        where.AND.push({
-          lastService: { gte: parseInt(gteLastService.replace(/\D/g, '')) },
-        });
-      }
-
-      if (lteLastService?.replace(/\D/g, '')) {
-        where.AND.push({
-          lastService: { lte: parseInt(lteLastService.replace(/\D/g, '')) },
-        });
-      }
-
-      if (
-        gteLastService?.replace(/\D/g, '') &&
-        lteLastService?.replace(/\D/g, '')
-      ) {
-        where.AND.push({
-          lastService: {
-            gte: parseInt(gteLastService.replace(/\D/g, '')),
-            lte: parseInt(lteLastService.replace(/\D/g, '')),
-          },
         });
       }
 
@@ -3047,11 +2953,47 @@ export class EntityService {
         where,
       });
 
+      let newEntities: any = [];
+
+      for (const entity of entities) {
+        if (
+          gteInterService?.replace(/\D/g, '') &&
+          lteInterService?.replace(/\D/g, '')
+        ) {
+          if (
+            entity.currentRunning - entity.lastService >=
+              parseInt(gteInterService.replace(/\D/g, '')) &&
+            entity.currentRunning - entity.lastService <=
+              parseInt(lteInterService.replace(/\D/g, ''))
+          ) {
+            newEntities.push(entity);
+          }
+        } else if (gteInterService?.replace(/\D/g, '')) {
+          if (
+            entity.currentRunning - entity.lastService >=
+            parseInt(gteInterService.replace(/\D/g, ''))
+          ) {
+            newEntities.push(entity);
+          }
+        } else if (lteInterService?.replace(/\D/g, '')) {
+          if (
+            entity.currentRunning - entity.lastService <=
+            parseInt(lteInterService.replace(/\D/g, ''))
+          ) {
+            newEntities.push(entity);
+          }
+        } else {
+          newEntities = entities;
+        }
+      }
+
       statusCount = {
-        working: entities.filter((e) => e.status === 'Working').length ?? 0,
-        critical: entities.filter((e) => e.status === 'Critical').length ?? 0,
-        breakdown: entities.filter((e) => e.status === 'Breakdown').length ?? 0,
-        dispose: entities.filter((e) => e.status === 'Dispose').length ?? 0,
+        working: newEntities.filter((e) => e.status === 'Working').length ?? 0,
+        critical:
+          newEntities.filter((e) => e.status === 'Critical').length ?? 0,
+        breakdown:
+          newEntities.filter((e) => e.status === 'Breakdown').length ?? 0,
+        dispose: newEntities.filter((e) => e.status === 'Dispose').length ?? 0,
       };
       return statusCount;
     } catch (e) {
