@@ -208,6 +208,7 @@ Table Entity {
   location Location
   currentRunning Int
   lastService Int
+  interService Int
   department String
   engine String
   brand String
