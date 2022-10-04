@@ -75,6 +75,11 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     type: 'Assignment',
     description: 'Can be assigned to entity as users.',
   },
+  {
+    name: 'ENTITY_TECHNICIAN',
+    type: 'Assignment',
+    description: 'Can be assigned to entity as technicians.',
+  },
   // {
   //   name: 'MODIFY_CHECKLIST_TEMPLATE',
   //   type: 'Config',
@@ -126,7 +131,12 @@ export const CHECKLIST_TYPES = ['Daily', 'Weekly'];
 // 12,960,000 seconds in a month
 export const ATTACHMENT_CACHE_DURATION = 12960000;
 
-export const ENTITY_ASSIGNMENT_TYPES = ['User', 'Engineer', 'Admin'];
+export const ENTITY_ASSIGNMENT_TYPES = [
+  'User',
+  'Technician',
+  'Engineer',
+  'Admin',
+];
 
 // 10 MB
 export const MAX_FILE_SIZE = 10 * 1000000;
