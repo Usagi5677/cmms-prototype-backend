@@ -151,10 +151,39 @@ export class EntityService {
       if (parentEntityId) {
         const parent = await this.prisma.entity.findFirst({
           where: { id: parentEntityId },
+          include: { assignees: true },
         });
         registeredDate = parent?.registeredDate;
         department = parent?.department;
         locationId = parent.locationId;
+        const entity = await this.prisma.entity.create({
+          data: {
+            createdById: user.id,
+            typeId,
+            machineNumber,
+            model,
+            locationId,
+            department,
+            engine,
+            measurement,
+            currentRunning,
+            lastService,
+            brand,
+            registeredDate,
+            dailyChecklistTemplateId: newDailyTemplate.id,
+            weeklyChecklistTemplateId: newWeeklyTemplate.id,
+            parentEntityId,
+          },
+        });
+        for (const e of parent.assignees) {
+          await this.prisma.entityAssignment.create({
+            data: {
+              entityId: entity.id,
+              userId: e.userId,
+              type: e.type,
+            },
+          });
+        }
       }
       const entity = await this.prisma.entity.create({
         data: {
@@ -172,7 +201,6 @@ export class EntityService {
           registeredDate,
           dailyChecklistTemplateId: newDailyTemplate.id,
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
-          parentEntityId,
         },
       });
       await this.checklistTemplateService.updateEntityChecklists(
@@ -240,6 +268,7 @@ export class EntityService {
       include: {
         location: locationId ? true : false,
         type: typeId ? true : false,
+        subEntities: true,
       },
     });
     // Check if admin of entity or has permission
@@ -273,7 +302,7 @@ export class EntityService {
         });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Type changed from ${entity.type.name} to ${newType.name}.`,
+          description: `Type changed from ${entity?.type?.name} to ${newType?.name}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -348,7 +377,7 @@ export class EntityService {
           link: `/entity/${id}`,
         });
       }
-
+      const subEntitiesId = entity.subEntities.map((e) => e.id);
       await this.prisma.entity.update({
         data: {
           typeId: typeId ?? undefined,
@@ -356,10 +385,16 @@ export class EntityService {
           model,
           locationId: locationId ?? undefined,
           department,
-          engine,
+          engine: engine ? engine : null,
           measurement,
           brand,
           registeredDate,
+          subEntities: {
+            updateMany: {
+              where: { id: { in: subEntitiesId } },
+              data: { locationId: locationId ?? undefined },
+            },
+          },
         },
         where: { id },
       });
@@ -469,6 +504,10 @@ export class EntityService {
         location: { include: { zone: true } },
         subEntities: {
           where: { deletedAt: null },
+          include: {
+            type: true,
+            assignees: { include: { user: true }, where: { removedAt: null } },
+          },
         },
       },
     });
@@ -482,6 +521,9 @@ export class EntityService {
     if (!entity) throw new BadRequestException('Entity not found.');
     const reading = await this.getLatestReading(entity);
     entity.currentRunning = reading;
+    for (const e of entity.subEntities) {
+      e.currentRunning = await this.getLatestReading(e);
+    }
     return entity;
   }
 
@@ -522,7 +564,6 @@ export class EntityService {
 
     where.AND.push({
       deletedAt: null,
-      parentEntityId: null,
     });
 
     if (search) {
@@ -2179,6 +2220,7 @@ export class EntityService {
     let where: any = { AND: [] };
     where.AND.push({
       deletedAt: null,
+      parentEntityId: null,
     });
     if (createdById) {
       where.AND.push({ createdById });
@@ -2266,6 +2308,7 @@ export class EntityService {
     let where: any = { AND: [] };
     where.AND.push({
       deletedAt: null,
+      parentEntityId: null,
     });
     if (locationIds?.length > 0) {
       where.AND.push({
@@ -2819,7 +2862,6 @@ export class EntityService {
 
       where.AND.push({
         deletedAt: null,
-        parentEntityId: null,
       });
 
       if (search) {
@@ -3350,6 +3392,7 @@ export class EntityService {
     where.AND.push({
       deletedAt: null,
       machineNumber: { not: null },
+      parentEntityId: null,
     });
     if (search) {
       const or: any = [
