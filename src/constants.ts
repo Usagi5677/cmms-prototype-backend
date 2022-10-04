@@ -41,6 +41,21 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'View all entities.',
   },
   {
+    name: 'VIEW_ALL_MACHINERY',
+    type: 'Entity',
+    description: 'View all machinery.',
+  },
+  {
+    name: 'VIEW_ALL_VEHICLES',
+    type: 'Entity',
+    description: 'View all vehicles.',
+  },
+  {
+    name: 'VIEW_ALL_VESSELS',
+    type: 'Entity',
+    description: 'View all vessels.',
+  },
+  {
     name: 'MODIFY_PERIODIC_MAINTENANCE',
     type: 'Entity',
     description: 'Create, edit and delete periodic maintenance of entities.',
