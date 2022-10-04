@@ -141,6 +141,14 @@ export class ChecklistService {
       where: { id },
       data: { currentMeterReading: reading, workingHour: null },
     });
+
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: checklist.entityId },
+    });
+    await this.prisma.entity.update({
+      where: { id: checklist.entityId },
+      data: { interService: reading - entity.lastService },
+    });
   }
 
   async updateDailyUsage(user: User, id: number, hours: number) {
@@ -157,6 +165,13 @@ export class ChecklistService {
     await this.prisma.checklist.update({
       where: { id },
       data: { dailyUsageHours: hours },
+    });
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: checklist.entityId },
+    });
+    await this.prisma.entity.update({
+      where: { id: checklist.entityId },
+      data: { interService: hours - entity.lastService },
     });
   }
 
