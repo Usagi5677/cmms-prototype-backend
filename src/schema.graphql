@@ -229,6 +229,7 @@ type ChecklistTemplate {
   id: Int!
   items: [ChecklistTemplateItem!]!
   name: String
+  skipFriday: Boolean
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -291,6 +292,7 @@ input CreateBreakdownInput {
 input CreateChecklistTemplateInput {
   items: [String!]!
   name: String!
+  skipFriday: Boolean
   type: String!
 }
 
@@ -1683,6 +1685,7 @@ input UpdateChecklistTemplateInput {
   id: Int!
   items: [String!]
   name: String
+  skipFriday: Boolean
   type: String
 }
 

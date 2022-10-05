@@ -10,4 +10,5 @@ export class ChecklistTemplate extends BaseModel {
   items: ChecklistTemplateItem[];
   entitiesDaily?: Entity[];
   entitiesWeekly?: Entity[];
+  skipFriday?: boolean;
 }

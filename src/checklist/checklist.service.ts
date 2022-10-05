@@ -595,9 +595,33 @@ export class ChecklistService {
     // Get ids of all entities that are working
     const entities = await this.prisma.entity.findMany({
       where: { status: 'Working', deletedAt: null },
-      select: { id: true },
+      select: {
+        id: true,
+        dailyChecklistTemplate: true,
+        weeklyChecklistTemplate: true,
+      },
     });
+    const skipFridayEntitiesDaily = entities.filter(
+      (e) =>
+        e.dailyChecklistTemplate.skipFriday && moment().toDate().getDay() === 5
+    );
+    const skipFridayDailyIds = skipFridayEntitiesDaily.map((m) => m.id);
+
     const entityIds = entities.map((m) => m.id);
+
+    const skipFridayDailyEntityIds = entityIds.filter(
+      (id) => !skipFridayDailyIds.includes(id)
+    );
+
+    const skipFridayEntitiesWeekly = entities.filter(
+      (e) =>
+        e.weeklyChecklistTemplate.skipFriday && moment().toDate().getDay() === 5
+    );
+    const skipFridayWeeklyIds = skipFridayEntitiesWeekly.map((m) => m.id);
+
+    const skipFridayWeeklyEntityIds = entityIds.filter(
+      (id) => !skipFridayWeeklyIds.includes(id)
+    );
 
     // Daily
     const todayStart = moment().startOf('day');
@@ -615,9 +639,10 @@ export class ChecklistService {
     const todayChecklistEntityIds = todayChecklists.map((c) => c.entityId);
 
     // Create daily checklists for entity
-    const notGeneratedDailyEntityIds = entityIds.filter(
+    const notGeneratedDailyEntityIds = skipFridayDailyEntityIds.filter(
       (id) => !todayChecklistEntityIds.includes(id)
     );
+
     for (const entityId of notGeneratedDailyEntityIds) {
       const dailyTemplate =
         await this.checklistTemplateService.entityChecklistTemplate({
@@ -657,7 +682,7 @@ export class ChecklistService {
     const thisWeekEntityIds = thisWeekChecklists.map((c) => c.entityId);
 
     // Create weekly checklists for entities
-    const notGeneratedWeeklyEntityIds = entityIds.filter(
+    const notGeneratedWeeklyEntityIds = skipFridayWeeklyEntityIds.filter(
       (id) => !thisWeekEntityIds.includes(id)
     );
     for (const entityId of notGeneratedWeeklyEntityIds) {

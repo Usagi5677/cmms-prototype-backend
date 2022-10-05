@@ -162,6 +162,7 @@ model ChecklistTemplate {
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
   name           String?
+  skipFriday     Boolean?
   items          ChecklistTemplateItem[]
   type           String                  @default("Daily")
   entitiesDaily  Entity[]                @relation("entityDaily")

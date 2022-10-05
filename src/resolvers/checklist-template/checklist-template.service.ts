@@ -32,7 +32,12 @@ export class ChecklistTemplateService {
     private readonly entityService: EntityService,
     private readonly userService: UserService
   ) {}
-  async create({ name, type, items }: CreateChecklistTemplateInput) {
+  async create({
+    name,
+    type,
+    items,
+    skipFriday,
+  }: CreateChecklistTemplateInput) {
     if (!CHECKLIST_TYPES.includes(type)) {
       throw new BadRequestException('Invalid checklist template type.');
     }
@@ -41,6 +46,7 @@ export class ChecklistTemplateService {
         name,
         type,
         items: { createMany: { data: items.map((item) => ({ name: item })) } },
+        skipFriday,
       },
     });
     return 'This action adds a new checklistTemplate';
@@ -109,7 +115,10 @@ export class ChecklistTemplateService {
     });
   }
 
-  async update(user: User, { id, name, type }: UpdateChecklistTemplateInput) {
+  async update(
+    user: User,
+    { id, name, type, skipFriday }: UpdateChecklistTemplateInput
+  ) {
     let isEntityAdmin = false;
     const checklistTemplate = await this.prisma.checklistTemplate.findFirst({
       where: { id },
@@ -142,7 +151,7 @@ export class ChecklistTemplateService {
     }
     await this.prisma.checklistTemplate.update({
       where: { id },
-      data: { name, type },
+      data: { name, type, skipFriday },
     });
   }
 
@@ -200,6 +209,7 @@ export class ChecklistTemplateService {
                 ],
               },
             },
+            skipFriday: template.skipFriday,
           },
         });
         await this.updateEntityTemplate(
@@ -262,6 +272,7 @@ export class ChecklistTemplateService {
                   .map((item) => ({ name: item.name })),
               },
             },
+            skipFriday: template.skipFriday,
           },
           include: { items: true },
         });
