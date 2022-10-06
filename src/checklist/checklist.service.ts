@@ -602,9 +602,12 @@ export class ChecklistService {
       },
     });
     const skipFridayEntitiesDaily = entities.filter((e) => {
-      return e.dailyChecklistTemplate.skipFriday
-        ? true
-        : false && moment().toDate().getDay() === 5;
+      if (
+        e?.dailyChecklistTemplate?.skipFriday &&
+        moment().toDate().getDay() === 5
+      ) {
+        return e;
+      }
     });
 
     const skipFridayDailyIds = skipFridayEntitiesDaily.map((m) => m.id);
@@ -615,11 +618,14 @@ export class ChecklistService {
       (id) => !skipFridayDailyIds.includes(id)
     );
 
-    const skipFridayEntitiesWeekly = entities.filter((e) =>
-      e.weeklyChecklistTemplate.skipFriday
-        ? true
-        : false && moment().toDate().getDay() === 5
-    );
+    const skipFridayEntitiesWeekly = entities.filter((e) => {
+      if (
+        e?.weeklyChecklistTemplate?.skipFriday &&
+        moment().toDate().getDay() === 5
+      ) {
+        return e;
+      }
+    });
     const skipFridayWeeklyIds = skipFridayEntitiesWeekly.map((m) => m.id);
 
     const skipFridayWeeklyEntityIds = entityIds.filter(
