@@ -399,7 +399,6 @@ export class ChecklistService {
         NOT: [{ entityId: null }],
         from: { gte: from },
         to: { lte: to },
-        OR: { currentMeterReading: null, workingHour: null, type },
       },
       select: {
         id: true,
@@ -410,12 +409,10 @@ export class ChecklistService {
 
     const checklistComment = await this.prisma.checklistComment.findMany({
       where: {
-        AND: {
-          checklistId: {
-            in: checklistIds,
-          },
-          type: 'Issue',
+        checklistId: {
+          in: checklistIds,
         },
+        type: 'Issue',
       },
       select: {
         checklistId: true,
@@ -486,7 +483,6 @@ export class ChecklistService {
         NOT: [{ entityId: null }],
         from: { gte: start.startOf('day').toDate() },
         to: { lte: end.endOf(type === 'Daily' ? 'day' : 'week').toDate() },
-        OR: { currentMeterReading: null, workingHour: null, type },
       },
       select: {
         id: true,
@@ -530,7 +526,7 @@ export class ChecklistService {
         where: {
           removedAt: null,
           userId: user.id,
-          type: { in: ['Admin', 'User'] },
+          type: { in: ['Admin', 'Engineer'] },
         },
       });
       where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
