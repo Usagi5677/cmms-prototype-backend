@@ -410,10 +410,12 @@ export class ChecklistService {
 
     const checklistComment = await this.prisma.checklistComment.findMany({
       where: {
-        checklistId: {
-          in: checklistIds,
+        AND: {
+          checklistId: {
+            in: checklistIds,
+          },
+          type: 'Issue',
         },
-        type: 'Issue',
       },
       select: {
         checklistId: true,
