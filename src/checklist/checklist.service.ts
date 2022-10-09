@@ -443,7 +443,7 @@ export class ChecklistService {
         where: {
           removedAt: null,
           userId: user.id,
-          type: { in: ['Admin', 'User'] },
+          type: { in: ['Admin', 'Engineer'] },
         },
       });
       where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
