@@ -517,13 +517,31 @@ export class EntityService {
         },
       },
     });
-    await this.checkEntityAssignmentOrPermission(
-      entityId,
-      user.id,
-      entity,
-      [],
-      ['VIEW_ALL_ENTITY']
-    );
+    if (entity.type.entityType === 'Machine') {
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        [],
+        ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
+      );
+    } else if (entity.type.entityType === 'Vehicle') {
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        [],
+        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
+      );
+    } else if (entity.type.entityType === 'Vessel') {
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        [],
+        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VESSELS']
+      );
+    }
     if (!entity) throw new BadRequestException('Entity not found.');
     const reading = await this.getLatestReading(entity);
     entity.currentRunning = reading;
@@ -541,11 +559,11 @@ export class EntityService {
     const userPermissions = await this.userService.getUserRolesPermissionsList(
       user.id
     );
-    const hasViewAll =
-      userPermissions.includes('VIEW_ALL_ENTITY') ||
-      userPermissions.includes('VIEW_ALL_MACHINERY') ||
-      userPermissions.includes('VIEW_ALL_VEHICLES') ||
-      userPermissions.includes('VIEW_ALL_VESSELS');
+    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
+    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const {
@@ -594,14 +612,46 @@ export class EntityService {
       where.AND.push({ createdById });
     }
     if (assignedToId || !hasViewAll) {
-      where.AND.push({
-        assignees: {
-          some: {
-            userId: !hasViewAll ? user.id : assignedToId,
-            removedAt: null,
+      if (
+        assignedToId ||
+        (!hasViewAllMachinery && entityType.some((type) => type === 'Machine'))
+      ) {
+        where.AND.push({
+          assignees: {
+            some: {
+              userId:
+                !hasViewAll || !hasViewAllMachinery ? user.id : assignedToId,
+              removedAt: null,
+            },
           },
-        },
-      });
+        });
+      } else if (
+        assignedToId ||
+        (!hasViewAllVehicles && entityType.some((type) => type === 'Vehicle'))
+      ) {
+        where.AND.push({
+          assignees: {
+            some: {
+              userId:
+                !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
+              removedAt: null,
+            },
+          },
+        });
+      } else if (
+        assignedToId ||
+        (!hasViewAllVessels && entityType.some((type) => type === 'Vessel'))
+      ) {
+        where.AND.push({
+          assignees: {
+            some: {
+              userId:
+                !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+              removedAt: null,
+            },
+          },
+        });
+      }
     }
 
     if (status?.length > 0) {
@@ -2016,13 +2066,35 @@ export class EntityService {
     // Start one day earlier to build up cumulative hours
     const fromDate = moment(from).startOf('day');
     const toDate = moment(to).endOf('day');
-    const entityFromCheck = await this.checkEntityAssignmentOrPermission(
-      entityId,
-      user.id,
-      entity ?? undefined,
-      [],
-      ['VIEW_ALL_ENTITY']
-    );
+    const entityFromCheck = await this.prisma.entity.findFirst({
+      where: { id: entityId },
+      include: { type: true },
+    });
+    if (entityFromCheck.type.entityType === 'Machine') {
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        [],
+        ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
+      );
+    } else if (entityFromCheck.type.entityType === 'Vehicle') {
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        [],
+        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
+      );
+    } else if (entityFromCheck.type.entityType === 'Vessel') {
+      await this.checkEntityAssignmentOrPermission(
+        entityId,
+        user.id,
+        entity,
+        [],
+        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VESSELS']
+      );
+    }
     if (!entity) {
       entity = entityFromCheck;
     }
@@ -2855,6 +2927,10 @@ export class EntityService {
       const userPermissions =
         await this.userService.getUserRolesPermissionsList(user.id);
       const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
       const {
         createdById,
         search,
@@ -2901,14 +2977,47 @@ export class EntityService {
         where.AND.push({ createdById });
       }
       if (assignedToId || !hasViewAll) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId: !hasViewAll ? user.id : assignedToId,
-              removedAt: null,
+        if (
+          assignedToId ||
+          (!hasViewAllMachinery &&
+            entityType.some((type) => type === 'Machine'))
+        ) {
+          where.AND.push({
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllMachinery ? user.id : assignedToId,
+                removedAt: null,
+              },
             },
-          },
-        });
+          });
+        } else if (
+          assignedToId ||
+          (!hasViewAllVehicles && entityType.some((type) => type === 'Vehicle'))
+        ) {
+          where.AND.push({
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
+                removedAt: null,
+              },
+            },
+          });
+        } else if (
+          assignedToId ||
+          (!hasViewAllVessels && entityType.some((type) => type === 'Vessel'))
+        ) {
+          where.AND.push({
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                removedAt: null,
+              },
+            },
+          });
+        }
       }
 
       if (status?.length > 0) {
@@ -3075,7 +3184,7 @@ export class EntityService {
     entityId: number,
     userId: number,
     entity?: Entity,
-    assignments?: ('User' | 'Engineer' | 'Admin')[],
+    assignments?: ('User' | 'Technician' | 'Engineer' | 'Admin')[],
     permissions?: string[]
   ): Promise<Entity> {
     if (!entity) {
@@ -3106,6 +3215,9 @@ export class EntityService {
       for (const permission of permissions) {
         if (!userPermissions.includes(permission)) {
           hasPermission = false;
+        } else {
+          hasPermission = true;
+          break;
         }
       }
     }
@@ -3446,9 +3558,15 @@ export class EntityService {
         typeId: { in: typeIds },
       });
     }
+
     if (!hasViewAll) {
       where.AND.push({
-        assignees: { some: { userId: user.id, removedAt: null } },
+        assignees: {
+          some: {
+            userId: user.id,
+            removedAt: null,
+          },
+        },
       });
     }
     const allEntities = await this.prisma.entity.findMany({
@@ -3610,11 +3728,11 @@ export class EntityService {
       });
     }
 
-    if (assignedToId || !hasViewAll) {
+    if (!hasViewAll) {
       where.AND.push({
         assignees: {
           some: {
-            userId: !hasViewAll ? user.id : assignedToId,
+            userId: user.id,
             removedAt: null,
           },
         },
