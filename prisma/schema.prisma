@@ -585,5 +585,5 @@ model DivisionUsers {
   divisionId Int
   userId     Int
   division   Division? @relation(fields: [divisionId], references: [id])
-  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?     @relation(fields: [userId], references: [id])
 }
