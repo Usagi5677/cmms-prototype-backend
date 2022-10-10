@@ -130,7 +130,7 @@ export class EntityService {
     machineNumber: string,
     model: string,
     locationId: number,
-    department: string,
+    divisionId: number,
     engine: string,
     measurement: string,
     currentRunning: number,
@@ -151,10 +151,10 @@ export class EntityService {
       if (parentEntityId) {
         const parent = await this.prisma.entity.findFirst({
           where: { id: parentEntityId },
-          include: { assignees: true },
+          include: { assignees: true, division: true },
         });
         registeredDate = parent?.registeredDate;
-        department = parent?.department;
+        divisionId = parent?.division?.id;
         locationId = parent.locationId;
         const entity = await this.prisma.entity.create({
           data: {
@@ -163,7 +163,7 @@ export class EntityService {
             machineNumber,
             model,
             locationId,
-            department,
+            divisionId,
             engine,
             measurement,
             currentRunning,
@@ -192,7 +192,7 @@ export class EntityService {
           machineNumber,
           model,
           locationId,
-          department,
+          divisionId,
           engine,
           measurement,
           currentRunning,
@@ -257,7 +257,7 @@ export class EntityService {
     machineNumber: string,
     model: string,
     locationId: number,
-    department: string,
+    divisionId: number,
     engine: string,
     measurement: string,
     brand: string,
@@ -269,6 +269,7 @@ export class EntityService {
         location: locationId ? true : false,
         type: typeId ? true : false,
         subEntities: true,
+        division: true,
       },
     });
     // Check if admin of entity or has permission
@@ -307,10 +308,15 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (department && entity.department != department) {
+      if (divisionId && entity.divisionId != divisionId) {
+        const newDivision = await this.prisma.division.findFirst({
+          where: { id: divisionId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Department changed from ${entity.department} to ${department}.`,
+          description: `Division changed${
+            entity.divisionId ? ` from ${entity?.division?.name}` : ``
+          } to ${newDivision.name}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -322,7 +328,7 @@ export class EntityService {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Location changed${
-            entity.locationId ? ` from ${entity.location.name}` : ``
+            entity.locationId ? ` from ${entity?.location?.name}` : ``
           } to ${newLocation.name}.`,
           entityId: id,
           completedById: user.id,
@@ -384,7 +390,7 @@ export class EntityService {
           machineNumber,
           model,
           locationId: locationId ?? undefined,
-          department,
+          divisionId,
           engine: engine ? engine : null,
           measurement,
           brand,
@@ -535,7 +541,11 @@ export class EntityService {
     const userPermissions = await this.userService.getUserRolesPermissionsList(
       user.id
     );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const hasViewAll =
+      userPermissions.includes('VIEW_ALL_ENTITY') ||
+      userPermissions.includes('VIEW_ALL_MACHINERY') ||
+      userPermissions.includes('VIEW_ALL_VEHICLES') ||
+      userPermissions.includes('VIEW_ALL_VESSELS');
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const {
@@ -545,7 +555,7 @@ export class EntityService {
       entityType,
       status,
       locationIds,
-      department,
+      divisionIds,
       isAssigned,
       typeIds,
       zoneIds,
@@ -613,10 +623,10 @@ export class EntityService {
       });
     }
 
-    if (department?.length > 0) {
+    if (divisionIds?.length > 0) {
       where.AND.push({
-        department: {
-          in: department,
+        divisionId: {
+          in: divisionIds,
         },
       });
     }
@@ -760,6 +770,7 @@ export class EntityService {
           where: { breakdownId: null, breakdownDetailId: null },
           take: 10,
         },
+        division: true,
       },
       orderBy: [{ id: 'asc' }],
     });
@@ -2843,7 +2854,7 @@ export class EntityService {
         entityType,
         status,
         locationIds,
-        department,
+        divisionIds,
         isAssigned,
         typeIds,
         zoneIds,
@@ -2911,10 +2922,10 @@ export class EntityService {
         });
       }
 
-      if (department?.length > 0) {
+      if (divisionIds?.length > 0) {
         where.AND.push({
-          department: {
-            in: department,
+          divisionId: {
+            in: divisionIds,
           },
         });
       }

@@ -11,6 +11,7 @@ import { EntityHistory } from './entity-history.model';
 import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
 import { SparePr } from 'src/spare-pr/entities/spare-pr.entity';
 import { Repair } from 'src/repair/entities/repair.entity';
+import { Division } from 'src/division/entities/division.entity';
 
 @ObjectType()
 export class Entity extends BaseModel {
@@ -21,7 +22,7 @@ export class Entity extends BaseModel {
   model?: string;
   zone?: string;
   location?: Location;
-  department?: string;
+  division?: Division;
   engine?: string;
   currentRunning?: number;
   lastService?: number;

@@ -27,6 +27,7 @@ import { AssignmentModule } from './assignment/assignment.module';
 import { BreakdownModule } from './breakdown/breakdown.module';
 import { RepairModule } from './repair/repair.module';
 import { SparePrModule } from './spare-pr/spare-pr.module';
+import { DivisionModule } from './division/division.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { SparePrModule } from './spare-pr/spare-pr.module';
     ApiKeyModule,
     AssignmentModule,
     SparePrModule,
+    DivisionModule,
   ],
   providers: [DateScalar, InitService],
 })

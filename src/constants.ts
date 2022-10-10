@@ -111,6 +111,11 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'Create, edit and delete locations and zones.',
   },
   {
+    name: 'MODIFY_DIVISIONS',
+    type: 'Config',
+    description: 'Create, edit and delete divisions.',
+  },
+  {
     name: 'VIEW_TEMPLATES',
     type: 'Config',
     description: 'View all templates.',

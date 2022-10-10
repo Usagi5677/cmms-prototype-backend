@@ -55,6 +55,8 @@ model User {
   breakdownCreated                     Breakdown[]
   sparePRCreated                       SparePR[]
   SparePRDetail                        SparePRDetail[]
+  divisionCreated                      Division[]                      @relation(name: "divisionCreated")
+  divisionUsers                        DivisionUsers[]
 }
 
 model Notification {
@@ -240,7 +242,8 @@ model Entity {
   currentRunning            Int?
   lastService               Int?
   interService              Int?
-  department                String?
+  divisionId                Int?
+  division                  Division?                   @relation(fields: [divisionId], references: [id])
   engine                    String?
   brand                     String?
   status                    String?                     @default("Working")
@@ -561,4 +564,26 @@ model ApiKeyPermission {
   apiKeyId   Int
   apiKey     ApiKey @relation(fields: [apiKeyId], references: [id])
   permission String
+}
+
+model Division {
+  id          Int             @id @default(autoincrement())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  name        String
+  createdById Int?
+  createdBy   User?           @relation(name: "divisionCreated", fields: [createdById], references: [id])
+  active      Boolean         @default(true)
+  assignees   DivisionUsers[]
+  entity      Entity[]
+}
+
+model DivisionUsers {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  divisionId Int
+  userId     Int
+  division   Division? @relation(fields: [divisionId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

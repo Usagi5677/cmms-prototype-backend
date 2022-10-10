@@ -9,7 +9,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   entityType?: string[];
   status?: string[];
   locationIds?: number[];
-  department?: string[];
+  divisionIds?: number[];
   assignedToId?: number;
   isAssigned?: boolean;
   typeIds?: number[];

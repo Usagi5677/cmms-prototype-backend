@@ -296,6 +296,10 @@ input CreateChecklistTemplateInput {
   type: String!
 }
 
+input CreateDivisionInput {
+  name: String!
+}
+
 input CreateLocationInput {
   name: String!
   zoneId: Int
@@ -338,6 +342,47 @@ input CreateZoneInput {
 """Date custom scalar type"""
 scalar Date
 
+type Division {
+  assignees: [DivisionAssign!]
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type DivisionAssign {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  division: Division
+  id: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User
+}
+
+input DivisionAssignInput {
+  divisionId: Int!
+  userIds: [Int!]
+}
+
+type DivisionEdge {
+  cursor: String
+  node: Division
+}
+
+type DivisionPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 input EditApiKeyInput {
   keyId: Int!
   name: String
@@ -355,7 +400,7 @@ type Entity {
   createdBy: User
   currentRunning: Int
   deletedAt: Date
-  department: String
+  division: Division
   engine: String
   histories: [EntityHistory!]
   id: Int!
@@ -658,13 +703,15 @@ type Mutation {
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
+  assignUserToDivision(input: DivisionAssignInput!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   bulkAssign(input: BulkAssignInput!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createApiKey(input: CreateApiKeyInput!): String!
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
-  createEntity(brand: String, currentRunning: Int, department: String, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, typeId: Int): String!
+  createDivision(input: CreateDivisionInput!): String!
+  createEntity(brand: String, currentRunning: Int, divisionId: Int, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createLocation(input: CreateLocationInput!): String!
   createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, previousMeterReading: Int, value: Int!): String!
@@ -679,7 +726,7 @@ type Mutation {
   deleteEntityRepairRequest(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
-  editEntity(brand: String, department: String, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
+  editEntity(brand: String, divisionId: Int, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
@@ -696,6 +743,7 @@ type Mutation {
   removeChecklistComment(id: Int!): String!
   removeChecklistTemplate(id: Int!): String!
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
+  removeDivision(id: Int!): String!
   removeEntity(id: Int!): String!
   removeEntityAttachment(id: Int!): String!
   removeLocation(id: Int!): String!
@@ -729,6 +777,7 @@ type Mutation {
   updateBreakdown(updateBreakdownInput: UpdateBreakdownInput!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateDailyUsage(hours: Int!, id: Int!): String!
+  updateDivision(input: UpdateDivisionInput!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
@@ -773,6 +822,11 @@ type PaginatedAssignment {
 type PaginatedBreakdown {
   edges: [BreakdownEdge!]
   pageInfo: BreakdownPageInfo
+}
+
+type PaginatedDivision {
+  edges: [DivisionEdge!]
+  pageInfo: DivisionPageInfo
 }
 
 type PaginatedEntity {
@@ -1037,7 +1091,7 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
-    department: [String!]
+    divisionIds: [Int!]
     engine: [String!]
     entityType: [String!]
 
@@ -1083,7 +1137,7 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
-    department: [String!]
+    divisionIds: [Int!]
     engine: [String!]
     entityType: [String!]
 
@@ -1158,6 +1212,22 @@ type Query {
   checklistWithIssueSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
   checklistsWithIssue(input: IncompleteChecklistInput!): [Checklist!]
   checklistsWithIssuePastTwoDays: [Int!]
+  division(id: Int!): Division!
+  divisions(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    divisionId: Int
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    name: String
+  ): PaginatedDivision!
   entityAttachment(id: Int!): EntityAttachment!
   entityAttachments(
     """Paginate after opaque cursor"""
@@ -1185,7 +1255,7 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
-    department: [String!]
+    divisionIds: [Int!]
     engine: [String!]
     entityType: [String!]
 
@@ -1215,7 +1285,7 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
-    department: [String!]
+    divisionIds: [Int!]
     engine: [String!]
     entityType: [String!]
 
@@ -1284,7 +1354,7 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
-    department: [String!]
+    divisionIds: [Int!]
     engine: [String!]
     entityType: [String!]
 
@@ -1314,7 +1384,7 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
-    department: [String!]
+    divisionIds: [Int!]
     engine: [String!]
     entityType: [String!]
 
@@ -1687,6 +1757,11 @@ input UpdateChecklistTemplateInput {
   name: String
   skipFriday: Boolean
   type: String
+}
+
+input UpdateDivisionInput {
+  id: Int!
+  name: String
 }
 
 input UpdateLocationInput {
