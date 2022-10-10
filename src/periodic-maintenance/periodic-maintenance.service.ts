@@ -124,6 +124,7 @@ export class PeriodicMaintenanceService {
                       },
                     },
                   },
+                  orderBy: { id: 'asc' },
                 },
                 completedBy: true,
                 remarks: {
@@ -208,7 +209,7 @@ export class PeriodicMaintenanceService {
     currentMeterReading?: number
   ) {
     try {
-      const pm = await this.prisma.periodicMaintenance.create({
+      await this.prisma.periodicMaintenance.create({
         data: {
           name,
           measurement,
@@ -541,16 +542,10 @@ export class PeriodicMaintenanceService {
           previousMeterReading: entity.currentRunning,
           currentMeterReading: entity.currentRunning,
           type: 'Template',
-          tasks: {
-            createMany: {
-              data: pm.tasks.map((task) => ({
-                parentTaskId: task?.parentTaskId,
-                name: task.name,
-              })),
-            },
-          },
         },
       });
+
+      this.createInnerTasks(pm, newPM);
 
       const reminder = await this.prisma.reminder.findMany({
         where: {
@@ -1514,7 +1509,7 @@ export class PeriodicMaintenanceService {
       level1 = await this.prisma.periodicMaintenanceTask.create({
         data: {
           periodicMaintenanceId: copyPM.id,
-          name: pm.tasks[index]?.name,
+          name: pm.tasks[index].name,
         },
       });
       for (let index2 = 0; index2 < pm.tasks[index].subTasks.length; index2++) {
@@ -1522,7 +1517,7 @@ export class PeriodicMaintenanceService {
           data: {
             periodicMaintenanceId: copyPM.id,
             parentTaskId: level1.id,
-            name: pm.tasks[index2]?.name,
+            name: pm.tasks[index].subTasks[index2].name,
           },
         });
         for (
@@ -1534,7 +1529,7 @@ export class PeriodicMaintenanceService {
             data: {
               periodicMaintenanceId: copyPM.id,
               parentTaskId: level2.id,
-              name: pm.tasks[index3]?.name,
+              name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
             },
           });
         }
