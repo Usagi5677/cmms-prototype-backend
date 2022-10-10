@@ -3662,6 +3662,7 @@ export class EntityService {
             where: { breakdownId: null, breakdownDetailId: null },
             take: 10,
           },
+          division: true,
         },
         orderBy: { machineNumber: 'asc' },
       });
