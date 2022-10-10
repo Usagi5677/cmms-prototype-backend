@@ -595,7 +595,12 @@ export class EntityService {
     }
     if (assignedToId || !hasViewAll) {
       where.AND.push({
-        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+        assignees: {
+          some: {
+            userId: !hasViewAll ? user.id : assignedToId,
+            removedAt: null,
+          },
+        },
       });
     }
 
@@ -761,6 +766,9 @@ export class EntityService {
         assignees: {
           include: {
             user: true,
+          },
+          where: {
+            removedAt: null,
           },
         },
         type: true,
@@ -2239,7 +2247,7 @@ export class EntityService {
 
     if (assignedToId) {
       where.AND.push({
-        assignees: { some: { userId: assignedToId } },
+        assignees: { some: { userId: assignedToId, removedAt: null } },
       });
     }
 
@@ -2894,7 +2902,12 @@ export class EntityService {
       }
       if (assignedToId || !hasViewAll) {
         where.AND.push({
-          assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+          assignees: {
+            some: {
+              userId: !hasViewAll ? user.id : assignedToId,
+              removedAt: null,
+            },
+          },
         });
       }
 
@@ -3276,7 +3289,7 @@ export class EntityService {
             from: todayStart.toDate(),
             to: todayEnd.toDate(),
             entity: {
-              assignees: { some: { userId: user.id } },
+              assignees: { some: { userId: user.id, removedAt: null } },
             },
             tasks: {
               some: {
@@ -3306,7 +3319,7 @@ export class EntityService {
             from: todayStart.toDate(),
             to: todayEnd.toDate(),
             entity: {
-              assignees: { some: { userId: user.id } },
+              assignees: { some: { userId: user.id, removedAt: null } },
             },
             items: {
               some: {
@@ -3435,7 +3448,7 @@ export class EntityService {
     }
     if (!hasViewAll) {
       where.AND.push({
-        assignees: { some: { userId: user.id } },
+        assignees: { some: { userId: user.id, removedAt: null } },
       });
     }
     const allEntities = await this.prisma.entity.findMany({
@@ -3599,7 +3612,12 @@ export class EntityService {
 
     if (assignedToId || !hasViewAll) {
       where.AND.push({
-        assignees: { some: { userId: !hasViewAll ? user.id : assignedToId } },
+        assignees: {
+          some: {
+            userId: !hasViewAll ? user.id : assignedToId,
+            removedAt: null,
+          },
+        },
       });
     }
 
@@ -3653,6 +3671,9 @@ export class EntityService {
           assignees: {
             include: {
               user: true,
+            },
+            where: {
+              removedAt: null,
             },
           },
           type: true,
