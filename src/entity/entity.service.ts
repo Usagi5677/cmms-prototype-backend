@@ -614,7 +614,7 @@ export class EntityService {
     if (assignedToId || !hasViewAll) {
       if (
         assignedToId ||
-        (!hasViewAllMachinery && entityType.some((type) => type === 'Machine'))
+        (!hasViewAllMachinery && entityType?.some((type) => type === 'Machine'))
       ) {
         where.AND.push({
           assignees: {
@@ -627,7 +627,7 @@ export class EntityService {
         });
       } else if (
         assignedToId ||
-        (!hasViewAllVehicles && entityType.some((type) => type === 'Vehicle'))
+        (!hasViewAllVehicles && entityType?.some((type) => type === 'Vehicle'))
       ) {
         where.AND.push({
           assignees: {
@@ -640,7 +640,7 @@ export class EntityService {
         });
       } else if (
         assignedToId ||
-        (!hasViewAllVessels && entityType.some((type) => type === 'Vessel'))
+        (!hasViewAllVessels && entityType?.some((type) => type === 'Vessel'))
       ) {
         where.AND.push({
           assignees: {

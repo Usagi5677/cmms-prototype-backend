@@ -108,7 +108,9 @@ export class ChecklistTemplateService {
     return await this.prisma.checklistTemplate.findFirst({
       where: { id },
       include: {
-        items: true,
+        items: {
+          where: { removedAt: null },
+        },
         entitiesDaily: { include: { type: true } },
         entitiesWeekly: { include: { type: true } },
       },
@@ -155,7 +157,35 @@ export class ChecklistTemplateService {
     });
   }
 
-  async remove(id: number) {
+  async remove(user: User, id: number) {
+    const template = await this.prisma.checklistTemplate.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        entitiesDaily: true,
+        entitiesWeekly: true,
+      },
+    });
+
+    if (template.type === 'Daily') {
+      for (const e of template?.entitiesDaily) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Daily checklist template deleted`,
+          description: `${user.fullName} (${user.rcno}) removed daily checklist template. ${template?.name} (${template.id}).`,
+          entityId: e.id,
+        });
+      }
+    }
+    if (template.type === 'Weekly') {
+      for (const e of template?.entitiesWeekly) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Weekly checklist template deleted`,
+          description: `${user.fullName} (${user.rcno}) removed weekly checklist template. ${template?.name} (${template.id}).`,
+          entityId: e.id,
+        });
+      }
+    }
     await this.prisma.checklistTemplate.delete({ where: { id } });
   }
 
@@ -195,7 +225,7 @@ export class ChecklistTemplateService {
     if (entityId) {
       const template = await this.prisma.checklistTemplate.findFirst({
         where: { id },
-        include: { items: true },
+        include: { items: { where: { removedAt: null } } },
       });
       if (template.name) {
         const newUnnamedTemplate = await this.prisma.checklistTemplate.create({
@@ -217,6 +247,21 @@ export class ChecklistTemplateService {
           entityId,
           newUnnamedTemplate.id
         );
+        if (template.type === 'Daily') {
+          await this.entityService.createEntityHistoryInBackground({
+            type: `Unnamed daily checklist template item added`,
+            description: `${user.fullName} (${user.rcno}) added daily item. ${name} (${newUnnamedTemplate.id}).`,
+            entityId: entityId,
+          });
+        }
+        if (template.type === 'Weekly') {
+          await this.entityService.createEntityHistoryInBackground({
+            type: `Unnamed weekly checklist template item added`,
+            description: `${user.fullName} (${user.rcno}) added weekly item. ${name} (${newUnnamedTemplate.id}).`,
+            entityId: entityId,
+          });
+        }
+
         return;
       }
     }
@@ -225,7 +270,31 @@ export class ChecklistTemplateService {
         checklistTemplateId: id,
         name,
       },
+      include: {
+        checklistTemplate: {
+          include: { entitiesDaily: true, entitiesWeekly: true },
+        },
+      },
     });
+
+    if (templateItem.checklistTemplate.type === 'Daily') {
+      for (const e of templateItem.checklistTemplate.entitiesDaily) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Daily checklist template item added`,
+          description: `${user.fullName} (${user.rcno}) added daily checklist item. ${templateItem.name} (${templateItem.id}).`,
+          entityId: e.id,
+        });
+      }
+    }
+    if (templateItem.checklistTemplate.type === 'Weekly') {
+      for (const e of templateItem.checklistTemplate.entitiesWeekly) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Weekly checklist template item added`,
+          description: `${user.fullName} (${user.rcno}) added weekly checklist item. ${templateItem.name} (${templateItem.id}).`,
+          entityId: e.id,
+        });
+      }
+    }
 
     // Update all checklists using this template
     await this.updateChecklistOfAllEntitiesUsingTemplate(
@@ -250,11 +319,11 @@ export class ChecklistTemplateService {
     } else {
       await this.userService.checkUserPermission(user.id, 'MODIFY_TEMPLATES');
     }
+    const template = await this.prisma.checklistTemplate.findFirst({
+      where: { id: templateId },
+      include: { items: { where: { removedAt: null } } },
+    });
     if (templateId && entityId) {
-      const template = await this.prisma.checklistTemplate.findFirst({
-        where: { id: templateId },
-        include: { items: true },
-      });
       if (template.name) {
         const entity = await this.prisma.entity.findFirst({
           where: { id: entityId },
@@ -268,14 +337,45 @@ export class ChecklistTemplateService {
             items: {
               createMany: {
                 data: template.items
-                  .filter((item) => item.id !== id)
+                  .filter(async (item) => {
+                    if (item.id !== id && template?.name == null) {
+                      await this.prisma.checklistTemplateItem.update({
+                        where: { id },
+                        data: { removedAt: new Date(), removedById: user.id },
+                      });
+                    }
+                    return item.id !== id;
+                  })
                   .map((item) => ({ name: item.name })),
               },
             },
             skipFriday: template.skipFriday,
           },
-          include: { items: true },
+          include: {
+            items: { where: { removedAt: null } },
+            entitiesDaily: true,
+            entitiesWeekly: true,
+          },
         });
+
+        if (newUnnamedTemplate.type === 'Daily') {
+          for (const e of newUnnamedTemplate?.entitiesDaily) {
+            await this.entityService.createEntityHistoryInBackground({
+              type: `Daily checklist template item removed`,
+              description: `${user.fullName} (${user.rcno}) removed daily checklist item. ${template.name} (${template.id}).`,
+              entityId: e.id,
+            });
+          }
+        }
+        if (newUnnamedTemplate.type === 'Weekly') {
+          for (const e of newUnnamedTemplate?.entitiesWeekly) {
+            await this.entityService.createEntityHistoryInBackground({
+              type: `Weekly checklist template item removed`,
+              description: `${user.fullName} (${user.rcno}) removed weekly checklist item. ${template.name} (${template.id}).`,
+              entityId: e.id,
+            });
+          }
+        }
         await this.updateEntityTemplate(
           template.type,
           entityId,
@@ -284,9 +384,40 @@ export class ChecklistTemplateService {
         return;
       }
     }
-    const templateItem = await this.prisma.checklistTemplateItem.delete({
+
+    const templateItem = await this.prisma.checklistTemplateItem.update({
       where: { id },
+      data: { removedAt: new Date(), removedById: user.id },
+      include: {
+        checklistTemplate: {
+          include: {
+            entitiesDaily: true,
+            entitiesWeekly: true,
+          },
+        },
+      },
     });
+    console.log(templateItem.checklistTemplateId);
+
+    if (templateItem.checklistTemplate.type === 'Daily') {
+      for (const e of templateItem.checklistTemplate.entitiesDaily) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Daily checklist template item removed`,
+          description: `${user.fullName} (${user.rcno}) removed daily checklist item. ${templateItem.name} (${templateItem.id}).`,
+          entityId: e.id,
+        });
+      }
+    }
+    if (templateItem.checklistTemplate.type === 'Weekly') {
+      for (const e of templateItem.checklistTemplate.entitiesWeekly) {
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Weekly checklist template item removed`,
+          description: `${user.fullName} (${user.rcno}) removed weekly checklist item. ${templateItem.name} (${templateItem.id}).`,
+          entityId: e.id,
+        });
+      }
+    }
+
     // Update all checklists using this template
     await this.updateChecklistOfAllEntitiesUsingTemplate(
       templateItem.checklistTemplateId
@@ -315,14 +446,14 @@ export class ChecklistTemplateService {
       if (entity.dailyChecklistTemplateId) {
         template = await this.prisma.checklistTemplate.findFirst({
           where: { id: entity.dailyChecklistTemplateId },
-          include: { items: true },
+          include: { items: { where: { removedAt: null } } },
         });
       }
     } else if (type === 'Weekly') {
       if (entity.weeklyChecklistTemplateId) {
         template = await this.prisma.checklistTemplate.findFirst({
           where: { id: entity.weeklyChecklistTemplateId },
-          include: { items: true },
+          include: { items: { where: { removedAt: null } } },
         });
       }
     } else {
@@ -333,7 +464,7 @@ export class ChecklistTemplateService {
     if (!template) {
       template = await this.prisma.checklistTemplate.create({
         data: { type },
-        include: { items: true },
+        include: { items: { where: { removedAt: null } } },
       });
       if (type === 'Daily') {
         await this.prisma.entity.update({
@@ -382,6 +513,11 @@ export class ChecklistTemplateService {
           data: { dailyChecklistTemplateId: newChecklistId },
         })
       );
+      await this.entityService.createEntityHistoryInBackground({
+        type: `Daily checklist template assigned`,
+        description: `${user.fullName} (${user.rcno}) assigned daily checklist template. ${newChecklistTemplate?.name} (${newChecklistTemplate.id}).`,
+        entityId: entityId,
+      });
     } else {
       currentTemplateId = entity.weeklyChecklistTemplateId;
       transactions.push(
@@ -390,6 +526,11 @@ export class ChecklistTemplateService {
           data: { weeklyChecklistTemplateId: newChecklistId },
         })
       );
+      await this.entityService.createEntityHistoryInBackground({
+        type: `Weekly checklist template assigned`,
+        description: `${user.fullName} (${user.rcno}) assigned weekly checklist template. ${newChecklistTemplate?.name} (${newChecklistTemplate.id}).`,
+        entityId: entityId,
+      });
     }
     // Delete current template if it is not a named template
     if (currentTemplateId) {
@@ -423,6 +564,7 @@ export class ChecklistTemplateService {
       include: {
         entitiesDaily: true,
         entitiesWeekly: true,
+        items: true,
       },
     });
     for (const entity of template.entitiesDaily) {

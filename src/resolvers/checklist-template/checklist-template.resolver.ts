@@ -59,8 +59,11 @@ export class ChecklistTemplateResolver {
 
   @Permissions('MODIFY_TEMPLATES')
   @Mutation(() => String)
-  async removeChecklistTemplate(@Args('id', { type: () => Int }) id: number) {
-    await this.checklistTemplateService.remove(id);
+  async removeChecklistTemplate(
+    @UserEntity() user: User,
+    @Args('id', { type: () => Int }) id: number
+  ) {
+    await this.checklistTemplateService.remove(user, id);
     return 'Successfully removed checklist template.';
   }
 

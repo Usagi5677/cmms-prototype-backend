@@ -45,6 +45,7 @@ Table User {
   SparePRDetail SparePRDetail [not null]
   divisionCreated Division [not null]
   divisionUsers DivisionUsers [not null]
+  removedChecklistTemplateItem ChecklistTemplateItem [not null]
 }
 
 Table Notification {
@@ -146,6 +147,9 @@ Table ChecklistTemplateItem {
   checklistTemplateId Int [not null]
   checklistTemplate ChecklistTemplate [not null]
   name String [not null]
+  removedAt DateTime
+  removedById Int
+  removedBy User
 }
 
 Table Checklist {
@@ -601,6 +605,8 @@ Ref: Location.zoneId > Zone.id
 Ref: Zone.createdById > User.id
 
 Ref: ChecklistTemplateItem.checklistTemplateId > ChecklistTemplate.id
+
+Ref: ChecklistTemplateItem.removedById > User.id
 
 Ref: Checklist.entityId > Entity.id
 

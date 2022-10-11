@@ -57,6 +57,7 @@ model User {
   SparePRDetail                        SparePRDetail[]
   divisionCreated                      Division[]                      @relation(name: "divisionCreated")
   divisionUsers                        DivisionUsers[]
+  removedChecklistTemplateItem         ChecklistTemplateItem[]
 }
 
 model Notification {
@@ -178,6 +179,9 @@ model ChecklistTemplateItem {
   checklistTemplateId Int
   checklistTemplate   ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id], onDelete: Cascade)
   name                String
+  removedAt           DateTime?
+  removedById         Int?
+  removedBy           User?             @relation(fields: [removedById], references: [id])
 }
 
 model Checklist {
