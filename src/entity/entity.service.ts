@@ -40,6 +40,7 @@ import { AuthService } from 'src/services/auth.service';
 import { UnassignExternalInput } from './dto/args/unassign-external.input';
 import { Location } from 'src/location/entities/location.entity';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
+import { ChecklistService } from 'src/checklist/checklist.service';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -64,6 +65,7 @@ export class EntityService {
     private entityHistoryQueue: Queue,
     @Inject(forwardRef(() => ChecklistTemplateService))
     private readonly checklistTemplateService: ChecklistTemplateService,
+    private readonly checklistService: ChecklistService,
     private readonly locationService: LocationService,
     private readonly authService: AuthService
   ) {}
@@ -448,6 +450,9 @@ export class EntityService {
           body: `${user.fullName} (${user.rcno}) set status to ${status} on entity ${entityId}`,
           link: `/entity/${entityId}`,
         });
+      }
+      if (status === 'Working' || status === 'Critical') {
+        await this.checklistService.generateChecklists();
       }
     } catch (e) {
       console.log(e);

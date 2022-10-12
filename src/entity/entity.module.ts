@@ -10,6 +10,7 @@ import { EntityConsumer } from './entity.consumer';
 import { LocationModule } from 'src/location/location.module';
 import { AuthModule } from 'src/resolvers/auth/auth.module';
 import { EntityController } from './entity.controller';
+import { ChecklistModule } from 'src/checklist/checklist.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { EntityController } from './entity.controller';
       name: 'cmms-entity-history',
     }),
     forwardRef(() => ChecklistTemplateModule),
+    ChecklistModule,
     LocationModule,
     AuthModule,
   ],
