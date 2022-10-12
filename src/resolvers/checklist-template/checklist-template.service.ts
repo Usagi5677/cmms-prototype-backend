@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bull';
 import {
   BadRequestException,
   forwardRef,
@@ -5,6 +6,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { Queue } from 'bull';
 import * as moment from 'moment';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -24,13 +26,20 @@ import { CreateChecklistTemplateInput } from './dto/create-checklist-template.in
 import { EntityChecklistTemplateInput } from './dto/entity-checklist-template.input';
 import { UpdateChecklistTemplateInput } from './dto/update-checklist-template.input';
 
+export interface UpdateTaskInterface {
+  checklistTemplateId: number;
+  add: boolean;
+}
+
 @Injectable()
 export class ChecklistTemplateService {
   constructor(
     private prisma: PrismaService,
     @Inject(forwardRef(() => EntityService))
     private readonly entityService: EntityService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    @InjectQueue('cmms-update-task')
+    private entityHistoryQueue: Queue
   ) {}
   async create({
     name,
@@ -295,11 +304,11 @@ export class ChecklistTemplateService {
         });
       }
     }
-
-    // Update all checklists using this template
-    await this.updateChecklistOfAllEntitiesUsingTemplate(
-      templateItem.checklistTemplateId
-    );
+    // Update all checklists using this template in background
+    await this.updateTaskInBackground({
+      checklistTemplateId: templateItem.checklistTemplateId,
+      add: true,
+    });
   }
 
   async removeItem(
@@ -397,7 +406,6 @@ export class ChecklistTemplateService {
         },
       },
     });
-    console.log(templateItem.checklistTemplateId);
 
     if (templateItem.checklistTemplate.type === 'Daily') {
       for (const e of templateItem.checklistTemplate.entitiesDaily) {
@@ -418,10 +426,11 @@ export class ChecklistTemplateService {
       }
     }
 
-    // Update all checklists using this template
-    await this.updateChecklistOfAllEntitiesUsingTemplate(
-      templateItem.checklistTemplateId
-    );
+    // Update all checklists using this template in background
+    await this.updateTaskInBackground({
+      checklistTemplateId: templateItem.checklistTemplateId,
+      add: false,
+    });
   }
 
   async entityChecklistTemplate(
@@ -558,9 +567,11 @@ export class ChecklistTemplateService {
     await this.updateEntityChecklists(entity.id, newChecklistTemplate.type);
   }
 
-  async updateChecklistOfAllEntitiesUsingTemplate(templateId: number) {
+  async updateChecklistOfAllEntitiesUsingTemplate(
+    updateTask: UpdateTaskInterface
+  ) {
     const template = await this.prisma.checklistTemplate.findFirst({
-      where: { id: templateId },
+      where: { id: updateTask.checklistTemplateId },
       include: {
         entitiesDaily: true,
         entitiesWeekly: true,
@@ -619,12 +630,20 @@ export class ChecklistTemplateService {
   }
 
   async updateAllEntityChecklists() {
+    const checkStatus = ['Working', 'Critical'];
     const allEntities = await this.prisma.entity.findMany({
-      where: { status: 'Working' },
+      where: { status: { in: checkStatus } },
     });
     for (const entity of allEntities) {
       await this.updateEntityChecklists(entity.id, 'Daily');
       await this.updateEntityChecklists(entity.id, 'Weekly');
     }
+  }
+
+  //** Update task in all entity in background */
+  async updateTaskInBackground(updateTask: UpdateTaskInterface) {
+    await this.entityHistoryQueue.add('updateTask', {
+      updateTask,
+    });
   }
 }
