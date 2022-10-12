@@ -188,7 +188,7 @@ export class ChecklistService {
       from = moment(date).startOf('week').toDate();
       to = moment(date).endOf('week').toDate();
     }
-
+    const checkStatus = ['Working', 'Critical'];
     const checklist = await this.prisma.checklist.findMany({
       where: {
         type,
@@ -232,7 +232,7 @@ export class ChecklistService {
     let where: any = { AND: [] };
     where.AND.push({
       deletedAt: null,
-      status: 'Working',
+      status: { in: checkStatus },
     });
     if (isAssigned) {
       const assignments = await this.prisma.entityAssignment.findMany({
@@ -312,11 +312,12 @@ export class ChecklistService {
         entityId: true,
       },
     });
+    const checkStatus = ['Working', 'Critical'];
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     where.AND.push({
       deletedAt: null,
-      status: 'Working',
+      status: { in: checkStatus },
     });
     if (isAssigned) {
       const assignments = await this.prisma.entityAssignment.findMany({
@@ -431,11 +432,12 @@ export class ChecklistService {
         entityId: true,
       },
     });
+    const checkStatus = ['Working', 'Critical'];
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     where.AND.push({
       deletedAt: null,
-      status: 'Working',
+      status: { in: checkStatus },
     });
     if (isAssigned) {
       const assignments = await this.prisma.entityAssignment.findMany({
@@ -515,11 +517,12 @@ export class ChecklistService {
         entityId: true,
       },
     });
+    const checkStatus = ['Working', 'Critical'];
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     where.AND.push({
       deletedAt: null,
-      status: 'Working',
+      status: { in: checkStatus },
     });
     if (isAssigned) {
       const assignments = await this.prisma.entityAssignment.findMany({
@@ -590,9 +593,10 @@ export class ChecklistService {
   }
 
   async generateChecklists() {
+    const checkStatus = ['Working', 'Critical'];
     // Get ids of all entities that are working
     const entities = await this.prisma.entity.findMany({
-      where: { status: 'Working', deletedAt: null },
+      where: { status: { in: checkStatus }, deletedAt: null },
       select: {
         id: true,
         dailyChecklistTemplate: true,
