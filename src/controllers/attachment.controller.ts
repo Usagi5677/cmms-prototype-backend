@@ -48,6 +48,8 @@ export class AttachmentController {
     @Body() { entityId, description, checklistId }: CreateEntityAttachmentInput
   ) {
     const user = req.user;
+    const compressedImages = [];
+
     for (const f of attachments) {
       // Only allow images to be uploaded to checklists
       if (checklistId && f.mimetype.substring(0, 6) !== 'image/') {
@@ -72,7 +74,10 @@ export class AttachmentController {
           'File size cannot be greater than 10 MB.'
         );
       }
+      compressedImages.push(f);
+    }
 
+    for (const f of compressedImages) {
       const mode = 'Public';
       let newAttachment: any;
       const sharepointFileName = `${user.rcno}_${moment().unix()}${extname(
