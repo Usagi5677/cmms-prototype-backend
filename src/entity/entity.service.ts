@@ -3266,7 +3266,7 @@ export class EntityService {
         });
       }
 
-      if (entityIds.length > 0) {
+      if (entityIds?.length > 0) {
         where.AND.push({
           id: { in: { entityIds } },
         });
