@@ -15,6 +15,8 @@ import { User } from 'src/models/user.model';
 import { AssignmentConnectionArgs } from './dto/assignment-connection.args';
 import { PaginatedAssignment } from './dto/assignment-connection.model';
 import { BulkAssignInput } from './dto/bulk-assign.input';
+import { DivisionAssignmentConnectionArgs } from './dto/division-assignment-connection.args';
+import { PaginatedDivisionAssignment } from './dto/division-assignment-connection.model';
 
 @Injectable()
 export class AssignmentService {
@@ -108,5 +110,50 @@ export class AssignmentService {
         throw new InternalServerErrorException('Unexpected error occured.');
       }
     }
+  }
+
+  async divisionAssignments(
+    args: DivisionAssignmentConnectionArgs
+  ): Promise<PaginatedDivisionAssignment> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { userIds, current, divisionIds } = args;
+    const where: any = { AND: [] };
+    if (current) {
+      where.AND.push({ removedAt: null });
+    }
+    if (userIds?.length > 0) {
+      where.AND.push({ userId: { in: userIds } });
+    }
+    if (divisionIds?.length > 0) {
+      where.AND.push({ divisionId: { in: divisionIds } });
+    }
+    const results = await this.prisma.divisionUsers.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        division: true,
+        user: true,
+      },
+    });
+    const count = await this.prisma.divisionUsers.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      results.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
   }
 }

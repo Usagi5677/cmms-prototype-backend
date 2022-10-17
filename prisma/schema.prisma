@@ -586,6 +586,7 @@ model DivisionUsers {
   id         Int       @id @default(autoincrement())
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+  removedAt  DateTime?
   divisionId Int
   userId     Int
   division   Division? @relation(fields: [divisionId], references: [id])

@@ -347,6 +347,7 @@ type Division {
 
   """Identifies the date and time when the object was created."""
   createdAt: Date!
+  entity: [Entity!]
   id: Int!
   name: String!
 
@@ -358,16 +359,33 @@ type DivisionAssign {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   division: Division
+  divisionId: Int
   id: Int!
+  removedAt: Date
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   user: User
+  userId: Int
+}
+
+type DivisionAssignEdge {
+  cursor: String
+  node: DivisionAssign
 }
 
 input DivisionAssignInput {
   divisionId: Int!
+  entityIds: [Int!]
   userIds: [Int!]
+}
+
+type DivisionAssignPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type DivisionEdge {
@@ -701,6 +719,7 @@ type Mutation {
   addRole(name: String!): String!
   addSparePRDetail(createSparePRDetailInput: CreateSparePRDetailInput!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
+  assignEntityToDivision(input: DivisionAssignInput!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToDivision(input: DivisionAssignInput!): String!
@@ -768,6 +787,7 @@ type Mutation {
   toggleSparePRComplete(complete: Boolean!, id: Int!): String!
   toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyPeriodicMaintenance(id: Int!, verify: Boolean!): String!
+  unassignUserFromDivision(id: Int!): String!
   unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
 
   """
@@ -778,6 +798,7 @@ type Mutation {
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateDailyUsage(hours: Int!, id: Int!): String!
   updateDivision(input: UpdateDivisionInput!): String!
+  updateEntityDivision(divisionId: Int!, entityId: Int!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
@@ -827,6 +848,11 @@ type PaginatedBreakdown {
 type PaginatedDivision {
   edges: [DivisionEdge!]
   pageInfo: DivisionPageInfo
+}
+
+type PaginatedDivisionAssignment {
+  edges: [DivisionAssignEdge!]
+  pageInfo: DivisionAssignPageInfo
 }
 
 type PaginatedEntity {
@@ -1213,6 +1239,22 @@ type Query {
   checklistsWithIssue(input: IncompleteChecklistInput!): [Checklist!]
   checklistsWithIssuePastTwoDays: [Int!]
   division(id: Int!): Division!
+  divisionAssignments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    current: Boolean!
+    divisionIds: [Int!]
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    userIds: [Int!]!
+  ): PaginatedDivisionAssignment!
   divisions(
     """Paginate after opaque cursor"""
     after: String
@@ -1557,6 +1599,7 @@ type Query {
     search: String
   ): PaginatedRepair!
   searchAPSUsers(query: String!): [User!]!
+  searchDivision(limit: Int, query: String): [Division!]!
   searchEntity(entityIds: [Int!], entityType: String, limit: Int, query: String): [Entity!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
   sparePR(id: Int!): SparePr!

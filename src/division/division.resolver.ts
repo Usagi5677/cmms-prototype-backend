@@ -54,9 +54,39 @@ export class DivisionResolver {
     return 'Successfully removed division.';
   }
 
+  @Permissions('MODIFY_DIVISIONS')
+  @Mutation(() => String)
+  async unassignUserFromDivision(@Args('id', { type: () => Int }) id: number) {
+    await this.divisionService.unassignUserFromDivision(id);
+    return 'Successfully removed user from division.';
+  }
+
   @Mutation(() => String)
   async assignUserToDivision(@Args('input') input: DivisionAssignInput) {
     await this.divisionService.assignUserToDivision(input);
-    return 'Successfully assigned user.';
+    return 'Successfully assigned user to division.';
+  }
+
+  @Query(() => [Division], { name: 'searchDivision' })
+  search(
+    @Args('query', { nullable: true }) query: string,
+    @Args('limit', { nullable: true }) limit: number
+  ) {
+    return this.divisionService.search(query, limit);
+  }
+
+  @Mutation(() => String)
+  async updateEntityDivision(
+    @Args('entityId') entityId: number,
+    @Args('divisionId') divisionId: number
+  ) {
+    await this.divisionService.updateEntityDivision(entityId, divisionId);
+    return `Successfully updated entity's division.`;
+  }
+
+  @Mutation(() => String)
+  async assignEntityToDivision(@Args('input') input: DivisionAssignInput) {
+    await this.divisionService.assignEntityToDivision(input);
+    return 'Successfully assigned entity to division.';
   }
 }

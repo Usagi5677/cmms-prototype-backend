@@ -5,6 +5,9 @@ import { Division } from './division.entity';
 
 @ObjectType()
 export class DivisionAssign extends BaseModel {
+  userId?: number;
+  divisionId?: number;
   division?: Division;
   user?: User;
+  removedAt?: Date;
 }

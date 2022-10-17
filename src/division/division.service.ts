@@ -92,11 +92,6 @@ export class DivisionService {
 
   async assignUserToDivision({ divisionId, userIds }: DivisionAssignInput) {
     try {
-      await this.prisma.divisionUsers.deleteMany({
-        where: {
-          divisionId: divisionId,
-        },
-      });
       if (userIds.length > 0) {
         await this.prisma.divisionUsers.createMany({
           data: userIds.map((userId) => ({
@@ -104,6 +99,65 @@ export class DivisionService {
             userId,
           })),
         });
+      }
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        // This error throws if user is already assigned to entity
+        // Catch and ignore this error and proceed
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
+
+  async search(query?: string, limit?: number) {
+    if (!limit) limit = 10;
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+
+    where.AND.push({
+      active: true,
+    });
+    if (query) {
+      where.AND.push({
+        name: { contains: query, mode: 'insensitive' },
+      });
+    }
+
+    const divisions = await this.prisma.division.findMany({
+      where,
+      take: limit,
+    });
+    return divisions;
+  }
+
+  async unassignUserFromDivision(id: number) {
+    await this.prisma.divisionUsers.update({
+      where: { id },
+      data: { removedAt: new Date() },
+    });
+  }
+
+  async updateEntityDivision(entityId: number, divisionId: number) {
+    await this.prisma.entity.update({
+      where: { id: entityId },
+      data: { divisionId },
+    });
+  }
+
+  async assignEntityToDivision({ divisionId, entityIds }: DivisionAssignInput) {
+    try {
+      if (entityIds.length > 0) {
+        for (const id of entityIds) {
+          await this.prisma.entity.update({
+            where: { id },
+            data: { divisionId },
+          });
+        }
       }
     } catch (e) {
       if (

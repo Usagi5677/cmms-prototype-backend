@@ -520,6 +520,7 @@ export class EntityService {
             assignees: { include: { user: true }, where: { removedAt: null } },
           },
         },
+        division: true,
       },
     });
     if (entity.type.entityType === 'Machine') {
@@ -568,6 +569,9 @@ export class EntityService {
     const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
     const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
     const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+    const hasViewAllDivisionEntity = userPermissions.includes(
+      'VIEW_ALL_DIVISION_ENTITY'
+    );
 
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
@@ -612,14 +616,15 @@ export class EntityService {
         OR: or,
       });
     }
-
     if (createdById) {
       where.AND.push({ createdById });
     }
     if (assignedToId || !hasViewAll) {
       if (
         assignedToId ||
-        (!hasViewAllMachinery && entityType?.some((type) => type === 'Machine'))
+        (!hasViewAllMachinery &&
+          entityType?.some((type) => type === 'Machine') &&
+          !hasViewAllDivisionEntity)
       ) {
         where.AND.push({
           assignees: {
@@ -632,7 +637,9 @@ export class EntityService {
         });
       } else if (
         assignedToId ||
-        (!hasViewAllVehicles && entityType?.some((type) => type === 'Vehicle'))
+        (!hasViewAllVehicles &&
+          entityType?.some((type) => type === 'Vehicle') &&
+          !hasViewAllDivisionEntity)
       ) {
         where.AND.push({
           assignees: {
@@ -645,7 +652,9 @@ export class EntityService {
         });
       } else if (
         assignedToId ||
-        (!hasViewAllVessels && entityType?.some((type) => type === 'Vessel'))
+        (!hasViewAllVessels &&
+          entityType?.some((type) => type === 'Vessel') &&
+          !hasViewAllDivisionEntity)
       ) {
         where.AND.push({
           assignees: {
@@ -655,6 +664,42 @@ export class EntityService {
               removedAt: null,
             },
           },
+        });
+      } else if (
+        assignedToId ||
+        (hasViewAllDivisionEntity &&
+          entityType?.some((type) => type === 'Machine') &&
+          !hasViewAllMachinery)
+      ) {
+        const userDivision = await this.prisma.divisionUsers.findFirst({
+          where: { userId: user.id },
+        });
+        where.AND.push({
+          divisionId: userDivision.divisionId,
+        });
+      } else if (
+        assignedToId ||
+        (hasViewAllDivisionEntity &&
+          entityType?.some((type) => type === 'Vehicle') &&
+          !hasViewAllVehicles)
+      ) {
+        const userDivision = await this.prisma.divisionUsers.findFirst({
+          where: { userId: user.id },
+        });
+        where.AND.push({
+          divisionId: userDivision.divisionId,
+        });
+      } else if (
+        assignedToId ||
+        (hasViewAllDivisionEntity &&
+          entityType?.some((type) => type === 'Vessel') &&
+          !hasViewAllVessels)
+      ) {
+        const userDivision = await this.prisma.divisionUsers.findFirst({
+          where: { userId: user.id },
+        });
+        where.AND.push({
+          divisionId: userDivision.divisionId,
         });
       }
     }
@@ -2936,6 +2981,9 @@ export class EntityService {
         userPermissions.includes('VIEW_ALL_MACHINERY');
       const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
       const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
       const {
         createdById,
         search,
@@ -2985,7 +3033,8 @@ export class EntityService {
         if (
           assignedToId ||
           (!hasViewAllMachinery &&
-            entityType?.some((type) => type === 'Machine'))
+            !(entityType?.some((type) => type === 'Machine') ? true : false) &&
+            !hasViewAllDivisionEntity)
         ) {
           where.AND.push({
             assignees: {
@@ -2999,7 +3048,8 @@ export class EntityService {
         } else if (
           assignedToId ||
           (!hasViewAllVehicles &&
-            entityType?.some((type) => type === 'Vehicle'))
+            !(entityType?.some((type) => type === 'Vehicle') ? true : false) &&
+            !hasViewAllDivisionEntity)
         ) {
           where.AND.push({
             assignees: {
@@ -3012,7 +3062,9 @@ export class EntityService {
           });
         } else if (
           assignedToId ||
-          (!hasViewAllVessels && entityType?.some((type) => type === 'Vessel'))
+          (!hasViewAllVessels &&
+            !(entityType?.some((type) => type === 'Vessel') ? true : false) &&
+            !hasViewAllDivisionEntity)
         ) {
           where.AND.push({
             assignees: {
@@ -3022,6 +3074,42 @@ export class EntityService {
                 removedAt: null,
               },
             },
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity &&
+            !(entityType?.some((type) => type === 'Machine') ? true : false) &&
+            !hasViewAllMachinery)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findFirst({
+            where: { userId: user.id },
+          });
+          where.AND.push({
+            divisionId: userDivision.divisionId,
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity &&
+            !(entityType?.some((type) => type === 'Vehicle') ? true : false) &&
+            !hasViewAllVehicles)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findFirst({
+            where: { userId: user.id },
+          });
+          where.AND.push({
+            divisionId: userDivision.divisionId,
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity &&
+            !(entityType?.some((type) => type === 'Vessel') ? true : false) &&
+            !hasViewAllVessels)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findFirst({
+            where: { userId: user.id },
+          });
+          where.AND.push({
+            divisionId: userDivision.divisionId,
           });
         }
       }
@@ -3529,6 +3617,12 @@ export class EntityService {
       user.id
     );
     const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
+    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+    const hasViewAllDivisionEntity = userPermissions.includes(
+      'VIEW_ALL_DIVISION_ENTITY'
+    );
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     where.AND.push({
@@ -3566,19 +3660,37 @@ export class EntityService {
     }
 
     if (!hasViewAll) {
-      where.AND.push({
-        assignees: {
-          some: {
-            userId: user.id,
-            removedAt: null,
-          },
-        },
-      });
+      if (hasViewAllMachinery) {
+        where.AND.push({
+          type: { entityType: 'Machine' },
+        });
+      } else if (hasViewAllVehicles) {
+        where.AND.push({
+          type: { entityType: 'Vehicle' },
+        });
+      } else if (hasViewAllVessels) {
+        where.AND.push({
+          type: { entityType: 'Vessel' },
+        });
+      } else if (
+        hasViewAllDivisionEntity &&
+        !hasViewAllMachinery &&
+        !hasViewAllVehicles &&
+        !hasViewAllVessels
+      ) {
+        const userDivision = await this.prisma.divisionUsers.findFirst({
+          where: { userId: user.id },
+        });
+        where.AND.push({
+          divisionId: userDivision.divisionId,
+        });
+      }
     }
     const allEntities = await this.prisma.entity.findMany({
       where,
       orderBy: { machineNumber: 'asc' },
     });
+
     const fromDate = moment(from).startOf('day');
     const toDate = moment(to).endOf('day');
 
@@ -3697,7 +3809,6 @@ export class EntityService {
       }
       await this.redisCacheService.setForHour(key, usage);
     }
-
     return usage;
   }
   //** Get all entity. */
@@ -3709,6 +3820,12 @@ export class EntityService {
       user.id
     );
     const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
+    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+    const hasViewAllDivisionEntity = userPermissions.includes(
+      'VIEW_ALL_DIVISION_ENTITY'
+    );
     const { search, assignedToId, locationIds, typeIds, zoneIds, measurement } =
       args;
 
@@ -3735,14 +3852,31 @@ export class EntityService {
     }
 
     if (!hasViewAll) {
-      where.AND.push({
-        assignees: {
-          some: {
-            userId: user.id,
-            removedAt: null,
-          },
-        },
-      });
+      if (hasViewAllMachinery) {
+        where.AND.push({
+          type: { entityType: 'Machine' },
+        });
+      } else if (hasViewAllVehicles) {
+        where.AND.push({
+          type: { entityType: 'Vehicle' },
+        });
+      } else if (hasViewAllVessels) {
+        where.AND.push({
+          type: { entityType: 'Vessel' },
+        });
+      } else if (
+        hasViewAllDivisionEntity &&
+        !hasViewAllMachinery &&
+        !hasViewAllVehicles &&
+        !hasViewAllVessels
+      ) {
+        const userDivision = await this.prisma.divisionUsers.findFirst({
+          where: { userId: user.id },
+        });
+        where.AND.push({
+          divisionId: userDivision.divisionId,
+        });
+      }
     }
 
     if (locationIds?.length > 0) {
