@@ -20,4 +20,6 @@ export class EntityConnectionArgs extends ConnectionArgs {
   lteInterService?: string;
   gteInterService?: string;
   isIncompleteChecklistTask?: boolean;
+  entityIds?: number[];
+  divisionExist?: boolean;
 }

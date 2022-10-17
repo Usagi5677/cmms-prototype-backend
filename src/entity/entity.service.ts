@@ -592,6 +592,8 @@ export class EntityService {
       lteInterService,
       gteInterService,
       isIncompleteChecklistTask,
+      entityIds,
+      divisionExist,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -843,6 +845,16 @@ export class EntityService {
       });
     }
 
+    if (entityIds?.length > 0) {
+      where.AND.push({
+        id: { in: entityIds },
+      });
+    }
+    if (divisionExist) {
+      where.AND.push({
+        divisionId: { not: null },
+      });
+    }
     const entities = await this.prisma.entity.findMany({
       skip: offset,
       take: limitPlusOne,
@@ -3001,6 +3013,7 @@ export class EntityService {
         lteInterService,
         gteInterService,
         isIncompleteChecklistTask,
+        entityIds,
       } = args;
 
       // eslint-disable-next-line prefer-const
@@ -3250,6 +3263,12 @@ export class EntityService {
           id: {
             in: entityIds,
           },
+        });
+      }
+
+      if (entityIds.length > 0) {
+        where.AND.push({
+          id: { in: { entityIds } },
         });
       }
       //use cache later

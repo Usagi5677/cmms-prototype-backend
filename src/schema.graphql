@@ -1117,8 +1117,10 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
+    divisionExist: Boolean
     divisionIds: [Int!]
     engine: [String!]
+    entityIds: [Int!]
     entityType: [String!]
 
     """Paginate first"""
@@ -1163,8 +1165,10 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
+    divisionExist: Boolean
     divisionIds: [Int!]
     engine: [String!]
+    entityIds: [Int!]
     entityType: [String!]
 
     """Paginate first"""
@@ -1297,8 +1301,10 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
+    divisionExist: Boolean
     divisionIds: [Int!]
     engine: [String!]
+    entityIds: [Int!]
     entityType: [String!]
 
     """Paginate first"""
@@ -1327,8 +1333,10 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
+    divisionExist: Boolean
     divisionIds: [Int!]
     engine: [String!]
+    entityIds: [Int!]
     entityType: [String!]
 
     """Paginate first"""
@@ -1396,8 +1404,10 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
+    divisionExist: Boolean
     divisionIds: [Int!]
     engine: [String!]
+    entityIds: [Int!]
     entityType: [String!]
 
     """Paginate first"""
@@ -1426,8 +1436,10 @@ type Query {
     brand: [String!]
     createdById: Int
     createdByUserId: String
+    divisionExist: Boolean
     divisionIds: [Int!]
     engine: [String!]
+    entityIds: [Int!]
     entityType: [String!]
 
     """Paginate first"""
