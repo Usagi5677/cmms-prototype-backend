@@ -93,6 +93,10 @@ export class DivisionService {
   async assignUserToDivision({ divisionId, userIds }: DivisionAssignInput) {
     try {
       if (userIds.length > 0) {
+        await this.prisma.divisionUsers.updateMany({
+          where: { userId: { in: userIds } },
+          data: { removedAt: new Date() },
+        });
         await this.prisma.divisionUsers.createMany({
           data: userIds.map((userId) => ({
             divisionId,
