@@ -1894,6 +1894,7 @@ type UserRoles {
 }
 
 type UserWithRoles {
+  divisionUsers: [DivisionAssign!]
   email: String!
   entityAssignment: [EntityAssignment!]
   fullName: String!

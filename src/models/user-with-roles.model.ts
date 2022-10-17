@@ -1,5 +1,6 @@
 import { ObjectType } from '@nestjs/graphql';
 import { EntityAssignment } from 'src/assignment/entities/entity-assign.model';
+import { DivisionAssign } from 'src/division/entities/division-assign.entity';
 import { Location } from 'src/location/entities/location.entity';
 import { UserRoles } from './user-roles.model';
 
@@ -13,4 +14,5 @@ export class UserWithRoles {
   location?: Location;
   roles?: UserRoles[];
   entityAssignment?: EntityAssignment[];
+  divisionUsers?: DivisionAssign[];
 }

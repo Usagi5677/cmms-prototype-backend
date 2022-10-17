@@ -569,9 +569,6 @@ export class EntityService {
     const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
     const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
     const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
 
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
@@ -622,86 +619,65 @@ export class EntityService {
       where.AND.push({ createdById });
     }
     if (assignedToId || !hasViewAll) {
+      const userDivision = await this.prisma.divisionUsers.findFirst({
+        where: { userId: user.id },
+      });
       if (
         assignedToId ||
-        (!hasViewAllMachinery &&
-          entityType?.some((type) => type === 'Machine') &&
-          !hasViewAllDivisionEntity)
+        (!hasViewAllMachinery && entityType?.some((type) => type === 'Machine'))
       ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId:
-                !hasViewAll || !hasViewAllMachinery ? user.id : assignedToId,
-              removedAt: null,
+        const or: any = [
+          { divisionId: userDivision?.divisionId },
+          {
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllMachinery ? user.id : assignedToId,
+                removedAt: null,
+              },
             },
           },
+        ];
+        where.AND.push({
+          OR: or,
         });
       } else if (
         assignedToId ||
-        (!hasViewAllVehicles &&
-          entityType?.some((type) => type === 'Vehicle') &&
-          !hasViewAllDivisionEntity)
+        (!hasViewAllVehicles && entityType?.some((type) => type === 'Vehicle'))
       ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId:
-                !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
-              removedAt: null,
+        const or: any = [
+          { divisionId: userDivision?.divisionId },
+          {
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
+                removedAt: null,
+              },
             },
           },
+        ];
+        where.AND.push({
+          OR: or,
         });
       } else if (
         assignedToId ||
-        (!hasViewAllVessels &&
-          entityType?.some((type) => type === 'Vessel') &&
-          !hasViewAllDivisionEntity)
+        (!hasViewAllVessels && entityType?.some((type) => type === 'Vessel'))
       ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId:
-                !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
-              removedAt: null,
+        const or: any = [
+          { divisionId: userDivision?.divisionId },
+          {
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                removedAt: null,
+              },
             },
           },
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity &&
-          entityType?.some((type) => type === 'Machine') &&
-          !hasViewAllMachinery)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findFirst({
-          where: { userId: user.id },
-        });
+        ];
         where.AND.push({
-          divisionId: userDivision.divisionId,
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity &&
-          entityType?.some((type) => type === 'Vehicle') &&
-          !hasViewAllVehicles)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findFirst({
-          where: { userId: user.id },
-        });
-        where.AND.push({
-          divisionId: userDivision.divisionId,
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity &&
-          entityType?.some((type) => type === 'Vessel') &&
-          !hasViewAllVessels)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findFirst({
-          where: { userId: user.id },
-        });
-        where.AND.push({
-          divisionId: userDivision.divisionId,
+          OR: or,
         });
       }
     }
@@ -2993,9 +2969,6 @@ export class EntityService {
         userPermissions.includes('VIEW_ALL_MACHINERY');
       const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
       const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-      const hasViewAllDivisionEntity = userPermissions.includes(
-        'VIEW_ALL_DIVISION_ENTITY'
-      );
       const {
         createdById,
         search,
@@ -3043,86 +3016,69 @@ export class EntityService {
         where.AND.push({ createdById });
       }
       if (assignedToId || !hasViewAll) {
+        const userDivision = await this.prisma.divisionUsers.findFirst({
+          where: { userId: user.id },
+        });
         if (
           assignedToId ||
           (!hasViewAllMachinery &&
-            !(entityType?.some((type) => type === 'Machine') ? true : false) &&
-            !hasViewAllDivisionEntity)
+            entityType?.some((type) => type === 'Machine'))
         ) {
-          where.AND.push({
-            assignees: {
-              some: {
-                userId:
-                  !hasViewAll || !hasViewAllMachinery ? user.id : assignedToId,
-                removedAt: null,
+          const or: any = [
+            { divisionId: userDivision?.divisionId },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllMachinery
+                      ? user.id
+                      : assignedToId,
+                  removedAt: null,
+                },
               },
             },
+          ];
+          where.AND.push({
+            OR: or,
           });
         } else if (
           assignedToId ||
           (!hasViewAllVehicles &&
-            !(entityType?.some((type) => type === 'Vehicle') ? true : false) &&
-            !hasViewAllDivisionEntity)
+            entityType?.some((type) => type === 'Vehicle'))
         ) {
-          where.AND.push({
-            assignees: {
-              some: {
-                userId:
-                  !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
-                removedAt: null,
+          const or: any = [
+            { divisionId: userDivision?.divisionId },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
+                  removedAt: null,
+                },
               },
             },
+          ];
+          where.AND.push({
+            OR: or,
           });
         } else if (
           assignedToId ||
-          (!hasViewAllVessels &&
-            !(entityType?.some((type) => type === 'Vessel') ? true : false) &&
-            !hasViewAllDivisionEntity)
+          (!hasViewAllVessels && entityType?.some((type) => type === 'Vessel'))
         ) {
-          where.AND.push({
-            assignees: {
-              some: {
-                userId:
-                  !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
-                removedAt: null,
+          const or: any = [
+            { divisionId: userDivision?.divisionId },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                  removedAt: null,
+                },
               },
             },
-          });
-        } else if (
-          assignedToId ||
-          (hasViewAllDivisionEntity &&
-            !(entityType?.some((type) => type === 'Machine') ? true : false) &&
-            !hasViewAllMachinery)
-        ) {
-          const userDivision = await this.prisma.divisionUsers.findFirst({
-            where: { userId: user.id },
-          });
+          ];
           where.AND.push({
-            divisionId: userDivision.divisionId,
-          });
-        } else if (
-          assignedToId ||
-          (hasViewAllDivisionEntity &&
-            !(entityType?.some((type) => type === 'Vehicle') ? true : false) &&
-            !hasViewAllVehicles)
-        ) {
-          const userDivision = await this.prisma.divisionUsers.findFirst({
-            where: { userId: user.id },
-          });
-          where.AND.push({
-            divisionId: userDivision.divisionId,
-          });
-        } else if (
-          assignedToId ||
-          (hasViewAllDivisionEntity &&
-            !(entityType?.some((type) => type === 'Vessel') ? true : false) &&
-            !hasViewAllVessels)
-        ) {
-          const userDivision = await this.prisma.divisionUsers.findFirst({
-            where: { userId: user.id },
-          });
-          where.AND.push({
-            divisionId: userDivision.divisionId,
+            OR: or,
           });
         }
       }
@@ -3639,9 +3595,6 @@ export class EntityService {
     const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
     const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
     const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
     where.AND.push({
@@ -3679,6 +3632,9 @@ export class EntityService {
     }
 
     if (!hasViewAll) {
+      const userDivision = await this.prisma.divisionUsers.findFirst({
+        where: { userId: user.id },
+      });
       if (hasViewAllMachinery) {
         where.AND.push({
           type: { entityType: 'Machine' },
@@ -3691,17 +3647,20 @@ export class EntityService {
         where.AND.push({
           type: { entityType: 'Vessel' },
         });
-      } else if (
-        hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findFirst({
-          where: { userId: user.id },
-        });
+      } else {
+        const or: any = [
+          { divisionId: userDivision?.divisionId },
+          {
+            assignees: {
+              some: {
+                userId: user.id,
+                removedAt: null,
+              },
+            },
+          },
+        ];
         where.AND.push({
-          divisionId: userDivision.divisionId,
+          OR: or,
         });
       }
     }
@@ -3842,9 +3801,6 @@ export class EntityService {
     const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
     const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
     const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
     const { search, assignedToId, locationIds, typeIds, zoneIds, measurement } =
       args;
 
@@ -3871,6 +3827,9 @@ export class EntityService {
     }
 
     if (!hasViewAll) {
+      const userDivision = await this.prisma.divisionUsers.findFirst({
+        where: { userId: user.id },
+      });
       if (hasViewAllMachinery) {
         where.AND.push({
           type: { entityType: 'Machine' },
@@ -3883,17 +3842,20 @@ export class EntityService {
         where.AND.push({
           type: { entityType: 'Vessel' },
         });
-      } else if (
-        hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findFirst({
-          where: { userId: user.id },
-        });
+      } else {
+        const or: any = [
+          { divisionId: userDivision?.divisionId },
+          {
+            assignees: {
+              some: {
+                userId: user.id,
+                removedAt: null,
+              },
+            },
+          },
+        ];
         where.AND.push({
-          divisionId: userDivision.divisionId,
+          OR: or,
         });
       }
     }
