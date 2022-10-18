@@ -14,5 +14,4 @@ export class UserWithRoles {
   location?: Location;
   roles?: UserRoles[];
   entityAssignment?: EntityAssignment[];
-  divisionUsers?: DivisionAssign[];
 }

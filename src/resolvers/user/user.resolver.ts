@@ -49,9 +49,6 @@ export class UserResolver {
             },
           },
         },
-        divisionUsers: {
-          where: { removedAt: null },
-        },
         location: true,
       },
     });
