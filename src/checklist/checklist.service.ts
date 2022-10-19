@@ -112,7 +112,7 @@ export class ChecklistService {
   async updateWorkingHours(user: User, id: number, newHrs: number) {
     const checklist = await this.prisma.checklist.findFirst({
       where: { id },
-      select: { entityId: true },
+      include: { entity: true },
     });
     await this.entityService.checkEntityAssignmentOrPermission(
       checklist.entityId,
@@ -124,12 +124,22 @@ export class ChecklistService {
       where: { id },
       data: { workingHour: newHrs, currentMeterReading: null },
     });
+
+    const latestReading = await this.entityService.getLatestReading(
+      checklist?.entity
+    );
+    const interService = latestReading - checklist.entity.lastService;
+    //update interservice so that filter will work
+    await this.prisma.entity.update({
+      where: { id: checklist.entityId },
+      data: { interService },
+    });
   }
 
   async updateReading(user: User, id: number, reading: number) {
     const checklist = await this.prisma.checklist.findFirst({
       where: { id },
-      select: { entityId: true },
+      include: { entity: true },
     });
     await this.entityService.checkEntityAssignmentOrPermission(
       checklist.entityId,
@@ -141,20 +151,21 @@ export class ChecklistService {
       where: { id },
       data: { currentMeterReading: reading, workingHour: null },
     });
-
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: checklist.entityId },
-    });
+    const latestReading = await this.entityService.getLatestReading(
+      checklist?.entity
+    );
+    const interService = latestReading - checklist.entity.lastService;
+    //update interservice so that filter will work
     await this.prisma.entity.update({
       where: { id: checklist.entityId },
-      data: { interService: reading - entity.lastService },
+      data: { interService },
     });
   }
 
   async updateDailyUsage(user: User, id: number, hours: number) {
     const checklist = await this.prisma.checklist.findFirst({
       where: { id },
-      select: { entityId: true },
+      include: { entity: true },
     });
     await this.entityService.checkEntityAssignmentOrPermission(
       checklist.entityId,
@@ -166,12 +177,14 @@ export class ChecklistService {
       where: { id },
       data: { dailyUsageHours: hours },
     });
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: checklist.entityId },
-    });
+    const latestReading = await this.entityService.getLatestReading(
+      checklist?.entity
+    );
+    const interService = latestReading - checklist.entity.lastService;
+    //update interservice so that filter will work
     await this.prisma.entity.update({
       where: { id: checklist.entityId },
-      data: { interService: hours - entity.lastService },
+      data: { interService },
     });
   }
 

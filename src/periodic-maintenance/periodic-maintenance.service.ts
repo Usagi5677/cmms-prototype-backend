@@ -25,6 +25,13 @@ import { NotificationService } from 'src/services/notification.service';
 import { PeriodicMaintenanceWithTasks } from './dto/models/periodic-maintenance-with-tasks.model';
 import { ForbiddenError } from 'apollo-server-express';
 import { PeriodicMaintenanceSummary } from './dto/models/periodic-maintenance-summary.model';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+
+export interface UpdatePMTaskInterface {
+  pm: PeriodicMaintenanceWithTasks;
+  copyPM: PeriodicMaintenanceWithTasks | PeriodicMaintenanceModel;
+}
 
 @Injectable()
 export class PeriodicMaintenanceService {
@@ -34,7 +41,9 @@ export class PeriodicMaintenanceService {
     @Inject(forwardRef(() => EntityService))
     private entityService: EntityService,
     private userService: UserService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    @InjectQueue('cmms-pm-queue')
+    private pmQueue: Queue
   ) {}
 
   async findOne({ entityId, from, to }: PeriodicMaintenanceInput) {
@@ -89,6 +98,9 @@ export class PeriodicMaintenanceService {
     const fromDate = moment(from).startOf('day');
     const toDate = moment(to).endOf('day');
     const where: any = {};
+
+    where.removedAt = null;
+
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
     }
@@ -151,7 +163,7 @@ export class PeriodicMaintenanceService {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { id: 'desc' },
     });
 
     const count = await this.prisma.periodicMaintenance.count({ where });
@@ -184,6 +196,7 @@ export class PeriodicMaintenanceService {
         where: {
           originId: id,
           type: 'Template',
+          removedAt: null,
         },
         include: {
           entity: {
@@ -205,18 +218,18 @@ export class PeriodicMaintenanceService {
     name?: string,
     measurement?: string,
     value?: number,
-    previousMeterReading?: number,
-    currentMeterReading?: number
+    currentMeterReading?: number,
+    recur?: boolean
   ) {
     try {
       await this.prisma.periodicMaintenance.create({
         data: {
           name,
           measurement,
-          value,
-          previousMeterReading,
+          value: recur ? value : null,
           currentMeterReading,
           type: 'Origin',
+          recur,
         },
       });
     } catch (e) {
@@ -231,8 +244,8 @@ export class PeriodicMaintenanceService {
     name?: string,
     measurement?: string,
     value?: number,
-    previousMeterReading?: number,
-    currentMeterReading?: number
+    currentMeterReading?: number,
+    recur?: boolean
   ) {
     try {
       const pm = await this.prisma.periodicMaintenance.findFirst({
@@ -245,9 +258,9 @@ export class PeriodicMaintenanceService {
         data: {
           name,
           measurement,
-          value,
-          previousMeterReading,
+          value: recur ? value : null,
           currentMeterReading,
+          recur,
         },
       });
       if (pm.type === 'Origin') {
@@ -357,19 +370,48 @@ export class PeriodicMaintenanceService {
   ) {
     try {
       const pm = await this.prisma.periodicMaintenance.findFirst({
-        where: {
-          id,
-        },
-        select: {
-          entityId: true,
-        },
+        where: { id },
+        include: { entity: true },
       });
+
       await this.prisma.periodicMaintenance.update({
         where: { id },
         data: verify
-          ? { verifiedById: user.id, verifiedAt: new Date() }
-          : { verifiedById: null, verifiedAt: null },
+          ? {
+              verifiedById: user.id,
+              verifiedAt: new Date(),
+              status: 'Completed',
+            }
+          : { verifiedById: null, verifiedAt: null, status: 'Ongoing' },
       });
+
+      const reading = await this.entityService.getLatestReading(pm.entity);
+
+      //update copy with new values. (Not necessary to update previous reading for copies)
+      await this.prisma.periodicMaintenance.update({
+        where: { id },
+        data: verify
+          ? { currentMeterReading: reading }
+          : { currentMeterReading: null },
+      });
+
+      //update the template as well so that it will make copy when it fulfills the requirement
+      await this.prisma.periodicMaintenance.update({
+        where: {
+          id: pm.originId,
+        },
+        data: {
+          currentMeterReading: reading,
+        },
+      });
+
+      //update last service to currentReading
+      if (verify) {
+        await this.prisma.entity.update({
+          where: { id: pm.entityId },
+          data: { lastService: reading },
+        });
+      }
 
       const users = await this.entityService.getEntityAssignmentIds(
         pm.entityId,
@@ -429,6 +471,7 @@ export class PeriodicMaintenanceService {
       where: {
         originId,
         type: 'Template',
+        removedAt: null,
       },
       include: {
         tasks: {
@@ -458,8 +501,8 @@ export class PeriodicMaintenanceService {
             name: originPM.name,
             measurement: originPM.measurement,
             value: originPM.value,
-            previousMeterReading: originPM.previousMeterReading,
             currentMeterReading: originPM.currentMeterReading,
+            recur: originPM.recur,
           },
         });
       }
@@ -470,16 +513,68 @@ export class PeriodicMaintenanceService {
             periodicMaintenanceId: template.id,
           },
         });
-        this.createInnerTasks(originPM, template);
+        await this.updatePMTaskInBackground({ pm: originPM, copyPM: template });
       }
     }
   }
-
+  //** Delete originperiodic maintenance. */
+  async deleteOriginPeriodicMaintenance(user: User, id: number) {
+    try {
+      await this.prisma.periodicMaintenance.update({
+        where: { id },
+        data: {
+          removedAt: new Date(),
+          removedById: user.id,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
   //** Delete periodic maintenance. */
   async deletePeriodicMaintenance(user: User, id: number) {
-    try {
-      await this.prisma.periodicMaintenance.delete({
+    const periodicMaintenance = await this.prisma.periodicMaintenance.findFirst(
+      {
         where: { id },
+        select: {
+          id: true,
+          entityId: true,
+          name: true,
+        },
+      }
+    );
+    await this.entityService.checkEntityAssignmentOrPermission(
+      periodicMaintenance.entityId,
+      user.id,
+      undefined,
+      ['Admin', 'Engineer', 'User'],
+      ['MODIFY_PERIODIC_MAINTENANCE']
+    );
+    try {
+      const users = await this.entityService.getEntityAssignmentIds(
+        periodicMaintenance.entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) deleted periodic maintenance template (${periodicMaintenance.id}) on entity ${periodicMaintenance.entityId}`,
+          link: `/entity/${periodicMaintenance.entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: 'Periodic Maintenance Template Delete',
+        description: `(${id}) Periodic Maintenance (${periodicMaintenance.name}) deleted.`,
+        entityId: periodicMaintenance.entityId,
+        completedById: user.id,
+      });
+      await this.prisma.periodicMaintenance.update({
+        where: { id },
+        data: {
+          removedAt: new Date(),
+          removedById: user.id,
+        },
       });
     } catch (e) {
       console.log(e);
@@ -494,7 +589,7 @@ export class PeriodicMaintenanceService {
   ) {
     // check if template is created or not
     const templateExist = await this.prisma.periodicMaintenance.findFirst({
-      where: { entityId, originId },
+      where: { entityId, originId, removedAt: null },
     });
     if (templateExist) {
       throw new BadRequestException('Template already exist.');
@@ -502,6 +597,7 @@ export class PeriodicMaintenanceService {
     const entity = await this.prisma.entity.findFirst({
       where: { id: entityId },
     });
+    const reading = await this.entityService.getLatestReading(entity);
     const pm = await this.prisma.periodicMaintenance.findFirst({
       where: { id: originId },
       include: {
@@ -528,7 +624,6 @@ export class PeriodicMaintenanceService {
       ['Admin'],
       ['MODIFY_TEMPLATES']
     );
-
     try {
       const newPM = await this.prisma.periodicMaintenance.create({
         data: {
@@ -539,13 +634,14 @@ export class PeriodicMaintenanceService {
           originId: pm.id,
           measurement: pm.measurement,
           value: pm.value,
-          previousMeterReading: entity.currentRunning,
-          currentMeterReading: entity.currentRunning,
+          currentMeterReading: reading,
           type: 'Template',
+          recur: pm.recur,
+          status: 'Upcoming',
         },
       });
 
-      this.createInnerTasks(pm, newPM);
+      await this.updatePMTaskInBackground({ pm: pm, copyPM: newPM });
 
       const reminder = await this.prisma.reminder.findMany({
         where: {
@@ -617,11 +713,11 @@ export class PeriodicMaintenanceService {
       undefined,
       []
     );
-    const prevReading = periodicMaintenance.entity?.currentRunning ?? 0;
+
     //update copy with new values. (Not necessary to update previous reading for copies)
     await this.prisma.periodicMaintenance.update({
       where: { id },
-      data: { currentMeterReading: reading, previousMeterReading: prevReading },
+      data: { currentMeterReading: reading },
     });
 
     //update the template as well so that it will make copy when it fulfills the requirement
@@ -629,7 +725,7 @@ export class PeriodicMaintenanceService {
       where: {
         id: periodicMaintenance.originId,
       },
-      data: { currentMeterReading: reading, previousMeterReading: prevReading },
+      data: { currentMeterReading: reading },
     });
   }
 
@@ -690,10 +786,9 @@ export class PeriodicMaintenanceService {
     const toDate = moment(to).endOf('day');
 
     const where: any = {};
-    if (true) {
-      where.type = 'Copy';
-    }
 
+    where.type = 'Copy';
+    where.removedAt = null;
     if (from && to) {
       where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
     }
@@ -776,6 +871,7 @@ export class PeriodicMaintenanceService {
   }
 
   //update or create reminder
+  //add removedAt check later
   async upsertPMNotificationReminder(
     user?: User,
     periodicMaintenanceId?: number,
@@ -1217,9 +1313,30 @@ export class PeriodicMaintenanceService {
   async generatePeriodicMaintenances() {
     //using original periodic maintenance as template to make its copies
 
+    //get all copies and update to overdue if wasn't completed yesterday
+    const yesterdayStart = moment().subtract(1, 'days').startOf('day');
+    const yesterdayEnd = moment().subtract(1, 'days').endOf('day');
+    const periodicMaintenanceCopies =
+      await this.prisma.periodicMaintenance.findMany({
+        where: {
+          type: 'Copy',
+          removedAt: null,
+          status: 'Ongoing',
+          from: yesterdayStart.toDate(),
+          to: yesterdayEnd.toDate(),
+        },
+        select: { id: true },
+      });
+    for (const p of periodicMaintenanceCopies) {
+      await this.prisma.periodicMaintenance.update({
+        where: { id: p.id },
+        data: { status: 'Overdue' },
+      });
+    }
+
     // Get ids of all pm template
     const periodicMaintenance = await this.prisma.periodicMaintenance.findMany({
-      where: { type: 'Template' },
+      where: { type: 'Template', recur: true, removedAt: null },
       select: { id: true },
     });
     const originIds = periodicMaintenance.map((m) => m.id);
@@ -1234,6 +1351,7 @@ export class PeriodicMaintenanceService {
           from: todayStart.toDate(),
           to: todayEnd.toDate(),
           type: 'Copy',
+          removedAt: null,
         },
         select: { originId: true },
       });
@@ -1276,28 +1394,32 @@ export class PeriodicMaintenanceService {
     //check if fulfills the requirement and then create it
     for (const pm of templatePM) {
       if (pm.measurement === 'Hour') {
-        const previousReading = pm.previousMeterReading;
         const currentReading = pm.currentMeterReading;
         const computedReading = await this.entityService.getLatestReading(
           pm.entity
         );
-        const readingDiff = Math.abs(currentReading - previousReading);
-        const computedReadingDiff = Math.abs(computedReading - previousReading);
+        //console.log('computedReading = ' + computedReading);
+        //console.log('currentReading = ' + currentReading);
+
+        //const readingDiff = Math.abs(currentReading - previousReading);
+        const computedReadingDiff = computedReading - currentReading;
+        //console.log('computedReadingDiff = ' + computedReadingDiff);
+        //console.log('value = ' + pm.value);
         //if difference is more than or equal it means it's ready to be made
-        const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
+        //const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
+        const flag = computedReadingDiff >= pm.value;
         if (flag) {
           this.createPM(pm);
         }
       } else if (pm.measurement === 'Kilometer') {
-        const previousReading = pm.previousMeterReading;
-        const currentReading = pm.currentMeterReading;
+        const currentMeterReading = pm.currentMeterReading;
         const computedReading = await this.entityService.getLatestReading(
           pm.entity
         );
-        const readingDiff = Math.abs(currentReading - previousReading);
-        const computedReadingDiff = Math.abs(computedReading - previousReading);
+
+        const computedReadingDiff = computedReading - currentMeterReading;
         //if difference is more than or equal it means it's ready to be made
-        const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
+        const flag = computedReadingDiff >= pm.value;
         if (flag) {
           this.createPM(pm);
         }
@@ -1342,7 +1464,7 @@ export class PeriodicMaintenanceService {
     // Get ids of all pm template
     const templatePeriodicMaintenance =
       await this.prisma.periodicMaintenance.findMany({
-        where: { type: 'Template' },
+        where: { type: 'Template', removedAt: null },
         include: { entity: true, notificationReminder: true },
       });
 
@@ -1487,22 +1609,122 @@ export class PeriodicMaintenanceService {
           entityId: pm.entityId,
           originId: pm.id,
           measurement: pm.measurement,
-          value: pm.value,
-          previousMeterReading: pm.previousMeterReading,
+          value: pm?.value,
+          currentMeterReading: null,
           type: 'Copy',
+          recur: false,
         },
       });
 
-      this.createInnerTasks(pm, copyPM);
+      await this.updatePMTaskInBackground({ pm, copyPM });
     } catch (e) {
       console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
-  async createInnerTasks(
-    pm: PeriodicMaintenanceWithTasks,
-    copyPM: PeriodicMaintenanceWithTasks | PeriodicMaintenanceModel
-  ) {
+  async activatePM(id: number) {
+    try {
+      const todayStart = moment().startOf('day');
+      const todayEnd = moment().endOf('day');
+      const pm = await this.prisma.periodicMaintenance.findFirst({
+        where: { id },
+        include: {
+          verifiedBy: true,
+          entity: true,
+          notificationReminder: true,
+          tasks: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: { include: { completedBy: true } },
+                  completedBy: true,
+                },
+                orderBy: { id: 'asc' },
+              },
+              completedBy: true,
+            },
+            orderBy: { id: 'asc' },
+          },
+        },
+      });
+      const copyPM = await this.prisma.periodicMaintenance.create({
+        data: {
+          from: todayStart.toDate(),
+          to: todayEnd.toDate(),
+          name: pm.name,
+          entityId: pm.entityId,
+          originId: pm.id,
+          measurement: pm.measurement,
+          value: pm.value,
+          currentMeterReading: null,
+          type: 'Copy',
+          recur: false,
+          status: 'Ongoing',
+        },
+      });
+      let level1;
+      let level2;
+      for (let index = 0; index < pm.tasks.length; index++) {
+        level1 = await this.prisma.periodicMaintenanceTask.create({
+          data: {
+            periodicMaintenanceId: copyPM.id,
+            name: pm.tasks[index].name,
+          },
+        });
+        for (
+          let index2 = 0;
+          index2 < pm.tasks[index].subTasks.length;
+          index2++
+        ) {
+          level2 = await this.prisma.periodicMaintenanceTask.create({
+            data: {
+              periodicMaintenanceId: copyPM.id,
+              parentTaskId: level1.id,
+              name: pm.tasks[index].subTasks[index2].name,
+            },
+          });
+          for (
+            let index3 = 0;
+            index3 < pm.tasks[index].subTasks[index2].subTasks.length;
+            index3++
+          ) {
+            await this.prisma.periodicMaintenanceTask.create({
+              data: {
+                periodicMaintenanceId: copyPM.id,
+                parentTaskId: level2.id,
+                name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+              },
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async checkCopyPMExist(id: number) {
+    try {
+      let exist = false;
+      const fromDate = moment().startOf('day');
+      const toDate = moment().endOf('day');
+      const pm = await this.prisma.periodicMaintenance.findFirst({
+        where: { originId: id, from: fromDate.toDate(), to: toDate.toDate() },
+      });
+      if (pm) {
+        exist = true;
+      }
+      return exist;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async createInnerTasks({ pm, copyPM }: UpdatePMTaskInterface) {
     let level1;
     let level2;
     for (let index = 0; index < pm.tasks.length; index++) {
@@ -1535,5 +1757,304 @@ export class PeriodicMaintenanceService {
         }
       }
     }
+  }
+
+  //** Update pm task in all entity in background */
+  async updatePMTaskInBackground(updatePMTask: UpdatePMTaskInterface) {
+    await this.pmQueue.add('updatePMTask', {
+      updatePMTask,
+    });
+  }
+
+  //** Get all pm. Results are paginated. User cursor argument to go forward/backward. */
+  async getAllPMWithPagination(
+    user: User,
+    args: PeriodicMaintenanceConnectionArgs
+  ): Promise<PeriodicMaintenanceConnection> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const {
+      search,
+      type2Ids,
+      measurement,
+      locationIds,
+      zoneIds,
+      divisionIds,
+      gteInterService,
+      lteInterService,
+    } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    const todayStart = moment().startOf('day');
+    const todayEnd = moment().endOf('day');
+
+    where.AND.push({
+      removedAt: null,
+      entityId: { not: null },
+    });
+
+    if (search) {
+      const or: any = [
+        { entity: { model: { contains: search, mode: 'insensitive' } } },
+        {
+          entity: { machineNumber: { contains: search, mode: 'insensitive' } },
+        },
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+
+    if (type2Ids?.length > 0) {
+      where.AND.push({
+        entity: { typeId: { in: type2Ids } },
+      });
+    }
+
+    if (measurement?.length > 0) {
+      where.AND.push({
+        entity: { measurement: { in: measurement } },
+      });
+    }
+
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        entity: { locationId: { in: locationIds } },
+      });
+    }
+
+    if (zoneIds?.length > 0) {
+      where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
+    }
+
+    if (divisionIds?.length > 0) {
+      where.AND.push({
+        entity: { divisionId: { in: divisionIds } },
+      });
+    }
+
+    if (gteInterService?.replace(/\D/g, '')) {
+      where.AND.push({
+        entity: {
+          interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+        },
+      });
+    }
+
+    if (lteInterService?.replace(/\D/g, '')) {
+      where.AND.push({
+        entity: {
+          interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+        },
+      });
+    }
+
+    if (
+      gteInterService?.replace(/\D/g, '') &&
+      lteInterService?.replace(/\D/g, '')
+    ) {
+      where.AND.push({
+        entity: {
+          interService: {
+            gte: parseInt(gteInterService.replace(/\D/g, '')),
+            lte: parseInt(lteInterService.replace(/\D/g, '')),
+          },
+        },
+      });
+    }
+
+    const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
+      {
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          entity: {
+            include: {
+              type: true,
+              location: { include: { zone: true } },
+              division: true,
+              assignees: {
+                include: {
+                  user: true,
+                },
+                where: {
+                  removedAt: null,
+                },
+              },
+            },
+          },
+          verifiedBy: true,
+        },
+        orderBy: [{ id: 'desc' }],
+      }
+    );
+
+    const count = await this.prisma.periodicMaintenance.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      periodicMaintenances.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  //** Get all pm status count */
+  async getAllPMStatusCount(
+    user: User,
+    args: PeriodicMaintenanceConnectionArgs
+  ): Promise<PeriodicMaintenanceConnection> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const {
+      search,
+      type2Ids,
+      measurement,
+      locationIds,
+      zoneIds,
+      divisionIds,
+      gteInterService,
+      lteInterService,
+    } = args;
+
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    const todayStart = moment().startOf('day');
+    const todayEnd = moment().endOf('day');
+
+    where.AND.push({
+      removedAt: null,
+      entityId: { not: null },
+    });
+
+    if (search) {
+      const or: any = [
+        { entity: { model: { contains: search, mode: 'insensitive' } } },
+        {
+          entity: { machineNumber: { contains: search, mode: 'insensitive' } },
+        },
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+
+    if (type2Ids?.length > 0) {
+      where.AND.push({
+        entity: { typeId: { in: type2Ids } },
+      });
+    }
+
+    if (measurement?.length > 0) {
+      where.AND.push({
+        entity: { measurement: { in: measurement } },
+      });
+    }
+
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        entity: { locationId: { in: locationIds } },
+      });
+    }
+
+    if (zoneIds?.length > 0) {
+      where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
+    }
+
+    if (divisionIds?.length > 0) {
+      where.AND.push({
+        entity: { divisionId: { in: divisionIds } },
+      });
+    }
+
+    if (gteInterService?.replace(/\D/g, '')) {
+      where.AND.push({
+        entity: {
+          interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+        },
+      });
+    }
+
+    if (lteInterService?.replace(/\D/g, '')) {
+      where.AND.push({
+        entity: {
+          interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+        },
+      });
+    }
+
+    if (
+      gteInterService?.replace(/\D/g, '') &&
+      lteInterService?.replace(/\D/g, '')
+    ) {
+      where.AND.push({
+        entity: {
+          interService: {
+            gte: parseInt(gteInterService.replace(/\D/g, '')),
+            lte: parseInt(lteInterService.replace(/\D/g, '')),
+          },
+        },
+      });
+    }
+
+    const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
+      {
+        where,
+        include: {
+          entity: {
+            include: {
+              type: true,
+              location: { include: { zone: true } },
+              division: true,
+              assignees: {
+                include: {
+                  user: true,
+                },
+                where: {
+                  removedAt: null,
+                },
+              },
+            },
+          },
+          verifiedBy: true,
+        },
+        orderBy: [{ id: 'desc' }],
+      }
+    );
+
+    const statusCount = {
+      completed:
+        periodicMaintenances.filter((e) => e.status === 'Completed').length ??
+        0,
+      ongoing:
+        periodicMaintenances.filter((e) => e.status === 'Ongoing').length ?? 0,
+      upcoming:
+        periodicMaintenances.filter((e) => e.status === 'Upcoming').length ?? 0,
+      overdue:
+        periodicMaintenances.filter((e) => e.status === 'Overdue').length ?? 0,
+    };
+    return statusCount;
   }
 }

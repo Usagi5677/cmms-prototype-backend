@@ -46,6 +46,7 @@ Table User {
   divisionCreated Division [not null]
   divisionUsers DivisionUsers [not null]
   removedChecklistTemplateItem ChecklistTemplateItem [not null]
+  removedPeriodicMaintenance PeriodicMaintenance [not null]
 }
 
 Table Notification {
@@ -416,7 +417,6 @@ Table PeriodicMaintenance {
   originPeriodicMaintenance PeriodicMaintenance
   measurement String
   value Int
-  previousMeterReading Int [default: 0]
   currentMeterReading Int
   type String
   verifiedById Int
@@ -426,11 +426,16 @@ Table PeriodicMaintenance {
   comments PeriodicMaintenanceComment [not null]
   entity Entity
   entityId Int
+  status String
+  recur Boolean [not null, default: true]
+  removedAt DateTime
+  removedById Int
+  removedBy User
   periodicMaintenance PeriodicMaintenance [not null]
   notificationReminder Reminder [not null]
 
   indexes {
-    (entityId, from, to, measurement, type) [unique]
+    (entityId, originId, from, to, measurement, type) [unique]
   }
 }
 
@@ -702,6 +707,8 @@ Ref: PeriodicMaintenance.originId - PeriodicMaintenance.id
 Ref: PeriodicMaintenance.verifiedById > User.id
 
 Ref: PeriodicMaintenance.entityId > Entity.id
+
+Ref: PeriodicMaintenance.removedById > User.id
 
 Ref: Reminder.originId - Reminder.id
 

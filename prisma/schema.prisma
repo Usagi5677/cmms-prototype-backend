@@ -58,6 +58,7 @@ model User {
   divisionCreated                      Division[]                      @relation(name: "divisionCreated")
   divisionUsers                        DivisionUsers[]
   removedChecklistTemplateItem         ChecklistTemplateItem[]
+  removedPeriodicMaintenance           PeriodicMaintenance[]
 }
 
 model Notification {
@@ -446,7 +447,6 @@ model PeriodicMaintenance {
   originPeriodicMaintenance PeriodicMaintenance?         @relation("originPM", fields: [originId], references: [id], onDelete: Cascade)
   measurement               String?
   value                     Int?
-  previousMeterReading      Int?                         @default(0)
   currentMeterReading       Int?
   type                      String?
   verifiedById              Int?
@@ -456,10 +456,15 @@ model PeriodicMaintenance {
   comments                  PeriodicMaintenanceComment[]
   entity                    Entity?                      @relation(fields: [entityId], references: [id], onDelete: Cascade)
   entityId                  Int?
+  status                    String?
+  recur                     Boolean                      @default(true)
+  removedAt                 DateTime?
+  removedById               Int?
+  removedBy                 User?                        @relation(fields: [removedById], references: [id])
   periodicMaintenance       PeriodicMaintenance[]        @relation("originPM")
   notificationReminder      Reminder[]                   @relation("notificationPM")
 
-  @@unique([entityId, from, to, measurement, type])
+  @@unique([entityId, originId, from, to, measurement, type])
 }
 
 model Reminder {

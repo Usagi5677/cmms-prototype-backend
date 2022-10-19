@@ -422,6 +422,7 @@ type Entity {
   engine: String
   histories: [EntityHistory!]
   id: Int!
+  interService: Int
   lastService: Int
   location: Location
   machineNumber: String
@@ -706,6 +707,7 @@ type LocationPageInfo {
 }
 
 type Mutation {
+  activatePM(id: Int!): String!
   addAppUser(roles: [Int!]!, userId: String!): String!
   addBreakdownComment(createBreakdownCommentInput: CreateBreakdownCommentInput!): String!
   addBreakdownDetail(createBreakdownDetailInput: CreateBreakdownDetailInput!): String!
@@ -733,7 +735,7 @@ type Mutation {
   createEntity(brand: String, currentRunning: Int, divisionId: Int, engine: String, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createLocation(input: CreateLocationInput!): String!
-  createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, previousMeterReading: Int, value: Int!): String!
+  createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, recur: Boolean, value: Int): String!
   createPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createRepair(createRepairInput: CreateRepairInput!): String!
   createSparePR(createSparePrInput: CreateSparePrInput!): String!
@@ -743,6 +745,7 @@ type Mutation {
   deleteEntityPMTask(id: Int!): String!
   deleteEntityPeriodicMaintenance(id: Int!): String!
   deleteEntityRepairRequest(id: Int!): String!
+  deleteOriginPeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
   editEntity(brand: String, divisionId: Int, engine: String, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
@@ -750,7 +753,7 @@ type Mutation {
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editKey(input: EditApiKeyInput!): String!
-  editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, previousMeterReading: Int, value: Int): String!
+  editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, recur: Boolean, value: Int): String!
   editRole(id: Int!, name: String!): String!
   editUserLocation(id: Int!, locationId: Int): String!
   flushRedis: String!
@@ -934,7 +937,8 @@ type PeriodicMaintenance {
   name: String
   notificationReminder: [PeriodicMaintenanceNotification!]
   originId: Int
-  previousMeterReading: Int
+  recur: Boolean!
+  status: String
   tasks: [PeriodicMaintenanceTask!]
   to: Date
   type: String
@@ -1021,7 +1025,8 @@ type PeriodicMaintenanceSummary {
   name: String
   notificationReminder: [PeriodicMaintenanceNotification!]
   originId: Int
-  previousMeterReading: Int
+  recur: Boolean!
+  status: String
   taskCompletion: String!
   tasks: [PeriodicMaintenanceTask!]
   to: Date
@@ -1140,6 +1145,31 @@ type Query {
     zoneIds: [Int!]
   ): entityStatusCount!
   allEntityUsageHistory(from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [AllEntityUsageHistory!]!
+  allPMStatusCount(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    divisionIds: [Int!]
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+    from: Date
+    gteInterService: String
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteInterService: String
+    measurement: [String!]
+    search: String
+    to: Date
+    type: String
+    type2Ids: [Int!]
+    zoneIds: [Int!]
+  ): pmStatusCount!
   apiKeys(
     """Paginate after opaque cursor"""
     after: String
@@ -1221,6 +1251,7 @@ type Query {
     last: Int
     search: String
   ): PaginatedBreakdown!
+  checkCopyPMExist(id: Int!): Boolean!
   checklist(input: ChecklistInput!): Checklist
   checklistSummary(input: ChecklistSummaryInput!): [ChecklistSummary!]!
   checklistTemplate(id: Int!): ChecklistTemplate!
@@ -1476,6 +1507,31 @@ type Query {
     search: String
     to: Date
   ): PaginatedEntityHistory!
+  getAllPMWithPagination(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    divisionIds: [Int!]
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+    from: Date
+    gteInterService: String
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteInterService: String
+    measurement: [String!]
+    search: String
+    to: Date
+    type: String
+    type2Ids: [Int!]
+    zoneIds: [Int!]
+  ): PeriodicMaintenanceConnection!
   getAllPeriodicMaintenanceOfEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -1578,17 +1634,24 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    divisionIds: [Int!]
     entityId: Int
 
     """Paginate first"""
     first: Int
     from: Date
+    gteInterService: String
 
     """Paginate last"""
     last: Int
+    locationIds: [Int!]
+    lteInterService: String
+    measurement: [String!]
     search: String
     to: Date
     type: String
+    type2Ids: [Int!]
+    zoneIds: [Int!]
   ): PeriodicMaintenanceConnection!
   permissions: [PermissionWithDescription!]!
   profile: Profile!
@@ -1894,7 +1957,6 @@ type UserRoles {
 }
 
 type UserWithRoles {
-  divisionUsers: [DivisionAssign!]
   email: String!
   entityAssignment: [EntityAssignment!]
   fullName: String!
@@ -1956,4 +2018,11 @@ type maintenanceStatusCount {
   done: Int
   missed: Int
   pending: Int
+}
+
+type pmStatusCount {
+  completed: Int
+  ongoing: Int
+  overdue: Int
+  upcoming: Int
 }

@@ -15,9 +15,10 @@ export class PeriodicMaintenance extends BaseModel {
   to?: Date;
   measurement?: string;
   value?: number;
-  previousMeterReading?: number;
   currentMeterReading?: number;
   type?: string;
+  status?: string;
+  recur: boolean;
   tasks?: PeriodicMaintenanceTask[];
   verifiedBy?: User;
   verifiedAt?: Date;

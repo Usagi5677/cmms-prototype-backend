@@ -26,6 +26,7 @@ export class Entity extends BaseModel {
   engine?: string;
   currentRunning?: number;
   lastService?: number;
+  interService?: number;
   measurement?: string;
   brand?: string;
   deletedAt?: Date;

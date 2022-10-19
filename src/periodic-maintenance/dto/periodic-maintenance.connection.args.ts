@@ -8,4 +8,11 @@ export class PeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   from?: Date;
   to?: Date;
   entityId?: number;
+  type2Ids?: number[];
+  measurement?: string[];
+  locationIds?: number[];
+  zoneIds?: number[];
+  divisionIds?: number[];
+  gteInterService?: string;
+  lteInterService?: string;
 }

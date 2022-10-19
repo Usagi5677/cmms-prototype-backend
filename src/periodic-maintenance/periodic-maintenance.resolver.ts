@@ -9,6 +9,7 @@ import { User } from 'src/models/user.model';
 import { PeriodicMaintenanceConnection } from './dto/periodic-maintenance-connection.model';
 import { PeriodicMaintenanceConnectionArgs } from './dto/periodic-maintenance.connection.args';
 import { PeriodicMaintenanceSummary } from './dto/models/periodic-maintenance-summary.model';
+import { pmStatusCount } from './dto/models/pmStatusCount.model';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => PeriodicMaintenance)
@@ -93,6 +94,17 @@ export class PeriodicMaintenanceResolver {
     await this.periodicMaintenanceService.deletePeriodicMaintenance(user, id);
     return `Periodic Maintenance deleted.`;
   }
+  @Mutation(() => String)
+  async deleteOriginPeriodicMaintenance(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<string> {
+    await this.periodicMaintenanceService.deleteOriginPeriodicMaintenance(
+      user,
+      id
+    );
+    return `Origin Periodic Maintenance deleted.`;
+  }
 
   @Mutation(() => String)
   async assignPeriodicMaintenanceTemplate(
@@ -113,18 +125,18 @@ export class PeriodicMaintenanceResolver {
     @UserEntity() user: User,
     @Args('name') name: string,
     @Args('measurement') measurement: string,
-    @Args('value') value: number,
-    @Args('previousMeterReading', { nullable: true })
-    previousMeterReading: number,
-    @Args('currentMeterReading', { nullable: true }) currentMeterReading: number
+    @Args('value', { nullable: true }) value: number,
+    @Args('currentMeterReading', { nullable: true })
+    currentMeterReading: number,
+    @Args('recur', { nullable: true }) recur: boolean
   ): Promise<string> {
     await this.periodicMaintenanceService.createPeriodicMaintenance(
       user,
       name,
       measurement,
       value,
-      previousMeterReading,
-      currentMeterReading
+      currentMeterReading,
+      recur
     );
     return `Periodic maintenance updated.`;
   }
@@ -136,9 +148,9 @@ export class PeriodicMaintenanceResolver {
     @Args('name') name: string,
     @Args('measurement', { nullable: true }) measurement: string,
     @Args('value', { nullable: true }) value: number,
-    @Args('previousMeterReading', { nullable: true })
-    previousMeterReading: number,
-    @Args('currentMeterReading', { nullable: true }) currentMeterReading: number
+    @Args('currentMeterReading', { nullable: true })
+    currentMeterReading: number,
+    @Args('recur', { nullable: true }) recur: boolean
   ): Promise<string> {
     await this.periodicMaintenanceService.editPeriodicMaintenance(
       user,
@@ -146,8 +158,8 @@ export class PeriodicMaintenanceResolver {
       name,
       measurement,
       value,
-      previousMeterReading,
-      currentMeterReading
+      currentMeterReading,
+      recur
     );
     return `Periodic maintenance updated.`;
   }
@@ -246,5 +258,38 @@ export class PeriodicMaintenanceResolver {
       month
     );
     return `Periodic maintenance notification reminder upserted.`;
+  }
+
+  @Mutation(() => String)
+  async activatePM(
+    @UserEntity() user: User,
+    @Args('id') id: number
+  ): Promise<string> {
+    await this.periodicMaintenanceService.activatePM(id);
+    return `Activated periodic maintenance.`;
+  }
+
+  @Query(() => Boolean)
+  async checkCopyPMExist(@Args('id') id: number): Promise<boolean> {
+    return await this.periodicMaintenanceService.checkCopyPMExist(id);
+  }
+
+  @Query(() => PeriodicMaintenanceConnection)
+  async getAllPMWithPagination(
+    @UserEntity() user: User,
+    @Args() args: PeriodicMaintenanceConnectionArgs
+  ) {
+    return await this.periodicMaintenanceService.getAllPMWithPagination(
+      user,
+      args
+    );
+  }
+
+  @Query(() => pmStatusCount)
+  async allPMStatusCount(
+    @UserEntity() user: User,
+    @Args() args: PeriodicMaintenanceConnectionArgs
+  ): Promise<pmStatusCount> {
+    return this.periodicMaintenanceService.getAllPMStatusCount(user, args);
   }
 }
