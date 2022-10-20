@@ -82,16 +82,6 @@ export class PeriodicMaintenanceService {
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PeriodicMaintenanceConnection> {
-    const hasPermission = await this.userService.checkUserPermission(
-      user.id,
-      'VIEW_TEMPLATES',
-      true
-    );
-    // If user does not have the permission, check if they are assigned as
-    // admin to any entity.
-    if (!hasPermission) {
-      await this.entityService.checkAllEntityAssignments(user.id, ['Admin']);
-    }
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const { search, type, from, to, entityId } = args;
