@@ -3572,6 +3572,67 @@ export class EntityService {
     }
   }
 
+  //** to check if assigned user has tasks to be done*/
+  async getAllEntityPMSummary(user: User) {
+    try {
+      const pm = await this.prisma.periodicMaintenance.findMany({
+        where: {
+          entity: {
+            assignees: { some: { userId: user.id, removedAt: null } },
+          },
+          status: { not: 'Upcoming' },
+          tasks: {
+            some: {
+              completedAt: null,
+              subTasks: {
+                some: {
+                  completedAt: null,
+                  subTasks: {
+                    some: { completedAt: null },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const todayStart = moment().startOf('day');
+      const todayEnd = moment().endOf('day');
+      const checklist = await this.prisma.checklist.findMany({
+        where: {
+          from: todayStart.toDate(),
+          to: todayEnd.toDate(),
+          entity: {
+            assignees: { some: { userId: user.id, removedAt: null } },
+          },
+          items: {
+            some: {
+              completedAt: null,
+            },
+          },
+        },
+        include: {
+          entity: {
+            include: {
+              type: true,
+            },
+          },
+        },
+      });
+      const pmUnique = [...new Set(pm.map((m) => m.id))];
+      const pmChecklistUnique = [...new Set(checklist.map((m) => m.entityId))];
+
+      const checklistAndPMSummary = {
+        pm: pmUnique,
+        checklist: pmChecklistUnique,
+      };
+      return checklistAndPMSummary;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
   //** to check if assigned user has checklist or tasks to be done*/
   async getAllEntityChecklistAndPMSummary(user: User) {
     try {

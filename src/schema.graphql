@@ -1387,6 +1387,7 @@ type Query {
     zoneIds: [Int!]
   ): PaginatedEntity!
   getAllEntityChecklistAndPMSummary: entityChecklistAndPMSummary!
+  getAllEntityPMSummary: entityPMSummary!
   getAllEntityPeriodicMaintenance(
     """Paginate after opaque cursor"""
     after: String
@@ -2005,6 +2006,11 @@ type entityChecklistAndPMSummary {
   vehicleTaskComplete: Boolean
   vesselChecklistComplete: Boolean
   vesselTaskComplete: Boolean
+}
+
+type entityPMSummary {
+  checklist: [Int!]
+  pm: [Int!]
 }
 
 type entityStatusCount {

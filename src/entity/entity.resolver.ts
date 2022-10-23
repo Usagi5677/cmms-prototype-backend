@@ -29,6 +29,7 @@ import { entityStatusCount } from './dto/models/entityStatusCount.model';
 import { Entity } from './dto/models/entity.model';
 import { entityBreakdownCount } from './dto/models/entityBreakdownCount.model';
 import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSummary.model';
+import { entityPMSummary } from './dto/models/entityPMSummary.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -585,6 +586,13 @@ export class EntityResolver {
     @UserEntity() user: User
   ): Promise<entityChecklistAndPMSummary> {
     return this.entityService.getAllEntityChecklistAndPMSummary(user);
+  }
+
+  @Query(() => entityPMSummary)
+  async getAllEntityPMSummary(
+    @UserEntity() user: User
+  ): Promise<entityPMSummary> {
+    return this.entityService.getAllEntityPMSummary(user);
   }
 
   @Mutation(() => String)
