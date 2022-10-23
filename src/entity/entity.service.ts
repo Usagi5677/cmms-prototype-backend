@@ -2168,7 +2168,7 @@ export class EntityService {
       where: { id: entityId },
       include: { type: true },
     });
-    if (entityFromCheck.type.entityType === 'Machine') {
+    if (entityFromCheck?.type?.entityType === 'Machine') {
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
@@ -2176,7 +2176,7 @@ export class EntityService {
         [],
         ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
       );
-    } else if (entityFromCheck.type.entityType === 'Vehicle') {
+    } else if (entityFromCheck?.type?.entityType === 'Vehicle') {
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
@@ -2184,7 +2184,7 @@ export class EntityService {
         [],
         ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
       );
-    } else if (entityFromCheck.type.entityType === 'Vessel') {
+    } else if (entityFromCheck?.type?.entityType === 'Vessel') {
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
