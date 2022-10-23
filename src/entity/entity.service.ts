@@ -523,7 +523,7 @@ export class EntityService {
         division: true,
       },
     });
-    if (entity.type.entityType === 'Machine') {
+    if (entity?.type?.entityType === 'Machine') {
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
@@ -531,7 +531,7 @@ export class EntityService {
         [],
         ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
       );
-    } else if (entity.type.entityType === 'Vehicle') {
+    } else if (entity?.type?.entityType === 'Vehicle') {
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
@@ -539,7 +539,7 @@ export class EntityService {
         [],
         ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
       );
-    } else if (entity.type.entityType === 'Vessel') {
+    } else if (entity?.type?.entityType === 'Vessel') {
       await this.checkEntityAssignmentOrPermission(
         entityId,
         user.id,
