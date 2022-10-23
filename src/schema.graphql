@@ -1164,6 +1164,7 @@ type Query {
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
+    pmStatus: [String!]
     search: String
     to: Date
     type: String
@@ -1527,6 +1528,7 @@ type Query {
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
+    pmStatus: [String!]
     search: String
     to: Date
     type: String
@@ -1648,6 +1650,7 @@ type Query {
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
+    pmStatus: [String!]
     search: String
     to: Date
     type: String

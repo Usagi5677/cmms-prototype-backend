@@ -1772,6 +1772,7 @@ export class PeriodicMaintenanceService {
       divisionIds,
       gteInterService,
       lteInterService,
+      pmStatus,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -1826,6 +1827,12 @@ export class PeriodicMaintenanceService {
     if (divisionIds?.length > 0) {
       where.AND.push({
         entity: { divisionId: { in: divisionIds } },
+      });
+    }
+
+    if (pmStatus?.length > 0) {
+      where.AND.push({
+        status: { in: pmStatus },
       });
     }
 
@@ -1911,8 +1918,6 @@ export class PeriodicMaintenanceService {
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PeriodicMaintenanceConnection> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
     const {
       search,
       type2Ids,
@@ -1922,6 +1927,7 @@ export class PeriodicMaintenanceService {
       divisionIds,
       gteInterService,
       lteInterService,
+      pmStatus,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -1976,6 +1982,12 @@ export class PeriodicMaintenanceService {
     if (divisionIds?.length > 0) {
       where.AND.push({
         entity: { divisionId: { in: divisionIds } },
+      });
+    }
+
+    if (pmStatus?.length > 0) {
+      where.AND.push({
+        status: { in: pmStatus },
       });
     }
 

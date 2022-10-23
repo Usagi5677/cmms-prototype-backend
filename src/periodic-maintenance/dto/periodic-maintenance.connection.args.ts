@@ -15,4 +15,5 @@ export class PeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   divisionIds?: number[];
   gteInterService?: string;
   lteInterService?: string;
+  pmStatus?: string[];
 }
