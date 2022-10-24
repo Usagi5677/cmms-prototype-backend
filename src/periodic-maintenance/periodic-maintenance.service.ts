@@ -375,6 +375,7 @@ export class PeriodicMaintenanceService {
           : { verifiedById: null, verifiedAt: null, status: 'Ongoing' },
       });
 
+      /*
       const reading = await this.entityService.getLatestReading(pm.entity);
 
       //update copy with new values. (Not necessary to update previous reading for copies)
@@ -402,7 +403,7 @@ export class PeriodicMaintenanceService {
           data: { lastService: reading },
         });
       }
-
+      */
       const users = await this.entityService.getEntityAssignmentIds(
         pm.entityId,
         user.id
@@ -716,6 +717,12 @@ export class PeriodicMaintenanceService {
         id: periodicMaintenance.originId,
       },
       data: { currentMeterReading: reading },
+    });
+
+    //update last service to currentReading
+    await this.prisma.entity.update({
+      where: { id: periodicMaintenance.entity.id },
+      data: { lastService: reading },
     });
   }
 
