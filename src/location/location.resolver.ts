@@ -11,6 +11,7 @@ import { User } from 'src/models/user.model';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { PaginatedLocation } from './dto/location-connection.model';
 import { LocationConnectionArgs } from './dto/location-connection.args';
+import { LocationAssignInput } from './dto/location-assign.input';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Location)
@@ -49,5 +50,33 @@ export class LocationResolver {
   async removeLocation(@Args('id', { type: () => Int }) id: number) {
     await this.locationService.remove(id);
     return 'Successfully removed location.';
+  }
+
+  @Mutation(() => String)
+  async assignUserToLocation(@Args('input') input: LocationAssignInput) {
+    await this.locationService.assignUserToLocation(input);
+    return 'Successfully assigned user to location.';
+  }
+
+  @Permissions('MODIFY_LOCATIONS')
+  @Mutation(() => String)
+  async unassignUserFromLocation(@Args('id', { type: () => Int }) id: number) {
+    await this.locationService.unassignUserFromLocation(id);
+    return 'Successfully removed user from location.';
+  }
+
+  @Mutation(() => String)
+  async assignEntityToLocation(@Args('input') input: LocationAssignInput) {
+    await this.locationService.assignEntityToLocation(input);
+    return 'Successfully assigned entity to location.';
+  }
+
+  @Mutation(() => String)
+  async updateEntityLocation(
+    @Args('entityId') entityId: number,
+    @Args('locationId') locationId: number
+  ) {
+    await this.locationService.updateEntityLocation(entityId, locationId);
+    return `Successfully updated entity's location.`;
   }
 }

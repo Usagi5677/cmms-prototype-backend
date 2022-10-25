@@ -10,8 +10,6 @@ Table User {
   rcno Int [not null]
   fullName String [not null]
   email String [not null]
-  locationId Int
-  location Location
   notifications Notification [not null]
   roles UserRole [not null]
   checklistCompletions ChecklistItem [not null]
@@ -47,6 +45,7 @@ Table User {
   divisionUsers DivisionUsers [not null]
   removedChecklistTemplateItem ChecklistTemplateItem [not null]
   removedPeriodicMaintenance PeriodicMaintenance [not null]
+  locationUsers LocationUsers [not null]
 }
 
 Table Notification {
@@ -115,7 +114,7 @@ Table Location {
   zone Zone
   entities Entity [not null]
   histories EntityHistory [not null]
-  user User [not null]
+  locationUsers LocationUsers [not null]
 }
 
 Table Zone {
@@ -570,6 +569,17 @@ Table DivisionUsers {
   user User
 }
 
+Table LocationUsers {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  removedAt DateTime
+  locationId Int [not null]
+  userId Int [not null]
+  location Location
+  user User
+}
+
 Enum SparePRStatus {
   Done
   Pending
@@ -592,8 +602,6 @@ Enum PeriodicMaintenanceStatus {
   Missed
 }
 
-Ref: User.locationId - Location.id
-
 Ref: Notification.userId > User.id
 
 Ref: Role.createdById > User.id
@@ -604,7 +612,7 @@ Ref: UserRole.roleId > Role.id
 
 Ref: PermissionRole.roleId > Role.id
 
-Ref: Location.createdById - User.id
+Ref: Location.createdById > User.id
 
 Ref: Location.zoneId > Zone.id
 
@@ -749,3 +757,7 @@ Ref: Division.createdById > User.id
 Ref: DivisionUsers.divisionId > Division.id
 
 Ref: DivisionUsers.userId > User.id
+
+Ref: LocationUsers.locationId > Location.id
+
+Ref: LocationUsers.userId > User.id

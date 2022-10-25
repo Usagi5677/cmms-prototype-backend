@@ -17,6 +17,8 @@ import { PaginatedAssignment } from './dto/assignment-connection.model';
 import { BulkAssignInput } from './dto/bulk-assign.input';
 import { DivisionAssignmentConnectionArgs } from './dto/division-assignment-connection.args';
 import { PaginatedDivisionAssignment } from './dto/division-assignment-connection.model';
+import { LocationAssignmentConnectionArgs } from './dto/location-assignment-connection.args';
+import { PaginatedLocationAssignment } from './dto/location-assignment-connection.model';
 
 @Injectable()
 export class AssignmentService {
@@ -47,6 +49,7 @@ export class AssignmentService {
       take: limitPlusOne,
       where,
       include: { entity: { include: { location: true } }, user: true },
+      orderBy: { id: 'desc' },
     });
     const count = await this.prisma.entityAssignment.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
@@ -136,8 +139,55 @@ export class AssignmentService {
         division: true,
         user: true,
       },
+      orderBy: { id: 'desc' },
     });
     const count = await this.prisma.divisionUsers.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      results.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
+  async locationAssignments(
+    args: LocationAssignmentConnectionArgs
+  ): Promise<PaginatedLocationAssignment> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { userIds, current, locationIds } = args;
+    const where: any = { AND: [] };
+    if (current) {
+      where.AND.push({ removedAt: null });
+    }
+    if (userIds?.length > 0) {
+      where.AND.push({ userId: { in: userIds } });
+    }
+    if (locationIds?.length > 0) {
+      where.AND.push({ locationId: { in: locationIds } });
+    }
+    const results = await this.prisma.locationUsers.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      include: {
+        location: true,
+        user: true,
+      },
+      orderBy: { id: 'desc' },
+    });
+    const count = await this.prisma.locationUsers.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
       results.slice(0, limit),
       args,

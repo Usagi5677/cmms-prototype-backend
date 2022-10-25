@@ -693,6 +693,39 @@ type Location {
   zone: Zone
 }
 
+type LocationAssign {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  location: Location
+  locationId: Int
+  removedAt: Date
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User
+  userId: Int
+}
+
+type LocationAssignEdge {
+  cursor: String
+  node: LocationAssign
+}
+
+input LocationAssignInput {
+  entityIds: [Int!]
+  locationId: Int!
+  userIds: [Int!]
+}
+
+type LocationAssignPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type LocationEdge {
   cursor: String
   node: Location
@@ -722,10 +755,12 @@ type Mutation {
   addSparePRDetail(createSparePRDetailInput: CreateSparePRDetailInput!): String!
   addUserRole(roles: [Int!]!, userId: Int!): String!
   assignEntityToDivision(input: DivisionAssignInput!): String!
+  assignEntityToLocation(input: LocationAssignInput!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
   assignUserToDivision(input: DivisionAssignInput!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
+  assignUserToLocation(input: LocationAssignInput!): String!
   bulkAssign(input: BulkAssignInput!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createApiKey(input: CreateApiKeyInput!): String!
@@ -755,7 +790,6 @@ type Mutation {
   editKey(input: EditApiKeyInput!): String!
   editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, recur: Boolean, value: Int): String!
   editRole(id: Int!, name: String!): String!
-  editUserLocation(id: Int!, locationId: Int): String!
   flushRedis: String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
@@ -792,6 +826,7 @@ type Mutation {
   toggleVerifyPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   unassignUserFromDivision(id: Int!): String!
   unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
+  unassignUserFromLocation(id: Int!): String!
 
   """
   Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.
@@ -802,6 +837,7 @@ type Mutation {
   updateDailyUsage(hours: Int!, id: Int!): String!
   updateDivision(input: UpdateDivisionInput!): String!
   updateEntityDivision(divisionId: Int!, entityId: Int!): String!
+  updateEntityLocation(entityId: Int!, locationId: Int!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
@@ -891,6 +927,11 @@ type PaginatedEntityRepair {
 type PaginatedLocation {
   edges: [LocationEdge!]
   pageInfo: LocationPageInfo
+}
+
+type PaginatedLocationAssignment {
+  edges: [LocationAssignEdge!]
+  pageInfo: LocationAssignPageInfo
 }
 
 type PaginatedPermissionRole {
@@ -1136,6 +1177,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    locationExist: Boolean
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
@@ -1210,6 +1252,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    locationExist: Boolean
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
@@ -1347,6 +1390,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    locationExist: Boolean
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
@@ -1379,6 +1423,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    locationExist: Boolean
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
@@ -1451,6 +1496,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    locationExist: Boolean
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
@@ -1483,6 +1529,7 @@ type Query {
 
     """Paginate last"""
     last: Int
+    locationExist: Boolean
     locationIds: [Int!]
     lteInterService: String
     measurement: [String!]
@@ -1594,12 +1641,14 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
+    divisionIds: [Int!]
 
     """Paginate first"""
     first: Int
 
     """Paginate last"""
     last: Int
+    locationIds: [Int!]
     search: String
   ): PaginatedUsers!
   getEntityLatestAttachment(entityId: Int!): EntityAttachment!
@@ -1611,6 +1660,22 @@ type Query {
   incompleteChecklists(input: IncompleteChecklistInput!): [Checklist!]
   incompleteChecklistsPastTwoDays: [Int!]
   location(id: Int!): Location!
+  locationAssignments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    current: Boolean!
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    userIds: [Int!]!
+  ): PaginatedLocationAssignment!
   locations(
     """Paginate after opaque cursor"""
     after: String
@@ -1925,7 +1990,7 @@ type User {
   email: String!
   fullName: String!
   id: Int!
-  location: Location
+  locationId: Int
   permissions: [String!]
   rcno: Int!
   roles: [UserRoles!]

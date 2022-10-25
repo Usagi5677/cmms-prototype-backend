@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
@@ -8,6 +13,7 @@ import { User } from 'src/models/user.model';
 import { CreateLocationInput } from './dto/create-location.input';
 import { LocationConnectionArgs } from './dto/location-connection.args';
 import { PaginatedLocation } from './dto/location-connection.model';
+import { LocationAssignInput } from './dto/location-assign.input';
 import { UpdateLocationInput } from './dto/update-location.input';
 
 @Injectable()
@@ -92,6 +98,72 @@ export class LocationService {
     await this.prisma.location.update({
       where: { id },
       data: { active: false },
+    });
+  }
+
+  async unassignUserFromLocation(id: number) {
+    await this.prisma.locationUsers.update({
+      where: { id },
+      data: { removedAt: new Date() },
+    });
+  }
+
+  async assignEntityToLocation({ locationId, entityIds }: LocationAssignInput) {
+    try {
+      if (entityIds.length > 0) {
+        for (const id of entityIds) {
+          await this.prisma.entity.update({
+            where: { id },
+            data: { locationId },
+          });
+        }
+      }
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        // This error throws if user is already assigned to entity
+        // Catch and ignore this error and proceed
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
+
+  async assignUserToLocation({ locationId, userIds }: LocationAssignInput) {
+    try {
+      if (userIds.length > 0) {
+        await this.prisma.locationUsers.updateMany({
+          where: { userId: { in: userIds }, locationId },
+          data: { removedAt: new Date() },
+        });
+        await this.prisma.locationUsers.createMany({
+          data: userIds.map((userId) => ({
+            locationId,
+            userId,
+          })),
+        });
+      }
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        // This error throws if user is already assigned to entity
+        // Catch and ignore this error and proceed
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
+
+  async updateEntityLocation(entityId: number, locationId: number) {
+    await this.prisma.entity.update({
+      where: { id: entityId },
+      data: { locationId },
     });
   }
 }

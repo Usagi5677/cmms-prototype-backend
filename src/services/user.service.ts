@@ -132,7 +132,7 @@ export class UserService {
   ): Promise<PaginatedUsers> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search } = args;
+    const { search, locationIds, divisionIds } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -147,6 +147,28 @@ export class UserService {
         OR: or,
       });
     }
+    if (locationIds) {
+      where.AND.push({
+        locationUsers: {
+          some: {
+            locationId: {
+              in: locationIds,
+            },
+          },
+        },
+      });
+    }
+    if (divisionIds) {
+      where.AND.push({
+        divisionUsers: {
+          some: {
+            divisionId: {
+              in: divisionIds,
+            },
+          },
+        },
+      });
+    }
     const users = await this.prisma.user.findMany({
       skip: offset,
       take: limitPlusOne,
@@ -158,7 +180,6 @@ export class UserService {
             role: true,
           },
         },
-        location: true,
       },
     });
     const count = await this.prisma.user.count({ where });
@@ -179,20 +200,5 @@ export class UserService {
         hasPreviousPage: offset >= limit,
       },
     };
-  }
-
-  //** Edit user location */
-  async editUserLocation(user: User, id: number, locationId: number) {
-    try {
-      await this.prisma.user.update({
-        where: { id },
-        data: {
-          locationId,
-        },
-      });
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
   }
 }

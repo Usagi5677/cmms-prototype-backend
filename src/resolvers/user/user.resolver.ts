@@ -49,7 +49,6 @@ export class UserResolver {
             },
           },
         },
-        location: true,
       },
     });
     return userDB;
@@ -167,6 +166,7 @@ export class UserResolver {
       //unique users only
       const uniqueUserIds = [...new Set(cleanUserIds)];
 
+      // eslint-disable-next-line prefer-const
       let where: any = {
         AND: [
           {
@@ -193,23 +193,6 @@ export class UserResolver {
         where,
       });
       return users;
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  /**Edit user location. */
-  @Permissions('EDIT_USER_LOCATION')
-  @Mutation(() => String)
-  async editUserLocation(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('locationId', { nullable: true }) locationId: number
-  ): Promise<String> {
-    try {
-      await this.userService.editUserLocation(user, id, locationId);
-      return 'User location updated.';
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

@@ -2,7 +2,6 @@ import { UseGuards } from '@nestjs/common';
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { UserEntity } from 'src/decorators/user.decorator';
-import { DivisionAssign } from 'src/division/entities/division-assign.entity';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { User } from 'src/models/user.model';
@@ -12,6 +11,8 @@ import { PaginatedAssignment } from './dto/assignment-connection.model';
 import { BulkAssignInput } from './dto/bulk-assign.input';
 import { DivisionAssignmentConnectionArgs } from './dto/division-assignment-connection.args';
 import { PaginatedDivisionAssignment } from './dto/division-assignment-connection.model';
+import { LocationAssignmentConnectionArgs } from './dto/location-assignment-connection.args';
+import { PaginatedLocationAssignment } from './dto/location-assignment-connection.model';
 import { EntityAssignment } from './entities/entity-assign.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -36,5 +37,10 @@ export class AssignmentResolver {
   @Query(() => PaginatedDivisionAssignment)
   async divisionAssignments(@Args() args: DivisionAssignmentConnectionArgs) {
     return await this.assignmentService.divisionAssignments(args);
+  }
+
+  @Query(() => PaginatedLocationAssignment)
+  async locationAssignments(@Args() args: LocationAssignmentConnectionArgs) {
+    return await this.assignmentService.locationAssignments(args);
   }
 }

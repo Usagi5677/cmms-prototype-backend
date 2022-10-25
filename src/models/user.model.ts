@@ -10,7 +10,7 @@ export class User extends BaseModel {
   userId: string;
   email: string;
   @Field({ nullable: true })
-  location?: Location;
+  locationId?: number;
   roles?: UserRoles[];
   permissions?: string[];
 }

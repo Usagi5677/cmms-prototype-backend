@@ -22,4 +22,5 @@ export class EntityConnectionArgs extends ConnectionArgs {
   isIncompleteChecklistTask?: boolean;
   entityIds?: number[];
   divisionExist?: boolean;
+  locationExist?: boolean;
 }

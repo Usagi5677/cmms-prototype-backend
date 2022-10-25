@@ -594,6 +594,7 @@ export class EntityService {
       isIncompleteChecklistTask,
       entityIds,
       divisionExist,
+      locationExist,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -889,6 +890,11 @@ export class EntityService {
     if (divisionExist) {
       where.AND.push({
         divisionId: { not: null },
+      });
+    }
+    if (locationExist) {
+      where.AND.push({
+        locationId: { not: null },
       });
     }
     const entities = await this.prisma.entity.findMany({
