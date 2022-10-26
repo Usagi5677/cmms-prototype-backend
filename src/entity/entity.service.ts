@@ -1794,7 +1794,7 @@ export class EntityService {
           userId: id,
           body: `${user.fullName} (${
             user.rcno
-          }) assigned ${newAssignmentsFormatted} to ${
+          }) removed ${newAssignmentsFormatted} from ${
             `${entity.type?.name} ` ?? ''
           }${entity.machineNumber} as ${type}.`,
           link: `/entity/${entityId}`,
