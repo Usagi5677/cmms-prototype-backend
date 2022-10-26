@@ -147,18 +147,23 @@ export class LocationService {
   ) {
     try {
       if (userIds.length > 0) {
+        const assignedUsers = await this.prisma.locationUsers.findMany({
+          where: { userId: { in: userIds }, locationId, removedAt: null },
+        });
+        const assignedUserIds = assignedUsers?.map((u) => u?.userId);
+        const newIds = userIds.filter((id) => !assignedUserIds?.includes(id));
         await this.prisma.locationUsers.updateMany({
-          where: { userId: { in: userIds }, locationId },
+          where: { userId: { in: newIds }, locationId },
           data: { removedAt: new Date() },
         });
         await this.prisma.locationUsers.createMany({
-          data: userIds.map((userId) => ({
+          data: newIds.map((userId) => ({
             locationId,
             userId,
           })),
         });
 
-        const userIdsExceptCurrentUser = userIds.filter((id) => id != user.id);
+        const userIdsExceptCurrentUser = newIds.filter((id) => id != user.id);
 
         const location = await this.prisma.location.findFirst({
           where: { id: locationId },

@@ -98,18 +98,23 @@ export class DivisionService {
   ) {
     try {
       if (userIds.length > 0) {
+        const assignedUsers = await this.prisma.divisionUsers.findMany({
+          where: { userId: { in: userIds }, divisionId, removedAt: null },
+        });
+        const assignedUserIds = assignedUsers?.map((u) => u?.userId);
+        const newIds = userIds.filter((id) => !assignedUserIds?.includes(id));
         await this.prisma.divisionUsers.updateMany({
-          where: { userId: { in: userIds }, divisionId },
+          where: { userId: { in: newIds }, divisionId },
           data: { removedAt: new Date() },
         });
         await this.prisma.divisionUsers.createMany({
-          data: userIds.map((userId) => ({
+          data: newIds.map((userId) => ({
             divisionId,
             userId,
           })),
         });
 
-        const userIdsExceptCurrentUser = userIds.filter((id) => id != user.id);
+        const userIdsExceptCurrentUser = newIds.filter((id) => id != user.id);
 
         const division = await this.prisma.division.findFirst({
           where: { id: divisionId },
