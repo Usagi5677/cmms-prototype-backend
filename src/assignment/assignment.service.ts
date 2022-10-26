@@ -50,7 +50,7 @@ export class AssignmentService {
       take: limitPlusOne,
       where,
       include: { entity: { include: { location: true } }, user: true },
-      orderBy: { id: 'desc' },
+      orderBy: { updatedAt: 'desc' },
     });
     const count = await this.prisma.entityAssignment.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
@@ -187,7 +187,7 @@ export class AssignmentService {
         division: true,
         user: true,
       },
-      orderBy: { id: 'desc' },
+      orderBy: { updatedAt: 'desc' },
     });
     const count = await this.prisma.divisionUsers.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
@@ -233,7 +233,7 @@ export class AssignmentService {
         location: true,
         user: true,
       },
-      orderBy: { id: 'desc' },
+      orderBy: { updatedAt: 'desc' },
     });
     const count = await this.prisma.locationUsers.count({ where });
     const { edges, pageInfo } = connectionFromArraySlice(
