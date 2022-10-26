@@ -9,6 +9,7 @@ import { AssignmentService } from './assignment.service';
 import { AssignmentConnectionArgs } from './dto/assignment-connection.args';
 import { PaginatedAssignment } from './dto/assignment-connection.model';
 import { BulkAssignInput } from './dto/bulk-assign.input';
+import { BulkUnassignInput } from './dto/bulk-unassign.input';
 import { DivisionAssignmentConnectionArgs } from './dto/division-assignment-connection.args';
 import { PaginatedDivisionAssignment } from './dto/division-assignment-connection.model';
 import { LocationAssignmentConnectionArgs } from './dto/location-assignment-connection.args';
@@ -32,6 +33,15 @@ export class AssignmentResolver {
   ) {
     await this.assignmentService.bulkAssign(user, input);
     return 'Successfully completed bulk assignment.';
+  }
+
+  @Mutation(() => String)
+  async bulkUnassign(
+    @UserEntity() user: User,
+    @Args('input') input: BulkUnassignInput
+  ) {
+    await this.assignmentService.bulkUnassign(user, input);
+    return 'Successfully completed bulk unassignment.';
   }
 
   @Query(() => PaginatedDivisionAssignment)

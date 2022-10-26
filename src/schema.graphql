@@ -132,6 +132,12 @@ input BulkAssignInput {
   userIds: [Int!]!
 }
 
+input BulkUnassignInput {
+  entityIds: [Int!]!
+  type: String!
+  userIds: [Int!]!
+}
+
 input ChangeChecklistTemplateInput {
   entityId: Int!
   newChecklistId: Int!
@@ -762,6 +768,9 @@ type Mutation {
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   assignUserToLocation(input: LocationAssignInput!): String!
   bulkAssign(input: BulkAssignInput!): String!
+  bulkUnassign(input: BulkUnassignInput!): String!
+  bulkUnassignUserFromDivision(input: DivisionAssignInput!): String!
+  bulkUnassignUserFromLocation(input: LocationAssignInput!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createApiKey(input: CreateApiKeyInput!): String!
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!

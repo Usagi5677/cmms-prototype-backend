@@ -1716,6 +1716,111 @@ export class EntityService {
     return [assignPromise, notifications, entityHistory];
   }
 
+  //** Unassign 'user' from entity and return transactions. Meant to be used with the bulk unassign function in assignment.service */
+  async unassignUserToEntityTransactions(
+    user: User,
+    entityId: number,
+    type: string,
+    userIds: number[]
+  ): Promise<
+    [PrismaPromise<Prisma.BatchPayload>, Promise<void>[], Promise<void>[]]
+  > {
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: entityId },
+      include: { type: true },
+    });
+    if (!entity) {
+      throw new BadRequestException('Invalid entity.');
+    }
+
+    // Filter out existing assignments of type
+    const existingAssignmentIds = await this.getEntityAssignmentIds(
+      entityId,
+      undefined,
+      type
+    );
+    const existingIds = userIds.filter((id) =>
+      existingAssignmentIds.includes(id)
+    );
+    if (existingIds.length === 0) {
+      return [null, [], []];
+    }
+    const newUnassignments = await this.prisma.user.findMany({
+      where: {
+        id: { in: existingIds },
+      },
+      select: {
+        id: true,
+        fullName: true,
+        rcno: true,
+        email: true,
+      },
+    });
+
+    const unassignPromise = this.prisma.entityAssignment.updateMany({
+      where: { entityId, userId: { in: existingIds } },
+      data: {
+        removedAt: new Date(),
+      },
+    });
+
+    const entityUserIds = await this.getEntityAssignmentIds(entityId, user.id);
+    const entityUsersExceptNewAssignments = entityUserIds.filter(
+      (id) => !userIds.includes(id)
+    );
+
+    const entityHistory: Promise<void>[] = [];
+    // Text format new assignments into a readable list with commas and 'and'
+    // at the end.
+    const newAssignmentsFormatted = newUnassignments
+      .map((a) => `${a.fullName} (${a.rcno})`)
+      .join(', ')
+      .replace(/, ([^,]*)$/, ' and $1');
+
+    entityHistory.push(
+      this.createEntityHistoryInBackground({
+        type: 'User Unassigned',
+        description: `${newAssignmentsFormatted} removed as ${type}.`,
+        entityId: entityId,
+        completedById: user.id,
+      })
+    );
+
+    const notifications: Promise<void>[] = [];
+    // Notification to entity assigned users except new assignments
+    for (const id of entityUsersExceptNewAssignments) {
+      notifications.push(
+        this.notificationService.createInBackground({
+          userId: id,
+          body: `${user.fullName} (${
+            user.rcno
+          }) assigned ${newAssignmentsFormatted} to ${
+            `${entity.type?.name} ` ?? ''
+          }${entity.machineNumber} as ${type}.`,
+          link: `/entity/${entityId}`,
+        })
+      );
+    }
+
+    // Notification to new assignments
+    const newUnassignmentsWithoutCurrentUser = newUnassignments.filter(
+      (na) => na.id !== user.id
+    );
+    const emailBody = `You have been removed from ${
+      `${entity.type?.name} ` ?? ''
+    }${entity.machineNumber} as ${type}.`;
+    for (const newUnassignment of newUnassignmentsWithoutCurrentUser) {
+      notifications.push(
+        this.notificationService.createInBackground({
+          userId: newUnassignment.id,
+          body: emailBody,
+          link: `/entity/${entityId}`,
+        })
+      );
+    }
+    return [unassignPromise, notifications, entityHistory];
+  }
+
   //** Assign 'user' to entity. */
   async assignUserToEntity(
     user: User,

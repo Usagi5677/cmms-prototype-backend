@@ -15,6 +15,7 @@ import { User } from 'src/models/user.model';
 import { AssignmentConnectionArgs } from './dto/assignment-connection.args';
 import { PaginatedAssignment } from './dto/assignment-connection.model';
 import { BulkAssignInput } from './dto/bulk-assign.input';
+import { BulkUnassignInput } from './dto/bulk-unassign.input';
 import { DivisionAssignmentConnectionArgs } from './dto/division-assignment-connection.args';
 import { PaginatedDivisionAssignment } from './dto/division-assignment-connection.model';
 import { LocationAssignmentConnectionArgs } from './dto/location-assignment-connection.args';
@@ -82,6 +83,53 @@ export class AssignmentService {
     for (const entityId of entityIds) {
       const [assignPromise, entityNotifications, entityHistories] =
         await this.entityService.assignUserToEntityTransactions(
+          user,
+          entityId,
+          type,
+          userIds
+        );
+      if (!assignPromise) {
+        continue;
+      }
+      transactions.push(assignPromise);
+      notifications.push(entityNotifications);
+      histories.push(entityHistories);
+    }
+
+    if (transactions.length === 0) return;
+
+    try {
+      await this.prisma.$transaction(transactions);
+      await Promise.all(notifications);
+      await Promise.all(histories);
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        // This error throws if user is already assigned to entity
+        // Catch and ignore this error and proceed
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
+
+  async bulkUnassign(
+    user: User,
+    { entityIds, userIds, type }: BulkUnassignInput
+  ) {
+    if (!ENTITY_ASSIGNMENT_TYPES.includes(type)) {
+      throw new BadRequestException('Invalid assignment type.');
+    }
+    const transactions: PrismaPromise<any>[] = [];
+    const notifications = [];
+    const histories = [];
+
+    for (const entityId of entityIds) {
+      const [assignPromise, entityNotifications, entityHistories] =
+        await this.entityService.unassignUserToEntityTransactions(
           user,
           entityId,
           type,

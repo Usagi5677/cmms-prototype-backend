@@ -9,10 +9,9 @@ import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
-import { ENTITY_ASSIGNMENT_TYPES } from 'src/constants';
 import { User } from 'src/models/user.model';
+import { NotificationService } from 'src/services/notification.service';
 import { CreateDivisionInput } from './dto/create-division.input';
-import { DivisionAssignConnectionArgs } from './dto/division-assign-connection.args';
 import { DivisionAssignInput } from './dto/division-assign.input';
 import { DivisionConnectionArgs } from './dto/division-connection.args';
 import { PaginatedDivision } from './dto/division-connection.model';
@@ -20,7 +19,10 @@ import { UpdateDivisionInput } from './dto/update-division.input';
 
 @Injectable()
 export class DivisionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationService: NotificationService
+  ) {}
 
   async create(user: User, { name }: CreateDivisionInput) {
     const existing = await this.prisma.division.findFirst({
@@ -90,11 +92,14 @@ export class DivisionService {
     });
   }
 
-  async assignUserToDivision({ divisionId, userIds }: DivisionAssignInput) {
+  async assignUserToDivision(
+    user: User,
+    { divisionId, userIds }: DivisionAssignInput
+  ) {
     try {
       if (userIds.length > 0) {
         await this.prisma.divisionUsers.updateMany({
-          where: { userId: { in: userIds } },
+          where: { userId: { in: userIds }, divisionId },
           data: { removedAt: new Date() },
         });
         await this.prisma.divisionUsers.createMany({
@@ -103,6 +108,58 @@ export class DivisionService {
             userId,
           })),
         });
+
+        const userIdsExceptCurrentUser = userIds.filter((id) => id != user.id);
+
+        const division = await this.prisma.division.findFirst({
+          where: { id: divisionId },
+          select: { name: true },
+        });
+
+        for (const id of userIdsExceptCurrentUser) {
+          this.notificationService.createInBackground({
+            userId: id,
+            body: `${user.fullName} (${user.rcno}) assigned you to division ${division?.name}`,
+          });
+        }
+      }
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        // This error throws if user is already assigned to entity
+        // Catch and ignore this error and proceed
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
+
+  async bulkUnassignUserFromDivision(
+    user: User,
+    { divisionId, userIds }: DivisionAssignInput
+  ) {
+    try {
+      if (userIds.length > 0) {
+        await this.prisma.divisionUsers.updateMany({
+          where: { userId: { in: userIds }, divisionId },
+          data: { removedAt: new Date() },
+        });
+        const userIdsExceptCurrentUser = userIds.filter((id) => id != user.id);
+
+        const division = await this.prisma.division.findFirst({
+          where: { id: divisionId },
+          select: { name: true },
+        });
+
+        for (const id of userIdsExceptCurrentUser) {
+          this.notificationService.createInBackground({
+            userId: id,
+            body: `${user.fullName} (${user.rcno}) removed you from division ${division?.name}`,
+          });
+        }
       }
     } catch (e) {
       if (

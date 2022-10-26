@@ -15,10 +15,14 @@ import { LocationConnectionArgs } from './dto/location-connection.args';
 import { PaginatedLocation } from './dto/location-connection.model';
 import { LocationAssignInput } from './dto/location-assign.input';
 import { UpdateLocationInput } from './dto/update-location.input';
+import { NotificationService } from 'src/services/notification.service';
 
 @Injectable()
 export class LocationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationService: NotificationService
+  ) {}
 
   async create(user: User, { name, zoneId, skipFriday }: CreateLocationInput) {
     const existing = await this.prisma.location.findFirst({
@@ -137,7 +141,10 @@ export class LocationService {
     }
   }
 
-  async assignUserToLocation({ locationId, userIds }: LocationAssignInput) {
+  async assignUserToLocation(
+    user: User,
+    { locationId, userIds }: LocationAssignInput
+  ) {
     try {
       if (userIds.length > 0) {
         await this.prisma.locationUsers.updateMany({
@@ -150,6 +157,59 @@ export class LocationService {
             userId,
           })),
         });
+
+        const userIdsExceptCurrentUser = userIds.filter((id) => id != user.id);
+
+        const location = await this.prisma.location.findFirst({
+          where: { id: locationId },
+          select: { name: true },
+        });
+
+        for (const id of userIdsExceptCurrentUser) {
+          this.notificationService.createInBackground({
+            userId: id,
+            body: `${user.fullName} (${user.rcno}) assigned you to location ${location?.name}`,
+          });
+        }
+      }
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        // This error throws if user is already assigned to entity
+        // Catch and ignore this error and proceed
+      } else {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+    }
+  }
+
+  async bulkUnassignUserFromLocation(
+    user: User,
+    { locationId, userIds }: LocationAssignInput
+  ) {
+    try {
+      if (userIds.length > 0) {
+        await this.prisma.locationUsers.updateMany({
+          where: { userId: { in: userIds }, locationId },
+          data: { removedAt: new Date() },
+        });
+
+        const userIdsExceptCurrentUser = userIds.filter((id) => id != user.id);
+
+        const location = await this.prisma.location.findFirst({
+          where: { id: locationId },
+          select: { name: true },
+        });
+
+        for (const id of userIdsExceptCurrentUser) {
+          this.notificationService.createInBackground({
+            userId: id,
+            body: `${user.fullName} (${user.rcno}) removed you from location ${location?.name}`,
+          });
+        }
       }
     } catch (e) {
       if (

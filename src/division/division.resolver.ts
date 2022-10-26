@@ -62,9 +62,21 @@ export class DivisionResolver {
   }
 
   @Mutation(() => String)
-  async assignUserToDivision(@Args('input') input: DivisionAssignInput) {
-    await this.divisionService.assignUserToDivision(input);
-    return 'Successfully assigned user to division.';
+  async assignUserToDivision(
+    @UserEntity() user: User,
+    @Args('input') input: DivisionAssignInput
+  ) {
+    await this.divisionService.assignUserToDivision(user, input);
+    return 'Successfully completed bulk assignment.';
+  }
+
+  @Mutation(() => String)
+  async bulkUnassignUserFromDivision(
+    @UserEntity() user: User,
+    @Args('input') input: DivisionAssignInput
+  ) {
+    await this.divisionService.bulkUnassignUserFromDivision(user, input);
+    return 'Successfully completed bulk unassignment.';
   }
 
   @Query(() => [Division], { name: 'searchDivision' })

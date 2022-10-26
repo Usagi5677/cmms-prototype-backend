@@ -53,9 +53,21 @@ export class LocationResolver {
   }
 
   @Mutation(() => String)
-  async assignUserToLocation(@Args('input') input: LocationAssignInput) {
-    await this.locationService.assignUserToLocation(input);
-    return 'Successfully assigned user to location.';
+  async assignUserToLocation(
+    @UserEntity() user: User,
+    @Args('input') input: LocationAssignInput
+  ) {
+    await this.locationService.assignUserToLocation(user, input);
+    return 'Successfully completed bulk assignment.';
+  }
+
+  @Mutation(() => String)
+  async bulkUnassignUserFromLocation(
+    @UserEntity() user: User,
+    @Args('input') input: LocationAssignInput
+  ) {
+    await this.locationService.bulkUnassignUserFromLocation(user, input);
+    return 'Successfully completed bulk unassignment.';
   }
 
   @Permissions('MODIFY_LOCATIONS')
