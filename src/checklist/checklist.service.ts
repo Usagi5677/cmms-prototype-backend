@@ -609,42 +609,28 @@ export class ChecklistService {
     const checkStatus = ['Working', 'Critical'];
     // Get ids of all entities that are working
     const entities = await this.prisma.entity.findMany({
-      where: { status: { in: checkStatus }, deletedAt: null },
+      where: {
+        status: { in: checkStatus },
+        deletedAt: null,
+        location: { active: true },
+      },
       select: {
         id: true,
-        dailyChecklistTemplate: true,
-        weeklyChecklistTemplate: true,
+        location: true,
       },
     });
-    const skipFridayEntitiesDaily = entities.filter((e) => {
-      if (
-        e?.dailyChecklistTemplate?.skipFriday &&
-        moment().toDate().getDay() === 5
-      ) {
+    const skipFridayEntities = entities.filter((e) => {
+      if (e?.location?.skipFriday && moment().toDate().getDay() === 5) {
         return e;
       }
     });
 
-    const skipFridayDailyIds = skipFridayEntitiesDaily.map((m) => m.id);
+    const skipFridayIds = skipFridayEntities.map((m) => m.id);
 
     const entityIds = entities.map((m) => m.id);
 
-    const skipFridayDailyEntityIds = entityIds.filter(
-      (id) => !skipFridayDailyIds.includes(id)
-    );
-
-    const skipFridayEntitiesWeekly = entities.filter((e) => {
-      if (
-        e?.weeklyChecklistTemplate?.skipFriday &&
-        moment().toDate().getDay() === 5
-      ) {
-        return e;
-      }
-    });
-    const skipFridayWeeklyIds = skipFridayEntitiesWeekly.map((m) => m.id);
-
-    const skipFridayWeeklyEntityIds = entityIds.filter(
-      (id) => !skipFridayWeeklyIds.includes(id)
+    const skipFridayEntityIds = entityIds.filter(
+      (id) => !skipFridayIds.includes(id)
     );
 
     // Daily
@@ -663,7 +649,7 @@ export class ChecklistService {
     const todayChecklistEntityIds = todayChecklists.map((c) => c.entityId);
 
     // Create daily checklists for entity
-    const notGeneratedDailyEntityIds = skipFridayDailyEntityIds.filter(
+    const notGeneratedDailyEntityIds = skipFridayEntityIds.filter(
       (id) => !todayChecklistEntityIds.includes(id)
     );
 
@@ -706,7 +692,7 @@ export class ChecklistService {
     const thisWeekEntityIds = thisWeekChecklists.map((c) => c.entityId);
 
     // Create weekly checklists for entities
-    const notGeneratedWeeklyEntityIds = skipFridayWeeklyEntityIds.filter(
+    const notGeneratedWeeklyEntityIds = skipFridayEntityIds.filter(
       (id) => !thisWeekEntityIds.includes(id)
     );
     for (const entityId of notGeneratedWeeklyEntityIds) {

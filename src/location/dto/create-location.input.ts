@@ -7,4 +7,7 @@ export class CreateLocationInput {
 
   @Field({ nullable: true })
   zoneId: number;
+
+  @Field({ nullable: true })
+  skipFriday: boolean;
 }

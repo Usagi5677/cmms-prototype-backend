@@ -229,7 +229,6 @@ type ChecklistTemplate {
   id: Int!
   items: [ChecklistTemplateItem!]!
   name: String
-  skipFriday: Boolean
   type: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -292,7 +291,6 @@ input CreateBreakdownInput {
 input CreateChecklistTemplateInput {
   items: [String!]!
   name: String!
-  skipFriday: Boolean
   type: String!
 }
 
@@ -302,6 +300,7 @@ input CreateDivisionInput {
 
 input CreateLocationInput {
   name: String!
+  skipFriday: Boolean
   zoneId: Int
 }
 
@@ -687,6 +686,7 @@ type Location {
   createdAt: Date!
   id: Int!
   name: String!
+  skipFriday: Boolean
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
@@ -1690,6 +1690,7 @@ type Query {
     last: Int
     name: String
     showOnlyUnzoned: Boolean
+    withSkipFriday: Boolean
     zoneId: Int
   ): PaginatedLocation!
   me: UserWithRoles!
@@ -1942,7 +1943,6 @@ input UpdateChecklistTemplateInput {
   id: Int!
   items: [String!]
   name: String
-  skipFriday: Boolean
   type: String
 }
 
@@ -1954,6 +1954,7 @@ input UpdateDivisionInput {
 input UpdateLocationInput {
   id: Int!
   name: String
+  skipFriday: Boolean
   zoneId: Int
 }
 

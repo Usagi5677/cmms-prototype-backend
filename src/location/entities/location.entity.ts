@@ -6,4 +6,5 @@ import { Zone } from 'src/zone/entities/zone.entity';
 export class Location extends BaseModel {
   name: string;
   zone?: Zone;
+  skipFriday?: boolean;
 }

@@ -6,4 +6,5 @@ export class LocationConnectionArgs extends ConnectionArgs {
   name?: string;
   zoneId?: number;
   showOnlyUnzoned?: boolean;
+  withSkipFriday?: boolean;
 }

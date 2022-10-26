@@ -121,6 +121,7 @@ model Location {
   createdBy     User?           @relation(name: "locationCreated", fields: [createdById], references: [id])
   active        Boolean         @default(true)
   zoneId        Int?
+  skipFriday    Boolean?        @default(false)
   zone          Zone?           @relation(fields: [zoneId], references: [id])
   entities      Entity[]
   histories     EntityHistory[]
@@ -165,7 +166,6 @@ model ChecklistTemplate {
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
   name           String?
-  skipFriday     Boolean?
   items          ChecklistTemplateItem[]
   type           String                  @default("Daily")
   entitiesDaily  Entity[]                @relation("entityDaily")
