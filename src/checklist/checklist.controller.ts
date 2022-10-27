@@ -30,6 +30,18 @@ export class ChecklistController {
       date: new Date(query.date),
       type: query.type,
     });
+
+    // Rename keys for consistency
+    delete Object.assign(results, {
+      ['meterReading']: results['currentMeterReading'],
+    })['currentMeterReading'];
+    delete Object.assign(results, {
+      ['dailyReading']: results['workingHour'],
+    })['workingHour'];
+    delete Object.assign(results, {
+      ['dailyUsage']: results['dailyUsageHours'],
+    })['dailyUsageHours'];
+
     return JSON.stringify(results, null, '\t');
   }
 
