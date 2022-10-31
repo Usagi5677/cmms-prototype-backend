@@ -433,10 +433,63 @@ export class EntityService {
       );
     }
     try {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+      });
       await this.prisma.entity.update({
         where: { id: entityId },
         data: { status, statusChangedAt: new Date(), deletedAt: null },
       });
+      //check if all sub entities are in breakdown if it is then update parent entity status
+      if (entity?.parentEntityId) {
+        const parentEntity = await this.prisma.entity.findFirst({
+          where: { id: entity.parentEntityId },
+          include: { subEntities: true },
+        });
+        const flag = parentEntity?.subEntities.every(
+          (s) => s.status === 'Breakdown'
+        );
+        const flag2 = parentEntity?.subEntities.every(
+          (s) => s.status === 'Critical'
+        );
+        if (flag) {
+          await this.prisma.breakdown.create({
+            data: {
+              entityId: entity.parentEntityId,
+              createdById: user.id,
+              type: 'Breakdown',
+              details: {
+                create: {
+                  createdById: user.id,
+                  description: 'All sub entities are broken',
+                },
+              },
+            },
+          });
+          await this.prisma.entity.update({
+            where: { id: entity.parentEntityId },
+            data: { status, statusChangedAt: new Date(), deletedAt: null },
+          });
+        } else if (flag2) {
+          await this.prisma.breakdown.create({
+            data: {
+              entityId: entity.parentEntityId,
+              createdById: user.id,
+              type: 'Critical',
+              details: {
+                create: {
+                  createdById: user.id,
+                  description: 'All sub entities are in critical condition',
+                },
+              },
+            },
+          });
+          await this.prisma.entity.update({
+            where: { id: entity.parentEntityId },
+            data: { status, statusChangedAt: new Date(), deletedAt: null },
+          });
+        }
+      }
       await this.createEntityHistoryInBackground({
         type: 'Status Change',
         description: `Status changed to ${status}`,
@@ -519,6 +572,7 @@ export class EntityService {
             type: true,
             assignees: { include: { user: true }, where: { removedAt: null } },
           },
+          orderBy: { id: 'desc' },
         },
         division: true,
       },
@@ -933,6 +987,10 @@ export class EntityService {
           take: 10,
         },
         division: true,
+        subEntities: {
+          where: { deletedAt: null },
+          orderBy: { id: 'desc' },
+        },
       },
       orderBy: [{ id: 'asc' }],
     });

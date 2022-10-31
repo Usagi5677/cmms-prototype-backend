@@ -59,6 +59,67 @@ export class BreakdownService {
         where: { id: entityId },
         data: { status: type, statusChangedAt: new Date() },
       });
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+      });
+      //check if all sub entities are in breakdown if it is then update parent entity status
+      if (entity?.parentEntityId) {
+        const parentEntity = await this.prisma.entity.findFirst({
+          where: { id: entity.parentEntityId },
+          include: { subEntities: true },
+        });
+        const flag = parentEntity?.subEntities.every(
+          (s) => s.status === 'Breakdown'
+        );
+        const flag2 = parentEntity?.subEntities.every(
+          (s) => s.status === 'Critical'
+        );
+        if (flag) {
+          await this.prisma.breakdown.create({
+            data: {
+              entityId: entity.parentEntityId,
+              createdById: user.id,
+              type: 'Breakdown',
+              details: {
+                create: {
+                  createdById: user.id,
+                  description: 'All sub entities are broken',
+                },
+              },
+            },
+          });
+          await this.prisma.entity.update({
+            where: { id: entity.parentEntityId },
+            data: {
+              status: type,
+              statusChangedAt: new Date(),
+              deletedAt: null,
+            },
+          });
+        } else if (flag2) {
+          await this.prisma.breakdown.create({
+            data: {
+              entityId: entity.parentEntityId,
+              createdById: user.id,
+              type: 'Critical',
+              details: {
+                create: {
+                  createdById: user.id,
+                  description: 'All sub entities are in critical condition',
+                },
+              },
+            },
+          });
+          await this.prisma.entity.update({
+            where: { id: entity.parentEntityId },
+            data: {
+              status: type,
+              statusChangedAt: new Date(),
+              deletedAt: null,
+            },
+          });
+        }
+      }
       const users = await this.entityService.getEntityAssignmentIds(
         entityId,
         user.id
