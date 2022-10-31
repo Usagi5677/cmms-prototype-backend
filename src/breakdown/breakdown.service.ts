@@ -158,7 +158,13 @@ export class BreakdownService {
       }
       //for now these only
       if (search) {
-        const or: any = [{ type: { contains: search, mode: 'insensitive' } }];
+        const or: any = [
+          {
+            details: {
+              some: { description: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        ];
         // If search contains all numbers, search the machine ids as well
         if (/^(0|[1-9]\d*)$/.test(search)) {
           or.push({ id: parseInt(search) });
@@ -198,7 +204,6 @@ export class BreakdownService {
         },
         orderBy: { id: 'desc' },
       });
-
       const count = await this.prisma.breakdown.count({ where });
       const { edges, pageInfo } = connectionFromArraySlice(
         breakdown.slice(0, limit),
