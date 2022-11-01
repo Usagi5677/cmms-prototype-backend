@@ -1615,7 +1615,7 @@ export class EntityService {
     if (locationIds?.length > 0) {
       where.AND.push({
         locationId: {
-          in: location,
+          in: locationIds,
         },
       });
     }
