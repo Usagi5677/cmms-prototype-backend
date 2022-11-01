@@ -433,6 +433,7 @@ type Entity {
   machineNumber: String
   measurement: String
   model: String
+  note: String
   parentEntityId: Int
   periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   periodicMaintenances: [PeriodicMaintenance!]
@@ -847,6 +848,7 @@ type Mutation {
   updateDivision(input: UpdateDivisionInput!): String!
   updateEntityDivision(divisionId: Int!, entityId: Int!): String!
   updateEntityLocation(entityId: Int!, locationId: Int!): String!
+  updateEntityNote(id: Int!, note: String): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!

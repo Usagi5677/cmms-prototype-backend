@@ -31,6 +31,7 @@ export class Entity extends BaseModel {
   brand?: string;
   deletedAt?: Date;
   status?: string;
+  note?: string;
   statusChangedAt?: Date;
   assignees?: EntityAssignment[];
   checklistItems?: ChecklistItem[];

@@ -225,6 +225,7 @@ Table Entity {
   measurement String [default: 'km']
   deletedAt DateTime
   parentEntityId Int
+  note String
   parentEntity Entity
   subEntities Entity [not null]
   dailyChecklistTemplateId Int

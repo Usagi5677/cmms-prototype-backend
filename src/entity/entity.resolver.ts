@@ -622,4 +622,14 @@ export class EntityResolver {
     );
     return `Repair request approval updated.`;
   }
+
+  @Mutation(() => String)
+  async updateEntityNote(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('note', { nullable: true }) note: string
+  ): Promise<string> {
+    await this.entityService.updateEntityNote(user, id, note);
+    return `Entity ${id}'s note updated.`;
+  }
 }

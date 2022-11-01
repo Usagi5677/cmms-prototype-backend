@@ -4355,4 +4355,18 @@ export class EntityService {
 
     return entitiesCache;
   }
+
+  async updateEntityNote(user: User, id: number, note: string) {
+    try {
+      await this.prisma.entity.update({
+        where: { id },
+        data: {
+          note: note.length > 0 ? note.trim() : null,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 }
