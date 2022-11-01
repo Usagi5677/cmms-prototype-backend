@@ -3577,7 +3577,26 @@ export class EntityService {
         }
       }
     }
-    if (!hasAssignment && !hasPermission) {
+    let hasDivisionPermission = false;
+    const userPermissions = await this.userService.getUserRolesPermissionsList(
+      userId
+    );
+    if (userPermissions.includes('VIEW_ALL_DIVISION_ENTITY')) {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+        select: { divisionId: true },
+      });
+      const user = await this.prisma.divisionUsers.findFirst({
+        where: { userId },
+        select: { divisionId: true },
+      });
+      if (entity.divisionId === user.divisionId) {
+        hasDivisionPermission = true;
+      } else {
+        hasDivisionPermission = false;
+      }
+    }
+    if (!hasAssignment && !hasPermission && !hasDivisionPermission) {
       throw new ForbiddenException('You do not have access to this resource.');
     }
     return entity;
