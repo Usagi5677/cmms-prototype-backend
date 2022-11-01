@@ -3590,7 +3590,7 @@ export class EntityService {
         where: { userId },
         select: { divisionId: true },
       });
-      if (entity.divisionId === user.divisionId) {
+      if (entity?.divisionId === user?.divisionId) {
         hasDivisionPermission = true;
       } else {
         hasDivisionPermission = false;
