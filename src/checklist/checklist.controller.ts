@@ -5,11 +5,16 @@ import {
   Header,
   Post,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { KeyGuard } from 'src/guards/key.guard';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
+import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
+import { AttachmentService } from 'src/services/attachment.service';
 import { AuthService } from 'src/services/auth.service';
 import { ChecklistService } from './checklist.service';
 
@@ -19,7 +24,8 @@ import { ChecklistService } from './checklist.service';
 export class ChecklistController {
   constructor(
     private checklistService: ChecklistService,
-    private authService: AuthService
+    private authService: AuthService,
+    private attachmentService: AttachmentService
   ) {}
 
   @Get()
@@ -87,5 +93,47 @@ export class ChecklistController {
       parseInt(input.checklistItemId),
       input.complete
     );
+  }
+
+  @Post('comment/add')
+  @Header('Content-Type', 'application/json')
+  async addComment(@Body() input) {
+    const user = await this.authService.validateUser(input.userUuid);
+    await this.checklistService.addComment(
+      user,
+      parseInt(input.checklistId),
+      input.comment
+    );
+  }
+
+  @Post('comment/issue/add')
+  @Header('Content-Type', 'application/json')
+  async addIssue(@Body() input) {
+    const user = await this.authService.validateUser(input.userUuid);
+    await this.checklistService.addIssue(
+      user,
+      parseInt(input.checklistId),
+      parseInt(input.checklistItemId),
+      input.comment
+    );
+  }
+
+  // Works for both comments and issues
+  @Post('comment/remove')
+  @Header('Content-Type', 'application/json')
+  async removeComment(@Body() input) {
+    const user = await this.authService.validateUser(input.userUuid);
+    await this.checklistService.removeComment(user, parseInt(input.id));
+  }
+
+  @Post('attachment')
+  @UseInterceptors(FilesInterceptor('attachments'))
+  async uploadEntityAttachment(
+    @UploadedFiles() attachments: Array<Express.Multer.File>,
+    @Body() body: CreateEntityAttachmentInput
+  ) {
+    console.log(body);
+    const user = await this.authService.validateUser(body.userUuid);
+    await this.attachmentService.uploadSharepoint(user, attachments, body);
   }
 }
