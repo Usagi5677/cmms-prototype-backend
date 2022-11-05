@@ -1,9 +1,12 @@
 import { HttpService } from '@nestjs/axios';
 import {
+  BadRequestException,
+  Body,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UploadedFiles,
 } from '@nestjs/common';
 import * as http from 'http2';
 import { extname } from 'path';
@@ -13,12 +16,17 @@ import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
+import { COMPRESS_IF_GREATER, MAX_FILE_SIZE } from 'src/constants';
 import { EntityAttachmentConnectionArgs } from 'src/entity/dto/args/entity-attachment-connection.args';
 import { EntityAttachment } from 'src/entity/dto/models/entity-attachment.model';
 import { PaginatedEntityAttachment } from 'src/entity/dto/paginations/entity-attachment-connection.model';
 import { User } from 'src/models/user.model';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisCacheService } from 'src/redisCache.service';
+import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
+import * as sharp from 'sharp';
+import * as moment from 'moment';
+import { EntityService } from 'src/entity/entity.service';
 
 interface FileOptions {
   path?: string;
@@ -35,7 +43,8 @@ export class AttachmentService {
   constructor(
     private prisma: PrismaService,
     private readonly redisCacheService: RedisCacheService,
-    private readonly httpService: HttpService
+    private readonly httpService: HttpService,
+    private readonly entityService: EntityService
   ) {}
 
   getInfo(document: Express.Multer.File) {
@@ -265,5 +274,85 @@ export class AttachmentService {
         hasPreviousPage: offset >= limit,
       },
     };
+  }
+
+  async uploadSharepoint(
+    user: User,
+    @UploadedFiles() attachments: Array<Express.Multer.File>,
+    @Body() { entityId, description, checklistId }: CreateEntityAttachmentInput
+  ) {
+    const compressedImages = [];
+    for (const f of attachments) {
+      // Only allow images to be uploaded to checklists
+      if (checklistId && f.mimetype.substring(0, 6) !== 'image/') {
+        console.log(f.mimetype.substring(0, 6));
+        throw new BadRequestException('Not an image file.');
+      }
+
+      // Compress image if greater than
+      if (f.size > COMPRESS_IF_GREATER) {
+        try {
+          const newBuffer = await sharp(f.buffer).resize(1000).toBuffer();
+          f.buffer = newBuffer;
+          f.size = Buffer.byteLength(newBuffer);
+        } catch (e) {
+          console.log(`Could not compress ${f.filename}: ${e}`);
+        }
+      }
+
+      // Max allowed file size in bytes.
+      if (f.size > MAX_FILE_SIZE) {
+        throw new BadRequestException(
+          'File size cannot be greater than 10 MB.'
+        );
+      }
+      compressedImages.push(f);
+    }
+
+    for (const f of compressedImages) {
+      const mode = 'Public';
+      let newAttachment: any;
+      const sharepointFileName = `${user.rcno}_${moment().unix()}${extname(
+        f.originalname
+      )}`;
+
+      try {
+        newAttachment = await this.prisma.entityAttachment.create({
+          data: {
+            userId: user.id,
+            entityId: parseInt(entityId),
+            description,
+            mode,
+            originalName: f.originalname,
+            mimeType: f.mimetype,
+            sharepointFileName,
+            checklistId: parseInt(checklistId) ? parseInt(checklistId) : null,
+          },
+        });
+        //add to history
+        await this.entityService.createEntityHistoryInBackground({
+          type: 'Add Attachment',
+          description: `Added attachment (${newAttachment.id})`,
+          entityId: parseInt(entityId),
+          completedById: user.id,
+        });
+        try {
+          await this.uploadFile(f, {
+            name: sharepointFileName,
+          });
+        } catch (error) {
+          if (newAttachment?.id) {
+            await this.prisma.entityAttachment.delete({
+              where: { id: newAttachment.id },
+            });
+          }
+          throw new InternalServerErrorException(
+            'Error uploading to sharepoint.'
+          );
+        }
+      } catch (error) {
+        throw error;
+      }
+    }
   }
 }

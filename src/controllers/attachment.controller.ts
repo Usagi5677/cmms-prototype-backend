@@ -7,29 +7,17 @@ import {
   Post,
   Req,
   Res,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  FileInterceptor,
-  AnyFilesInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AttachmentService } from 'src/services/attachment.service';
-import * as moment from 'moment';
-import { extname } from 'path';
 import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
 import { EntityService } from 'src/entity/entity.service';
-import {
-  ATTACHMENT_CACHE_DURATION,
-  COMPRESS_IF_GREATER,
-  MAX_FILE_SIZE,
-} from 'src/constants';
-import * as sharp from 'sharp';
+import { ATTACHMENT_CACHE_DURATION } from 'src/constants';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -45,81 +33,10 @@ export class AttachmentController {
   async uploadEntityAttachment(
     @Req() req,
     @UploadedFiles() attachments: Array<Express.Multer.File>,
-    @Body() { entityId, description, checklistId }: CreateEntityAttachmentInput
+    @Body() body: CreateEntityAttachmentInput
   ) {
     const user = req.user;
-    const compressedImages = [];
-
-    for (const f of attachments) {
-      // Only allow images to be uploaded to checklists
-      if (checklistId && f.mimetype.substring(0, 6) !== 'image/') {
-        console.log(f.mimetype.substring(0, 6));
-        throw new BadRequestException('Not an image file.');
-      }
-
-      // Compress image if greater than
-      if (f.size > COMPRESS_IF_GREATER) {
-        try {
-          const newBuffer = await sharp(f.buffer).resize(1000).toBuffer();
-          f.buffer = newBuffer;
-          f.size = Buffer.byteLength(newBuffer);
-        } catch (e) {
-          console.log(`Could not compress ${f.filename}: ${e}`);
-        }
-      }
-
-      // Max allowed file size in bytes.
-      if (f.size > MAX_FILE_SIZE) {
-        throw new BadRequestException(
-          'File size cannot be greater than 10 MB.'
-        );
-      }
-      compressedImages.push(f);
-    }
-
-    for (const f of compressedImages) {
-      const mode = 'Public';
-      let newAttachment: any;
-      const sharepointFileName = `${user.rcno}_${moment().unix()}${extname(
-        f.originalname
-      )}`;
-
-      try {
-        newAttachment = await this.prisma.entityAttachment.create({
-          data: {
-            userId: user.id,
-            entityId: parseInt(entityId),
-            description,
-            mode,
-            originalName: f.originalname,
-            mimeType: f.mimetype,
-            sharepointFileName,
-            checklistId: parseInt(checklistId) ? parseInt(checklistId) : null,
-          },
-        });
-        //add to history
-        await this.entityService.createEntityHistoryInBackground({
-          type: 'Add Attachment',
-          description: `Added attachment (${newAttachment.id})`,
-          entityId: parseInt(entityId),
-          completedById: user.id,
-        });
-        try {
-          await this.attachmentService.uploadFile(f, {
-            name: sharepointFileName,
-          });
-        } catch (error) {
-          if (newAttachment?.id) {
-            await this.prisma.entityAttachment.delete({
-              where: { id: newAttachment.id },
-            });
-          }
-          throw error;
-        }
-      } catch (error) {
-        throw error;
-      }
-    }
+    await this.attachmentService.uploadSharepoint(user, attachments, body);
   }
 
   @UseGuards(JwtAuthGuard)
