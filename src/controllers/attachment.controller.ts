@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   Req,
@@ -18,6 +19,9 @@ import { AttachmentService } from 'src/services/attachment.service';
 import { CreateEntityAttachmentInput } from 'src/resolvers/attachment/dto/create-entity-attachment.input';
 import { EntityService } from 'src/entity/entity.service';
 import { ATTACHMENT_CACHE_DURATION } from 'src/constants';
+import { KeyGuard } from 'src/guards/key.guard';
+import { PermissionsGuard } from 'src/guards/permissions.guard';
+import { Permissions } from 'src/decorators/permissions.decorator';
 
 @Controller('attachment')
 export class AttachmentController {
@@ -57,6 +61,31 @@ export class AttachmentController {
       [],
       ['VIEW_ALL_ENTITY']
     );
+    const file = await this.attachmentService.getFile(
+      attachment.sharepointFileName
+    );
+    const fileData = file.data;
+    res.set({
+      'Content-Disposition': `inline; filename=${
+        attachment.originalName ?? attachment.sharepointFileName
+      }`,
+      'Content-Type': attachment.mimeType ?? null,
+      'Cache-Control': `max-age=${ATTACHMENT_CACHE_DURATION}, public`,
+    });
+    res.end(fileData);
+  }
+
+  @UseGuards(KeyGuard, PermissionsGuard)
+  @Permissions('VIEW_ALL_ENTITY')
+  @Get(':id')
+  async viewAttachment(@Req() req, @Param() params, @Res() res) {
+    const attachmentId = parseInt(params.id);
+    const attachment = await this.prisma.entityAttachment.findFirst({
+      where: { id: attachmentId },
+    });
+    if (!attachment) {
+      throw new NotFoundException('Attachment does not exist.');
+    }
     const file = await this.attachmentService.getFile(
       attachment.sharepointFileName
     );
