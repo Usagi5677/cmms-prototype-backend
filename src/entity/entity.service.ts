@@ -1020,6 +1020,7 @@ export class EntityService {
           where: { deletedAt: null },
           orderBy: { id: 'desc' },
         },
+        hullType: true,
       },
       orderBy: [{ id: 'asc' }],
     });
