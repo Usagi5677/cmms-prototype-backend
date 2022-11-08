@@ -883,12 +883,13 @@ type Mutation {
   updateEntityDivision(divisionId: Int!, entityId: Int!): String!
   updateEntityLocation(entityId: Int!, locationId: Int!): String!
   updateEntityNote(id: Int!, note: String): String!
+  updateHullType(updateHullTypeInput: UpdateHullTypeInput!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
   updateRepair(updateRepairInput: UpdateRepairInput!): String!
   updateSparePR(updateSparePrInput: UpdateSparePrInput!): String!
-  updateType(updateHullTypeInput: UpdateHullTypeInput!): String!
+  updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
   updateZone(input: UpdateZoneInput!): String!
   upsertPMNotificationReminder(day: Int, hour: Int, kilometer: Int, month: Int, periodicMaintenanceId: Int, type: String, week: Int): String!
@@ -2043,6 +2044,12 @@ input UpdateSparePrInput {
   id: Int!
   name: String
   requestedDate: Date
+}
+
+input UpdateTypeInput {
+  entityType: String
+  id: Int!
+  name: String
 }
 
 input UpdateZoneInput {

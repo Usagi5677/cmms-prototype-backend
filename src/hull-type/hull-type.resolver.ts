@@ -36,7 +36,9 @@ export class HullTypeResolver {
 
   @Permissions('MODIFY_HULL_TYPES')
   @Mutation(() => String)
-  async updateType(@Args('updateHullTypeInput') input: UpdateHullTypeInput) {
+  async updateHullType(
+    @Args('updateHullTypeInput') input: UpdateHullTypeInput
+  ) {
     await this.hullTypeService.update(input);
     return 'Successfully updated hull type.';
   }
