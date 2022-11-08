@@ -139,7 +139,9 @@ export class EntityService {
     lastService: number,
     brand: string,
     registeredDate: Date,
-    parentEntityId: number
+    parentEntityId: number,
+    hullTypeId: number,
+    dimension: number
   ) {
     try {
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
@@ -150,6 +152,7 @@ export class EntityService {
         data: { type: 'Weekly' },
         include: { items: true },
       });
+      //sub entity with parent entity value
       if (parentEntityId) {
         const parent = await this.prisma.entity.findFirst({
           where: { id: parentEntityId },
@@ -175,6 +178,8 @@ export class EntityService {
             dailyChecklistTemplateId: newDailyTemplate.id,
             weeklyChecklistTemplateId: newWeeklyTemplate.id,
             parentEntityId,
+            hullTypeId,
+            dimension,
           },
         });
         for (const e of parent.assignees) {
@@ -203,6 +208,8 @@ export class EntityService {
           registeredDate,
           dailyChecklistTemplateId: newDailyTemplate.id,
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
+          hullTypeId,
+          dimension,
         },
       });
       await this.checklistTemplateService.updateEntityChecklists(
@@ -263,7 +270,9 @@ export class EntityService {
     engine: string,
     measurement: string,
     brand: string,
-    registeredDate: Date
+    registeredDate: Date,
+    hullTypeId: number,
+    dimension: number
   ) {
     const entity = await this.prisma.entity.findFirst({
       where: { id },
@@ -272,6 +281,7 @@ export class EntityService {
         type: typeId ? true : false,
         subEntities: true,
         division: true,
+        hullType: true,
       },
     });
     // Check if admin of entity or has permission
@@ -283,23 +293,23 @@ export class EntityService {
       ['EDIT_ENTITY']
     );
     try {
-      if (machineNumber && entity.machineNumber != machineNumber) {
+      if (machineNumber && entity?.machineNumber != machineNumber) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Machine number changed from ${entity.machineNumber} to ${machineNumber}.`,
+          description: `Machine number changed from ${entity?.machineNumber} to ${machineNumber}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (model && entity.model != model) {
+      if (model && entity?.model != model) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Model changed from ${entity.model} to ${model}.`,
+          description: `Model changed from ${entity?.model} to ${model}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (typeId && entity.typeId != typeId) {
+      if (typeId && entity?.typeId != typeId) {
         const newType = await this.prisma.type.findFirst({
           where: { id: typeId },
         });
@@ -310,65 +320,84 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (divisionId && entity.divisionId != divisionId) {
+      if (hullTypeId && entity?.hullTypeId != hullTypeId) {
+        const newHullType = await this.prisma.hullType.findFirst({
+          where: { id: hullTypeId },
+        });
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Edit',
+          description: `Hull Type changed from ${entity?.hullType?.name} to ${newHullType?.name}.`,
+          entityId: id,
+          completedById: user.id,
+        });
+      }
+      if (dimension && entity?.dimension != dimension) {
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Edit',
+          description: `Dimension changed from ${entity?.dimension} to ${dimension}.`,
+          entityId: id,
+          completedById: user.id,
+        });
+      }
+      if (divisionId && entity?.divisionId != divisionId) {
         const newDivision = await this.prisma.division.findFirst({
           where: { id: divisionId },
         });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Division changed${
-            entity.divisionId ? ` from ${entity?.division?.name}` : ``
-          } to ${newDivision.name}.`,
+            entity?.divisionId ? ` from ${entity?.division?.name}` : ``
+          } to ${newDivision?.name}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (locationId && entity.locationId != locationId) {
+      if (locationId && entity?.locationId != locationId) {
         const newLocation = await this.prisma.location.findFirst({
           where: { id: locationId },
         });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Location changed${
-            entity.locationId ? ` from ${entity?.location?.name}` : ``
+            entity?.locationId ? ` from ${entity?.location?.name}` : ``
           } to ${newLocation.name}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (engine && entity.engine != engine) {
+      if (engine && entity?.engine != engine) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Engine changed from ${entity.engine} to ${engine}.`,
+          description: `Engine changed from ${entity?.engine} to ${engine}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (measurement && entity.measurement != measurement) {
+      if (measurement && entity?.measurement != measurement) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Measurement changed from ${entity.measurement} to ${measurement}.`,
+          description: `Measurement changed from ${entity?.measurement} to ${measurement}.`,
           entityId: id,
           completedById: user.id,
         });
       }
-      if (brand && entity.brand != brand) {
+      if (brand && entity?.brand != brand) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Brand changed from ${entity.brand} to ${brand}.`,
+          description: `Brand changed from ${entity?.brand} to ${brand}.`,
           entityId: id,
           completedById: user.id,
         });
       }
       if (
         registeredDate &&
-        moment(entity.registeredDate).format('DD MMMM YYYY HH:mm:ss') !=
+        moment(entity?.registeredDate).format('DD MMMM YYYY HH:mm:ss') !=
           moment(registeredDate).format('DD MMMM YYYY HH:mm:ss')
       ) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Registered date changed from ${moment(
-            entity.registeredDate
+            entity?.registeredDate
           ).format('DD MMMM YYYY')} to ${moment(registeredDate).format(
             'DD MMMM YYYY'
           )}.`,

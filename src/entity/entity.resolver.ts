@@ -66,7 +66,9 @@ export class EntityResolver {
     @Args('lastService', { nullable: true }) lastService: number,
     @Args('brand', { nullable: true }) brand: string,
     @Args('registeredDate', { nullable: true }) registeredDate: Date,
-    @Args('parentEntityId', { nullable: true }) parentEntityId: number
+    @Args('parentEntityId', { nullable: true }) parentEntityId: number,
+    @Args('hullTypeId', { nullable: true }) hullTypeId: number,
+    @Args('dimension', { nullable: true }) dimension: number
   ): Promise<String> {
     await this.entityService.createEntity(
       user,
@@ -81,7 +83,9 @@ export class EntityResolver {
       lastService,
       brand,
       registeredDate,
-      parentEntityId
+      parentEntityId,
+      hullTypeId,
+      dimension
     );
     return `Successfully created entity.`;
   }
@@ -114,7 +118,9 @@ export class EntityResolver {
     @Args('engine', { nullable: true }) engine: string,
     @Args('measurement', { nullable: true }) measurement: string,
     @Args('brand', { nullable: true }) brand: string,
-    @Args('registeredDate', { nullable: true }) registeredDate: Date
+    @Args('registeredDate', { nullable: true }) registeredDate: Date,
+    @Args('hullTypeId', { nullable: true }) hullTypeId: number,
+    @Args('dimension', { nullable: true }) dimension: number
   ): Promise<String> {
     await this.entityService.editEntity(
       user,
@@ -127,7 +133,9 @@ export class EntityResolver {
       engine,
       measurement,
       brand,
-      registeredDate
+      registeredDate,
+      hullTypeId,
+      dimension
     );
     return `Entity updated.`;
   }

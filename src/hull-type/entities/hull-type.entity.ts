@@ -1,7 +1,6 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class HullType {
-  @Field(() => Int, { description: 'Example field (placeholder)' })
-  exampleField: number;
+  name: string;
 }

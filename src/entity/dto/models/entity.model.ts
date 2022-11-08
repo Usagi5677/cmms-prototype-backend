@@ -12,6 +12,7 @@ import { EntityPeriodicMaintenance } from './entity-periodic-maintenance.model';
 import { SparePr } from 'src/spare-pr/entities/spare-pr.entity';
 import { Repair } from 'src/repair/entities/repair.entity';
 import { Division } from 'src/division/entities/division.entity';
+import { HullType } from 'src/hull-type/entities/hull-type.entity';
 
 @ObjectType()
 export class Entity extends BaseModel {
@@ -32,6 +33,8 @@ export class Entity extends BaseModel {
   deletedAt?: Date;
   status?: string;
   note?: string;
+  dimension?: number;
+  hullType?: HullType;
   statusChangedAt?: Date;
   assignees?: EntityAssignment[];
   checklistItems?: ChecklistItem[];
