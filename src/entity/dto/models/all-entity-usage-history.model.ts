@@ -1,9 +1,8 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { GraphQLFloat, GraphQLString } from 'graphql';
-import { BaseModel } from 'src/models/base.model';
 
 @ObjectType()
-export class AllEntityUsageHistory extends BaseModel {
+export class AllEntityUsageHistory {
   date: Date;
   workingHour?: number;
   idleHour?: number;

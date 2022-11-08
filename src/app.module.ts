@@ -28,6 +28,7 @@ import { BreakdownModule } from './breakdown/breakdown.module';
 import { RepairModule } from './repair/repair.module';
 import { SparePrModule } from './spare-pr/spare-pr.module';
 import { DivisionModule } from './division/division.module';
+import { HullTypeModule } from './hull-type/hull-type.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { DivisionModule } from './division/division.module';
     AssignmentModule,
     SparePrModule,
     DivisionModule,
+    HullTypeModule,
   ],
   providers: [DateScalar, InitService],
 })

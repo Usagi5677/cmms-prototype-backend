@@ -30,6 +30,7 @@ import { Entity } from './dto/models/entity.model';
 import { entityBreakdownCount } from './dto/models/entityBreakdownCount.model';
 import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSummary.model';
 import { entityPMSummary } from './dto/models/entityPMSummary.model';
+import { AllGroupedEntityUsage } from './dto/models/all-grouped-entity-usage.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -501,6 +502,36 @@ export class EntityResolver {
       zoneIds,
       typeIds,
       measurement
+    );
+  }
+
+  @Query(() => [AllGroupedEntityUsage])
+  async getAllGroupedEntityUsage(
+    @UserEntity() user: User,
+    @Args('from') from: Date,
+    @Args('to') to: Date,
+    @Args('search', { nullable: true, type: () => String }) search: string,
+    @Args('locationIds', { nullable: true, type: () => [Int] })
+    locationIds: number[],
+    @Args('zoneIds', { nullable: true, type: () => [Int] })
+    zoneIds: number[],
+    @Args('typeIds', { nullable: true, type: () => [Int] })
+    typeIds: number[],
+    @Args('measurement', { nullable: true, type: () => [String] })
+    measurement: string[],
+    @Args('entityTypes', { nullable: true, type: () => [String] })
+    entityTypes: string[]
+  ): Promise<AllGroupedEntityUsage[]> {
+    return this.entityService.getAllGroupedEntityUsage(
+      user,
+      from,
+      to,
+      search,
+      locationIds,
+      zoneIds,
+      typeIds,
+      measurement,
+      entityTypes
     );
   }
 

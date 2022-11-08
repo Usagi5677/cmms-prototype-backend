@@ -232,6 +232,9 @@ Table Entity {
   dailyChecklistTemplate ChecklistTemplate
   weeklyChecklistTemplateId Int
   weeklyChecklistTemplate ChecklistTemplate
+  hullTypeId Int
+  hullType HullType
+  dimension Int
   checklists Checklist [not null]
   assignees EntityAssignment [not null]
   periodicMaintenancePlans EntityPeriodicMaintenance [not null]
@@ -581,6 +584,15 @@ Table LocationUsers {
   user User
 }
 
+Table HullType {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  active Boolean [not null, default: true]
+  entity Entity [not null]
+}
+
 Enum SparePRStatus {
   Done
   Pending
@@ -648,6 +660,8 @@ Ref: Entity.parentEntityId - Entity.id
 Ref: Entity.dailyChecklistTemplateId > ChecklistTemplate.id
 
 Ref: Entity.weeklyChecklistTemplateId > ChecklistTemplate.id
+
+Ref: Entity.hullTypeId > HullType.id
 
 Ref: EntityAssignment.userId > User.id
 

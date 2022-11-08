@@ -262,6 +262,9 @@ model Entity {
   dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
   weeklyChecklistTemplateId Int?
   weeklyChecklistTemplate   ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
+  hullTypeId                Int?
+  hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
+  dimension                 Int?
   checklists                Checklist[]
   assignees                 EntityAssignment[]
   periodicMaintenancePlans  EntityPeriodicMaintenance[]
@@ -607,4 +610,13 @@ model LocationUsers {
   userId     Int
   location   Location? @relation(fields: [locationId], references: [id])
   user       User?     @relation(fields: [userId], references: [id])
+}
+
+model HullType {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  active    Boolean  @default(true)
+  entity    Entity[]
 }
