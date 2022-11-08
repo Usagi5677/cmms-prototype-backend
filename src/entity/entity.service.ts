@@ -432,6 +432,8 @@ export class EntityService {
               data: { locationId: locationId ?? undefined },
             },
           },
+          hullTypeId,
+          dimension,
         },
         where: { id },
       });
@@ -604,6 +606,7 @@ export class EntityService {
           orderBy: { id: 'desc' },
         },
         division: true,
+        hullType: true,
       },
     });
     if (entity?.type?.entityType === 'Machine') {
