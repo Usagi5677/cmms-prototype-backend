@@ -235,6 +235,7 @@ Table Entity {
   hullTypeId Int
   hullType HullType
   dimension Int
+  registryNumber String
   checklists Checklist [not null]
   assignees EntityAssignment [not null]
   periodicMaintenancePlans EntityPeriodicMaintenance [not null]

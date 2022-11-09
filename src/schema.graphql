@@ -447,6 +447,7 @@ type Entity {
   periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   periodicMaintenances: [PeriodicMaintenance!]
   registeredDate: Date
+  registryNumber: String
   repairs: [Repair!]
   sparePRs: [SparePr!]
   status: String
@@ -809,7 +810,7 @@ type Mutation {
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createDivision(input: CreateDivisionInput!): String!
-  createEntity(brand: String, currentRunning: Int, dimension: Int, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, typeId: Int): String!
+  createEntity(brand: String, currentRunning: Int, dimension: Int, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, registryNumber: String, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createHullType(createHullTypeInput: CreateHullTypeInput!): String!
   createLocation(input: CreateLocationInput!): String!
@@ -826,7 +827,7 @@ type Mutation {
   deleteOriginPeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
-  editEntity(brand: String, dimension: Int, divisionId: Int, engine: String, hullTypeId: Int, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, typeId: Int): String!
+  editEntity(brand: String, dimension: Int, divisionId: Int, engine: String, hullTypeId: Int, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, registryNumber: String, typeId: Int): String!
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!

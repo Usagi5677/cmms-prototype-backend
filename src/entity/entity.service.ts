@@ -141,7 +141,8 @@ export class EntityService {
     registeredDate: Date,
     parentEntityId: number,
     hullTypeId: number,
-    dimension: number
+    dimension: number,
+    registryNumber: string
   ) {
     try {
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
@@ -180,6 +181,7 @@ export class EntityService {
             parentEntityId,
             hullTypeId,
             dimension,
+            registryNumber,
           },
         });
         for (const e of parent.assignees) {
@@ -210,6 +212,7 @@ export class EntityService {
           weeklyChecklistTemplateId: newWeeklyTemplate.id,
           hullTypeId,
           dimension,
+          registryNumber,
         },
       });
       await this.checklistTemplateService.updateEntityChecklists(
@@ -272,7 +275,8 @@ export class EntityService {
     brand: string,
     registeredDate: Date,
     hullTypeId: number,
-    dimension: number
+    dimension: number,
+    registryNumber: string
   ) {
     const entity = await this.prisma.entity.findFirst({
       where: { id },
@@ -297,6 +301,14 @@ export class EntityService {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Machine number changed from ${entity?.machineNumber} to ${machineNumber}.`,
+          entityId: id,
+          completedById: user.id,
+        });
+      }
+      if (registryNumber && entity?.registryNumber != registryNumber) {
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Edit',
+          description: `Registry number changed from ${entity?.registryNumber} to ${registryNumber}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -434,6 +446,7 @@ export class EntityService {
           },
           hullTypeId,
           dimension,
+          registryNumber,
         },
         where: { id },
       });

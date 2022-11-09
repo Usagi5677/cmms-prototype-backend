@@ -265,6 +265,7 @@ model Entity {
   hullTypeId                Int?
   hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
   dimension                 Int?
+  registryNumber            String?
   checklists                Checklist[]
   assignees                 EntityAssignment[]
   periodicMaintenancePlans  EntityPeriodicMaintenance[]
