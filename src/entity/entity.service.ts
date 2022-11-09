@@ -484,19 +484,8 @@ export class EntityService {
         where: { id: entityId },
         data: { status, statusChangedAt: new Date(), deletedAt: null },
       });
-      //check if all sub entities are in breakdown if it is then update parent entity status
       if (entity?.parentEntityId) {
-        const parentEntity = await this.prisma.entity.findFirst({
-          where: { id: entity.parentEntityId },
-          include: { subEntities: true },
-        });
-        const flag = parentEntity?.subEntities.every(
-          (s) => s.status === 'Breakdown'
-        );
-        const flag2 = parentEntity?.subEntities.every(
-          (s) => s.status === 'Critical'
-        );
-        if (flag) {
+        if (status === 'Breakdown') {
           await this.prisma.breakdown.create({
             data: {
               entityId: entity.parentEntityId,
@@ -505,7 +494,7 @@ export class EntityService {
               details: {
                 create: {
                   createdById: user.id,
-                  description: 'All sub entities are broken',
+                  description: `Sub Entity (${entityId}) broken`,
                 },
               },
             },
@@ -514,7 +503,7 @@ export class EntityService {
             where: { id: entity.parentEntityId },
             data: { status, statusChangedAt: new Date(), deletedAt: null },
           });
-        } else if (flag2) {
+        } else if (status === 'Critical') {
           await this.prisma.breakdown.create({
             data: {
               entityId: entity.parentEntityId,
@@ -523,7 +512,7 @@ export class EntityService {
               details: {
                 create: {
                   createdById: user.id,
-                  description: 'All sub entities are in critical condition',
+                  description: `Sub Entity (${entityId}) in critical condition`,
                 },
               },
             },
@@ -1025,6 +1014,7 @@ export class EntityService {
           },
         },
         type: true,
+        hullType: true,
         location: { include: { zone: true } },
         repairs: {
           orderBy: { id: 'desc' },
@@ -1034,9 +1024,40 @@ export class EntityService {
         division: true,
         subEntities: {
           where: { deletedAt: null },
+          include: {
+            sparePRs: {
+              orderBy: { id: 'desc' },
+              where: { completedAt: null },
+              include: { sparePRDetails: true },
+            },
+            breakdowns: {
+              orderBy: { id: 'desc' },
+              where: { completedAt: null },
+              include: {
+                createdBy: true,
+                details: { include: { repairs: true } },
+                repairs: { include: { breakdownDetail: true } },
+              },
+            },
+            assignees: {
+              include: {
+                user: true,
+              },
+              where: {
+                removedAt: null,
+              },
+            },
+            type: true,
+            location: { include: { zone: true } },
+            repairs: {
+              orderBy: { id: 'desc' },
+              where: { breakdownId: null, breakdownDetailId: null },
+              take: 10,
+            },
+            hullType: true,
+          },
           orderBy: { id: 'desc' },
         },
-        hullType: true,
       },
       orderBy: [{ id: 'asc' }],
     });

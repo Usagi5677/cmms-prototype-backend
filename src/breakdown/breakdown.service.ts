@@ -62,19 +62,8 @@ export class BreakdownService {
       const entity = await this.prisma.entity.findFirst({
         where: { id: entityId },
       });
-      //check if all sub entities are in breakdown if it is then update parent entity status
       if (entity?.parentEntityId) {
-        const parentEntity = await this.prisma.entity.findFirst({
-          where: { id: entity.parentEntityId },
-          include: { subEntities: true },
-        });
-        const flag = parentEntity?.subEntities.every(
-          (s) => s.status === 'Breakdown'
-        );
-        const flag2 = parentEntity?.subEntities.every(
-          (s) => s.status === 'Critical'
-        );
-        if (flag) {
+        if (type === 'Breakdown') {
           await this.prisma.breakdown.create({
             data: {
               entityId: entity.parentEntityId,
@@ -83,7 +72,7 @@ export class BreakdownService {
               details: {
                 create: {
                   createdById: user.id,
-                  description: 'All sub entities are broken',
+                  description: `Sub Entity (${entityId}) broken`,
                 },
               },
             },
@@ -96,7 +85,7 @@ export class BreakdownService {
               deletedAt: null,
             },
           });
-        } else if (flag2) {
+        } else if (type === 'Critical') {
           await this.prisma.breakdown.create({
             data: {
               entityId: entity.parentEntityId,
@@ -105,7 +94,7 @@ export class BreakdownService {
               details: {
                 create: {
                   createdById: user.id,
-                  description: 'All sub entities are in critical condition',
+                  description: `Sub Entity (${entityId}) in critical condition`,
                 },
               },
             },
