@@ -602,8 +602,36 @@ export class EntityService {
         subEntities: {
           where: { deletedAt: null },
           include: {
+            sparePRs: {
+              orderBy: { id: 'desc' },
+              where: { completedAt: null },
+              include: { sparePRDetails: true },
+            },
+            breakdowns: {
+              orderBy: { id: 'desc' },
+              where: { completedAt: null },
+              include: {
+                createdBy: true,
+                details: { include: { repairs: true } },
+                repairs: { include: { breakdownDetail: true } },
+              },
+            },
+            assignees: {
+              include: {
+                user: true,
+              },
+              where: {
+                removedAt: null,
+              },
+            },
             type: true,
-            assignees: { include: { user: true }, where: { removedAt: null } },
+            location: { include: { zone: true } },
+            repairs: {
+              orderBy: { id: 'desc' },
+              where: { breakdownId: null, breakdownDetailId: null },
+              take: 10,
+            },
+            hullType: true,
           },
           orderBy: { id: 'desc' },
         },
