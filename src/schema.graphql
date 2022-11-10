@@ -443,6 +443,7 @@ type Entity {
   measurement: String
   model: String
   note: String
+  parentEntity: Entity
   parentEntityId: Int
   periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   periodicMaintenances: [PeriodicMaintenance!]
@@ -799,6 +800,7 @@ type Mutation {
   assignEntityToLocation(input: LocationAssignInput!): String!
   assignPeriodicMaintenanceTemplate(entityId: Int!, originId: Int!): String!
   assignPermission(permissions: [String!]!, roleId: Int!): String!
+  assignSubEntityToEntity(id: Int!, parentEntityId: Int!): String!
   assignUserToDivision(input: DivisionAssignInput!): String!
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   assignUserToLocation(input: LocationAssignInput!): String!

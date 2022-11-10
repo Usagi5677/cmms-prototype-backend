@@ -47,4 +47,5 @@ export class Entity extends BaseModel {
   periodicMaintenances?: PeriodicMaintenance[];
   parentEntityId?: number;
   subEntities?: Entity[];
+  parentEntity?: Entity;
 }

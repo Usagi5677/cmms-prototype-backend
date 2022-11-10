@@ -675,4 +675,14 @@ export class EntityResolver {
     await this.entityService.updateEntityNote(user, id, note);
     return `Entity ${id}'s note updated.`;
   }
+
+  @Mutation(() => String)
+  async assignSubEntityToEntity(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('parentEntityId') parentEntityId: number
+  ): Promise<string> {
+    await this.entityService.assignSubEntityToEntity(user, id, parentEntityId);
+    return `Successfully assigned sub entity to entity.`;
+  }
 }

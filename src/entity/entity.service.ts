@@ -632,6 +632,7 @@ export class EntityService {
               take: 10,
             },
             hullType: true,
+            parentEntity: true,
           },
           orderBy: { id: 'desc' },
         },
@@ -1083,6 +1084,7 @@ export class EntityService {
               take: 10,
             },
             hullType: true,
+            parentEntity: true,
           },
           orderBy: { id: 'desc' },
         },
@@ -2466,7 +2468,7 @@ export class EntityService {
       usage = [];
       const days = toDate.diff(fromDate, 'days') + 1;
       let cumulative = 0;
-      if (entity.measurement === 'hr') {
+      if (entity?.measurement === 'hr') {
         cumulative += await this.getLatestReading(entity, fromDate.toDate());
       }
       for (let i = 0; i < days; i++) {
@@ -2486,7 +2488,7 @@ export class EntityService {
         let breakdownHour = 0;
         let na = 0;
         if (checklist) {
-          if (entity.measurement === 'hr') {
+          if (entity?.measurement === 'hr') {
             if (checklist.workingHour) {
               workingHour = checklist.workingHour;
             } else if (checklist.currentMeterReading) {
@@ -4744,6 +4746,22 @@ export class EntityService {
         data: {
           note: note.length > 0 ? note.trim() : null,
         },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async assignSubEntityToEntity(
+    user: User,
+    id: number,
+    parentEntityId: number
+  ) {
+    try {
+      await this.prisma.entity.update({
+        where: { id },
+        data: { parentEntityId },
       });
     } catch (e) {
       console.log(e);
