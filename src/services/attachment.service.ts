@@ -226,7 +226,9 @@ export class AttachmentService {
   ): Promise<PaginatedEntityAttachment> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { search, entityId } = args;
+    const { search, entityId, from, to } = args;
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
@@ -248,6 +250,13 @@ export class AttachmentService {
         OR: or,
       });
     }
+
+    if (from && to) {
+      where.AND.push({
+        createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+      });
+    }
+
     const entityAttachment = await this.prisma.entityAttachment.findMany({
       skip: offset,
       take: limitPlusOne,

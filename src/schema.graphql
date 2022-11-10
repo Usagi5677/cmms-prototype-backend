@@ -1413,10 +1413,12 @@ type Query {
 
     """Paginate first"""
     first: Int
+    from: Date
 
     """Paginate last"""
     last: Int
     search: String
+    to: Date
   ): PaginatedEntityAttachment!
   entityChecklistTemplate(input: EntityChecklistTemplateInput!): ChecklistTemplate!
   getAllAssignedEntity(

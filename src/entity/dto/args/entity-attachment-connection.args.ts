@@ -5,4 +5,6 @@ import ConnectionArgs from 'src/common/pagination/connection-args';
 export class EntityAttachmentConnectionArgs extends ConnectionArgs {
   search?: string;
   entityId: number;
+  from?: Date;
+  to?: Date;
 }
