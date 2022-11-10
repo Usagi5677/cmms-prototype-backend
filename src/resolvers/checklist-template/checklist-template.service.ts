@@ -635,4 +635,91 @@ export class ChecklistTemplateService {
       updateTask,
     });
   }
+
+  async bulkAssignChecklistTemplate(
+    user: User,
+    entityIds: number[],
+    newChecklistId: number
+  ) {
+    for (const e of entityIds) {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: e },
+      });
+      await this.entityService.checkEntityAssignmentOrPermission(
+        e,
+        user.id,
+        entity,
+        ['Admin'],
+        ['MODIFY_TEMPLATES']
+      );
+    }
+
+    for (const e of entityIds) {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: e },
+      });
+      // Validate new checklist template
+      const newChecklistTemplate =
+        await this.prisma.checklistTemplate.findFirst({
+          where: { id: newChecklistId },
+        });
+      if (!newChecklistTemplate) {
+        throw new BadRequestException('Invalid checklist template.');
+      }
+
+      const transactions: any = [];
+      let currentTemplateId = null;
+      if (newChecklistTemplate.type === 'Daily') {
+        currentTemplateId = entity.dailyChecklistTemplateId;
+        transactions.push(
+          this.prisma.entity.update({
+            where: { id: e },
+            data: { dailyChecklistTemplateId: newChecklistId },
+          })
+        );
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Daily checklist template assigned`,
+          description: `${user.fullName} (${user.rcno}) assigned daily checklist template. ${newChecklistTemplate?.name} (${newChecklistTemplate.id}).`,
+          entityId: e,
+        });
+      } else {
+        currentTemplateId = entity.weeklyChecklistTemplateId;
+        transactions.push(
+          this.prisma.entity.update({
+            where: { id: e },
+            data: { weeklyChecklistTemplateId: newChecklistId },
+          })
+        );
+        await this.entityService.createEntityHistoryInBackground({
+          type: `Weekly checklist template assigned`,
+          description: `${user.fullName} (${user.rcno}) assigned weekly checklist template. ${newChecklistTemplate?.name} (${newChecklistTemplate.id}).`,
+          entityId: e,
+        });
+      }
+      // Delete current template if it is not a named template
+      if (currentTemplateId) {
+        const currentTemplate = await this.prisma.checklistTemplate.findFirst({
+          where: { id: currentTemplateId },
+        });
+        if (currentTemplate && !currentTemplate.name) {
+          transactions.push(
+            this.prisma.checklistTemplate.delete({
+              where: { id: currentTemplateId },
+            })
+          );
+        }
+      }
+
+      // Run transactions
+      try {
+        await this.prisma.$transaction(transactions);
+      } catch (e) {
+        console.log(e);
+        throw new InternalServerErrorException('Unexpected error occured.');
+      }
+
+      // Update existing checklists
+      await this.updateEntityChecklists(entity.id, newChecklistTemplate.type);
+    }
+  }
 }

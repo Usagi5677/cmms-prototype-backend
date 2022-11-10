@@ -802,6 +802,7 @@ type Mutation {
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   assignUserToLocation(input: LocationAssignInput!): String!
   bulkAssign(input: BulkAssignInput!): String!
+  bulkAssignChecklistTemplate(entityIds: [Int!]!, newChecklistId: Int!): String!
   bulkUnassign(input: BulkUnassignInput!): String!
   bulkUnassignUserFromDivision(input: DivisionAssignInput!): String!
   bulkUnassignUserFromLocation(input: LocationAssignInput!): String!

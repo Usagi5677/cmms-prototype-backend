@@ -125,4 +125,19 @@ export class ChecklistTemplateResolver {
     await this.checklistTemplateService.updateAllEntityChecklists();
     return 'Successfully updated all entity checklists.';
   }
+
+  @Mutation(() => String)
+  async bulkAssignChecklistTemplate(
+    @UserEntity() user: User,
+    @Args('entityIds', { type: () => [Int] })
+    entityIds: number[],
+    @Args('newChecklistId') newChecklistId: number
+  ) {
+    await this.checklistTemplateService.bulkAssignChecklistTemplate(
+      user,
+      entityIds,
+      newChecklistId
+    );
+    return 'Successfully completed bulk assign checklist template.';
+  }
 }
