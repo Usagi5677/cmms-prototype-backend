@@ -1610,6 +1610,7 @@ export class PeriodicMaintenanceService {
           currentMeterReading: null,
           type: 'Copy',
           recur: false,
+          status: 'Ongoing',
         },
       });
 
