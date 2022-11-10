@@ -493,6 +493,7 @@ type EntityAttachment {
   createdAt: Date!
   description: String!
   entityId: Int!
+  favourite: Boolean
   id: Int!
   mimeType: String
   mode: String!
@@ -860,6 +861,7 @@ type Mutation {
   removeZone(id: Int!): String!
   setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setEntityStatus(entityId: Int!, status: String!): String!
+  setFavouriteAttachment(flag: Boolean!, id: Int!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleComplete(complete: Boolean!, id: Int!): String!
@@ -1707,7 +1709,7 @@ type Query {
     locationIds: [Int!]
     search: String
   ): PaginatedUsers!
-  getEntityLatestAttachment(entityId: Int!): EntityAttachment!
+  getLatestFavouriteAttachment(entityId: Int!): EntityAttachment!
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!

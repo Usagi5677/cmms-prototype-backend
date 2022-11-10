@@ -207,17 +207,36 @@ export class AttachmentService {
     }
   }
 
-  async getEntityLatestAttachment(entityId: number): Promise<EntityAttachment> {
+  async getLatestFavouriteAttachment(
+    entityId: number
+  ): Promise<EntityAttachment> {
     const entityAttachment = await this.prisma.entityAttachment.findFirst({
-      where: {
-        entityId,
-      },
-      orderBy: {
-        id: 'desc',
-      },
+      where: { entityId, favourite: true },
+      orderBy: { id: 'desc' },
     });
-
     return entityAttachment;
+  }
+
+  async setFavouriteAttachment(id: number, flag: boolean) {
+    try {
+      const attachments = await this.prisma.entityAttachment.findMany({
+        where: { favourite: true },
+      });
+      const attachmentIds = attachments?.map((a) => a.id);
+      //remove all favourite
+      await this.prisma.entityAttachment.updateMany({
+        where: { id: { in: attachmentIds } },
+        data: { favourite: false },
+      });
+      //update new favourite
+      await this.prisma.entityAttachment.update({
+        where: { id },
+        data: flag ? { favourite: true } : { favourite: false },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async getEntityAttachmentWithPagination(

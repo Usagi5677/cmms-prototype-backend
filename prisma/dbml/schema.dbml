@@ -295,6 +295,7 @@ Table EntityAttachment {
   originalName String
   sharepointFileName String
   mode String [not null, default: 'Public']
+  favourite Boolean [default: false]
 }
 
 Table EntityPeriodicMaintenanceTask {

@@ -325,6 +325,7 @@ model EntityAttachment {
   originalName       String?
   sharepointFileName String?
   mode               String     @default("Public")
+  favourite          Boolean?   @default(false)
 }
 
 model EntityPeriodicMaintenanceTask {

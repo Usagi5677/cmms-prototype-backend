@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { EntityAttachmentConnectionArgs } from 'src/entity/dto/args/entity-attachment-connection.args';
@@ -36,9 +36,18 @@ export class AttachmentResolver {
   }
 
   @Query(() => EntityAttachment)
-  async getEntityLatestAttachment(
+  async getLatestFavouriteAttachment(
     @Args('entityId') entityId: number
   ): Promise<EntityAttachment> {
-    return await this.attachmentService.getEntityLatestAttachment(entityId);
+    return await this.attachmentService.getLatestFavouriteAttachment(entityId);
+  }
+
+  @Mutation(() => String)
+  async setFavouriteAttachment(
+    @Args('id') id: number,
+    @Args('flag') flag: boolean
+  ): Promise<string> {
+    await this.attachmentService.setFavouriteAttachment(id, flag);
+    return `Successfuly updated favourite attachment`;
   }
 }
