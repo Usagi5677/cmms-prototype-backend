@@ -3,11 +3,11 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateHullTypeInput } from './dto/create-hull-type.input';
 import { HullTypeConnectionArgs } from './dto/hull-type-connection.args';
 import { PaginatedHullType } from './dto/hull-type-connection.model';

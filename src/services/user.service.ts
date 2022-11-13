@@ -1,9 +1,7 @@
-import { PrismaService } from 'nestjs-prisma';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  InternalServerErrorException,
 } from '@nestjs/common';
 
 import { RedisCacheService } from 'src/redisCache.service';
@@ -16,6 +14,7 @@ import { APSService } from './aps.service';
 import { UsersConnectionArgs } from 'src/models/args/user-connection.args';
 import { PaginatedUsers } from 'src/models/pagination/user-connection.model';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class UserService {
   constructor(

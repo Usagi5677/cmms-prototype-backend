@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateZoneInput } from './dto/create-zone.input';
 import { UpdateZoneInput } from './dto/update-zone.input';
 import { ZoneConnectionArgs } from './dto/zone-connection.args';

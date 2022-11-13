@@ -4,7 +4,6 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Prisma, PrismaPromise } from '@prisma/client';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -12,6 +11,7 @@ import {
 import { ENTITY_ASSIGNMENT_TYPES } from 'src/constants';
 import { EntityService } from 'src/entity/entity.service';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { AssignmentConnectionArgs } from './dto/assignment-connection.args';
 import { PaginatedAssignment } from './dto/assignment-connection.model';
 import { BulkAssignInput } from './dto/bulk-assign.input';

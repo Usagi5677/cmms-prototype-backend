@@ -1,5 +1,4 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -16,6 +15,7 @@ import { CreateBreakdownDetailInput } from './dto/create-breakdown-detail.input'
 import { CreateBreakdownInput } from './dto/create-breakdown.input';
 import { UpdateBreakdownInput } from './dto/update-breakdown.input';
 import * as moment from 'moment';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BreakdownService {

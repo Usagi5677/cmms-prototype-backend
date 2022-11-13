@@ -1,4 +1,3 @@
-import { PrismaService } from 'nestjs-prisma';
 import {
   BadRequestException,
   Injectable,
@@ -13,6 +12,7 @@ import { PermissionRoleConnectionArgs } from 'src/models/args/permission-role-co
 import { PaginatedPermissionRole } from 'src/models/pagination/permission-role-connection.model';
 import { PERMISSIONS } from 'src/constants';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class PermissionRoleService {

@@ -3,7 +3,6 @@ import { Resolver, Query, Args, Mutation, Int } from '@nestjs/graphql';
 import { EntityService } from './entity.service';
 import { InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
-import { PrismaService } from 'nestjs-prisma';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { UserEntity } from 'src/decorators/user.decorator';
@@ -31,6 +30,7 @@ import { entityBreakdownCount } from './dto/models/entityBreakdownCount.model';
 import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSummary.model';
 import { entityPMSummary } from './dto/models/entityPMSummary.model';
 import { AllGroupedEntityUsage } from './dto/models/all-grouped-entity-usage.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)

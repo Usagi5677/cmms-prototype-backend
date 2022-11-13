@@ -1,12 +1,12 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { PrismaService } from 'nestjs-prisma';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { EntityAttachmentConnectionArgs } from 'src/entity/dto/args/entity-attachment-connection.args';
 import { EntityAttachment } from 'src/entity/dto/models/entity-attachment.model';
 import { PaginatedEntityAttachment } from 'src/entity/dto/paginations/entity-attachment-connection.model';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { AttachmentService } from 'src/services/attachment.service';
 
 @Resolver(() => EntityAttachment)

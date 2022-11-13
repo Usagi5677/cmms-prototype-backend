@@ -6,7 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from 'nestjs-prisma';
 import * as moment from 'moment';
 import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
 import { ChecklistInput } from './dto/checklist.input';
@@ -19,6 +18,7 @@ import { ForbiddenError } from 'apollo-server-express';
 import { IncompleteChecklistSummaryInput } from './dto/incomplete-checklist-summary.input';
 import { Entity } from 'src/entity/dto/models/entity.model';
 import { IncompleteChecklistInput } from './dto/incomplete-checklist.input';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ChecklistService {

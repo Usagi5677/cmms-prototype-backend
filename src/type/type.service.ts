@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTypeInput } from './dto/create-type.input';
 import { TypeConnectionArgs } from './dto/type-connection.args';
 import { PaginatedType } from './dto/type-connection.model';

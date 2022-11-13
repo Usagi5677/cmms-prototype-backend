@@ -3,6 +3,6 @@ import { ZoneService } from './zone.service';
 import { ZoneResolver } from './zone.resolver';
 
 @Module({
-  providers: [ZoneResolver, ZoneService]
+  providers: [ZoneResolver, ZoneService],
 })
 export class ZoneModule {}

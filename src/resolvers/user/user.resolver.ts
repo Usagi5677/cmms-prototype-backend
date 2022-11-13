@@ -4,7 +4,6 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserEntity } from '../../decorators/user.decorator';
 import { GqlAuthGuard } from '../../guards/gql-auth.guard';
 import { User } from '../../models/user.model';
-import { PrismaService } from 'nestjs-prisma';
 import { UsersConnectionArgs } from '../../models/args/user-connection.args';
 import { PaginatedUsers } from '../../models/pagination/user-connection.model';
 import { UserService } from 'src/services/user.service';
@@ -14,6 +13,7 @@ import { UserWithRoles } from 'src/models/user-with-roles.model';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { RedisCacheService } from 'src/redisCache.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Resolver(() => User)
 @UseGuards(GqlAuthGuard, PermissionsGuard)

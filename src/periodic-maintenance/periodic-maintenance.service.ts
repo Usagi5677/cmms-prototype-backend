@@ -6,7 +6,6 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import * as moment from 'moment';
 import { PeriodicMaintenance as PeriodicMaintenanceModel } from './dto/models/periodic-maintenance.model';
 import { EntityService } from 'src/entity/entity.service';
@@ -27,6 +26,7 @@ import { ForbiddenError } from 'apollo-server-express';
 import { PeriodicMaintenanceSummary } from './dto/models/periodic-maintenance-summary.model';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 export interface UpdatePMTaskInterface {
   pm: PeriodicMaintenanceWithTasks;

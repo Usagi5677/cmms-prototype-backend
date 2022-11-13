@@ -1,11 +1,11 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { EntityService } from 'src/entity/entity.service';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisCacheService } from 'src/redisCache.service';
 import { NotificationService } from 'src/services/notification.service';
 import { UserService } from 'src/services/user.service';

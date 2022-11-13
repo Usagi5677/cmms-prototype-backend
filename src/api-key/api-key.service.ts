@@ -4,7 +4,6 @@ import { ApiKey } from './entities/api-key.model';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { CreateApiKeyInput } from './dto/create-api-key.input';
-import { PrismaService } from 'nestjs-prisma';
 import { PERMISSIONS } from 'src/constants';
 import { User } from 'src/models/user.model';
 import { ApiKeyConnectionArgs } from './dto/api-key-connection.args';
@@ -14,6 +13,7 @@ import {
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
 import { EditApiKeyInput } from './dto/edit-api-key.input';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ApiKeyService {

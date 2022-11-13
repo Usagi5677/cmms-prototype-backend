@@ -1,5 +1,4 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -15,6 +14,7 @@ import { PaginatedSparePR } from './dto/spare-pr-connection.model';
 import { UpdateSparePrInput } from './dto/update-spare-pr.input';
 import * as moment from 'moment';
 import { CreateSparePRDetailInput } from './dto/create-spare-pr-detail.input';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class SparePrService {

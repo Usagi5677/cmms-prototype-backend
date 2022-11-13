@@ -4,7 +4,6 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -16,6 +15,7 @@ import { PaginatedLocation } from './dto/location-connection.model';
 import { LocationAssignInput } from './dto/location-assign.input';
 import { UpdateLocationInput } from './dto/update-location.input';
 import { NotificationService } from 'src/services/notification.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class LocationService {

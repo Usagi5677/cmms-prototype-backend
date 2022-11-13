@@ -3,6 +3,6 @@ import { HullTypeService } from './hull-type.service';
 import { HullTypeResolver } from './hull-type.resolver';
 
 @Module({
-  providers: [HullTypeResolver, HullTypeService]
+  providers: [HullTypeResolver, HullTypeService],
 })
 export class HullTypeModule {}

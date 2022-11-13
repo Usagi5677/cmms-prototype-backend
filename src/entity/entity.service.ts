@@ -8,7 +8,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Queue } from 'bull';
-import { PrismaService } from 'nestjs-prisma';
+
 import { User } from 'src/models/user.model';
 import { RedisCacheService } from 'src/redisCache.service';
 import { ChecklistTemplateService } from 'src/resolvers/checklist-template/checklist-template.service';
@@ -41,6 +41,7 @@ import { UnassignExternalInput } from './dto/args/unassign-external.input';
 import { Location } from 'src/location/entities/location.entity';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
 import { ChecklistService } from 'src/checklist/checklist.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 export interface EntityHistoryInterface {
   entityId: number;

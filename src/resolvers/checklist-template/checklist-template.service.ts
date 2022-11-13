@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { Queue } from 'bull';
 import * as moment from 'moment';
-import { PrismaService } from 'nestjs-prisma';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -18,6 +17,7 @@ import { EntityService } from 'src/entity/entity.service';
 import { ChecklistTemplateWithItems } from 'src/models/checklist-template-with-items.model';
 import { ChecklistWithItems } from 'src/models/checklist-with-items.model';
 import { User } from 'src/models/user.model';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/services/user.service';
 import { ChangeChecklistTemplateInput } from './dto/change-checklist-template.input';
 import { ChecklistTemplateConnection } from './dto/checklist-template-connection.model';
