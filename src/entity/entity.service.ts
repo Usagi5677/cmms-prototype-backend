@@ -2475,6 +2475,10 @@ export class EntityService {
       if (entity?.measurement === 'hr') {
         cumulative += await this.getLatestReading(entity, fromDate.toDate());
       }
+      const breakdowns = await this.prisma.breakdown.findMany({
+        where: { entityId },
+        orderBy: { id: 'desc' },
+      });
       for (let i = 0; i < days; i++) {
         const day = fromDate.clone().add(i, 'day');
         const dayStart = day.clone().startOf('day');
@@ -2523,38 +2527,45 @@ export class EntityService {
         }
 
         const now = moment();
-        if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-          const fromDate = await this.prisma.breakdown.findFirst({
-            where: {
-              entityId: entity.id,
-              completedAt: null,
-            },
-            orderBy: {
-              id: 'desc',
-            },
-          });
-          if (fromDate) {
-            const duration = moment.duration(now.diff(fromDate.createdAt));
+        const bd = breakdowns.find((b) =>
+          dayStart.isBetween(
+            moment(b.createdAt).startOf('day'),
+            b?.completedAt
+              ? moment(b?.completedAt).endOf('day')
+              : now.endOf('day')
+          )
+        );
+        if (bd) {
+          if (bd?.completedAt) {
+            const duration = moment.duration(
+              moment(bd?.completedAt).diff(bd.createdAt)
+            );
             breakdownHour = parseInt(duration.asHours().toFixed(0));
+          } else {
+            const duration = moment.duration(now.diff(bd.createdAt));
+            breakdownHour = parseInt(duration.asHours().toFixed(0));
+          }
 
-            if (breakdownHour >= 10) {
-              breakdownHour = 10;
+          if (breakdownHour >= 10) {
+            breakdownHour = 10;
+            na = 0;
+            breakdownHour = breakdownHour - workingHour;
+            idleHour =
+              10 - workingHour - breakdownHour > 0
+                ? 10 - workingHour - breakdownHour
+                : 0;
+          } else {
+            if (breakdownHour > 0) {
               na = 0;
-            } else {
-              if (breakdownHour > 0) {
-                na = 0;
-                if (workingHour >= 0 && workingHour < 10) {
-                  idleHour =
-                    10 - workingHour - breakdownHour > 0
-                      ? 10 - workingHour - breakdownHour
-                      : 0;
-                } else {
-                  idleHour = 10 - breakdownHour > 0 ? 10 - breakdownHour : 0;
-                }
-              }
+              breakdownHour = Math.abs(breakdownHour - workingHour);
+              idleHour =
+                10 - workingHour - breakdownHour > 0
+                  ? 10 - workingHour - breakdownHour
+                  : 0;
             }
           }
         }
+
         usage.push({
           date: day.toDate(),
           workingHour,
@@ -4185,6 +4196,10 @@ export class EntityService {
         let idleHour = 0;
         let breakdownHour = 0;
         let na = 0;
+        const breakdowns = await this.prisma.breakdown.findMany({
+          where: { entityId: entity.id },
+          orderBy: { id: 'desc' },
+        });
         for (let i = 0; i < days; i++) {
           const day = fromDate.clone().add(i, 'day');
           const dayStart = day.clone().startOf('day');
@@ -4236,41 +4251,111 @@ export class EntityService {
           } else {
             na += 10;
           }
-
           const now = moment();
-          if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-            const fromDate = await this.prisma.breakdown.findFirst({
-              where: {
-                entityId: entity.id,
-                completedAt: null,
-              },
-              orderBy: {
-                id: 'desc',
-              },
-            });
-            if (fromDate) {
-              const duration = moment.duration(now.diff(fromDate.createdAt));
-              tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+          if (tempWorkingHour < 10) {
+            const bd = breakdowns.find((b) =>
+              dayStart.isBetween(
+                moment(b.createdAt).startOf('day'),
+                b?.completedAt
+                  ? moment(b?.completedAt).endOf('day')
+                  : now.endOf('day')
+              )
+            );
+            if (bd) {
+              if (bd?.completedAt) {
+                const duration = moment.duration(
+                  moment(bd?.completedAt).diff(bd.createdAt)
+                );
+                tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+              } else {
+                const duration = moment.duration(now.diff(bd.createdAt));
+                tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+              }
 
               if (tempBreakdownHour >= 10) {
+                console.log(bd.createdAt);
+                console.log(tempBreakdownHour);
                 tempBreakdownHour = 10;
                 na = 0;
+                tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
+                tempIdleHour =
+                  10 - tempWorkingHour - tempBreakdownHour > 0
+                    ? 10 - tempWorkingHour - tempBreakdownHour
+                    : 0;
               } else {
                 if (tempBreakdownHour > 0) {
                   na = 0;
-                  if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
+                  tempBreakdownHour = Math.abs(
+                    tempBreakdownHour - tempWorkingHour
+                  );
+                  tempIdleHour =
+                    10 - tempWorkingHour - tempBreakdownHour > 0
+                      ? 10 - tempWorkingHour - tempBreakdownHour
+                      : 0;
+                }
+              }
+            }
+            /*
+            if (entity.status === 'Breakdown' || entity.status === 'Critical') {
+              const fromDate = await this.prisma.breakdown.findFirst({
+                where: {
+                  entityId: entity.id,
+                  OR: [
+                    {
+                      createdAt: {
+                        gte: dayStart.toDate(),
+                        lte: dayEnd.toDate(),
+                      },
+                    },
+                    { completedAt: null },
+                  ],
+                },
+                orderBy: {
+                  id: 'desc',
+                },
+              });
+              if (fromDate) {
+                if (fromDate?.completedAt) {
+                  const duration = moment.duration(
+                    moment(fromDate?.completedAt).diff(fromDate.createdAt)
+                  );
+                  tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+                } else {
+                  const duration = moment.duration(
+                    dayStart.diff(fromDate.createdAt)
+                  );
+                  tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+                }
+
+                if (tempBreakdownHour >= 10) {
+                  console.log(fromDate.createdAt);
+                  console.log(tempBreakdownHour);
+                  tempBreakdownHour = 10;
+                  na = 0;
+                  tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
+                  tempIdleHour =
+                    10 - tempWorkingHour - tempBreakdownHour > 0
+                      ? 10 - tempWorkingHour - tempBreakdownHour
+                      : 0;
+                  console.log('here1');
+                } else {
+                  console.log('here');
+                  if (tempBreakdownHour > 0) {
+                    na = 0;
+                    tempBreakdownHour = Math.abs(
+                      tempBreakdownHour - tempWorkingHour
+                    );
                     tempIdleHour =
                       10 - tempWorkingHour - tempBreakdownHour > 0
                         ? 10 - tempWorkingHour - tempBreakdownHour
                         : 0;
-                  } else {
-                    tempIdleHour =
-                      10 - tempBreakdownHour > 0 ? 10 - tempBreakdownHour : 0;
                   }
                 }
               }
             }
+            */
           }
+
           workingHour += tempWorkingHour;
           idleHour += tempIdleHour;
           breakdownHour += tempBreakdownHour;
@@ -4435,6 +4520,10 @@ export class EntityService {
         let idleHour = 0;
         let breakdownHour = 0;
         let na = 0;
+        const breakdowns = await this.prisma.breakdown.findMany({
+          where: { entityId: entity.id },
+          orderBy: { id: 'desc' },
+        });
         for (let i = 0; i < days; i++) {
           const day = fromDate.clone().add(i, 'day');
           const dayStart = day.clone().startOf('day');
@@ -4488,36 +4577,45 @@ export class EntityService {
           }
 
           const now = moment();
-          if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-            const fromDate = await this.prisma.breakdown.findFirst({
-              where: {
-                entityId: entity.id,
-                completedAt: null,
-              },
-              orderBy: {
-                id: 'desc',
-              },
-            });
-            if (fromDate) {
-              const duration = moment.duration(now.diff(fromDate.createdAt));
+          const bd = breakdowns.find((b) =>
+            dayStart.isBetween(
+              moment(b.createdAt).startOf('day'),
+              b?.completedAt
+                ? moment(b?.completedAt).endOf('day')
+                : now.endOf('day')
+            )
+          );
+          if (bd) {
+            if (bd?.completedAt) {
+              const duration = moment.duration(
+                moment(bd?.completedAt).diff(bd.createdAt)
+              );
               tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+            } else {
+              const duration = moment.duration(now.diff(bd.createdAt));
+              tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+            }
 
-              if (tempBreakdownHour >= 10) {
-                tempBreakdownHour = 10;
+            if (tempBreakdownHour >= 10) {
+              console.log(bd.createdAt);
+              console.log(tempBreakdownHour);
+              tempBreakdownHour = 10;
+              na = 0;
+              tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
+              tempIdleHour =
+                10 - tempWorkingHour - tempBreakdownHour > 0
+                  ? 10 - tempWorkingHour - tempBreakdownHour
+                  : 0;
+            } else {
+              if (tempBreakdownHour > 0) {
                 na = 0;
-              } else {
-                if (tempBreakdownHour > 0) {
-                  na = 0;
-                  if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
-                    tempIdleHour =
-                      10 - tempWorkingHour - tempBreakdownHour > 0
-                        ? 10 - tempWorkingHour - tempBreakdownHour
-                        : 0;
-                  } else {
-                    tempIdleHour =
-                      10 - tempBreakdownHour > 0 ? 10 - tempBreakdownHour : 0;
-                  }
-                }
+                tempBreakdownHour = Math.abs(
+                  tempBreakdownHour - tempWorkingHour
+                );
+                tempIdleHour =
+                  10 - tempWorkingHour - tempBreakdownHour > 0
+                    ? 10 - tempWorkingHour - tempBreakdownHour
+                    : 0;
               }
             }
           }
