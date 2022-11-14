@@ -4273,8 +4273,6 @@ export class EntityService {
               }
 
               if (tempBreakdownHour >= 10) {
-                console.log(bd.createdAt);
-                console.log(tempBreakdownHour);
                 tempBreakdownHour = 10;
                 na = 0;
                 tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
@@ -4366,6 +4364,8 @@ export class EntityService {
           idleHour: idleHour,
           breakdownHour: breakdownHour,
           na: na,
+          total: workingHour + idleHour + breakdownHour + na,
+          id: entity.id,
         });
       }
       await this.redisCacheService.setForHour(key, usage);
@@ -4597,8 +4597,6 @@ export class EntityService {
             }
 
             if (tempBreakdownHour >= 10) {
-              console.log(bd.createdAt);
-              console.log(tempBreakdownHour);
               tempBreakdownHour = 10;
               na = 0;
               tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
@@ -4641,6 +4639,10 @@ export class EntityService {
         (a) => a.typeId === u.typeId && a.name === u.name
       );
 
+      const count = usage.filter(
+        (a) => a.typeId === u.typeId && a.name === u.name
+      ).length;
+
       const workingHour = entities.reduce(function (prev, cur) {
         return prev + cur.workingHour;
       }, 0);
@@ -4662,13 +4664,15 @@ export class EntityService {
         idleHour: idleHour,
         breakdownHour: breakdownHour,
         na: na,
+        total: workingHour + idleHour + breakdownHour + na,
+        count: count,
       });
     }
     const result = Object.values(
       tempUsage.reduce((acc, obj) => ({ ...acc, [obj.typeId]: obj }), {})
     );
     //console.log(result);
-    console.log(result.length);
+    //console.log(result.length);
     return result;
   }
   //** Get all entity. */

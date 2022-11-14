@@ -6,10 +6,12 @@ type AllEntityUsageHistory {
   breakdownHour: Int
   breakdownPercentage: Float
   date: Date!
+  id: Int
   idleHour: Int
   idlePercentage: Float
   machineNumber: String
   na: Int
+  total: Int
   totalHour: Float
   workingHour: Int
   workingPercentage: Float
@@ -17,10 +19,12 @@ type AllEntityUsageHistory {
 
 type AllGroupedEntityUsage {
   breakdownHour: Int
+  count: Int
   idleHour: Int
   machineNumber: String
   na: Int
   name: String
+  total: Int
   typeId: Int
   workingHour: Int
 }

@@ -9,4 +9,6 @@ export class AllGroupedEntityUsage {
   idleHour?: number;
   breakdownHour?: number;
   na?: number;
+  total?: number;
+  count?: number;
 }

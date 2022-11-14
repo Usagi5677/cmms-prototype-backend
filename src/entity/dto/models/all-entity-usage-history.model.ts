@@ -8,6 +8,8 @@ export class AllEntityUsageHistory {
   idleHour?: number;
   breakdownHour?: number;
   na?: number;
+  total?: number;
+  id?: number;
   @Field(() => GraphQLFloat)
   totalHour?: typeof GraphQLFloat;
   @Field(() => GraphQLFloat)
