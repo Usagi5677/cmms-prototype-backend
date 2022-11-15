@@ -4052,7 +4052,7 @@ export class EntityService {
           vesselChecklistComplete,
         };
 
-        await this.redisCacheService.setForHour(key, checklistAndPMSummary);
+        await this.redisCacheService.setForDay(key, checklistAndPMSummary);
       }
       return checklistAndPMSummary;
     } catch (e) {
