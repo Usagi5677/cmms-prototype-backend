@@ -3,6 +3,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -192,203 +193,213 @@ export class ChecklistService {
     user: User,
     { date, type, isAssigned }: IncompleteChecklistInput
   ): Promise<Checklist[] | null> {
-    let from;
-    let to;
-    if (type === 'Daily') {
-      from = moment(date).startOf('day').toDate();
-      to = moment(date).endOf('day').toDate();
-    } else {
-      from = moment(date).startOf('week').toDate();
-      to = moment(date).endOf('week').toDate();
-    }
-    const checkStatus = ['Working', 'Critical'];
-    const checklist = await this.prisma.checklist.findMany({
-      where: {
-        type,
-        NOT: [{ entityId: null }],
-        from: { gte: from },
-        to: { lte: to },
-        OR: { currentMeterReading: null, workingHour: null, type },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    const checklistIds = checklist.map((id) => id.id);
-
-    const checklistItem = await this.prisma.checklistItem.findMany({
-      where: {
-        checklistId: {
-          in: checklistIds,
-        },
-        completedAt: null,
-      },
-      select: {
-        checklistId: true,
-      },
-    });
-    const checklistItemIds = checklistItem.map((id) => id.checklistId);
-
-    const newChecklist = await this.prisma.checklist.findMany({
-      where: {
-        id: {
-          in: checklistItemIds,
-        },
-      },
-      select: {
-        id: true,
-        entityId: true,
-      },
-    });
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      status: { in: checkStatus },
-    });
-    if (isAssigned) {
-      const assignments = await this.prisma.entityAssignment.findMany({
+    try {
+      let from;
+      let to;
+      if (type === 'Daily') {
+        from = moment(date).startOf('day').toDate();
+        to = moment(date).endOf('day').toDate();
+      } else {
+        from = moment(date).startOf('week').toDate();
+        to = moment(date).endOf('week').toDate();
+      }
+      const checkStatus = ['Working', 'Critical'];
+      const checklist = await this.prisma.checklist.findMany({
         where: {
-          removedAt: null,
-          userId: user.id,
-          type: { in: ['Admin', 'User'] },
+          type,
+          NOT: [{ entityId: null }],
+          from: { gte: from },
+          to: { lte: to },
+          OR: { currentMeterReading: null, workingHour: null, type },
+        },
+        select: {
+          id: true,
         },
       });
-      where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
+
+      const checklistIds = checklist.map((id) => id.id);
+
+      const checklistItem = await this.prisma.checklistItem.findMany({
+        where: {
+          checklistId: {
+            in: checklistIds,
+          },
+          completedAt: null,
+        },
+        select: {
+          checklistId: true,
+        },
+      });
+      const checklistItemIds = checklistItem.map((id) => id.checklistId);
+
+      const newChecklist = await this.prisma.checklist.findMany({
+        where: {
+          id: {
+            in: checklistItemIds,
+          },
+        },
+        select: {
+          id: true,
+          entityId: true,
+        },
+      });
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      where.AND.push({
+        deletedAt: null,
+        status: { in: checkStatus },
+      });
+      if (isAssigned) {
+        const assignments = await this.prisma.entityAssignment.findMany({
+          where: {
+            removedAt: null,
+            userId: user.id,
+            type: { in: ['Admin', 'User'] },
+          },
+        });
+        where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
+      }
+      const entities = await this.prisma.entity.findMany({
+        where,
+        select: { id: true },
+      });
+      const workingIds = newChecklist.filter((e) =>
+        entities.some((b) => e.entityId === b.id)
+      );
+
+      const newChecklistIds = workingIds.map((e) => e.id);
+
+      const checklists = await this.prisma.checklist.findMany({
+        where: {
+          id: { in: newChecklistIds },
+        },
+        include: {
+          entity: { include: { type: true, location: true } },
+          items: true,
+          comments: true,
+        },
+      });
+      return checklists;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const entities = await this.prisma.entity.findMany({
-      where,
-      select: { id: true },
-    });
-    const workingIds = newChecklist.filter((e) =>
-      entities.some((b) => e.entityId === b.id)
-    );
-
-    const newChecklistIds = workingIds.map((e) => e.id);
-
-    const checklists = await this.prisma.checklist.findMany({
-      where: {
-        id: { in: newChecklistIds },
-      },
-      include: {
-        entity: { include: { type: true, location: true } },
-        items: true,
-        comments: true,
-      },
-    });
-    return checklists;
   }
 
   async incompleteChecklistSummary(
     user: User,
     { type, from, to, isAssigned }: IncompleteChecklistSummaryInput
   ) {
-    const start = moment(from);
-    const end = moment(to);
-    const checklist = await this.prisma.checklist.findMany({
-      where: {
-        type,
-        NOT: [{ entityId: null }],
-        from: { gte: start.startOf('day').toDate() },
-        to: { lte: end.endOf(type === 'Daily' ? 'day' : 'week').toDate() },
-        OR: { currentMeterReading: null, workingHour: null, type },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    const checklistIds = checklist.map((id) => id.id);
-
-    const checklistItem = await this.prisma.checklistItem.findMany({
-      where: {
-        checklistId: {
-          in: checklistIds,
-        },
-        completedAt: null,
-      },
-      select: {
-        checklistId: true,
-      },
-    });
-    const checklistItemIds = checklistItem.map((id) => id.checklistId);
-
-    const newChecklist = await this.prisma.checklist.findMany({
-      where: {
-        id: {
-          in: checklistItemIds,
-        },
-      },
-      select: {
-        id: true,
-        entityId: true,
-      },
-    });
-    const checkStatus = ['Working', 'Critical'];
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      status: { in: checkStatus },
-    });
-    if (isAssigned) {
-      const assignments = await this.prisma.entityAssignment.findMany({
+    try {
+      const start = moment(from);
+      const end = moment(to);
+      const checklist = await this.prisma.checklist.findMany({
         where: {
-          removedAt: null,
-          userId: user.id,
-          type: { in: ['Admin', 'User'] },
+          type,
+          NOT: [{ entityId: null }],
+          from: { gte: start.startOf('day').toDate() },
+          to: { lte: end.endOf(type === 'Daily' ? 'day' : 'week').toDate() },
+          OR: { currentMeterReading: null, workingHour: null, type },
+        },
+        select: {
+          id: true,
         },
       });
-      where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
-    }
-    const entities = await this.prisma.entity.findMany({
-      where,
-      select: { id: true },
-    });
-    const workingIds = newChecklist.filter((e) =>
-      entities.some((b) => e.entityId === b.id)
-    );
 
-    const newChecklistIds = workingIds.map((e) => e.id);
+      const checklistIds = checklist.map((id) => id.id);
 
-    const checklists = await this.prisma.checklist.findMany({
-      where: {
-        id: { in: newChecklistIds },
-      },
-    });
-    if (type === 'Daily') {
-      const checklistByDay = [];
-      const days = end.diff(start, 'day') + 1;
-      for (let i = 0; i < days; i++) {
-        const checklistStart = moment(from).add(i, 'day').startOf('day');
-        const checklistEnd = moment(from).add(i, 'day').endOf('day');
-        checklistByDay.push({
-          date: checklistStart.toISOString(),
-          count: checklists.filter(
-            (checklist) =>
-              moment(checklist.from).isSame(checklistStart) &&
-              moment(checklist.to).isSame(checklistEnd)
-          ).length,
+      const checklistItem = await this.prisma.checklistItem.findMany({
+        where: {
+          checklistId: {
+            in: checklistIds,
+          },
+          completedAt: null,
+        },
+        select: {
+          checklistId: true,
+        },
+      });
+      const checklistItemIds = checklistItem.map((id) => id.checklistId);
+
+      const newChecklist = await this.prisma.checklist.findMany({
+        where: {
+          id: {
+            in: checklistItemIds,
+          },
+        },
+        select: {
+          id: true,
+          entityId: true,
+        },
+      });
+      const checkStatus = ['Working', 'Critical'];
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      where.AND.push({
+        deletedAt: null,
+        status: { in: checkStatus },
+      });
+      if (isAssigned) {
+        const assignments = await this.prisma.entityAssignment.findMany({
+          where: {
+            removedAt: null,
+            userId: user.id,
+            type: { in: ['Admin', 'User'] },
+          },
         });
+        where.AND.push({ id: { in: assignments.map((a) => a.entityId) } });
       }
-      return checklistByDay;
-    } else {
-      const checklistByWeek = [];
-      const weeks = end.diff(start, 'week') + 1;
-      for (let i = 0; i < weeks; i++) {
-        const checklistStart = moment(from).add(i, 'week').startOf('week');
-        const checklistEnd = moment(from).add(i, 'week').endOf('week');
-        checklistByWeek.push({
-          date: checklistStart,
-          count: checklists.filter(
-            (checklist) =>
-              moment(checklist.from).isSame(checklistStart) &&
-              moment(checklist.to).isSame(checklistEnd)
-          ).length,
-        });
+      const entities = await this.prisma.entity.findMany({
+        where,
+        select: { id: true },
+      });
+      const workingIds = newChecklist.filter((e) =>
+        entities.some((b) => e.entityId === b.id)
+      );
+
+      const newChecklistIds = workingIds.map((e) => e.id);
+
+      const checklists = await this.prisma.checklist.findMany({
+        where: {
+          id: { in: newChecklistIds },
+        },
+      });
+      if (type === 'Daily') {
+        const checklistByDay = [];
+        const days = end.diff(start, 'day') + 1;
+        for (let i = 0; i < days; i++) {
+          const checklistStart = moment(from).add(i, 'day').startOf('day');
+          const checklistEnd = moment(from).add(i, 'day').endOf('day');
+          checklistByDay.push({
+            date: checklistStart.toISOString(),
+            count: checklists.filter(
+              (checklist) =>
+                moment(checklist.from).isSame(checklistStart) &&
+                moment(checklist.to).isSame(checklistEnd)
+            ).length,
+          });
+        }
+        return checklistByDay;
+      } else {
+        const checklistByWeek = [];
+        const weeks = end.diff(start, 'week') + 1;
+        for (let i = 0; i < weeks; i++) {
+          const checklistStart = moment(from).add(i, 'week').startOf('week');
+          const checklistEnd = moment(from).add(i, 'week').endOf('week');
+          checklistByWeek.push({
+            date: checklistStart,
+            count: checklists.filter(
+              (checklist) =>
+                moment(checklist.from).isSame(checklistStart) &&
+                moment(checklist.to).isSame(checklistEnd)
+            ).length,
+          });
+        }
+        return checklistByWeek;
       }
-      return checklistByWeek;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
