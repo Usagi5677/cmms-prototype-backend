@@ -3949,24 +3949,12 @@ export class EntityService {
 
         const pm = await this.prisma.periodicMaintenance.findMany({
           where: {
-            from: todayStart.toDate(),
-            to: todayEnd.toDate(),
+            from: { gte: todayStart.toDate() },
+            to: { lte: todayEnd.toDate() },
             entity: {
               assignees: { some: { userId: user.id, removedAt: null } },
             },
-            tasks: {
-              some: {
-                completedAt: null,
-                subTasks: {
-                  some: {
-                    completedAt: null,
-                    subTasks: {
-                      some: { completedAt: null },
-                    },
-                  },
-                },
-              },
-            },
+            type: 'Copy',
           },
           include: {
             entity: {
@@ -3974,9 +3962,17 @@ export class EntityService {
                 type: true,
               },
             },
+            tasks: {
+              include: {
+                subTasks: {
+                  include: {
+                    subTasks: true,
+                  },
+                },
+              },
+            },
           },
         });
-
         const checklist = await this.prisma.checklist.findMany({
           where: {
             from: todayStart.toDate(),
@@ -4006,12 +4002,18 @@ export class EntityService {
         let vehicleChecklistComplete = false;
         let vesselChecklistComplete = false;
         for (const p of pm) {
-          if (p.entity.type.entityType === 'Machine') {
-            machineTaskComplete = true;
-          } else if (p.entity.type.entityType === 'Vehicle') {
-            vehicleTaskComplete = true;
-          } else if (p.entity.type.entityType === 'Vessel') {
-            vesselTaskComplete = true;
+          if (p?.entity?.type?.entityType === 'Machine') {
+            if (p?.tasks?.flat(2).every((task) => task?.completedAt === null)) {
+              machineTaskComplete = true;
+            }
+          } else if (p?.entity?.type?.entityType === 'Vehicle') {
+            if (p?.tasks?.flat(2).every((task) => task?.completedAt === null)) {
+              vehicleTaskComplete = true;
+            }
+          } else if (p?.entity?.type?.entityType === 'Vessel') {
+            if (p?.tasks?.flat(2).every((task) => task?.completedAt === null)) {
+              vesselTaskComplete = true;
+            }
           } else if (
             machineTaskComplete &&
             vehicleTaskComplete &&
@@ -4040,7 +4042,6 @@ export class EntityService {
         const pmChecklistUnique = [
           ...new Set(checklist.map((m) => m.entityId)),
         ];
-
         checklistAndPMSummary = {
           pm: pmUnique,
           checklist: pmChecklistUnique,
@@ -4406,8 +4407,7 @@ export class EntityService {
     });
     if (search) {
       const or: any = [
-        { model: { contains: search, mode: 'insensitive' } },
-        { machineNumber: { contains: search, mode: 'insensitive' } },
+        { type: { name: { contains: search, mode: 'insensitive' } } },
       ];
       // If search contains all numbers, search the machine ids as well
       if (/^(0|[1-9]\d*)$/.test(search)) {
@@ -4880,5 +4880,232 @@ export class EntityService {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+
+  //** Get all grouped location's incomplete tasks*/
+  async getAllGroupedLocationIncompleteTasks(
+    user: User,
+    from: Date,
+    to: Date,
+    search: string,
+    divisionIds: number[],
+    locationIds: number[],
+    zoneIds: number[],
+    typeIds: number[],
+    measurement: string[],
+    entityType: string[]
+  ) {
+    const userPermissions = await this.userService.getUserRolesPermissionsList(
+      user.id
+    );
+    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
+    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+    const hasViewAllDivisionEntity = userPermissions.includes(
+      'VIEW_ALL_DIVISION_ENTITY'
+    );
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+      machineNumber: { not: null },
+      parentEntityId: null,
+    });
+    if (search) {
+      const or: any = [
+        { location: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    if (divisionIds?.length > 0) {
+      where.AND.push({
+        divisionId: {
+          in: divisionIds,
+        },
+      });
+    }
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        locationId: {
+          in: locationIds,
+        },
+      });
+    }
+    if (zoneIds?.length > 0) {
+      where.AND.push({ location: { zoneId: { in: zoneIds } } });
+    }
+    if (typeIds?.length > 0) {
+      where.AND.push({
+        typeId: { in: typeIds },
+      });
+    }
+
+    if (!hasViewAll) {
+      const userDivision = await this.prisma.divisionUsers.findMany({
+        where: { userId: user.id },
+      });
+      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+      const or: any = [];
+      if (hasViewAllMachinery) {
+        or.push({ type: { entityType: 'Machine' } });
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (hasViewAllVehicles) {
+        or.push({ type: { entityType: 'Vehicle' } });
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (hasViewAllVessels) {
+        or.push({ type: { entityType: 'Vessel' } });
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (hasViewAllDivisionEntity) {
+        or.push(
+          { divisionId: { in: userDivisionIds } },
+          {
+            assignees: {
+              some: {
+                userId: user.id,
+                removedAt: null,
+              },
+            },
+          }
+        );
+
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (
+        !hasViewAllDivisionEntity &&
+        !hasViewAllMachinery &&
+        !hasViewAllVehicles &&
+        !hasViewAllVessels
+      ) {
+        where.AND.push({
+          assignees: {
+            some: {
+              userId: user.id,
+              removedAt: null,
+            },
+          },
+        });
+      }
+    }
+    if (entityType?.length > 0) {
+      where.AND.push({
+        type: {
+          entityType: { in: entityType },
+        },
+      });
+    }
+
+    const allEntities = await this.prisma.entity.findMany({
+      where,
+      include: { type: true, location: true },
+      orderBy: { machineNumber: 'asc' },
+    });
+
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
+    const key = `grouped_incomplete_tasks_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+    let stats = await this.redisCacheService.get(key);
+    if (!stats) {
+      stats = [];
+      const checklists = await this.prisma.checklist.findMany({
+        where: {
+          type: 'Daily',
+          NOT: [{ entityId: null }],
+          from: { gte: moment(from).startOf('day').toDate() },
+          to: { lte: moment(to).endOf('day').toDate() },
+        },
+        select: {
+          id: true,
+          entityId: true,
+          from: true,
+          to: true,
+        },
+      });
+
+      const checklistIds = checklists.map((id) => id.id);
+      const checklistItems = await this.prisma.checklistItem.findMany({
+        where: { checklistId: { in: checklistIds } },
+        select: { checklistId: true, completedAt: true },
+      });
+      for (const entity of allEntities) {
+        let completeTask = 0;
+        let incompleteTask = 0;
+        const days = toDate.diff(fromDate, 'days') + 1;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const dayStart = day.clone().startOf('day');
+          const dayEnd = day.clone().endOf('day');
+
+          const checklist = checklists.find(
+            (c) =>
+              c.entityId === entity.id &&
+              moment(c.from).startOf('day').isSame(dayStart.toDate()) &&
+              moment(c.to).endOf('day').isSame(dayEnd.toDate())
+          );
+          const ckItems = checklistItems.filter(
+            (ci) => ci.checklistId === checklist?.id
+          );
+          ckItems.map((ci) => {
+            if (ci?.completedAt !== null) {
+              completeTask = completeTask + 1;
+            } else {
+              incompleteTask = incompleteTask + 1;
+            }
+          });
+        }
+        stats.push({
+          locationId: entity?.locationId,
+          name: entity?.location?.name,
+          incompleteTask,
+          completeTask,
+        });
+      }
+
+      await this.redisCacheService.setForHour(key, stats);
+    }
+    const tempUsage = [];
+    for (const u of stats) {
+      const entities = stats.filter((a) => a?.locationId === u?.locationId);
+
+      const count = stats.filter((a) => a?.locationId === u?.locationId).length;
+
+      const incompleteTask = entities.reduce(function (prev, cur) {
+        return prev + cur.incompleteTask;
+      }, 0);
+      const completeTask = entities.reduce(function (prev, cur) {
+        return prev + cur.completeTask;
+      }, 0);
+      tempUsage.push({
+        locationId: u?.locationId,
+        name: u?.name,
+        incompleteTask,
+        completeTask,
+        count,
+        total: incompleteTask + completeTask,
+      });
+    }
+    const result = Object.values(
+      tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.locationId]: obj }), {})
+    );
+    //console.log(result);
+    //console.log(result.length);
+    return result;
   }
 }

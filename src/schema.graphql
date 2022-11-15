@@ -686,6 +686,15 @@ type EntityUsageHistory {
   workingHour: Int
 }
 
+type GroupedLocationIncompleteTasks {
+  completeTask: Int
+  count: Int
+  incompleteTask: Int
+  locationId: Int
+  name: String
+  total: Int
+}
+
 type HullType {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -1602,6 +1611,7 @@ type Query {
     zoneIds: [Int!]
   ): [Entity!]!
   getAllGroupedEntityUsage(entityTypes: [String!], from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [AllGroupedEntityUsage!]!
+  getAllGroupedLocationIncompleteTasks(divisionIds: [Int!], entityType: [String!], from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [GroupedLocationIncompleteTasks!]!
   getAllHistoryOfEntity(
     """Paginate after opaque cursor"""
     after: String

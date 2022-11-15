@@ -31,6 +31,7 @@ import { entityChecklistAndPMSummary } from './dto/models/entityChecklistAndPMSu
 import { entityPMSummary } from './dto/models/entityPMSummary.model';
 import { AllGroupedEntityUsage } from './dto/models/all-grouped-entity-usage.model';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { GroupedLocationIncompleteTasks } from './dto/models/grouped-location-incomplete-tasks.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -544,6 +545,39 @@ export class EntityResolver {
       typeIds,
       measurement,
       entityTypes
+    );
+  }
+
+  @Query(() => [GroupedLocationIncompleteTasks])
+  async getAllGroupedLocationIncompleteTasks(
+    @UserEntity() user: User,
+    @Args('from') from: Date,
+    @Args('to') to: Date,
+    @Args('search', { nullable: true, type: () => String }) search: string,
+    @Args('divisionIds', { nullable: true, type: () => [Int] })
+    divisionIds: number[],
+    @Args('locationIds', { nullable: true, type: () => [Int] })
+    locationIds: number[],
+    @Args('zoneIds', { nullable: true, type: () => [Int] })
+    zoneIds: number[],
+    @Args('typeIds', { nullable: true, type: () => [Int] })
+    typeIds: number[],
+    @Args('measurement', { nullable: true, type: () => [String] })
+    measurement: string[],
+    @Args('entityType', { nullable: true, type: () => [String] })
+    entityType: string[]
+  ): Promise<GroupedLocationIncompleteTasks[]> {
+    return this.entityService.getAllGroupedLocationIncompleteTasks(
+      user,
+      from,
+      to,
+      search,
+      divisionIds,
+      locationIds,
+      zoneIds,
+      typeIds,
+      measurement,
+      entityType
     );
   }
 
