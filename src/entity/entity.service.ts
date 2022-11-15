@@ -4051,6 +4051,8 @@ export class EntityService {
           vehicleChecklistComplete,
           vesselChecklistComplete,
         };
+
+        await this.redisCacheService.setForHour(key, checklistAndPMSummary);
       }
       return checklistAndPMSummary;
     } catch (e) {
