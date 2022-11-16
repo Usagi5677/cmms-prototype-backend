@@ -194,44 +194,45 @@ export class EntityService {
             },
           });
         }
+      } else {
+        const entity = await this.prisma.entity.create({
+          data: {
+            createdById: user.id,
+            typeId,
+            machineNumber,
+            model,
+            locationId,
+            divisionId,
+            engine,
+            measurement,
+            currentRunning,
+            lastService,
+            brand,
+            registeredDate,
+            dailyChecklistTemplateId: newDailyTemplate.id,
+            weeklyChecklistTemplateId: newWeeklyTemplate.id,
+            hullTypeId,
+            dimension,
+            registryNumber,
+          },
+        });
+        await this.checklistTemplateService.updateEntityChecklists(
+          entity.id,
+          'Daily',
+          newDailyTemplate
+        );
+        await this.checklistTemplateService.updateEntityChecklists(
+          entity.id,
+          'Weekly',
+          newWeeklyTemplate
+        );
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Add',
+          description: `Entity created`,
+          entityId: entity.id,
+          completedById: user.id,
+        });
       }
-      const entity = await this.prisma.entity.create({
-        data: {
-          createdById: user.id,
-          typeId,
-          machineNumber,
-          model,
-          locationId,
-          divisionId,
-          engine,
-          measurement,
-          currentRunning,
-          lastService,
-          brand,
-          registeredDate,
-          dailyChecklistTemplateId: newDailyTemplate.id,
-          weeklyChecklistTemplateId: newWeeklyTemplate.id,
-          hullTypeId,
-          dimension,
-          registryNumber,
-        },
-      });
-      await this.checklistTemplateService.updateEntityChecklists(
-        entity.id,
-        'Daily',
-        newDailyTemplate
-      );
-      await this.checklistTemplateService.updateEntityChecklists(
-        entity.id,
-        'Weekly',
-        newWeeklyTemplate
-      );
-      await this.createEntityHistoryInBackground({
-        type: 'Entity Add',
-        description: `Entity created`,
-        entityId: entity.id,
-        completedById: user.id,
-      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
