@@ -5015,7 +5015,7 @@ export class EntityService {
 
     const allEntities = await this.prisma.entity.findMany({
       where,
-      include: { type: true, location: true },
+      include: { location: true },
       orderBy: { machineNumber: 'asc' },
     });
 
@@ -5107,6 +5107,235 @@ export class EntityService {
     );
     //console.log(result);
     //console.log(result.length);
+    return result;
+  }
+
+  //** Get all grouped type's repair stats*/
+  async getAllGroupedTypeRepairStats(
+    user: User,
+    from: Date,
+    to: Date,
+    search: string,
+    divisionIds: number[],
+    locationIds: number[],
+    zoneIds: number[],
+    typeIds: number[],
+    measurement: string[],
+    entityType: string[]
+  ) {
+    const userPermissions = await this.userService.getUserRolesPermissionsList(
+      user.id
+    );
+    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
+    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+    const hasViewAllDivisionEntity = userPermissions.includes(
+      'VIEW_ALL_DIVISION_ENTITY'
+    );
+    // eslint-disable-next-line prefer-const
+    let where: any = { AND: [] };
+    where.AND.push({
+      deletedAt: null,
+      machineNumber: { not: null },
+      parentEntityId: null,
+    });
+    if (search) {
+      const or: any = [
+        { type: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+      // If search contains all numbers, search the machine ids as well
+      if (/^(0|[1-9]\d*)$/.test(search)) {
+        or.push({ id: parseInt(search) });
+      }
+      where.AND.push({
+        OR: or,
+      });
+    }
+    if (divisionIds?.length > 0) {
+      where.AND.push({
+        divisionId: {
+          in: divisionIds,
+        },
+      });
+    }
+    if (locationIds?.length > 0) {
+      where.AND.push({
+        locationId: {
+          in: locationIds,
+        },
+      });
+    }
+    if (zoneIds?.length > 0) {
+      where.AND.push({ location: { zoneId: { in: zoneIds } } });
+    }
+    if (typeIds?.length > 0) {
+      where.AND.push({
+        typeId: { in: typeIds },
+      });
+    }
+
+    if (!hasViewAll) {
+      const userDivision = await this.prisma.divisionUsers.findMany({
+        where: { userId: user.id },
+      });
+      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+      const or: any = [];
+      if (hasViewAllMachinery) {
+        or.push({ type: { entityType: 'Machine' } });
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (hasViewAllVehicles) {
+        or.push({ type: { entityType: 'Vehicle' } });
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (hasViewAllVessels) {
+        or.push({ type: { entityType: 'Vessel' } });
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (hasViewAllDivisionEntity) {
+        or.push(
+          { divisionId: { in: userDivisionIds } },
+          {
+            assignees: {
+              some: {
+                userId: user.id,
+                removedAt: null,
+              },
+            },
+          }
+        );
+
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (
+        !hasViewAllDivisionEntity &&
+        !hasViewAllMachinery &&
+        !hasViewAllVehicles &&
+        !hasViewAllVessels
+      ) {
+        where.AND.push({
+          assignees: {
+            some: {
+              userId: user.id,
+              removedAt: null,
+            },
+          },
+        });
+      }
+    }
+    if (entityType?.length > 0) {
+      where.AND.push({
+        type: {
+          entityType: { in: entityType },
+        },
+      });
+    }
+
+    const allEntities = await this.prisma.entity.findMany({
+      where,
+      include: { type: true },
+      orderBy: { machineNumber: 'asc' },
+    });
+
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
+    const key = `grouped_type_repair_stats_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+    let stats = await this.redisCacheService.get(key);
+    if (!stats) {
+      stats = [];
+      const repairs = await this.prisma.repair.findMany({
+        where: {
+          createdAt: {
+            gte: moment(from).startOf('day').toDate(),
+            lte: moment(to).endOf('day').toDate(),
+          },
+        },
+        include: { breakdown: true },
+      });
+
+      for (const entity of allEntities) {
+        let averageTimeOfRepair = 0;
+        let total = 0;
+        let reading = 0;
+        let mean = 0;
+        const days = toDate.diff(fromDate, 'days') + 1;
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const dayStart = day.clone().startOf('day');
+          const dayEnd = day.clone().endOf('day');
+
+          const repairsOfEntity = repairs.filter(
+            (r) =>
+              r.entityId === entity.id &&
+              moment(r.createdAt).isBetween(dayStart.toDate(), dayEnd.toDate())
+          );
+          if (repairsOfEntity.length > 0) {
+            for (const r of repairsOfEntity) {
+              if (r?.breakdown?.completedAt) {
+                const duration = moment.duration(
+                  moment(r.createdAt).diff(r.breakdown.createdAt)
+                );
+                const durationHour = parseInt(duration.asHours().toFixed(0));
+                const finalDuration = durationHour / repairsOfEntity.length;
+                averageTimeOfRepair += finalDuration;
+              }
+            }
+            total = await this.getLatestReading(entity);
+            const entityReading = await this.getLatestReading(
+              entity,
+              dayEnd.toDate()
+            );
+            reading += entityReading;
+            mean = reading / repairsOfEntity.length;
+          }
+        }
+        stats.push({
+          typeId: entity?.type?.id,
+          name: entity?.type?.name,
+          averageTimeOfRepair,
+          mean,
+          total,
+        });
+      }
+
+      await this.redisCacheService.setForHour(key, stats);
+    }
+    const tempUsage = [];
+    for (const u of stats) {
+      const entities = stats.filter((a) => a?.typeId === u?.typeId);
+
+      const count = stats.filter((a) => a?.typeId === u?.typeId).length;
+
+      const averageTimeOfRepair = entities.reduce(function (prev, cur) {
+        return prev + cur.averageTimeOfRepair;
+      }, 0);
+      const mean = entities.reduce(function (prev, cur) {
+        return prev + cur.mean;
+      }, 0);
+      const total = entities.reduce(function (prev, cur) {
+        return prev + cur.total;
+      }, 0);
+      tempUsage.push({
+        typeId: u?.typeId,
+        name: u?.name,
+        averageTimeOfRepair: Math.ceil(averageTimeOfRepair),
+        mean: Math.ceil(mean),
+        count,
+        total,
+      });
+    }
+    const result = Object.values(
+      tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.typeId]: obj }), {})
+    );
     return result;
   }
 }

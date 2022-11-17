@@ -695,6 +695,15 @@ type GroupedLocationIncompleteTasks {
   total: Int
 }
 
+type GroupedTypeRepairStats {
+  averageTimeOfRepair: Int
+  count: Int
+  mean: Int
+  name: String
+  total: Int
+  typeId: Int
+}
+
 type HullType {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -1612,6 +1621,7 @@ type Query {
   ): [Entity!]!
   getAllGroupedEntityUsage(entityTypes: [String!], from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [AllGroupedEntityUsage!]!
   getAllGroupedLocationIncompleteTasks(divisionIds: [Int!], entityType: [String!], from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [GroupedLocationIncompleteTasks!]!
+  getAllGroupedTypeRepairStats(divisionIds: [Int!], entityType: [String!], from: Date!, locationIds: [Int!], measurement: [String!], search: String, to: Date!, typeIds: [Int!], zoneIds: [Int!]): [GroupedTypeRepairStats!]!
   getAllHistoryOfEntity(
     """Paginate after opaque cursor"""
     after: String
