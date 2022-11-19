@@ -867,6 +867,170 @@ export class PeriodicMaintenanceService {
     return summaries;
   }
 
+  async allPeriodicMaintenanceSummary(
+    args: PeriodicMaintenanceConnectionArgs
+  ): Promise<PeriodicMaintenanceSummary[]> {
+    try {
+      const {
+        search,
+        type2Ids,
+        measurement,
+        locationIds,
+        zoneIds,
+        divisionIds,
+        gteInterService,
+        lteInterService,
+        pmStatus,
+        from,
+        to,
+      } = args;
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      const todayStart = moment(from).startOf('day');
+      const todayEnd = moment(to).endOf('day');
+
+      where.AND.push({
+        removedAt: null,
+        entityId: { not: null },
+        type: { in: ['Copy', 'Upcoming'] },
+      });
+
+      if (search) {
+        const or: any = [
+          { entity: { model: { contains: search, mode: 'insensitive' } } },
+          {
+            entity: {
+              machineNumber: { contains: search, mode: 'insensitive' },
+            },
+          },
+          { name: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+
+      if (type2Ids?.length > 0) {
+        where.AND.push({
+          entity: { typeId: { in: type2Ids } },
+        });
+      }
+
+      if (measurement?.length > 0) {
+        where.AND.push({
+          entity: { measurement: { in: measurement } },
+        });
+      }
+
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          entity: { locationId: { in: locationIds } },
+        });
+      }
+
+      if (zoneIds?.length > 0) {
+        where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
+      }
+
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          entity: { divisionId: { in: divisionIds } },
+        });
+      }
+
+      if (pmStatus?.length > 0) {
+        where.AND.push({
+          status: { in: pmStatus },
+        });
+      }
+
+      if (gteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          entity: {
+            interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+          },
+        });
+      }
+
+      if (lteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          entity: {
+            interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+          },
+        });
+      }
+
+      if (
+        gteInterService?.replace(/\D/g, '') &&
+        lteInterService?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          entity: {
+            interService: {
+              gte: parseInt(gteInterService.replace(/\D/g, '')),
+              lte: parseInt(lteInterService.replace(/\D/g, '')),
+            },
+          },
+        });
+      }
+      if (from) {
+        where.AND.push({
+          createdAt: { gte: todayStart.toDate() },
+        });
+      }
+
+      if (to) {
+        where.AND.push({
+          createdAt: { lte: todayEnd.toDate() },
+        });
+      }
+      if (from && to) {
+        where.AND.push({
+          createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+        });
+      }
+
+      const periodicMaintenances =
+        await this.prisma.periodicMaintenance.findMany({
+          where,
+          include: {
+            verifiedBy: true,
+            comments: {
+              include: {
+                createdBy: true,
+              },
+            },
+          },
+        });
+      const summaries: PeriodicMaintenanceSummary[] = [];
+      for (const pm of periodicMaintenances) {
+        const summary = new PeriodicMaintenanceSummary();
+        Object.assign(summary, pm);
+        summary.taskCompletion = 'none';
+        summary.hasObservations =
+          pm.comments.filter((c) => c.type === 'Observation').length > 0
+            ? true
+            : false;
+        summary.hasRemarks =
+          pm.comments.filter((c) => c.type === 'Remark').length > 0
+            ? true
+            : false;
+        summary.hasVerify = pm.verifiedAt !== null;
+        summaries.push(summary);
+      }
+      return summaries;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   //update or create reminder
   //add removedAt check later
   async upsertPMNotificationReminder(
@@ -1781,12 +1945,14 @@ export class PeriodicMaintenanceService {
       gteInterService,
       lteInterService,
       pmStatus,
+      from,
+      to,
     } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
-    const todayStart = moment().startOf('day');
-    const todayEnd = moment().endOf('day');
+    const todayStart = moment(from).startOf('day');
+    const todayEnd = moment(to).endOf('day');
 
     where.AND.push({
       removedAt: null,
@@ -1874,6 +2040,22 @@ export class PeriodicMaintenanceService {
       });
     }
 
+    if (from) {
+      where.AND.push({
+        createdAt: { gte: todayStart.toDate() },
+      });
+    }
+
+    if (to) {
+      where.AND.push({
+        createdAt: { lte: todayEnd.toDate() },
+      });
+    }
+    if (from && to) {
+      where.AND.push({
+        createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+      });
+    }
     const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
       {
         skip: offset,
@@ -1936,12 +2118,14 @@ export class PeriodicMaintenanceService {
       gteInterService,
       lteInterService,
       pmStatus,
+      from,
+      to,
     } = args;
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
-    const todayStart = moment().startOf('day');
-    const todayEnd = moment().endOf('day');
+    const todayStart = moment(from).startOf('day');
+    const todayEnd = moment(to).endOf('day');
 
     where.AND.push({
       removedAt: null,
@@ -2028,42 +2212,48 @@ export class PeriodicMaintenanceService {
         },
       });
     }
+    if (from) {
+      where.AND.push({
+        createdAt: { gte: todayStart.toDate() },
+      });
+    }
 
+    if (to) {
+      where.AND.push({
+        createdAt: { lte: todayEnd.toDate() },
+      });
+    }
+    if (from && to) {
+      where.AND.push({
+        createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+      });
+    }
     const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
       {
         where,
-        include: {
-          entity: {
-            include: {
-              type: true,
-              location: { include: { zone: true } },
-              division: true,
-              assignees: {
-                include: {
-                  user: true,
-                },
-                where: {
-                  removedAt: null,
-                },
-              },
-            },
-          },
-          verifiedBy: true,
-        },
         orderBy: [{ id: 'desc' }],
       }
     );
-
+    let completed = 0;
+    let ongoing = 0;
+    let upcoming = 0;
+    let overdue = 0;
+    periodicMaintenances.filter((e) => {
+      if (e.status === 'Completed') {
+        completed += 1;
+      } else if (e.status === 'Ongoing') {
+        ongoing += 1;
+      } else if (e.status === 'Upcoming') {
+        upcoming += 1;
+      } else if (e.status === 'Overdue') {
+        overdue += 1;
+      }
+    });
     const statusCount = {
-      completed:
-        periodicMaintenances.filter((e) => e.status === 'Completed').length ??
-        0,
-      ongoing:
-        periodicMaintenances.filter((e) => e.status === 'Ongoing').length ?? 0,
-      upcoming:
-        periodicMaintenances.filter((e) => e.status === 'Upcoming').length ?? 0,
-      overdue:
-        periodicMaintenances.filter((e) => e.status === 'Overdue').length ?? 0,
+      completed,
+      ongoing,
+      upcoming,
+      overdue,
     };
     return statusCount;
   }

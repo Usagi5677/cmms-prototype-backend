@@ -235,6 +235,13 @@ export class PeriodicMaintenanceResolver {
     );
   }
 
+  @Query(() => [PeriodicMaintenanceSummary])
+  allPeriodicMaintenanceSummary(
+    @Args() args: PeriodicMaintenanceConnectionArgs
+  ) {
+    return this.periodicMaintenanceService.allPeriodicMaintenanceSummary(args);
+  }
+
   @Mutation(() => String)
   async upsertPMNotificationReminder(
     @UserEntity() user: User,

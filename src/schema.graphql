@@ -1292,6 +1292,32 @@ type Query {
     type2Ids: [Int!]
     zoneIds: [Int!]
   ): pmStatusCount!
+  allPeriodicMaintenanceSummary(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    divisionIds: [Int!]
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+    from: Date
+    gteInterService: String
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteInterService: String
+    measurement: [String!]
+    pmStatus: [String!]
+    search: String
+    to: Date
+    type: String
+    type2Ids: [Int!]
+    zoneIds: [Int!]
+  ): [PeriodicMaintenanceSummary!]!
   apiKeys(
     """Paginate after opaque cursor"""
     after: String

@@ -3,6 +3,8 @@ import { PeriodicMaintenance } from './periodic-maintenance.model';
 
 @ObjectType()
 export class PeriodicMaintenanceSummary extends PeriodicMaintenance {
+  @Field({ nullable: true })
+  entityId?: number;
   @Field()
   taskCompletion: string;
   @Field()
