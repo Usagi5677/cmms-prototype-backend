@@ -266,6 +266,7 @@ model Entity {
   hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
   dimension                 Int?
   registryNumber            String?
+  transit                   Boolean?                    @default(false)
   checklists                Checklist[]
   assignees                 EntityAssignment[]
   periodicMaintenancePlans  EntityPeriodicMaintenance[]

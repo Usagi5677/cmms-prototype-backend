@@ -458,6 +458,7 @@ type Entity {
   status: String
   statusChangedAt: Date
   subEntities: [Entity!]
+  transit: Boolean
   type: Type
 
   """Identifies the date and time when the object was last updated."""
@@ -779,6 +780,7 @@ type LocationAssignEdge {
 input LocationAssignInput {
   entityIds: [Int!]
   locationId: Int!
+  transit: Boolean
   userIds: [Int!]
 }
 
@@ -891,6 +893,7 @@ type Mutation {
   toggleComplete(complete: Boolean!, id: Int!): String!
   toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
   toggleEntityPMTask(complete: Boolean!, id: Int!): String!
+  toggleEntityTransit(complete: Boolean!, id: Int!): String!
   togglePeriodicMaintenanceTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
   toggleSparePRComplete(complete: Boolean!, id: Int!): String!

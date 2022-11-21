@@ -753,4 +753,14 @@ export class EntityResolver {
     await this.entityService.assignSubEntityToEntity(user, id, parentEntityId);
     return `Successfully assigned sub entity to entity.`;
   }
+
+  @Mutation(() => String)
+  async toggleEntityTransit(
+    @UserEntity() user: User,
+    @Args('id') id: number,
+    @Args('complete') complete: boolean
+  ): Promise<string> {
+    await this.entityService.toggleEntityTransit(user, id, complete);
+    return `Location Transition updated.`;
+  }
 }

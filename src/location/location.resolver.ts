@@ -78,17 +78,21 @@ export class LocationResolver {
   }
 
   @Mutation(() => String)
-  async assignEntityToLocation(@Args('input') input: LocationAssignInput) {
-    await this.locationService.assignEntityToLocation(input);
+  async assignEntityToLocation(
+    @UserEntity() user: User,
+    @Args('input') input: LocationAssignInput
+  ) {
+    await this.locationService.assignEntityToLocation(user, input);
     return 'Successfully assigned entity to location.';
   }
 
   @Mutation(() => String)
   async updateEntityLocation(
+    @UserEntity() user: User,
     @Args('entityId') entityId: number,
     @Args('locationId') locationId: number
   ) {
-    await this.locationService.updateEntityLocation(entityId, locationId);
+    await this.locationService.updateEntityLocation(user, entityId, locationId);
     return `Successfully updated entity's location.`;
   }
 }

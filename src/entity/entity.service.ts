@@ -370,11 +370,17 @@ export class EntityService {
         const newLocation = await this.prisma.location.findFirst({
           where: { id: locationId },
         });
+        await this.prisma.entity.update({
+          where: { id },
+          data: { transit: true },
+        });
         await this.createEntityHistoryInBackground({
-          type: 'Entity Edit',
-          description: `Location changed${
-            entity?.locationId ? ` from ${entity?.location?.name}` : ``
-          } to ${newLocation.name}.`,
+          type: 'Transit start',
+          description: `Transition started on ${moment().format(
+            'YYYY-MM-DD HH:mm:ss'
+          )}. Location to change from ${newLocation.name} to ${
+            entity?.location?.name
+          }`,
           entityId: id,
           completedById: user.id,
         });
@@ -5337,5 +5343,49 @@ export class EntityService {
       tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.typeId]: obj }), {})
     );
     return result;
+  }
+
+  async toggleEntityTransit(user: User, id: number, complete: boolean) {
+    try {
+      await this.prisma.entity.update({
+        where: { id },
+        data: complete ? { transit: true } : { transit: false },
+      });
+
+      const users = await this.getEntityAssignmentIds(id, user.id);
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) ${
+            complete
+              ? `Location transition started on entity (${id})`
+              : `Location transition finished on entity (${id})`
+          }`,
+          link: `/entity/${id}`,
+        });
+      }
+      if (complete) {
+        await this.createEntityHistoryInBackground({
+          type: 'Transit start',
+          description: `Transition started on ${moment().format(
+            'YYYY-MM-DD HH:mm:ss'
+          )}`,
+          entityId: id,
+          completedById: user.id,
+        });
+      } else {
+        await this.createEntityHistoryInBackground({
+          type: 'Transit finish',
+          description: `Transition finished on ${moment().format(
+            'YYYY-MM-DD HH:mm:ss'
+          )}`,
+          entityId: id,
+          completedById: user.id,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

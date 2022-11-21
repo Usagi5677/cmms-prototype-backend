@@ -236,6 +236,7 @@ Table Entity {
   hullType HullType
   dimension Int
   registryNumber String
+  transit Boolean [default: false]
   checklists Checklist [not null]
   assignees EntityAssignment [not null]
   periodicMaintenancePlans EntityPeriodicMaintenance [not null]

@@ -5,4 +5,5 @@ export class LocationAssignInput {
   userIds?: number[];
   entityIds?: number[];
   locationId: number;
+  transit?: boolean;
 }

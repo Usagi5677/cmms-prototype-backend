@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -16,12 +18,16 @@ import { LocationAssignInput } from './dto/location-assign.input';
 import { UpdateLocationInput } from './dto/update-location.input';
 import { NotificationService } from 'src/services/notification.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EntityService } from 'src/entity/entity.service';
+import * as moment from 'moment';
 
 @Injectable()
 export class LocationService {
   constructor(
     private prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => EntityService))
+    private entityService: EntityService
   ) {}
 
   async create(user: User, { name, zoneId, skipFriday }: CreateLocationInput) {
@@ -117,14 +123,52 @@ export class LocationService {
     });
   }
 
-  async assignEntityToLocation({ locationId, entityIds }: LocationAssignInput) {
+  async assignEntityToLocation(
+    user: User,
+    { locationId, entityIds, transit }: LocationAssignInput
+  ) {
     try {
       if (entityIds.length > 0) {
+        const newLocation = await this.prisma.location.findFirst({
+          where: { id: locationId },
+        });
+        const entities = await this.prisma.entity.findMany({
+          where: { id: { in: entityIds } },
+          include: { location: true },
+        });
         for (const id of entityIds) {
-          await this.prisma.entity.update({
-            where: { id },
-            data: { locationId },
-          });
+          const entity = entities.find((e) => e.id === id);
+          if (transit) {
+            await this.entityService.createEntityHistoryInBackground({
+              type: 'Transit finished',
+              description: `Transition finished on ${moment().format(
+                'YYYY-MM-DD HH:mm:ss'
+              )}. Location to changed from ${entity?.location?.name} to ${
+                newLocation.name
+              }`,
+              entityId: id,
+              completedById: user.id,
+            });
+            await this.prisma.entity.update({
+              where: { id },
+              data: { locationId, transit: false },
+            });
+          } else {
+            await this.entityService.createEntityHistoryInBackground({
+              type: 'Transit start',
+              description: `Transition started on ${moment().format(
+                'YYYY-MM-DD HH:mm:ss'
+              )}. Location to change from ${newLocation.name} to ${
+                entity?.location?.name
+              }`,
+              entityId: id,
+              completedById: user.id,
+            });
+            await this.prisma.entity.update({
+              where: { id },
+              data: { locationId, transit: true },
+            });
+          }
         }
       }
     } catch (e) {
@@ -230,10 +274,27 @@ export class LocationService {
     }
   }
 
-  async updateEntityLocation(entityId: number, locationId: number) {
+  async updateEntityLocation(user: User, entityId: number, locationId: number) {
+    const newLocation = await this.prisma.location.findFirst({
+      where: { id: locationId },
+    });
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: entityId },
+      include: { location: true },
+    });
+    await this.entityService.createEntityHistoryInBackground({
+      type: 'Transit start',
+      description: `Transition started on ${moment().format(
+        'YYYY-MM-DD HH:mm:ss'
+      )}. Location to change from ${newLocation.name} to ${
+        entity?.location?.name
+      }`,
+      entityId: entityId,
+      completedById: user.id,
+    });
     await this.prisma.entity.update({
       where: { id: entityId },
-      data: { locationId },
+      data: { locationId, transit: true },
     });
   }
 }

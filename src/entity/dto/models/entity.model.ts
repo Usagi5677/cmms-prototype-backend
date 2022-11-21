@@ -35,6 +35,7 @@ export class Entity extends BaseModel {
   note?: string;
   dimension?: number;
   registryNumber?: string;
+  transit?: boolean;
   hullType?: HullType;
   statusChangedAt?: Date;
   assignees?: EntityAssignment[];
