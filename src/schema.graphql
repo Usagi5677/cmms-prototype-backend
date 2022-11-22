@@ -830,6 +830,7 @@ type Mutation {
   assignUserToLocation(input: LocationAssignInput!): String!
   bulkAssign(input: BulkAssignInput!): String!
   bulkAssignChecklistTemplate(entityIds: [Int!]!, newChecklistId: Int!): String!
+  bulkAssignPeriodicMaintenanceTemplate(entityIds: [Int!], originId: Int!): String!
   bulkUnassign(input: BulkUnassignInput!): String!
   bulkUnassignUserFromDivision(input: DivisionAssignInput!): String!
   bulkUnassignUserFromLocation(input: LocationAssignInput!): String!

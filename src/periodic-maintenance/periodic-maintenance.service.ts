@@ -634,6 +634,7 @@ export class PeriodicMaintenanceService {
 
       await this.updatePMTaskInBackground({ pm: pm, copyPM: newPM });
 
+      /*
       const reminder = await this.prisma.reminder.findMany({
         where: {
           periodicMaintenanceId: pm.id,
@@ -649,7 +650,103 @@ export class PeriodicMaintenanceService {
           periodicMaintenanceId: newPM.id,
         })),
       });
+      */
+      //run generate again so copies will be made
+      this.generatePeriodicMaintenances();
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
 
+  async bulkAssignPeriodicMaintenanceTemplate(
+    user: User,
+    entityIds: number[],
+    originId: number
+  ) {
+    if (entityIds.length <= 0) {
+      return;
+    }
+    // check if template is created or not
+    const templatesExist = await this.prisma.periodicMaintenance.findMany({
+      where: { entityId: { in: entityIds }, originId, removedAt: null },
+      include: { entity: true },
+    });
+    for (const t of templatesExist) {
+      throw new BadRequestException(
+        `Template already exist in ${t?.entity?.machineNumber}.`
+      );
+    }
+    const entities = await this.prisma.entity.findMany({
+      where: { id: { in: entityIds } },
+    });
+    for (const e of entities) {
+      await this.entityService.checkEntityAssignmentOrPermission(
+        e.id,
+        user.id,
+        e,
+        ['Admin'],
+        ['MODIFY_TEMPLATES']
+      );
+    }
+
+    const pm = await this.prisma.periodicMaintenance.findFirst({
+      where: { id: originId },
+      include: {
+        tasks: {
+          where: { parentTaskId: null },
+          include: {
+            subTasks: {
+              include: {
+                subTasks: { include: { completedBy: true } },
+                completedBy: true,
+              },
+              orderBy: { id: 'asc' },
+            },
+            completedBy: true,
+          },
+          orderBy: { id: 'asc' },
+        },
+      },
+    });
+
+    try {
+      for (const e of entities) {
+        const reading = await this.entityService.getLatestReading(e);
+        const newPM = await this.prisma.periodicMaintenance.create({
+          data: {
+            from: pm.from,
+            to: pm.to,
+            name: pm.name,
+            entityId: e.id,
+            originId: pm.id,
+            measurement: pm.measurement,
+            value: pm.value,
+            currentMeterReading: reading,
+            type: 'Template',
+            recur: pm.recur,
+            status: 'Upcoming',
+          },
+        });
+        await this.updatePMTaskInBackground({ pm: pm, copyPM: newPM });
+      }
+      /*
+      const reminder = await this.prisma.reminder.findMany({
+        where: {
+          periodicMaintenanceId: pm.id,
+        },
+      });
+      await this.prisma.reminder.createMany({
+        data: reminder.map((rm) => ({
+          type: 'Template',
+          measurement: rm.measurement,
+          value: rm.value,
+          previousValue:
+            entity?.measurement === 'day' ? rm.value : entity.currentRunning,
+          periodicMaintenanceId: newPM.id,
+        })),
+      });
+      */
       //run generate again so copies will be made
       this.generatePeriodicMaintenances();
     } catch (e) {

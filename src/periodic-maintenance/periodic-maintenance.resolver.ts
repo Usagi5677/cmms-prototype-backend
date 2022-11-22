@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/guards/gql-auth.guard';
 import { PeriodicMaintenance } from './dto/models/periodic-maintenance.model';
@@ -115,6 +115,21 @@ export class PeriodicMaintenanceResolver {
     await this.periodicMaintenanceService.assignPeriodicMaintenanceTemplate(
       user,
       entityId,
+      originId
+    );
+    return `Periodic Maintenance template assigned.`;
+  }
+
+  @Mutation(() => String)
+  async bulkAssignPeriodicMaintenanceTemplate(
+    @UserEntity() user: User,
+    @Args('entityIds', { nullable: true, type: () => [Int] })
+    entityIds: number[],
+    @Args('originId') originId: number
+  ): Promise<string> {
+    await this.periodicMaintenanceService.bulkAssignPeriodicMaintenanceTemplate(
+      user,
+      entityIds,
       originId
     );
     return `Periodic Maintenance template assigned.`;
