@@ -727,6 +727,115 @@ export class ChecklistService {
     this.logger.verbose('Checklist generation complete');
   }
 
+  async generateSingleChecklist(entityId: number) {
+    // Get ids of all entities that are working
+    const entity = await this.prisma.entity.findFirst({
+      where: { id: entityId, deletedAt: null },
+      select: {
+        id: true,
+        location: true,
+        status: true,
+        transit: true,
+      },
+    });
+    if (!entity) {
+      throw new BadRequestException(`Entity does not exist.`);
+    }
+    if (entity?.location?.skipFriday && moment().toDate().getDay() === 5) {
+      throw new BadRequestException(
+        `This entity cannot generate checklist on Friday.`
+      );
+    }
+    if (entity?.transit) {
+      throw new BadRequestException(
+        `Entity cannot generate checklist while in transit.`
+      );
+    }
+    if (entity?.status === 'Breakdown') {
+      throw new BadRequestException(
+        `Entity cannot generate checklist while in breakdown.`
+      );
+    }
+
+    // Daily
+    const todayStart = moment().startOf('day');
+    const todayEnd = moment().endOf('day');
+    // Get daily checklist that have been generated
+    const todayChecklist = await this.prisma.checklist.findFirst({
+      where: {
+        type: 'Daily',
+        from: todayStart.toDate(),
+        to: todayEnd.toDate(),
+        entityId,
+      },
+      select: { entityId: true },
+    });
+
+    // Weekly
+    const weekStart = moment().startOf('week');
+    const weekEnd = moment().endOf('week');
+    // Get week checklist that have been generated
+    const thisWeekChecklist = await this.prisma.checklist.findFirst({
+      where: {
+        type: 'Weekly',
+        from: weekStart.toDate(),
+        to: weekEnd.toDate(),
+        entityId,
+      },
+      select: { entityId: true },
+    });
+
+    if (todayChecklist || thisWeekChecklist) {
+      throw new BadRequestException(`Checklist already generated.`);
+    }
+    if (!todayChecklist) {
+      const dailyTemplate =
+        await this.checklistTemplateService.entityChecklistTemplate({
+          entityId,
+          type: 'Daily',
+        });
+      await this.prisma.checklist.create({
+        data: {
+          type: 'Daily',
+          entityId,
+          from: todayStart.toDate(),
+          to: todayEnd.toDate(),
+          items: {
+            createMany: {
+              data: dailyTemplate.items.map((item) => ({
+                description: item.name,
+              })),
+            },
+          },
+        },
+      });
+    }
+
+    if (!thisWeekChecklist) {
+      const weeklyTemplate =
+        await this.checklistTemplateService.entityChecklistTemplate({
+          entityId,
+          type: 'Weekly',
+        });
+      await this.prisma.checklist.create({
+        data: {
+          type: 'Weekly',
+          entityId,
+          from: weekStart.toDate(),
+          to: weekEnd.toDate(),
+          items: {
+            createMany: {
+              data: weeklyTemplate.items.map((item) => ({
+                description: item.name,
+              })),
+            },
+          },
+        },
+      });
+    }
+    this.logger.verbose('Single checklist generation complete');
+  }
+
   async addComment(user: User, checklistId: number, comment: string) {
     const checklist = await this.prisma.checklist.findFirst({
       where: { id: checklistId },

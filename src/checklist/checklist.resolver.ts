@@ -154,4 +154,12 @@ export class ChecklistResolver {
   checklistSummary(@Args('input') input: ChecklistSummaryInput) {
     return this.checklistService.checklistSummary(input);
   }
+
+  @Mutation(() => String)
+  async generateSingleChecklist(
+    @Args('entityId') entityId: number
+  ): Promise<string> {
+    await this.checklistService.generateSingleChecklist(entityId);
+    return `Single checklist generated.`;
+  }
 }

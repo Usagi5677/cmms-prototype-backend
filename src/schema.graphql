@@ -864,6 +864,7 @@ type Mutation {
   editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, recur: Boolean, value: Int): String!
   editRole(id: Int!, name: String!): String!
   flushRedis: String!
+  generateSingleChecklist(entityId: Int!): String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
   removeBreakdown(id: Int!): String!
