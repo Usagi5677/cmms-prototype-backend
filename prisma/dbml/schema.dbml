@@ -386,6 +386,8 @@ Table SparePRDetail {
 
 Table PeriodicMaintenanceTask {
   id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
   periodicMaintenanceId Int [not null]
   periodicMaintenance PeriodicMaintenance [not null]
   parentTaskId Int
