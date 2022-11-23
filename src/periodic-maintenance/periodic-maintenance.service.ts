@@ -992,7 +992,7 @@ export class PeriodicMaintenanceService {
       where.AND.push({
         removedAt: null,
         entityId: { not: null },
-        type: { in: ['Copy', 'Upcoming'] },
+        type: { in: ['Copy', 'Template'] },
       });
 
       if (search) {
@@ -1106,25 +1106,49 @@ export class PeriodicMaintenanceService {
             },
           },
         });
+      const periodicMaintenanceIds = periodicMaintenances.map((p) => p.id);
+
+      const pmTasks = await this.prisma.periodicMaintenanceTask.findMany({
+        where: { periodicMaintenanceId: { in: periodicMaintenanceIds } },
+      });
+
       const summaries: PeriodicMaintenanceSummary[] = [];
-      for (const pm of periodicMaintenances) {
+      let i = 0;
+      while (i < periodicMaintenances.length) {
         const summary = new PeriodicMaintenanceSummary();
-        Object.assign(summary, pm);
-        summary.taskCompletion = 'none';
-        summary.hasObservations =
-          pm.comments.filter((c) => c.type === 'Observation').length > 0
-            ? true
-            : false;
-        summary.hasRemarks =
-          pm.comments.filter((c) => c.type === 'Remark').length > 0
-            ? true
-            : false;
-        summary.hasVerify = pm.verifiedAt !== null;
+        Object.assign(summary, periodicMaintenances[i]);
+        const tasks = pmTasks.filter(
+          (t) => t.periodicMaintenanceId === periodicMaintenances[i].id
+        );
+
+        if (tasks.length === 0) {
+          summary.taskCompletion = 'empty';
+        } else if (tasks.every((t) => t.completedAt !== null)) {
+          summary.taskCompletion = 'all';
+        } else if (tasks.some((t) => t.completedAt !== null)) {
+          summary.taskCompletion = 'some';
+        } else {
+          summary.taskCompletion = 'none';
+        }
+
+        summary.hasObservations = false;
+        summary.hasRemarks = false;
+        periodicMaintenances[i].comments.filter((c) => {
+          if (c?.type === 'Observation') {
+            summary.hasObservations = true;
+          } else if (c?.type === 'Remark') {
+            summary.hasRemarks = true;
+          }
+        });
+        summary.hasVerify = periodicMaintenances[i].verifiedAt !== null;
         summaries.push(summary);
+        i++;
+        //console.timeEnd();
       }
       return summaries;
     } catch (e) {
       console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
