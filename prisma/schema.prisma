@@ -264,7 +264,7 @@ model Entity {
   weeklyChecklistTemplate   ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
   hullTypeId                Int?
   hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
-  dimension                 Int?
+  dimension                 Float?
   registryNumber            String?
   transit                   Boolean?                    @default(false)
   checklists                Checklist[]

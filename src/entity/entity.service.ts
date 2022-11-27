@@ -42,6 +42,8 @@ import { Location } from 'src/location/entities/location.entity';
 import { EntityRepairConnectionArgs } from './dto/args/entity-repair-connection.args';
 import { ChecklistService } from 'src/checklist/checklist.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Entity as EntityModel } from './dto/models/entity.model';
+import { GraphQLFloat } from 'graphql';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -142,10 +144,11 @@ export class EntityService {
     registeredDate: Date,
     parentEntityId: number,
     hullTypeId: number,
-    dimension: number,
+    dimension: typeof GraphQLFloat,
     registryNumber: string
   ) {
     try {
+      const convertedDimension = dimension as unknown as number;
       const newDailyTemplate = await this.prisma.checklistTemplate.create({
         data: { type: 'Daily' },
         include: { items: true },
@@ -181,7 +184,7 @@ export class EntityService {
             weeklyChecklistTemplateId: newWeeklyTemplate.id,
             parentEntityId,
             hullTypeId,
-            dimension,
+            dimension: convertedDimension,
             registryNumber,
           },
         });
@@ -212,7 +215,7 @@ export class EntityService {
             dailyChecklistTemplateId: newDailyTemplate.id,
             weeklyChecklistTemplateId: newWeeklyTemplate.id,
             hullTypeId,
-            dimension,
+            dimension: convertedDimension,
             registryNumber,
           },
         });
@@ -277,9 +280,10 @@ export class EntityService {
     brand: string,
     registeredDate: Date,
     hullTypeId: number,
-    dimension: number,
+    dimension: typeof GraphQLFloat,
     registryNumber: string
   ) {
+    const convertedDimension = dimension as unknown as number;
     const entity = await this.prisma.entity.findFirst({
       where: { id },
       include: {
@@ -345,7 +349,7 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (dimension && entity?.dimension != dimension) {
+      if (dimension && entity?.dimension != convertedDimension) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Dimension changed from ${entity?.dimension} to ${dimension}.`,
@@ -453,7 +457,7 @@ export class EntityService {
             },
           },
           hullTypeId,
-          dimension,
+          dimension: convertedDimension,
           registryNumber,
         },
         where: { id },
@@ -4688,7 +4692,7 @@ export class EntityService {
   async getAllEntityWithoutPagination(
     user: User,
     args: EntityConnectionArgs
-  ): Promise<Entity[]> {
+  ): Promise<EntityModel[]> {
     const userPermissions = await this.userService.getUserRolesPermissionsList(
       user.id
     );
@@ -4853,7 +4857,7 @@ export class EntityService {
         entity.currentRunning = reading;
       }
       await this.redisCacheService.setForHour(key, entitiesCache);
-      return entities;
+      return entities as unknown as EntityModel[];
     }
 
     return entitiesCache;

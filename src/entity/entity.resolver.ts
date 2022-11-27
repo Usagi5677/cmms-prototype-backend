@@ -33,6 +33,7 @@ import { AllGroupedEntityUsage } from './dto/models/all-grouped-entity-usage.mod
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GroupedLocationIncompleteTasks } from './dto/models/grouped-location-incomplete-tasks.model';
 import { GroupedTypeRepairStats } from './dto/models/grouped-type-repair-stats.model';
+import { GraphQLFloat } from 'graphql';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -70,7 +71,8 @@ export class EntityResolver {
     @Args('registeredDate', { nullable: true }) registeredDate: Date,
     @Args('parentEntityId', { nullable: true }) parentEntityId: number,
     @Args('hullTypeId', { nullable: true }) hullTypeId: number,
-    @Args('dimension', { nullable: true }) dimension: number,
+    @Args('dimension', { type: () => GraphQLFloat, nullable: true })
+    dimension: typeof GraphQLFloat,
     @Args('registryNumber', { nullable: true }) registryNumber: string
   ): Promise<String> {
     await this.entityService.createEntity(
@@ -124,7 +126,8 @@ export class EntityResolver {
     @Args('brand', { nullable: true }) brand: string,
     @Args('registeredDate', { nullable: true }) registeredDate: Date,
     @Args('hullTypeId', { nullable: true }) hullTypeId: number,
-    @Args('dimension', { nullable: true }) dimension: number,
+    @Args('dimension', { type: () => GraphQLFloat, nullable: true })
+    dimension: typeof GraphQLFloat,
     @Args('registryNumber', { nullable: true }) registryNumber: string
   ): Promise<String> {
     await this.entityService.editEntity(

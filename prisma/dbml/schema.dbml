@@ -234,7 +234,7 @@ Table Entity {
   weeklyChecklistTemplate ChecklistTemplate
   hullTypeId Int
   hullType HullType
-  dimension Int
+  dimension Float
   registryNumber String
   transit Boolean [default: false]
   checklists Checklist [not null]

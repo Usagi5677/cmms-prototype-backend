@@ -1,4 +1,4 @@
-import { ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
 import { EntityAssignment } from 'src/assignment/entities/entity-assign.model';
 import { Breakdown } from 'src/breakdown/entities/breakdown.entity';
 import { Location } from 'src/location/entities/location.entity';
@@ -13,6 +13,7 @@ import { SparePr } from 'src/spare-pr/entities/spare-pr.entity';
 import { Repair } from 'src/repair/entities/repair.entity';
 import { Division } from 'src/division/entities/division.entity';
 import { HullType } from 'src/hull-type/entities/hull-type.entity';
+import { GraphQLFloat } from 'graphql';
 
 @ObjectType()
 export class Entity extends BaseModel {
@@ -33,7 +34,8 @@ export class Entity extends BaseModel {
   deletedAt?: Date;
   status?: string;
   note?: string;
-  dimension?: number;
+  @Field(() => GraphQLFloat)
+  dimension?: typeof GraphQLFloat;
   registryNumber?: string;
   transit?: boolean;
   hullType?: HullType;
