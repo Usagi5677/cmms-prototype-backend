@@ -2487,7 +2487,7 @@ export class EntityService {
         cumulative += await this.getLatestReading(entity, fromDate.toDate());
       }
       const breakdowns = await this.prisma.breakdown.findMany({
-        where: { entityId },
+        where: { entityId: entity.id, type: 'Breakdown' },
         orderBy: { id: 'desc' },
       });
       for (let i = 0; i < days; i++) {
@@ -4211,7 +4211,7 @@ export class EntityService {
         let breakdownHour = 0;
         let na = 0;
         const breakdowns = await this.prisma.breakdown.findMany({
-          where: { entityId: entity.id },
+          where: { entityId: entity.id, type: 'Breakdown' },
           orderBy: { id: 'desc' },
         });
         for (let i = 0; i < days; i++) {
@@ -4534,7 +4534,7 @@ export class EntityService {
         let breakdownHour = 0;
         let na = 0;
         const breakdowns = await this.prisma.breakdown.findMany({
-          where: { entityId: entity.id },
+          where: { entityId: entity.id, type: 'Breakdown' },
           orderBy: { id: 'desc' },
         });
         for (let i = 0; i < days; i++) {
