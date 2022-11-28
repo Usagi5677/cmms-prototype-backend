@@ -496,6 +496,16 @@ export class EntityService {
         where: { id: entityId },
         data: { status, statusChangedAt: new Date(), deletedAt: null },
       });
+      if (status === 'Working') {
+        const breakdowns = await this.prisma.breakdown.findMany({
+          where: { entityId, completedAt: null },
+        });
+        const breakdownIds = breakdowns?.map((b) => b.id);
+        await this.prisma.breakdown.updateMany({
+          where: { id: { in: breakdownIds } },
+          data: { completedAt: new Date() },
+        });
+      }
       if (entity?.parentEntityId) {
         if (status === 'Breakdown') {
           await this.prisma.breakdown.create({
@@ -532,6 +542,15 @@ export class EntityService {
           await this.prisma.entity.update({
             where: { id: entity.parentEntityId },
             data: { status, statusChangedAt: new Date(), deletedAt: null },
+          });
+        } else if (status === 'Working') {
+          const breakdowns = await this.prisma.breakdown.findMany({
+            where: { entityId, completedAt: null },
+          });
+          const breakdownIds = breakdowns?.map((b) => b.id);
+          await this.prisma.breakdown.updateMany({
+            where: { id: { in: breakdownIds } },
+            data: { completedAt: new Date() },
           });
         }
       }
