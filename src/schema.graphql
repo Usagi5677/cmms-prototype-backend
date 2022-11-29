@@ -63,6 +63,35 @@ type ApiKeyPermission {
   permission: String!
 }
 
+type Brand {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  name: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+input BrandAssignInput {
+  brandId: Int!
+  entityIds: [Int!]
+  userIds: [Int!]
+}
+
+type BrandEdge {
+  cursor: String
+  node: Brand
+}
+
+type BrandPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type Breakdown {
   comments: [BreakdownComment!]
   completedAt: Date
@@ -282,6 +311,10 @@ input CreateApiKeyInput {
   permissions: [String!]!
 }
 
+input CreateBrandInput {
+  name: String!
+}
+
 input CreateBreakdownCommentInput {
   breakdownId: Int
   description: String!
@@ -425,7 +458,7 @@ input EditApiKeyInput {
 
 type Entity {
   assignees: [EntityAssignment!]
-  brand: String
+  brand: Brand
   breakdowns: [Breakdown!]
   checklistItems: [ChecklistItem!]
 
@@ -829,6 +862,7 @@ type Mutation {
   assignUserToEntity(entityId: Int!, type: String!, userIds: [Int!]!): String!
   assignUserToLocation(input: LocationAssignInput!): String!
   bulkAssign(input: BulkAssignInput!): String!
+  bulkAssignBrandToEntity(input: BrandAssignInput!): String!
   bulkAssignChecklistTemplate(entityIds: [Int!]!, newChecklistId: Int!): String!
   bulkAssignPeriodicMaintenanceTemplate(entityIds: [Int!], originId: Int!): String!
   bulkUnassign(input: BulkUnassignInput!): String!
@@ -836,10 +870,11 @@ type Mutation {
   bulkUnassignUserFromLocation(input: LocationAssignInput!): String!
   changeChecklistTemplate(input: ChangeChecklistTemplateInput!): String!
   createApiKey(input: CreateApiKeyInput!): String!
+  createBrand(input: CreateBrandInput!): String!
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createDivision(input: CreateDivisionInput!): String!
-  createEntity(brand: String, currentRunning: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, registryNumber: String, typeId: Int): String!
+  createEntity(brandId: Int, currentRunning: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, registryNumber: String, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createHullType(createHullTypeInput: CreateHullTypeInput!): String!
   createLocation(input: CreateLocationInput!): String!
@@ -856,7 +891,7 @@ type Mutation {
   deleteOriginPeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
-  editEntity(brand: String, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, registryNumber: String, typeId: Int): String!
+  editEntity(brandId: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, registryNumber: String, typeId: Int): String!
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
@@ -867,6 +902,7 @@ type Mutation {
   generateSingleChecklist(entityId: Int!): String!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
+  removeBrand(id: Int!): String!
   removeBreakdown(id: Int!): String!
   removeBreakdownComment(id: Int!): String!
   removeBreakdownDetail(id: Int!): String!
@@ -909,10 +945,12 @@ type Mutation {
   Not to be called from frontend. Meant to be used when templates of entities are updated manually in the DB.
   """
   updateAllEntityChecklists: String!
+  updateBrand(input: UpdateBrandInput!): String!
   updateBreakdown(updateBreakdownInput: UpdateBreakdownInput!): String!
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateDailyUsage(hours: Int!, id: Int!): String!
   updateDivision(input: UpdateDivisionInput!): String!
+  updateEntityBrand(brandId: Int!, entityId: Int!): String!
   updateEntityDivision(divisionId: Int!, entityId: Int!): String!
   updateEntityLocation(entityId: Int!, locationId: Int!): String!
   updateEntityNote(id: Int!, note: String): String!
@@ -956,6 +994,11 @@ type PaginatedApiKey {
 type PaginatedAssignment {
   edges: [EntityAssignmentEdge!]
   pageInfo: EntityAssignmentPageInfo
+}
+
+type PaginatedBrand {
+  edges: [BrandEdge!]
+  pageInfo: BrandPageInfo
 }
 
 type PaginatedBreakdown {
@@ -1244,7 +1287,8 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    brand: [String!]
+    brandExist: Boolean
+    brandIds: [Int!]
     createdById: Int
     createdByUserId: String
     divisionExist: Boolean
@@ -1345,7 +1389,8 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    brand: [String!]
+    brandExist: Boolean
+    brandIds: [Int!]
     createdById: Int
     createdByUserId: String
     divisionExist: Boolean
@@ -1388,6 +1433,21 @@ type Query {
     type: String
     userIds: [Int!]!
   ): PaginatedAssignment!
+  brand(id: Int!): Brand!
+  brands(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    name: String
+  ): PaginatedBrand!
   breakdown(id: Int!): Breakdown!
   breakdownCount: BreakdownNotif!
   breakdowns(
@@ -1485,7 +1545,8 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    brand: [String!]
+    brandExist: Boolean
+    brandIds: [Int!]
     createdById: Int
     createdByUserId: String
     divisionExist: Boolean
@@ -1518,7 +1579,8 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    brand: [String!]
+    brandExist: Boolean
+    brandIds: [Int!]
     createdById: Int
     createdByUserId: String
     divisionExist: Boolean
@@ -1591,7 +1653,8 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    brand: [String!]
+    brandExist: Boolean
+    brandIds: [Int!]
     createdById: Int
     createdByUserId: String
     divisionExist: Boolean
@@ -1624,7 +1687,8 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    brand: [String!]
+    brandExist: Boolean
+    brandIds: [Int!]
     createdById: Int
     createdByUserId: String
     divisionExist: Boolean
@@ -2059,6 +2123,11 @@ type TypePageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+input UpdateBrandInput {
+  id: Int!
+  name: String
 }
 
 input UpdateBreakdownInput {

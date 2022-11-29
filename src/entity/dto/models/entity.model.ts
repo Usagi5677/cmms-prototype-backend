@@ -14,6 +14,7 @@ import { Repair } from 'src/repair/entities/repair.entity';
 import { Division } from 'src/division/entities/division.entity';
 import { HullType } from 'src/hull-type/entities/hull-type.entity';
 import { GraphQLFloat } from 'graphql';
+import { Brand } from 'src/brand/entities/brand.entity';
 
 @ObjectType()
 export class Entity extends BaseModel {
@@ -30,7 +31,7 @@ export class Entity extends BaseModel {
   lastService?: number;
   interService?: number;
   measurement?: string;
-  brand?: string;
+  brand?: Brand;
   deletedAt?: Date;
   status?: string;
   note?: string;

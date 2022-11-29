@@ -58,6 +58,8 @@ model User {
   removedChecklistTemplateItem         ChecklistTemplateItem[]
   removedPeriodicMaintenance           PeriodicMaintenance[]
   locationUsers                        LocationUsers[]
+  hullTypeCreated                      HullType[]                      @relation(name: "hullTypeCreated")
+  brandCreated                         Brand[]                         @relation(name: "brandCreated")
 }
 
 model Notification {
@@ -249,7 +251,6 @@ model Entity {
   divisionId                Int?
   division                  Division?                   @relation(fields: [divisionId], references: [id])
   engine                    String?
-  brand                     String?
   status                    String?                     @default("Working")
   statusChangedAt           DateTime?
   measurement               String?                     @default("km")
@@ -267,6 +268,8 @@ model Entity {
   dimension                 Float?
   registryNumber            String?
   transit                   Boolean?                    @default(false)
+  brand                     Brand?                      @relation(fields: [brandId], references: [id])
+  brandId                   Int?
   checklists                Checklist[]
   assignees                 EntityAssignment[]
   periodicMaintenancePlans  EntityPeriodicMaintenance[]
@@ -618,10 +621,23 @@ model LocationUsers {
 }
 
 model HullType {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  name      String
-  active    Boolean  @default(true)
-  entity    Entity[]
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  active      Boolean  @default(true)
+  createdById Int?
+  createdBy   User?    @relation(name: "hullTypeCreated", fields: [createdById], references: [id])
+  entity      Entity[]
+}
+
+model Brand {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  createdBy   User?    @relation(name: "brandCreated", fields: [createdById], references: [id])
+  active      Boolean  @default(true)
+  entity      Entity[]
 }

@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { User } from '@prisma/client';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -16,14 +17,14 @@ import { UpdateHullTypeInput } from './dto/update-hull-type.input';
 @Injectable()
 export class HullTypeService {
   constructor(private prisma: PrismaService) {}
-  async create({ name }: CreateHullTypeInput) {
+  async create(user: User, { name }: CreateHullTypeInput) {
     const existing = await this.prisma.hullType.findFirst({
       where: { name, active: true },
     });
     if (existing) {
       throw new BadRequestException('This hull type already exists.');
     }
-    await this.prisma.hullType.create({ data: { name } });
+    await this.prisma.hullType.create({ data: { name, createdById: user.id } });
   }
 
   async findAll(args: HullTypeConnectionArgs): Promise<PaginatedHullType> {

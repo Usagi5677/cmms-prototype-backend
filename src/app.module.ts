@@ -29,6 +29,7 @@ import { RepairModule } from './repair/repair.module';
 import { SparePrModule } from './spare-pr/spare-pr.module';
 import { DivisionModule } from './division/division.module';
 import { HullTypeModule } from './hull-type/hull-type.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { HullTypeModule } from './hull-type/hull-type.module';
     SparePrModule,
     DivisionModule,
     HullTypeModule,
+    BrandModule,
   ],
   providers: [DateScalar, InitService],
 })

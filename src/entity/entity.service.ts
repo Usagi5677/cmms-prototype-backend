@@ -140,7 +140,7 @@ export class EntityService {
     measurement: string,
     currentRunning: number,
     lastService: number,
-    brand: string,
+    brandId: number,
     registeredDate: Date,
     parentEntityId: number,
     hullTypeId: number,
@@ -178,7 +178,7 @@ export class EntityService {
             measurement,
             currentRunning,
             lastService,
-            brand,
+            brandId,
             registeredDate,
             dailyChecklistTemplateId: newDailyTemplate.id,
             weeklyChecklistTemplateId: newWeeklyTemplate.id,
@@ -210,7 +210,7 @@ export class EntityService {
             measurement,
             currentRunning,
             lastService,
-            brand,
+            brandId,
             registeredDate,
             dailyChecklistTemplateId: newDailyTemplate.id,
             weeklyChecklistTemplateId: newWeeklyTemplate.id,
@@ -277,7 +277,7 @@ export class EntityService {
     divisionId: number,
     engine: string,
     measurement: string,
-    brand: string,
+    brandId: number,
     registeredDate: Date,
     hullTypeId: number,
     dimension: typeof GraphQLFloat,
@@ -292,6 +292,7 @@ export class EntityService {
         subEntities: true,
         division: true,
         hullType: true,
+        brand: true,
       },
     });
     // Check if admin of entity or has permission
@@ -405,10 +406,13 @@ export class EntityService {
           completedById: user.id,
         });
       }
-      if (brand && entity?.brand != brand) {
+      if (brandId && entity?.brandId != brandId) {
+        const newBrand = await this.prisma.brand.findFirst({
+          where: { id: brandId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Brand changed from ${entity?.brand} to ${brand}.`,
+          description: `Brand changed from ${entity?.brand?.name} to ${newBrand?.name}.`,
           entityId: id,
           completedById: user.id,
         });
@@ -448,7 +452,7 @@ export class EntityService {
           divisionId,
           engine: engine ? engine : null,
           measurement,
-          brand,
+          brandId,
           registeredDate,
           subEntities: {
             updateMany: {
@@ -630,6 +634,7 @@ export class EntityService {
         assignees: { include: { user: true }, where: { removedAt: null } },
         type: true,
         location: { include: { zone: true } },
+        brand: true,
         subEntities: {
           where: { deletedAt: null },
           include: {
@@ -663,6 +668,7 @@ export class EntityService {
               take: 10,
             },
             hullType: true,
+            brand: true,
             parentEntity: true,
           },
           orderBy: { id: 'desc' },
@@ -734,7 +740,7 @@ export class EntityService {
       isAssigned,
       typeIds,
       zoneIds,
-      brand,
+      brandIds,
       engine,
       measurement,
       lteInterService,
@@ -743,6 +749,7 @@ export class EntityService {
       entityIds,
       divisionExist,
       locationExist,
+      brandExist,
     } = args;
 
     // eslint-disable-next-line prefer-const
@@ -912,9 +919,11 @@ export class EntityService {
       where.AND.push({ location: { zoneId: { in: zoneIds } } });
     }
 
-    if (brand?.length > 0) {
+    if (brandIds?.length > 0) {
       where.AND.push({
-        brand: { in: brand },
+        brandId: {
+          in: brandIds,
+        },
       });
     }
 
@@ -1034,19 +1043,16 @@ export class EntityService {
     }
 
     if (entityIds?.length > 0) {
-      where.AND.push({
-        id: { in: entityIds },
-      });
+      where.AND.push({ id: { in: entityIds } });
     }
     if (divisionExist) {
-      where.AND.push({
-        divisionId: { not: null },
-      });
+      where.AND.push({ divisionId: { not: null } });
     }
     if (locationExist) {
-      where.AND.push({
-        locationId: { not: null },
-      });
+      where.AND.push({ locationId: { not: null } });
+    }
+    if (brandExist) {
+      where.AND.push({ brandId: { not: null } });
     }
     const entities = await this.prisma.entity.findMany({
       skip: offset,
@@ -1084,6 +1090,7 @@ export class EntityService {
           where: { breakdownId: null, breakdownDetailId: null },
           take: 10,
         },
+        brand: true,
         division: true,
         subEntities: {
           where: { deletedAt: null },
@@ -1119,6 +1126,7 @@ export class EntityService {
             },
             hullType: true,
             parentEntity: true,
+            brand: true,
           },
           orderBy: { id: 'desc' },
         },
@@ -3354,7 +3362,7 @@ export class EntityService {
         isAssigned,
         typeIds,
         zoneIds,
-        brand,
+        brandIds,
         engine,
         measurement,
         lteInterService,
@@ -3533,9 +3541,11 @@ export class EntityService {
         where.AND.push({ location: { zoneId: { in: zoneIds } } });
       }
 
-      if (brand?.length > 0) {
+      if (brandIds?.length > 0) {
         where.AND.push({
-          brand: { in: brand },
+          brandId: {
+            in: brandIds,
+          },
         });
       }
 

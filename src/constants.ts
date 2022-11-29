@@ -116,6 +116,11 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'Create, edit and delete hull types.',
   },
   {
+    name: 'MODIFY_BRANDS',
+    type: 'Config',
+    description: 'Create, edit and delete brands.',
+  },
+  {
     name: 'MODIFY_LOCATIONS',
     type: 'Config',
     description: 'Create, edit and delete locations and zones.',

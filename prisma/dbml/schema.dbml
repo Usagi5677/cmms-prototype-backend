@@ -46,6 +46,8 @@ Table User {
   removedChecklistTemplateItem ChecklistTemplateItem [not null]
   removedPeriodicMaintenance PeriodicMaintenance [not null]
   locationUsers LocationUsers [not null]
+  hullTypeCreated HullType [not null]
+  brandCreated Brand [not null]
 }
 
 Table Notification {
@@ -219,7 +221,6 @@ Table Entity {
   divisionId Int
   division Division
   engine String
-  brand String
   status String [default: 'Working']
   statusChangedAt DateTime
   measurement String [default: 'km']
@@ -237,6 +238,8 @@ Table Entity {
   dimension Float
   registryNumber String
   transit Boolean [default: false]
+  brand Brand
+  brandId Int
   checklists Checklist [not null]
   assignees EntityAssignment [not null]
   periodicMaintenancePlans EntityPeriodicMaintenance [not null]
@@ -595,6 +598,19 @@ Table HullType {
   updatedAt DateTime [not null]
   name String [not null]
   active Boolean [not null, default: true]
+  createdById Int
+  createdBy User
+  entity Entity [not null]
+}
+
+Table Brand {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  createdBy User
+  active Boolean [not null, default: true]
   entity Entity [not null]
 }
 
@@ -667,6 +683,8 @@ Ref: Entity.dailyChecklistTemplateId > ChecklistTemplate.id
 Ref: Entity.weeklyChecklistTemplateId > ChecklistTemplate.id
 
 Ref: Entity.hullTypeId > HullType.id
+
+Ref: Entity.brandId > Brand.id
 
 Ref: EntityAssignment.userId > User.id
 
@@ -781,3 +799,7 @@ Ref: DivisionUsers.userId > User.id
 Ref: LocationUsers.locationId > Location.id
 
 Ref: LocationUsers.userId > User.id
+
+Ref: HullType.createdById > User.id
+
+Ref: Brand.createdById > User.id

@@ -9,6 +9,8 @@ import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { Permissions } from 'src/decorators/permissions.decorator';
 import { PaginatedHullType } from './dto/hull-type-connection.model';
 import { HullTypeConnectionArgs } from './dto/hull-type-connection.args';
+import { UserEntity } from 'src/decorators/user.decorator';
+import { User } from 'src/models/user.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => HullType)
@@ -18,9 +20,10 @@ export class HullTypeResolver {
   @Permissions('MODIFY_HULL_TYPES')
   @Mutation(() => String)
   async createHullType(
+    @UserEntity() user: User,
     @Args('createHullTypeInput') createHullTypeInput: CreateHullTypeInput
   ) {
-    await this.hullTypeService.create(createHullTypeInput);
+    await this.hullTypeService.create(user, createHullTypeInput);
     return 'Successfully created hull type.';
   }
 

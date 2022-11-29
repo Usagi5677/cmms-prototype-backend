@@ -14,7 +14,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   isAssigned?: boolean;
   typeIds?: number[];
   zoneIds?: number[];
-  brand?: string[];
+  brandIds?: number[];
   engine?: string[];
   measurement?: string[];
   lteInterService?: string;
@@ -23,4 +23,5 @@ export class EntityConnectionArgs extends ConnectionArgs {
   entityIds?: number[];
   divisionExist?: boolean;
   locationExist?: boolean;
+  brandExist?: boolean;
 }
