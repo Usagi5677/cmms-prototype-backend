@@ -60,6 +60,7 @@ model User {
   locationUsers                        LocationUsers[]
   hullTypeCreated                      HullType[]                      @relation(name: "hullTypeCreated")
   brandCreated                         Brand[]                         @relation(name: "brandCreated")
+  interServiceColor                    InterServiceColor[]             @relation(name: "interServiceColorCreated")
 }
 
 model Notification {
@@ -105,13 +106,14 @@ model PermissionRole {
 }
 
 model Type {
-  id         Int      @id @default(autoincrement())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  entityType String
-  name       String
-  active     Boolean  @default(true)
-  Entity     Entity[]
+  id                Int                 @id @default(autoincrement())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  entityType        String
+  name              String
+  active            Boolean             @default(true)
+  Entity            Entity[]
+  interServiceColor InterServiceColor[]
 }
 
 model Location {
@@ -632,12 +634,29 @@ model HullType {
 }
 
 model Brand {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String
+  id                Int                 @id @default(autoincrement())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  name              String
+  createdById       Int?
+  createdBy         User?               @relation(name: "brandCreated", fields: [createdById], references: [id])
+  active            Boolean             @default(true)
+  entity            Entity[]
+  interServiceColor InterServiceColor[]
+}
+
+model InterServiceColor {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  removedAt   DateTime?
+  typeId      Int
+  brandId     Int
+  measurement String
+  greaterThan Int?
+  lessThan    Int?
   createdById Int?
-  createdBy   User?    @relation(name: "brandCreated", fields: [createdById], references: [id])
-  active      Boolean  @default(true)
-  entity      Entity[]
+  createdBy   User?     @relation(name: "interServiceColorCreated", fields: [createdById], references: [id])
+  type        Type?     @relation(fields: [typeId], references: [id])
+  brand       Brand?    @relation(fields: [brandId], references: [id])
 }

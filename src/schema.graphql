@@ -348,6 +348,14 @@ input CreateHullTypeInput {
   name: String!
 }
 
+input CreateInterServiceColorInput {
+  brandId: Int!
+  greaterThan: Int!
+  lessThan: Int!
+  measurement: String!
+  typeId: Int!
+}
+
 input CreateLocationInput {
   name: String!
   skipFriday: Boolean
@@ -779,6 +787,34 @@ input IncompleteChecklistSummaryInput {
   type: String!
 }
 
+type InterServiceColor {
+  brand: Brand
+
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  greaterThan: Int!
+  id: Int!
+  lessThan: Int!
+  measurement: String!
+  type: Type
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type InterServiceColorEdge {
+  cursor: String
+  node: InterServiceColor
+}
+
+type InterServiceColorPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type Location {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -877,6 +913,7 @@ type Mutation {
   createEntity(brandId: Int, currentRunning: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, registryNumber: String, typeId: Int): String!
   createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createHullType(createHullTypeInput: CreateHullTypeInput!): String!
+  createInterServiceColor(input: CreateInterServiceColorInput!): String!
   createLocation(input: CreateLocationInput!): String!
   createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, recur: Boolean, value: Int): String!
   createPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
@@ -913,6 +950,7 @@ type Mutation {
   removeEntity(id: Int!): String!
   removeEntityAttachment(id: Int!): String!
   removeHullType(id: Int!): String!
+  removeInterServiceColor(id: Int!): String!
   removeLocation(id: Int!): String!
   removePeriodicMaintenanceComment(id: Int!): String!
   removeRepair(id: Int!): String!
@@ -955,6 +993,7 @@ type Mutation {
   updateEntityLocation(entityId: Int!, locationId: Int!): String!
   updateEntityNote(id: Int!, note: String): String!
   updateHullType(updateHullTypeInput: UpdateHullTypeInput!): String!
+  updateInterServiceColor(input: UpdateInterServiceColorInput!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
@@ -1049,6 +1088,11 @@ type PaginatedEntityRepair {
 type PaginatedHullType {
   edges: [HullTypeEdge!]
   pageInfo: HullTypePageInfo
+}
+
+type PaginatedInterServiceColor {
+  edges: [InterServiceColorEdge!]
+  pageInfo: InterServiceColorPageInfo
 }
 
 type PaginatedLocation {
@@ -1853,6 +1897,21 @@ type Query {
   incompleteChecklistSummary(input: IncompleteChecklistSummaryInput!): [IncompleteChecklistSummary!]
   incompleteChecklists(input: IncompleteChecklistInput!): [Checklist!]
   incompleteChecklistsPastTwoDays: [Int!]
+  interServiceColor(id: Int!): InterServiceColor!
+  interServiceColors(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    name: String
+  ): PaginatedInterServiceColor!
   location(id: Int!): Location!
   locationAssignments(
     """Paginate after opaque cursor"""
@@ -2106,6 +2165,7 @@ type Type {
   createdAt: Date!
   entityType: String!
   id: Int!
+  interServiceColor: [InterServiceColor!]
   name: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -2153,6 +2213,15 @@ input UpdateDivisionInput {
 input UpdateHullTypeInput {
   id: Int!
   name: String
+}
+
+input UpdateInterServiceColorInput {
+  brandId: Int
+  greaterThan: Int
+  id: Int!
+  lessThan: Int
+  measurement: String
+  typeId: Int
 }
 
 input UpdateLocationInput {

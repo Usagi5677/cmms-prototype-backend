@@ -1082,7 +1082,14 @@ export class EntityService {
             removedAt: null,
           },
         },
-        type: true,
+        type: {
+          include: {
+            interServiceColor: {
+              where: { removedAt: null },
+              include: { brand: true, type: true },
+            },
+          },
+        },
         hullType: true,
         location: { include: { zone: true } },
         repairs: {
@@ -1117,7 +1124,14 @@ export class EntityService {
                 removedAt: null,
               },
             },
-            type: true,
+            type: {
+              include: {
+                interServiceColor: {
+                  where: { removedAt: null },
+                  include: { brand: true, type: true },
+                },
+              },
+            },
             location: { include: { zone: true } },
             repairs: {
               orderBy: { id: 'desc' },
@@ -1133,7 +1147,6 @@ export class EntityService {
       },
       orderBy: [{ id: 'asc' }],
     });
-
     for (const entity of entities) {
       const reading = await this.getLatestReading(entity);
       entity.currentRunning = reading;
@@ -4870,6 +4883,7 @@ export class EntityService {
               removedAt: null,
             },
           },
+          brand: true,
           type: true,
           location: { include: { zone: true } },
           repairs: {

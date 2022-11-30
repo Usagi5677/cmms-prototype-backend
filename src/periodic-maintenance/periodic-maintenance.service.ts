@@ -1110,17 +1110,23 @@ export class PeriodicMaintenanceService {
 
       const pmTasks = await this.prisma.periodicMaintenanceTask.findMany({
         where: { periodicMaintenanceId: { in: periodicMaintenanceIds } },
+        select: { periodicMaintenanceId: true, completedAt: true },
       });
 
       const summaries: PeriodicMaintenanceSummary[] = [];
       let i = 0;
+      //console.time('pm');
       while (i < periodicMaintenances.length) {
         const summary = new PeriodicMaintenanceSummary();
         Object.assign(summary, periodicMaintenances[i]);
+        //console.time('tasks filter');
         const tasks = pmTasks.filter(
           (t) => t.periodicMaintenanceId === periodicMaintenances[i].id
         );
+        //console.log(tasks.length);
+        //console.timeEnd('tasks filter');
 
+        //console.time('tasks completion');
         if (tasks.length === 0) {
           summary.taskCompletion = 'empty';
         } else if (tasks.every((t) => t.completedAt !== null)) {
@@ -1130,7 +1136,9 @@ export class PeriodicMaintenanceService {
         } else {
           summary.taskCompletion = 'none';
         }
+        //console.timeEnd('tasks completion');
 
+        //console.time('comment');
         summary.hasObservations = false;
         summary.hasRemarks = false;
         periodicMaintenances[i].comments.filter((c) => {
@@ -1141,10 +1149,12 @@ export class PeriodicMaintenanceService {
           }
         });
         summary.hasVerify = periodicMaintenances[i].verifiedAt !== null;
+        //console.timeEnd('comment');
         summaries.push(summary);
         i++;
         //console.timeEnd();
       }
+      //console.timeEnd('pm');
       return summaries;
     } catch (e) {
       console.log(e);
@@ -2185,7 +2195,14 @@ export class PeriodicMaintenanceService {
         include: {
           entity: {
             include: {
-              type: true,
+              type: {
+                include: {
+                  interServiceColor: {
+                    where: { removedAt: null },
+                    include: { brand: true, type: true },
+                  },
+                },
+              },
               location: { include: { zone: true } },
               division: true,
               assignees: {
@@ -2196,6 +2213,7 @@ export class PeriodicMaintenanceService {
                   removedAt: null,
                 },
               },
+              brand: true,
             },
           },
           verifiedBy: true,

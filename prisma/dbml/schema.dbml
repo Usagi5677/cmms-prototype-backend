@@ -48,6 +48,7 @@ Table User {
   locationUsers LocationUsers [not null]
   hullTypeCreated HullType [not null]
   brandCreated Brand [not null]
+  interServiceColor InterServiceColor [not null]
 }
 
 Table Notification {
@@ -102,6 +103,7 @@ Table Type {
   name String [not null]
   active Boolean [not null, default: true]
   Entity Entity [not null]
+  interServiceColor InterServiceColor [not null]
 }
 
 Table Location {
@@ -612,6 +614,23 @@ Table Brand {
   createdBy User
   active Boolean [not null, default: true]
   entity Entity [not null]
+  interServiceColor InterServiceColor [not null]
+}
+
+Table InterServiceColor {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  removedAt DateTime
+  typeId Int [not null]
+  brandId Int [not null]
+  measurement String [not null]
+  greaterThan Int
+  lessThan Int
+  createdById Int
+  createdBy User
+  type Type
+  brand Brand
 }
 
 Enum SparePRStatus {
@@ -803,3 +822,9 @@ Ref: LocationUsers.userId > User.id
 Ref: HullType.createdById > User.id
 
 Ref: Brand.createdById > User.id
+
+Ref: InterServiceColor.createdById > User.id
+
+Ref: InterServiceColor.typeId > Type.id
+
+Ref: InterServiceColor.brandId > Brand.id

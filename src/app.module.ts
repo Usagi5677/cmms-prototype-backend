@@ -30,6 +30,7 @@ import { SparePrModule } from './spare-pr/spare-pr.module';
 import { DivisionModule } from './division/division.module';
 import { HullTypeModule } from './hull-type/hull-type.module';
 import { BrandModule } from './brand/brand.module';
+import { InterServiceColorModule } from './inter-service-color/inter-service-color.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { BrandModule } from './brand/brand.module';
     DivisionModule,
     HullTypeModule,
     BrandModule,
+    InterServiceColorModule,
   ],
   providers: [DateScalar, InitService],
 })
