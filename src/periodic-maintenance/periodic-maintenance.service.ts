@@ -2187,11 +2187,58 @@ export class PeriodicMaintenanceService {
         createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
       });
     }
+    const newPeriodicMaintenances = [];
+    const pm = await this.prisma.periodicMaintenance.findMany({
+      where,
+      include: {
+        entity: {
+          include: {
+            type: {
+              include: {
+                interServiceColor: {
+                  where: { removedAt: null },
+                  include: { brand: true, type: true },
+                },
+              },
+            },
+            brand: true,
+          },
+        },
+      },
+      orderBy: [{ id: 'desc' }],
+    });
+    //get all pm that doesn't have green color in interservice
+    for (const p of pm) {
+      const interService =
+        (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
+        (p?.entity?.lastService ? p?.entity?.lastService : 0);
+      if (p.entity?.type?.interServiceColor.length > 0) {
+        for (const intColor of p.entity?.type?.interServiceColor) {
+          if (
+            intColor?.brand?.name === p?.entity?.brand?.name &&
+            intColor?.type?.name === p?.entity?.type?.name &&
+            intColor?.measurement === p?.entity?.measurement
+          ) {
+            if (
+              interService >= intColor?.lessThan &&
+              interService <= intColor?.greaterThan
+            ) {
+              newPeriodicMaintenances.push(p);
+            } else if (interService >= intColor?.greaterThan) {
+              newPeriodicMaintenances.push(p);
+            }
+          }
+        }
+      }
+    }
+    const newPeriodicMaintenanceIds = newPeriodicMaintenances.map((p) => p.id);
     const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
       {
         skip: offset,
         take: limitPlusOne,
-        where,
+        where: {
+          id: { in: newPeriodicMaintenanceIds },
+        },
         include: {
           entity: {
             include: {
@@ -2221,8 +2268,18 @@ export class PeriodicMaintenanceService {
         orderBy: [{ id: 'desc' }],
       }
     );
-
-    const count = await this.prisma.periodicMaintenance.count({ where });
+    //apply calculated reading
+    for (const pm of periodicMaintenances) {
+      const reading = await this.entityService.getLatestReading(pm?.entity);
+      if (reading !== null) {
+        pm.entity.currentRunning = reading;
+      }
+    }
+    const count = await this.prisma.periodicMaintenance.count({
+      where: {
+        id: { in: newPeriodicMaintenanceIds },
+      },
+    });
     const { edges, pageInfo } = connectionFromArraySlice(
       periodicMaintenances.slice(0, limit),
       args,
@@ -2247,6 +2304,8 @@ export class PeriodicMaintenanceService {
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PeriodicMaintenanceConnection> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
     const {
       search,
       type2Ids,
@@ -2367,12 +2426,63 @@ export class PeriodicMaintenanceService {
         createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
       });
     }
+
+    const newPeriodicMaintenances = [];
+    const pm = await this.prisma.periodicMaintenance.findMany({
+      where,
+      include: {
+        entity: {
+          include: {
+            type: {
+              include: {
+                interServiceColor: {
+                  where: { removedAt: null },
+                  include: { brand: true, type: true },
+                },
+              },
+            },
+            brand: true,
+          },
+        },
+      },
+      orderBy: [{ id: 'desc' }],
+    });
+    //get all pm that doesn't have green color in interservice
+    for (const p of pm) {
+      const interService =
+        (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
+        (p?.entity?.lastService ? p?.entity?.lastService : 0);
+      if (p.entity?.type?.interServiceColor.length > 0) {
+        for (const intColor of p.entity.type.interServiceColor) {
+          if (
+            intColor?.brand?.name === p?.entity?.brand?.name &&
+            intColor?.type?.name === p?.entity?.type?.name &&
+            intColor?.measurement === p?.entity?.measurement
+          ) {
+            if (
+              interService >= intColor?.lessThan &&
+              interService <= intColor?.greaterThan
+            ) {
+              newPeriodicMaintenances.push(p);
+            } else if (interService >= intColor?.greaterThan) {
+              newPeriodicMaintenances.push(p);
+            }
+          }
+        }
+      }
+    }
+    const newPeriodicMaintenanceIds = newPeriodicMaintenances.map((p) => p.id);
     const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
       {
-        where,
+        skip: offset,
+        take: limitPlusOne,
+        where: {
+          id: { in: newPeriodicMaintenanceIds },
+        },
         orderBy: [{ id: 'desc' }],
       }
     );
+
     let completed = 0;
     let ongoing = 0;
     let upcoming = 0;
