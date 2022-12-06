@@ -1751,6 +1751,7 @@ export class PeriodicMaintenanceService {
     }
   }
 
+  /*
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async notificationReminderCrons() {
     this.logger.verbose('Notification reminder cron job started');
@@ -1891,6 +1892,7 @@ export class PeriodicMaintenanceService {
     }
     this.logger.verbose('Notification Reminder Complete');
   }
+  */
 
   async createPM(pm: PeriodicMaintenanceWithTasks) {
     const todayStart = moment().startOf('day');
