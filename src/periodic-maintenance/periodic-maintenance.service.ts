@@ -652,7 +652,7 @@ export class PeriodicMaintenanceService {
       });
       */
       //run generate again so copies will be made
-      //this.generatePeriodicMaintenances();
+      this.generatePeriodicMaintenances();
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -748,7 +748,7 @@ export class PeriodicMaintenanceService {
       });
       */
       //run generate again so copies will be made
-      //this.generatePeriodicMaintenances();
+      this.generatePeriodicMaintenances();
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -1603,147 +1603,152 @@ export class PeriodicMaintenanceService {
   }
 
   async generatePeriodicMaintenances() {
-    //using original periodic maintenance as template to make its copies
+    try {
+      //using original periodic maintenance as template to make its copies
 
-    //get all copies and update to overdue if wasn't completed yesterday
-    const yesterdayStart = moment().subtract(1, 'days').startOf('day');
-    const yesterdayEnd = moment().subtract(1, 'days').endOf('day');
-    const periodicMaintenanceCopies =
-      await this.prisma.periodicMaintenance.findMany({
-        where: {
-          type: 'Copy',
-          removedAt: null,
-          status: 'Ongoing',
-          from: yesterdayStart.toDate(),
-          to: yesterdayEnd.toDate(),
-        },
-        select: { id: true },
-      });
-    for (const p of periodicMaintenanceCopies) {
-      await this.prisma.periodicMaintenance.update({
-        where: { id: p.id },
-        data: { status: 'Overdue' },
-      });
-    }
-
-    // Get ids of all pm template
-    const periodicMaintenance = await this.prisma.periodicMaintenance.findMany({
-      where: { type: 'Template', recur: true, removedAt: null },
-      select: { id: true },
-    });
-    const originIds = periodicMaintenance.map((m) => m.id);
-
-    const todayStart = moment().startOf('day');
-    const todayEnd = moment().endOf('day');
-
-    // Get all pm copies that have been generated today
-    const todayPeriodicMaintenances =
-      await this.prisma.periodicMaintenance.findMany({
-        where: {
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          type: 'Copy',
-          removedAt: null,
-        },
-        select: { originId: true },
-      });
-
-    const todayPeriodicMaintenanceOriginIds = todayPeriodicMaintenances.map(
-      (c) => c.originId
-    );
-
-    //if there is generated, remove origin pm ids from pm array (copy's origin id will be template pm)
-    const notGeneratedPeriodicMaintenanceOriginIds = originIds.filter(
-      (id) => !todayPeriodicMaintenanceOriginIds.includes(id)
-    );
-    //get all template periodic maintenance
-    const templatePM = await this.prisma.periodicMaintenance.findMany({
-      where: {
-        id: {
-          in: notGeneratedPeriodicMaintenanceOriginIds,
-        },
-      },
-      include: {
-        verifiedBy: true,
-        entity: true,
-        notificationReminder: true,
-        tasks: {
-          where: { parentTaskId: null },
-          include: {
-            subTasks: {
-              include: {
-                subTasks: { include: { completedBy: true } },
-                completedBy: true,
-              },
-              orderBy: { id: 'asc' },
-            },
-            completedBy: true,
+      //get all copies and update to overdue if wasn't completed yesterday
+      const yesterdayStart = moment().subtract(1, 'days').startOf('day');
+      const yesterdayEnd = moment().subtract(1, 'days').endOf('day');
+      const periodicMaintenanceCopies =
+        await this.prisma.periodicMaintenance.findMany({
+          where: {
+            type: 'Copy',
+            removedAt: null,
+            status: 'Ongoing',
+            from: yesterdayStart.toDate(),
+            to: yesterdayEnd.toDate(),
           },
-          orderBy: { id: 'asc' },
+          select: { id: true },
+        });
+      for (const p of periodicMaintenanceCopies) {
+        await this.prisma.periodicMaintenance.update({
+          where: { id: p.id },
+          data: { status: 'Overdue' },
+        });
+      }
+
+      // Get ids of all pm template
+      const periodicMaintenance =
+        await this.prisma.periodicMaintenance.findMany({
+          where: { type: 'Template', recur: true, removedAt: null },
+          select: { id: true },
+        });
+      const originIds = periodicMaintenance.map((m) => m.id);
+
+      const todayStart = moment().startOf('day');
+      const todayEnd = moment().endOf('day');
+
+      // Get all pm copies that have been generated today
+      const todayPeriodicMaintenances =
+        await this.prisma.periodicMaintenance.findMany({
+          where: {
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+            type: 'Copy',
+            removedAt: null,
+          },
+          select: { originId: true },
+        });
+
+      const todayPeriodicMaintenanceOriginIds = todayPeriodicMaintenances.map(
+        (c) => c.originId
+      );
+
+      //if there is generated, remove origin pm ids from pm array (copy's origin id will be template pm)
+      const notGeneratedPeriodicMaintenanceOriginIds = originIds.filter(
+        (id) => !todayPeriodicMaintenanceOriginIds.includes(id)
+      );
+      //get all template periodic maintenance
+      const templatePM = await this.prisma.periodicMaintenance.findMany({
+        where: {
+          id: {
+            in: notGeneratedPeriodicMaintenanceOriginIds,
+          },
         },
-      },
-    });
-    //check if fulfills the requirement and then create it
-    for (const pm of templatePM) {
-      if (pm.measurement === 'Hour') {
-        const currentReading = pm.currentMeterReading;
-        const computedReading = await this.entityService.getLatestReading(
-          pm.entity
-        );
-        //console.log('computedReading = ' + computedReading);
-        //console.log('currentReading = ' + currentReading);
+        include: {
+          verifiedBy: true,
+          entity: true,
+          notificationReminder: true,
+          tasks: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: { include: { completedBy: true } },
+                  completedBy: true,
+                },
+                orderBy: { id: 'asc' },
+              },
+              completedBy: true,
+            },
+            orderBy: { id: 'asc' },
+          },
+        },
+      });
+      //check if fulfills the requirement and then create it
+      for (const pm of templatePM) {
+        if (pm.measurement === 'Hour') {
+          const currentReading = pm.currentMeterReading;
+          const computedReading = await this.entityService.getLatestReading(
+            pm.entity
+          );
+          //console.log('computedReading = ' + computedReading);
+          //console.log('currentReading = ' + currentReading);
 
-        //const readingDiff = Math.abs(currentReading - previousReading);
-        const computedReadingDiff = computedReading - currentReading;
-        //console.log('computedReadingDiff = ' + computedReadingDiff);
-        //console.log('value = ' + pm.value);
-        //if difference is more than or equal it means it's ready to be made
-        //const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
-        const flag = computedReadingDiff >= pm.value;
-        if (flag) {
-          this.createPM(pm);
-        }
-      } else if (pm.measurement === 'Kilometer') {
-        const currentMeterReading = pm.currentMeterReading;
-        const computedReading = await this.entityService.getLatestReading(
-          pm.entity
-        );
+          //const readingDiff = Math.abs(currentReading - previousReading);
+          const computedReadingDiff = computedReading - currentReading;
+          //console.log('computedReadingDiff = ' + computedReadingDiff);
+          //console.log('value = ' + pm.value);
+          //if difference is more than or equal it means it's ready to be made
+          //const flag = readingDiff >= pm.value || computedReadingDiff >= pm.value;
+          const flag = computedReadingDiff >= pm.value;
+          if (flag) {
+            this.createPM(pm);
+          }
+        } else if (pm.measurement === 'Kilometer') {
+          const currentMeterReading = pm.currentMeterReading;
+          const computedReading = await this.entityService.getLatestReading(
+            pm.entity
+          );
 
-        const computedReadingDiff = computedReading - currentMeterReading;
-        //if difference is more than or equal it means it's ready to be made
-        const flag = computedReadingDiff >= pm.value;
-        if (flag) {
-          this.createPM(pm);
-        }
-      } else if (pm.measurement === 'Day') {
-        const todayStart = moment().startOf('day');
-        const createdAtStart = moment(pm.createdAt).startOf('day');
-        const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
-        const flag = diff % pm.value;
-        if (flag == 0) {
-          this.createPM(pm);
-        }
-      } else if (pm.measurement === 'Week') {
-        const todayStart = moment().startOf('day');
-        const createdAtStart = moment(pm.createdAt).startOf('day');
-        const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
-        //multiplying by 7 since a week has 7 days
-        const flag = diff % (pm.value * 7);
-        if (flag == 0) {
-          this.createPM(pm);
-        }
-      } else if (pm.measurement === 'Month') {
-        const todayStart = moment().startOf('day');
-        const createdAtStart = moment(pm.createdAt).startOf('day');
-        const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
-        //multiplying by 30 since a month has 30 days
-        const flag = diff % (pm.value * 30);
-        if (flag == 0) {
-          this.createPM(pm);
+          const computedReadingDiff = computedReading - currentMeterReading;
+          //if difference is more than or equal it means it's ready to be made
+          const flag = computedReadingDiff >= pm.value;
+          if (flag) {
+            this.createPM(pm);
+          }
+        } else if (pm.measurement === 'Day') {
+          const todayStart = moment().startOf('day');
+          const createdAtStart = moment(pm.createdAt).startOf('day');
+          const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+          const flag = diff % pm.value;
+          if (flag == 0) {
+            this.createPM(pm);
+          }
+        } else if (pm.measurement === 'Week') {
+          const todayStart = moment().startOf('day');
+          const createdAtStart = moment(pm.createdAt).startOf('day');
+          const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+          //multiplying by 7 since a week has 7 days
+          const flag = diff % (pm.value * 7);
+          if (flag == 0) {
+            this.createPM(pm);
+          }
+        } else if (pm.measurement === 'Month') {
+          const todayStart = moment().startOf('day');
+          const createdAtStart = moment(pm.createdAt).startOf('day');
+          const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
+          //multiplying by 30 since a month has 30 days
+          const flag = diff % (pm.value * 30);
+          if (flag == 0) {
+            this.createPM(pm);
+          }
         }
       }
+      this.logger.verbose('Periodic Maintenance generation complete');
+    } catch (e) {
+      console.log(e);
     }
-    this.logger.verbose('Periodic Maintenance generation complete');
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
