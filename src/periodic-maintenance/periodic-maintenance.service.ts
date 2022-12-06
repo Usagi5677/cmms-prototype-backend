@@ -652,7 +652,7 @@ export class PeriodicMaintenanceService {
       });
       */
       //run generate again so copies will be made
-      this.generatePeriodicMaintenances();
+      //this.generatePeriodicMaintenances();
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -748,7 +748,7 @@ export class PeriodicMaintenanceService {
       });
       */
       //run generate again so copies will be made
-      this.generatePeriodicMaintenances();
+      //this.generatePeriodicMaintenances();
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
