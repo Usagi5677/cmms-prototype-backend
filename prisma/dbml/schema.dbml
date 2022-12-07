@@ -10,55 +10,55 @@ Table User {
   rcno Int [not null]
   fullName String [not null]
   email String [not null]
-  notifications Notification [not null]
-  roles UserRole [not null]
-  checklistCompletions ChecklistItem [not null]
-  checklistComments ChecklistComment [not null]
-  roleCreated Role [not null]
-  entityCreated Entity [not null]
-  entityAssignment EntityAssignment [not null]
-  entityPeriodicMaintenances EntityPeriodicMaintenance [not null]
-  entityAttachment EntityAttachment [not null]
-  entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
-  entityHistory EntityHistory [not null]
-  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
-  entityRepairRequestOperator EntityRepairRequest [not null]
-  entityRepairRequestSupervisor EntityRepairRequest [not null]
-  entityRepairRequestProjectManager EntityRepairRequest [not null]
-  entityRepairRequestRequestedBy EntityRepairRequest [not null]
-  entityRepairRequestApprovedBy EntityRepairRequest [not null]
-  entityRepairRequestRepairedBy EntityRepairRequest [not null]
-  locationsCreated Location [not null]
-  periodicMaintenanceTask PeriodicMaintenanceTask [not null]
-  periodicMaintenanceComment PeriodicMaintenanceComment [not null]
-  verifiedPeriodicMaintenance PeriodicMaintenance [not null]
-  zonesCreated Zone [not null]
   keysCreated ApiKey [not null]
-  breakdownComments BreakdownComment [not null]
-  repairComments RepairComment [not null]
-  breakdownDetails BreakdownDetail [not null]
-  repairCreated Repair [not null]
+  brandCreated Brand [not null]
   breakdownCreated Breakdown [not null]
-  sparePRCreated SparePR [not null]
-  SparePRDetail SparePRDetail [not null]
+  breakdownComments BreakdownComment [not null]
+  breakdownDetails BreakdownDetail [not null]
+  checklistComments ChecklistComment [not null]
+  checklistCompletions ChecklistItem [not null]
+  removedChecklistTemplateItem ChecklistTemplateItem [not null]
   divisionCreated Division [not null]
   divisionUsers DivisionUsers [not null]
-  removedChecklistTemplateItem ChecklistTemplateItem [not null]
-  removedPeriodicMaintenance PeriodicMaintenance [not null]
-  locationUsers LocationUsers [not null]
+  entityCreated Entity [not null]
+  entityAssignment EntityAssignment [not null]
+  entityAttachment EntityAttachment [not null]
+  entityHistory EntityHistory [not null]
+  entityPeriodicMaintenances EntityPeriodicMaintenance [not null]
+  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
+  entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
+  entityRepairRequestApprovedBy EntityRepairRequest [not null]
+  entityRepairRequestOperator EntityRepairRequest [not null]
+  entityRepairRequestProjectManager EntityRepairRequest [not null]
+  entityRepairRequestRepairedBy EntityRepairRequest [not null]
+  entityRepairRequestRequestedBy EntityRepairRequest [not null]
+  entityRepairRequestSupervisor EntityRepairRequest [not null]
   hullTypeCreated HullType [not null]
-  brandCreated Brand [not null]
   interServiceColor InterServiceColor [not null]
+  locationsCreated Location [not null]
+  locationUsers LocationUsers [not null]
+  notifications Notification [not null]
+  removedPeriodicMaintenance PeriodicMaintenance [not null]
+  verifiedPeriodicMaintenance PeriodicMaintenance [not null]
+  periodicMaintenanceComment PeriodicMaintenanceComment [not null]
+  periodicMaintenanceTask PeriodicMaintenanceTask [not null]
+  repairCreated Repair [not null]
+  repairComments RepairComment [not null]
+  roleCreated Role [not null]
+  sparePRCreated SparePR [not null]
+  SparePRDetail SparePRDetail [not null]
+  roles UserRole [not null]
+  zonesCreated Zone [not null]
 }
 
 Table Notification {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   userId Int [not null]
-  user User [not null]
   body String
   link String
   readAt DateTime
+  user User [not null]
 }
 
 Table Role {
@@ -67,9 +67,9 @@ Table Role {
   updatedAt DateTime [not null]
   name String [not null]
   createdById Int [not null]
+  permissionRoles PermissionRole [not null]
   createdBy User [not null]
   userRoles UserRole [not null]
-  permissionRoles PermissionRole [not null]
 }
 
 Table UserRole {
@@ -78,8 +78,8 @@ Table UserRole {
   updatedAt DateTime [not null]
   userId Int [not null]
   roleId Int [not null]
-  user User [not null]
   role Role [not null]
+  user User [not null]
 
   indexes {
     (userId, roleId) [unique]
@@ -112,13 +112,13 @@ Table Location {
   updatedAt DateTime [not null]
   name String [not null]
   createdById Int
-  createdBy User
   active Boolean [not null, default: true]
   zoneId Int
   skipFriday Boolean [default: false]
-  zone Zone
   entities Entity [not null]
   histories EntityHistory [not null]
+  createdBy User
+  zone Zone
   locationUsers LocationUsers [not null]
 }
 
@@ -129,8 +129,8 @@ Table Zone {
   name String [not null]
   active Boolean [not null, default: true]
   createdById Int
-  createdBy User
   locations Location [not null]
+  createdBy User
 }
 
 Table ChecklistTemplate {
@@ -138,8 +138,8 @@ Table ChecklistTemplate {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   name String
-  items ChecklistTemplateItem [not null]
   type String [not null, default: 'Daily']
+  items ChecklistTemplateItem [not null]
   entitiesDaily Entity [not null]
   entitiesWeekly Entity [not null]
 }
@@ -149,10 +149,10 @@ Table ChecklistTemplateItem {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   checklistTemplateId Int [not null]
-  checklistTemplate ChecklistTemplate [not null]
   name String [not null]
   removedAt DateTime
   removedById Int
+  checklistTemplate ChecklistTemplate [not null]
   removedBy User
 }
 
@@ -164,13 +164,13 @@ Table Checklist {
   to DateTime [not null]
   type String [not null, default: 'Daily']
   currentMeterReading Int
-  dailyUsageHours Int
   workingHour Int
-  items ChecklistItem [not null]
-  comments ChecklistComment [not null]
-  attachments EntityAttachment [not null]
-  entity Entity
   entityId Int
+  dailyUsageHours Int
+  entity Entity
+  comments ChecklistComment [not null]
+  items ChecklistItem [not null]
+  attachments EntityAttachment [not null]
 
   indexes {
     (entityId, from, to, type) [unique]
@@ -182,12 +182,12 @@ Table ChecklistItem {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   checklistId Int [not null]
-  checklist Checklist [not null]
   description String [not null]
   completedById Int
-  completedBy User
   completedAt DateTime
   issues ChecklistComment [not null]
+  checklist Checklist [not null]
+  completedBy User
 }
 
 Table ChecklistComment {
@@ -195,12 +195,12 @@ Table ChecklistComment {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   checklistId Int [not null]
-  checklist Checklist [not null]
-  type String [not null, default: 'Comment']
-  itemId Int
-  item ChecklistItem
   description String [not null]
   userId Int
+  itemId Int
+  type String [not null, default: 'Comment']
+  checklist Checklist [not null]
+  item ChecklistItem
   user User
 }
 
@@ -209,61 +209,61 @@ Table Entity {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   createdById Int [not null]
-  createdBy User [not null]
   machineNumber String
   registeredDate DateTime
   model String
   typeId Int
-  type Type
-  locationId Int
-  location Location
   currentRunning Int
   lastService Int
-  interService Int
-  divisionId Int
-  division Division
   engine String
-  status String [default: 'Working']
   statusChangedAt DateTime
   measurement String [default: 'km']
   deletedAt DateTime
-  parentEntityId Int
-  note String
-  parentEntity Entity
-  subEntities Entity [not null]
   dailyChecklistTemplateId Int
-  dailyChecklistTemplate ChecklistTemplate
   weeklyChecklistTemplateId Int
-  weeklyChecklistTemplate ChecklistTemplate
-  hullTypeId Int
-  hullType HullType
+  locationId Int
+  status String [default: 'Working']
+  parentEntityId Int
+  interService Int
+  divisionId Int
+  note String
   dimension Float
+  hullTypeId Int
   registryNumber String
   transit Boolean [default: false]
-  brand Brand
   brandId Int
-  checklists Checklist [not null]
-  assignees EntityAssignment [not null]
-  periodicMaintenancePlans EntityPeriodicMaintenance [not null]
-  histories EntityHistory [not null]
-  attachments EntityAttachment [not null]
-  repairsRequests EntityRepairRequest [not null]
-  sparePRs SparePR [not null]
-  periodicMaintenances PeriodicMaintenance [not null]
   breakdowns Breakdown [not null]
+  checklists Checklist [not null]
+  brand Brand
+  createdBy User [not null]
+  dailyChecklistTemplate ChecklistTemplate
+  division Division
+  hullType HullType
+  location Location
+  parentEntity Entity
+  subEntities Entity [not null]
+  type Type
+  weeklyChecklistTemplate ChecklistTemplate
+  assignees EntityAssignment [not null]
+  attachments EntityAttachment [not null]
+  histories EntityHistory [not null]
+  periodicMaintenancePlans EntityPeriodicMaintenance [not null]
+  repairsRequests EntityRepairRequest [not null]
+  periodicMaintenances PeriodicMaintenance [not null]
   repairs Repair [not null]
+  sparePRs SparePR [not null]
 }
 
 Table EntityAssignment {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  removedAt DateTime
-  type String [not null, default: 'User']
   userId Int [not null]
-  user User [not null]
   entityId Int [not null]
+  type String [not null, default: 'User']
+  removedAt DateTime
   entity Entity [not null]
+  user User [not null]
 }
 
 Table EntityPeriodicMaintenance {
@@ -271,18 +271,18 @@ Table EntityPeriodicMaintenance {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   entityId Int [not null]
-  entity Entity [not null]
   title String [not null]
   measurement String
   value Int
   startDate DateTime
   completedById Int
-  completedBy User
   completedAt DateTime
   status PeriodicMaintenanceStatus [not null, default: 'Pending']
   verifiedById Int
-  verifiedBy User
   verifiedAt DateTime
+  completedBy User
+  entity Entity [not null]
+  verifiedBy User
   entityPeriodicMaintenanceTask EntityPeriodicMaintenanceTask [not null]
 }
 
@@ -291,30 +291,30 @@ Table EntityAttachment {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   userId Int [not null]
-  user User [not null]
   entityId Int [not null]
-  entity Entity [not null]
-  checklistId Int
-  checklist Checklist
   description String [not null]
   mimeType String
   originalName String
   sharepointFileName String
   mode String [not null, default: 'Public']
+  checklistId Int
   favourite Boolean [default: false]
+  checklist Checklist
+  entity Entity [not null]
+  user User [not null]
 }
 
 Table EntityPeriodicMaintenanceTask {
   id Int [pk, increment]
   periodicMaintenanceId Int [not null]
-  periodicMaintenance EntityPeriodicMaintenance [not null]
   parentTaskId Int
   name String [not null]
   completedById Int
-  completedBy User
   completedAt DateTime
+  completedBy User
   parentTask EntityPeriodicMaintenanceTask
   subTasks EntityPeriodicMaintenanceTask [not null]
+  periodicMaintenance EntityPeriodicMaintenance [not null]
 }
 
 Table EntityHistory {
@@ -322,17 +322,17 @@ Table EntityHistory {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   entityId Int [not null]
-  entity Entity [not null]
   completedById Int
-  completedBy User
   type String [not null]
   description String [not null]
-  entityStatus String
   entityType String
   workingHour Float
   idleHour Float
   breakdownHour Float
   locationId Int
+  entityStatus String
+  completedBy User
+  entity Entity [not null]
   location Location
 }
 
@@ -341,27 +341,27 @@ Table EntityRepairRequest {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   entityId Int [not null]
-  entity Entity [not null]
   internal Boolean [not null, default: true]
   projectName String
-  location String
   reason String
   additionalInfo String
   attendInfo String
   operatorId Int
-  repairedById Int
-  repairedBy User
-  repairedAt DateTime
-  operator User
   supervisorId Int
-  supervisor User
   projectManagerId Int
-  projectManager User
   requestorId Int
-  requestedBy User
   approverId Int
-  approvedBy User
   approvedAt DateTime
+  repairedAt DateTime
+  repairedById Int
+  location String
+  approvedBy User
+  entity Entity [not null]
+  operator User
+  projectManager User
+  repairedBy User
+  requestedBy User
+  supervisor User
 }
 
 Table SparePR {
@@ -369,12 +369,12 @@ Table SparePR {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   entityId Int [not null]
-  entity Entity [not null]
   requestedDate DateTime
-  completedAt DateTime
-  name String [not null]
   createdById Int
+  name String [not null]
+  completedAt DateTime
   createdBy User
+  entity Entity [not null]
   sparePRDetails SparePRDetail [not null]
 }
 
@@ -383,40 +383,40 @@ Table SparePRDetail {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   sparePRId Int [not null]
-  sparePR SparePR [not null]
   description String [not null]
   createdById Int
   createdBy User
+  sparePR SparePR [not null]
 }
 
 Table PeriodicMaintenanceTask {
   id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
   periodicMaintenanceId Int [not null]
-  periodicMaintenance PeriodicMaintenance [not null]
   parentTaskId Int
   name String [not null]
   completedById Int
-  completedBy User
   completedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  remarks PeriodicMaintenanceComment [not null]
+  completedBy User
   parentTask PeriodicMaintenanceTask
   subTasks PeriodicMaintenanceTask [not null]
-  remarks PeriodicMaintenanceComment [not null]
+  periodicMaintenance PeriodicMaintenance [not null]
 }
 
 Table PeriodicMaintenanceComment {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  taskId Int
-  task PeriodicMaintenanceTask
   type String [not null, default: 'Remark']
   description String [not null]
+  periodicMaintenanceId Int
+  taskId Int
   createdById Int
   createdBy User
   periodicMaintenance PeriodicMaintenance
-  periodicMaintenanceId Int
+  task PeriodicMaintenanceTask
 }
 
 Table PeriodicMaintenance {
@@ -425,26 +425,26 @@ Table PeriodicMaintenance {
   updatedAt DateTime [not null]
   from DateTime
   to DateTime
-  name String [not null]
+  currentMeterReading Int
+  entityId Int
   originId Int
-  originPeriodicMaintenance PeriodicMaintenance
+  verifiedAt DateTime
+  verifiedById Int
   measurement String
   value Int
-  currentMeterReading Int
+  name String [not null]
   type String
-  verifiedById Int
-  verifiedBy User
-  verifiedAt DateTime
-  tasks PeriodicMaintenanceTask [not null]
-  comments PeriodicMaintenanceComment [not null]
-  entity Entity
-  entityId Int
-  status String
   recur Boolean [not null, default: true]
-  removedAt DateTime
+  status String
   removedById Int
-  removedBy User
+  removedAt DateTime
+  entity Entity
+  originPeriodicMaintenance PeriodicMaintenance
   periodicMaintenance PeriodicMaintenance [not null]
+  removedBy User
+  verifiedBy User
+  comments PeriodicMaintenanceComment [not null]
+  tasks PeriodicMaintenanceTask [not null]
   notificationReminder Reminder [not null]
 
   indexes {
@@ -456,15 +456,15 @@ Table Reminder {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  originId Int
-  origin Reminder
   type String
   measurement String
   previousValue Int
   value Int
+  originId Int
   periodicMaintenanceId Int
-  periodicMaintenance PeriodicMaintenance
+  origin Reminder
   Reminder Reminder [not null]
+  periodicMaintenance PeriodicMaintenance
 }
 
 Table Repair {
@@ -473,13 +473,13 @@ Table Repair {
   updatedAt DateTime [not null]
   entityId Int [not null]
   breakdownId Int
-  breakdownDetailId Int
   name String [not null]
   createdById Int
-  createdBy User
-  entity Entity
-  breakdown Breakdown
+  breakdownDetailId Int
   breakdownDetail BreakdownDetail
+  breakdown Breakdown
+  createdBy User
+  entity Entity [not null]
   comments RepairComment [not null]
 }
 
@@ -490,9 +490,9 @@ Table RepairComment {
   type String [not null, default: 'Remark']
   description String [not null]
   repairId Int
-  repair Repair
   createdById Int
   createdBy User
+  repair Repair
 }
 
 Table Breakdown {
@@ -502,12 +502,12 @@ Table Breakdown {
   entityId Int [not null]
   type String [not null]
   estimatedDateOfRepair DateTime
-  completedAt DateTime
-  entity Entity
   createdById Int
+  completedAt DateTime
   createdBy User
-  details BreakdownDetail [not null]
+  entity Entity [not null]
   comments BreakdownComment [not null]
+  details BreakdownDetail [not null]
   repairs Repair [not null]
 }
 
@@ -516,11 +516,11 @@ Table BreakdownDetail {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   breakdownId Int [not null]
-  breakdown Breakdown [not null]
   description String [not null]
   createdById Int
-  createdBy User
   comments BreakdownComment [not null]
+  breakdown Breakdown [not null]
+  createdBy User
   repairs Repair [not null]
 }
 
@@ -531,11 +531,11 @@ Table BreakdownComment {
   type String [not null, default: 'Remark']
   description String [not null]
   breakdownId Int
-  breakdown Breakdown
   detailId Int
-  detail BreakdownDetail
   createdById Int
+  breakdown Breakdown
   createdBy User
+  detail BreakdownDetail
 }
 
 Table ApiKey {
@@ -546,18 +546,18 @@ Table ApiKey {
   apiKeyStart String [not null]
   hash String [not null]
   calls Int [not null, default: 0]
-  permissions ApiKeyPermission [not null]
   createdById Int
-  createdBy User
   active Boolean [not null, default: true]
   expiresAt DateTime
+  createdBy User
+  permissions ApiKeyPermission [not null]
 }
 
 Table ApiKeyPermission {
   id Int [pk, increment]
   apiKeyId Int [not null]
-  apiKey ApiKey [not null]
   permission String [not null]
+  apiKey ApiKey [not null]
 }
 
 Table Division {
@@ -566,8 +566,8 @@ Table Division {
   updatedAt DateTime [not null]
   name String [not null]
   createdById Int
-  createdBy User
   active Boolean [not null, default: true]
+  createdBy User
   assignees DivisionUsers [not null]
   entity Entity [not null]
 }
@@ -576,11 +576,11 @@ Table DivisionUsers {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  removedAt DateTime
   divisionId Int [not null]
   userId Int [not null]
-  division Division
-  user User
+  removedAt DateTime
+  division Division [not null]
+  user User [not null]
 }
 
 Table LocationUsers {
@@ -590,8 +590,8 @@ Table LocationUsers {
   removedAt DateTime
   locationId Int [not null]
   userId Int [not null]
-  location Location
-  user User
+  location Location [not null]
+  user User [not null]
 }
 
 Table HullType {
@@ -601,8 +601,8 @@ Table HullType {
   name String [not null]
   active Boolean [not null, default: true]
   createdById Int
-  createdBy User
   entity Entity [not null]
+  createdBy User
 }
 
 Table Brand {
@@ -611,8 +611,8 @@ Table Brand {
   updatedAt DateTime [not null]
   name String [not null]
   createdById Int
-  createdBy User
   active Boolean [not null, default: true]
+  createdBy User
   entity Entity [not null]
   interServiceColor InterServiceColor [not null]
 }
@@ -628,9 +628,9 @@ Table InterServiceColor {
   greaterThan Int
   lessThan Int
   createdById Int
+  brand Brand [not null]
   createdBy User
-  type Type
-  brand Brand
+  type Type [not null]
 }
 
 Enum SparePRStatus {
@@ -659,9 +659,9 @@ Ref: Notification.userId > User.id
 
 Ref: Role.createdById > User.id
 
-Ref: UserRole.userId > User.id
-
 Ref: UserRole.roleId > Role.id
+
+Ref: UserRole.userId > User.id
 
 Ref: PermissionRole.roleId > Role.id
 
@@ -687,113 +687,113 @@ Ref: ChecklistComment.itemId > ChecklistItem.id
 
 Ref: ChecklistComment.userId > User.id
 
+Ref: Entity.brandId > Brand.id
+
 Ref: Entity.createdById > User.id
-
-Ref: Entity.typeId > Type.id
-
-Ref: Entity.locationId > Location.id
-
-Ref: Entity.divisionId > Division.id
-
-Ref: Entity.parentEntityId - Entity.id
 
 Ref: Entity.dailyChecklistTemplateId > ChecklistTemplate.id
 
-Ref: Entity.weeklyChecklistTemplateId > ChecklistTemplate.id
+Ref: Entity.divisionId > Division.id
 
 Ref: Entity.hullTypeId > HullType.id
 
-Ref: Entity.brandId > Brand.id
+Ref: Entity.locationId > Location.id
 
-Ref: EntityAssignment.userId > User.id
+Ref: Entity.parentEntityId - Entity.id
+
+Ref: Entity.typeId > Type.id
+
+Ref: Entity.weeklyChecklistTemplateId > ChecklistTemplate.id
 
 Ref: EntityAssignment.entityId > Entity.id
 
-Ref: EntityPeriodicMaintenance.entityId > Entity.id
+Ref: EntityAssignment.userId > User.id
 
 Ref: EntityPeriodicMaintenance.completedById > User.id
 
+Ref: EntityPeriodicMaintenance.entityId > Entity.id
+
 Ref: EntityPeriodicMaintenance.verifiedById > User.id
-
-Ref: EntityAttachment.userId > User.id
-
-Ref: EntityAttachment.entityId > Entity.id
 
 Ref: EntityAttachment.checklistId > Checklist.id
 
-Ref: EntityPeriodicMaintenanceTask.periodicMaintenanceId > EntityPeriodicMaintenance.id
+Ref: EntityAttachment.entityId > Entity.id
+
+Ref: EntityAttachment.userId > User.id
 
 Ref: EntityPeriodicMaintenanceTask.completedById > User.id
 
 Ref: EntityPeriodicMaintenanceTask.parentTaskId - EntityPeriodicMaintenanceTask.id
 
-Ref: EntityHistory.entityId > Entity.id
+Ref: EntityPeriodicMaintenanceTask.periodicMaintenanceId > EntityPeriodicMaintenance.id
 
 Ref: EntityHistory.completedById > User.id
 
+Ref: EntityHistory.entityId > Entity.id
+
 Ref: EntityHistory.locationId > Location.id
-
-Ref: EntityRepairRequest.entityId > Entity.id
-
-Ref: EntityRepairRequest.repairedById > User.id
-
-Ref: EntityRepairRequest.operatorId > User.id
-
-Ref: EntityRepairRequest.supervisorId > User.id
-
-Ref: EntityRepairRequest.projectManagerId > User.id
-
-Ref: EntityRepairRequest.requestorId > User.id
 
 Ref: EntityRepairRequest.approverId > User.id
 
-Ref: SparePR.entityId > Entity.id
+Ref: EntityRepairRequest.entityId > Entity.id
+
+Ref: EntityRepairRequest.operatorId > User.id
+
+Ref: EntityRepairRequest.projectManagerId > User.id
+
+Ref: EntityRepairRequest.repairedById > User.id
+
+Ref: EntityRepairRequest.requestorId > User.id
+
+Ref: EntityRepairRequest.supervisorId > User.id
 
 Ref: SparePR.createdById > User.id
 
-Ref: SparePRDetail.sparePRId > SparePR.id
+Ref: SparePR.entityId > Entity.id
 
 Ref: SparePRDetail.createdById > User.id
 
-Ref: PeriodicMaintenanceTask.periodicMaintenanceId > PeriodicMaintenance.id
+Ref: SparePRDetail.sparePRId > SparePR.id
 
 Ref: PeriodicMaintenanceTask.completedById > User.id
 
 Ref: PeriodicMaintenanceTask.parentTaskId - PeriodicMaintenanceTask.id
 
-Ref: PeriodicMaintenanceComment.taskId > PeriodicMaintenanceTask.id
+Ref: PeriodicMaintenanceTask.periodicMaintenanceId > PeriodicMaintenance.id
 
 Ref: PeriodicMaintenanceComment.createdById > User.id
 
 Ref: PeriodicMaintenanceComment.periodicMaintenanceId > PeriodicMaintenance.id
 
-Ref: PeriodicMaintenance.originId - PeriodicMaintenance.id
-
-Ref: PeriodicMaintenance.verifiedById > User.id
+Ref: PeriodicMaintenanceComment.taskId > PeriodicMaintenanceTask.id
 
 Ref: PeriodicMaintenance.entityId > Entity.id
 
+Ref: PeriodicMaintenance.originId - PeriodicMaintenance.id
+
 Ref: PeriodicMaintenance.removedById > User.id
+
+Ref: PeriodicMaintenance.verifiedById > User.id
 
 Ref: Reminder.originId - Reminder.id
 
 Ref: Reminder.periodicMaintenanceId > PeriodicMaintenance.id
 
+Ref: Repair.breakdownDetailId > BreakdownDetail.id
+
+Ref: Repair.breakdownId > Breakdown.id
+
 Ref: Repair.createdById > User.id
 
 Ref: Repair.entityId > Entity.id
 
-Ref: Repair.breakdownId > Breakdown.id
-
-Ref: Repair.breakdownDetailId > BreakdownDetail.id
+Ref: RepairComment.createdById > User.id
 
 Ref: RepairComment.repairId > Repair.id
 
-Ref: RepairComment.createdById > User.id
+Ref: Breakdown.createdById > User.id
 
 Ref: Breakdown.entityId > Entity.id
-
-Ref: Breakdown.createdById > User.id
 
 Ref: BreakdownDetail.breakdownId > Breakdown.id
 
@@ -801,9 +801,9 @@ Ref: BreakdownDetail.createdById > User.id
 
 Ref: BreakdownComment.breakdownId > Breakdown.id
 
-Ref: BreakdownComment.detailId > BreakdownDetail.id
-
 Ref: BreakdownComment.createdById > User.id
+
+Ref: BreakdownComment.detailId > BreakdownDetail.id
 
 Ref: ApiKey.createdById > User.id
 
@@ -823,8 +823,8 @@ Ref: HullType.createdById > User.id
 
 Ref: Brand.createdById > User.id
 
+Ref: InterServiceColor.brandId > Brand.id
+
 Ref: InterServiceColor.createdById > User.id
 
 Ref: InterServiceColor.typeId > Type.id
-
-Ref: InterServiceColor.brandId > Brand.id

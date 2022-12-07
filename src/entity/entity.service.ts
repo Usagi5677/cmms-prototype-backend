@@ -3247,7 +3247,7 @@ export class EntityService {
   }: EntityTransferInput) {
     const entity = (await this.findOne(entityId, {
       location: true,
-    })) as Entity & {
+    })) as unknown as Entity & {
       location: Location;
     };
     const newLocation = await this.locationService.findOne(newLocationId);

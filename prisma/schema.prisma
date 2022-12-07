@@ -1,17 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-generator dbml {
-  provider = "prisma-dbml-generator"
 }
 
 model User {
@@ -22,55 +19,55 @@ model User {
   rcno                                 Int
   fullName                             String
   email                                String
-  notifications                        Notification[]
-  roles                                UserRole[]
-  checklistCompletions                 ChecklistItem[]
+  keysCreated                          ApiKey[]
+  brandCreated                         Brand[]                         @relation("brandCreated")
+  breakdownCreated                     Breakdown[]
+  breakdownComments                    BreakdownComment[]
+  breakdownDetails                     BreakdownDetail[]
   checklistComments                    ChecklistComment[]
-  roleCreated                          Role[]
+  checklistCompletions                 ChecklistItem[]
+  removedChecklistTemplateItem         ChecklistTemplateItem[]
+  divisionCreated                      Division[]                      @relation("divisionCreated")
+  divisionUsers                        DivisionUsers[]
   entityCreated                        Entity[]
   entityAssignment                     EntityAssignment[]
-  entityPeriodicMaintenances           EntityPeriodicMaintenance[]
   entityAttachment                     EntityAttachment[]
-  entityPeriodicMaintenanceTasks       EntityPeriodicMaintenanceTask[]
   entityHistory                        EntityHistory[]
-  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance[]     @relation(name: "entityVerifiedBy")
-  entityRepairRequestOperator          EntityRepairRequest[]           @relation(name: "operator")
-  entityRepairRequestSupervisor        EntityRepairRequest[]           @relation(name: "supervisor")
-  entityRepairRequestProjectManager    EntityRepairRequest[]           @relation(name: "projectManager")
-  entityRepairRequestRequestedBy       EntityRepairRequest[]           @relation(name: "requestedBy")
-  entityRepairRequestApprovedBy        EntityRepairRequest[]           @relation(name: "approvedBy")
-  entityRepairRequestRepairedBy        EntityRepairRequest[]           @relation(name: "repairedBy")
-  locationsCreated                     Location[]                      @relation(name: "locationCreated")
-  periodicMaintenanceTask              PeriodicMaintenanceTask[]
+  entityPeriodicMaintenances           EntityPeriodicMaintenance[]
+  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance[]     @relation("entityVerifiedBy")
+  entityPeriodicMaintenanceTasks       EntityPeriodicMaintenanceTask[]
+  entityRepairRequestApprovedBy        EntityRepairRequest[]           @relation("approvedBy")
+  entityRepairRequestOperator          EntityRepairRequest[]           @relation("operator")
+  entityRepairRequestProjectManager    EntityRepairRequest[]           @relation("projectManager")
+  entityRepairRequestRepairedBy        EntityRepairRequest[]           @relation("repairedBy")
+  entityRepairRequestRequestedBy       EntityRepairRequest[]           @relation("requestedBy")
+  entityRepairRequestSupervisor        EntityRepairRequest[]           @relation("supervisor")
+  hullTypeCreated                      HullType[]                      @relation("hullTypeCreated")
+  interServiceColor                    InterServiceColor[]             @relation("interServiceColorCreated")
+  locationsCreated                     Location[]                      @relation("locationCreated")
+  locationUsers                        LocationUsers[]
+  notifications                        Notification[]
+  removedPeriodicMaintenance           PeriodicMaintenance[]
+  verifiedPeriodicMaintenance          PeriodicMaintenance[]           @relation("verifiedBy")
   periodicMaintenanceComment           PeriodicMaintenanceComment[]
-  verifiedPeriodicMaintenance          PeriodicMaintenance[]           @relation(name: "verifiedBy")
-  zonesCreated                         Zone[]
-  keysCreated                          ApiKey[]
-  breakdownComments                    BreakdownComment[]
-  repairComments                       RepairComment[]
-  breakdownDetails                     BreakdownDetail[]
+  periodicMaintenanceTask              PeriodicMaintenanceTask[]
   repairCreated                        Repair[]
-  breakdownCreated                     Breakdown[]
+  repairComments                       RepairComment[]
+  roleCreated                          Role[]
   sparePRCreated                       SparePR[]
   SparePRDetail                        SparePRDetail[]
-  divisionCreated                      Division[]                      @relation(name: "divisionCreated")
-  divisionUsers                        DivisionUsers[]
-  removedChecklistTemplateItem         ChecklistTemplateItem[]
-  removedPeriodicMaintenance           PeriodicMaintenance[]
-  locationUsers                        LocationUsers[]
-  hullTypeCreated                      HullType[]                      @relation(name: "hullTypeCreated")
-  brandCreated                         Brand[]                         @relation(name: "brandCreated")
-  interServiceColor                    InterServiceColor[]             @relation(name: "interServiceColorCreated")
+  roles                                UserRole[]
+  zonesCreated                         Zone[]
 }
 
 model Notification {
   id        Int       @id @default(autoincrement())
   createdAt DateTime  @default(now())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id])
   body      String?
   link      String?
   readAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model Role {
@@ -79,9 +76,9 @@ model Role {
   updatedAt       DateTime         @updatedAt
   name            String
   createdById     Int
+  permissionRoles PermissionRole[]
   createdBy       User             @relation(fields: [createdById], references: [id])
   userRoles       UserRole[]
-  permissionRoles PermissionRole[]
 }
 
 model UserRole {
@@ -90,8 +87,8 @@ model UserRole {
   updatedAt DateTime @updatedAt
   userId    Int
   roleId    Int
-  user      User     @relation(fields: [userId], references: [id])
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, roleId])
 }
@@ -122,13 +119,13 @@ model Location {
   updatedAt     DateTime        @updatedAt
   name          String
   createdById   Int?
-  createdBy     User?           @relation(name: "locationCreated", fields: [createdById], references: [id])
   active        Boolean         @default(true)
   zoneId        Int?
   skipFriday    Boolean?        @default(false)
-  zone          Zone?           @relation(fields: [zoneId], references: [id])
   entities      Entity[]
   histories     EntityHistory[]
+  createdBy     User?           @relation("locationCreated", fields: [createdById], references: [id])
+  zone          Zone?           @relation(fields: [zoneId], references: [id])
   locationUsers LocationUsers[]
 }
 
@@ -139,8 +136,504 @@ model Zone {
   name        String
   active      Boolean    @default(true)
   createdById Int?
-  createdBy   User?      @relation(fields: [createdById], references: [id])
   locations   Location[]
+  createdBy   User?      @relation(fields: [createdById], references: [id])
+}
+
+model ChecklistTemplate {
+  id             Int                     @id @default(autoincrement())
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  name           String?
+  type           String                  @default("Daily")
+  items          ChecklistTemplateItem[]
+  entitiesDaily  Entity[]                @relation("entityDaily")
+  entitiesWeekly Entity[]                @relation("entityWeekly")
+}
+
+model ChecklistTemplateItem {
+  id                  Int               @id @default(autoincrement())
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  checklistTemplateId Int
+  name                String
+  removedAt           DateTime?
+  removedById         Int?
+  checklistTemplate   ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id], onDelete: Cascade)
+  removedBy           User?             @relation(fields: [removedById], references: [id])
+}
+
+model Checklist {
+  id                  Int                @id @default(autoincrement())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  from                DateTime
+  to                  DateTime
+  type                String             @default("Daily")
+  currentMeterReading Int?
+  workingHour         Int?
+  entityId            Int?
+  dailyUsageHours     Int?
+  entity              Entity?            @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  comments            ChecklistComment[]
+  items               ChecklistItem[]
+  attachments         EntityAttachment[]
+
+  @@unique([entityId, from, to, type])
+}
+
+model ChecklistItem {
+  id            Int                @id @default(autoincrement())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  checklistId   Int
+  description   String
+  completedById Int?
+  completedAt   DateTime?
+  issues        ChecklistComment[]
+  checklist     Checklist          @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  completedBy   User?              @relation(fields: [completedById], references: [id])
+}
+
+model ChecklistComment {
+  id          Int            @id @default(autoincrement())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  checklistId Int
+  description String
+  userId      Int?
+  itemId      Int?
+  type        String         @default("Comment")
+  checklist   Checklist      @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  item        ChecklistItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user        User?          @relation(fields: [userId], references: [id])
+}
+
+model Entity {
+  id                        Int                         @id @default(autoincrement())
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  createdById               Int
+  machineNumber             String?
+  registeredDate            DateTime?
+  model                     String?
+  typeId                    Int?
+  currentRunning            Int?
+  lastService               Int?
+  engine                    String?
+  statusChangedAt           DateTime?
+  measurement               String?                     @default("km")
+  deletedAt                 DateTime?
+  dailyChecklistTemplateId  Int?
+  weeklyChecklistTemplateId Int?
+  locationId                Int?
+  status                    String?                     @default("Working")
+  parentEntityId            Int?
+  interService              Int?
+  divisionId                Int?
+  note                      String?
+  dimension                 Float?
+  hullTypeId                Int?
+  registryNumber            String?
+  transit                   Boolean?                    @default(false)
+  brandId                   Int?
+  breakdowns                Breakdown[]
+  checklists                Checklist[]
+  brand                     Brand?                      @relation(fields: [brandId], references: [id])
+  createdBy                 User                        @relation(fields: [createdById], references: [id])
+  dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id])
+  division                  Division?                   @relation(fields: [divisionId], references: [id])
+  hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
+  location                  Location?                   @relation(fields: [locationId], references: [id])
+  parentEntity              Entity?                     @relation("entityLink", fields: [parentEntityId], references: [id], onDelete: Cascade)
+  subEntities               Entity[]                    @relation("entityLink")
+  type                      Type?                       @relation(fields: [typeId], references: [id])
+  weeklyChecklistTemplate   ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id])
+  assignees                 EntityAssignment[]
+  attachments               EntityAttachment[]
+  histories                 EntityHistory[]
+  periodicMaintenancePlans  EntityPeriodicMaintenance[]
+  repairsRequests           EntityRepairRequest[]
+  periodicMaintenances      PeriodicMaintenance[]
+  repairs                   Repair[]
+  sparePRs                  SparePR[]
+}
+
+model EntityAssignment {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    Int
+  entityId  Int
+  type      String    @default("User")
+  removedAt DateTime?
+  entity    Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model EntityPeriodicMaintenance {
+  id                            Int                             @id @default(autoincrement())
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime                        @updatedAt
+  entityId                      Int
+  title                         String
+  measurement                   String?
+  value                         Int?
+  startDate                     DateTime?
+  completedById                 Int?
+  completedAt                   DateTime?
+  status                        PeriodicMaintenanceStatus       @default(Pending)
+  verifiedById                  Int?
+  verifiedAt                    DateTime?
+  completedBy                   User?                           @relation(fields: [completedById], references: [id])
+  entity                        Entity                          @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  verifiedBy                    User?                           @relation("entityVerifiedBy", fields: [verifiedById], references: [id])
+  entityPeriodicMaintenanceTask EntityPeriodicMaintenanceTask[]
+}
+
+model EntityAttachment {
+  id                 Int        @id @default(autoincrement())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  userId             Int
+  entityId           Int
+  description        String
+  mimeType           String?
+  originalName       String?
+  sharepointFileName String?
+  mode               String     @default("Public")
+  checklistId        Int?
+  favourite          Boolean?   @default(false)
+  checklist          Checklist? @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  entity             Entity     @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  user               User       @relation(fields: [userId], references: [id])
+}
+
+model EntityPeriodicMaintenanceTask {
+  id                    Int                             @id @default(autoincrement())
+  periodicMaintenanceId Int
+  parentTaskId          Int?
+  name                  String
+  completedById         Int?
+  completedAt           DateTime?
+  completedBy           User?                           @relation(fields: [completedById], references: [id])
+  parentTask            EntityPeriodicMaintenanceTask?  @relation("entityTaskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks              EntityPeriodicMaintenanceTask[] @relation("entityTaskLink")
+  periodicMaintenance   EntityPeriodicMaintenance       @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
+}
+
+model EntityHistory {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  entityId      Int
+  completedById Int?
+  type          String
+  description   String
+  entityType    String?
+  workingHour   Float?
+  idleHour      Float?
+  breakdownHour Float?
+  locationId    Int?
+  entityStatus  String?
+  completedBy   User?     @relation(fields: [completedById], references: [id])
+  entity        Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  location      Location? @relation(fields: [locationId], references: [id])
+}
+
+model EntityRepairRequest {
+  id               Int       @id @default(autoincrement())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  entityId         Int
+  internal         Boolean   @default(true)
+  projectName      String?
+  reason           String?
+  additionalInfo   String?
+  attendInfo       String?
+  operatorId       Int?
+  supervisorId     Int?
+  projectManagerId Int?
+  requestorId      Int?
+  approverId       Int?
+  approvedAt       DateTime?
+  repairedAt       DateTime?
+  repairedById     Int?
+  location         String?
+  approvedBy       User?     @relation("approvedBy", fields: [approverId], references: [id])
+  entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  operator         User?     @relation("operator", fields: [operatorId], references: [id])
+  projectManager   User?     @relation("projectManager", fields: [projectManagerId], references: [id])
+  repairedBy       User?     @relation("repairedBy", fields: [repairedById], references: [id])
+  requestedBy      User?     @relation("requestedBy", fields: [requestorId], references: [id])
+  supervisor       User?     @relation("supervisor", fields: [supervisorId], references: [id])
+}
+
+model SparePR {
+  id             Int             @id @default(autoincrement())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  entityId       Int
+  requestedDate  DateTime?
+  createdById    Int?
+  name           String
+  completedAt    DateTime?
+  createdBy      User?           @relation(fields: [createdById], references: [id])
+  entity         Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  sparePRDetails SparePRDetail[]
+}
+
+model SparePRDetail {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sparePRId   Int
+  description String
+  createdById Int?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  sparePR     SparePR  @relation(fields: [sparePRId], references: [id], onDelete: Cascade)
+}
+
+model PeriodicMaintenanceTask {
+  id                    Int                          @id @default(autoincrement())
+  periodicMaintenanceId Int
+  parentTaskId          Int?
+  name                  String
+  completedById         Int?
+  completedAt           DateTime?
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  remarks               PeriodicMaintenanceComment[]
+  completedBy           User?                        @relation(fields: [completedById], references: [id])
+  parentTask            PeriodicMaintenanceTask?     @relation("taskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks              PeriodicMaintenanceTask[]    @relation("taskLink")
+  periodicMaintenance   PeriodicMaintenance          @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
+}
+
+model PeriodicMaintenanceComment {
+  id                    Int                      @id @default(autoincrement())
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  type                  String                   @default("Remark")
+  description           String
+  periodicMaintenanceId Int?
+  taskId                Int?
+  createdById           Int?
+  createdBy             User?                    @relation(fields: [createdById], references: [id])
+  periodicMaintenance   PeriodicMaintenance?     @relation(fields: [periodicMaintenanceId], references: [id])
+  task                  PeriodicMaintenanceTask? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model PeriodicMaintenance {
+  id                        Int                          @id @unique @default(autoincrement())
+  createdAt                 DateTime                     @default(now())
+  updatedAt                 DateTime                     @updatedAt
+  from                      DateTime?
+  to                        DateTime?
+  currentMeterReading       Int?
+  entityId                  Int?
+  originId                  Int?
+  verifiedAt                DateTime?
+  verifiedById              Int?
+  measurement               String?
+  value                     Int?
+  name                      String
+  type                      String?
+  recur                     Boolean                      @default(true)
+  status                    String?
+  removedById               Int?
+  removedAt                 DateTime?
+  entity                    Entity?                      @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  originPeriodicMaintenance PeriodicMaintenance?         @relation("originPM", fields: [originId], references: [id], onDelete: Cascade)
+  periodicMaintenance       PeriodicMaintenance[]        @relation("originPM")
+  removedBy                 User?                        @relation(fields: [removedById], references: [id])
+  verifiedBy                User?                        @relation("verifiedBy", fields: [verifiedById], references: [id])
+  comments                  PeriodicMaintenanceComment[]
+  tasks                     PeriodicMaintenanceTask[]
+  notificationReminder      Reminder[]                   @relation("notificationPM")
+
+  @@unique([entityId, originId, from, to, measurement, type])
+}
+
+model Reminder {
+  id                    Int                  @id @default(autoincrement())
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  type                  String?
+  measurement           String?
+  previousValue         Int?
+  value                 Int?
+  originId              Int?
+  periodicMaintenanceId Int?
+  origin                Reminder?            @relation("originReminder", fields: [originId], references: [id], onDelete: Cascade)
+  Reminder              Reminder[]           @relation("originReminder")
+  periodicMaintenance   PeriodicMaintenance? @relation("notificationPM", fields: [periodicMaintenanceId], references: [id])
+}
+
+model Repair {
+  id                Int              @id @default(autoincrement())
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  entityId          Int
+  breakdownId       Int?
+  name              String
+  createdById       Int?
+  breakdownDetailId Int?
+  breakdownDetail   BreakdownDetail? @relation(fields: [breakdownDetailId], references: [id], onDelete: Cascade)
+  breakdown         Breakdown?       @relation(fields: [breakdownId], references: [id], onDelete: Cascade)
+  createdBy         User?            @relation(fields: [createdById], references: [id])
+  entity            Entity           @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  comments          RepairComment[]
+}
+
+model RepairComment {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  type        String   @default("Remark")
+  description String
+  repairId    Int?
+  createdById Int?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  repair      Repair?  @relation(fields: [repairId], references: [id])
+}
+
+model Breakdown {
+  id                    Int                @id @default(autoincrement())
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  entityId              Int
+  type                  String
+  estimatedDateOfRepair DateTime?
+  createdById           Int?
+  completedAt           DateTime?
+  createdBy             User?              @relation(fields: [createdById], references: [id])
+  entity                Entity             @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  comments              BreakdownComment[]
+  details               BreakdownDetail[]
+  repairs               Repair[]
+}
+
+model BreakdownDetail {
+  id          Int                @id @default(autoincrement())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  breakdownId Int
+  description String
+  createdById Int?
+  comments    BreakdownComment[]
+  breakdown   Breakdown          @relation(fields: [breakdownId], references: [id], onDelete: Cascade)
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  repairs     Repair[]
+}
+
+model BreakdownComment {
+  id          Int              @id @default(autoincrement())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  type        String           @default("Remark")
+  description String
+  breakdownId Int?
+  detailId    Int?
+  createdById Int?
+  breakdown   Breakdown?       @relation(fields: [breakdownId], references: [id])
+  createdBy   User?            @relation(fields: [createdById], references: [id])
+  detail      BreakdownDetail? @relation(fields: [detailId], references: [id], onDelete: Cascade)
+}
+
+model ApiKey {
+  id          Int                @id @default(autoincrement())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  name        String
+  apiKeyStart String
+  hash        String
+  calls       Int                @default(0)
+  createdById Int?
+  active      Boolean            @default(true)
+  expiresAt   DateTime?
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  permissions ApiKeyPermission[]
+}
+
+model ApiKeyPermission {
+  id         Int    @id @default(autoincrement())
+  apiKeyId   Int
+  permission String
+  apiKey     ApiKey @relation(fields: [apiKeyId], references: [id])
+}
+
+model Division {
+  id          Int             @id @default(autoincrement())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean         @default(true)
+  createdBy   User?           @relation("divisionCreated", fields: [createdById], references: [id])
+  assignees   DivisionUsers[]
+  entity      Entity[]
+}
+
+model DivisionUsers {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  divisionId Int
+  userId     Int
+  removedAt  DateTime?
+  division   Division  @relation(fields: [divisionId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model LocationUsers {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  removedAt  DateTime?
+  locationId Int
+  userId     Int
+  location   Location  @relation(fields: [locationId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model HullType {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  active      Boolean  @default(true)
+  createdById Int?
+  entity      Entity[]
+  createdBy   User?    @relation("hullTypeCreated", fields: [createdById], references: [id])
+}
+
+model Brand {
+  id                Int                 @id @default(autoincrement())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  name              String
+  createdById       Int?
+  active            Boolean             @default(true)
+  createdBy         User?               @relation("brandCreated", fields: [createdById], references: [id])
+  entity            Entity[]
+  interServiceColor InterServiceColor[]
+}
+
+model InterServiceColor {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  removedAt   DateTime?
+  typeId      Int
+  brandId     Int
+  measurement String
+  greaterThan Int?
+  lessThan    Int?
+  createdById Int?
+  brand       Brand     @relation(fields: [brandId], references: [id])
+  createdBy   User?     @relation("interServiceColorCreated", fields: [createdById], references: [id])
+  type        Type      @relation(fields: [typeId], references: [id])
 }
 
 enum SparePRStatus {
@@ -163,500 +656,4 @@ enum PeriodicMaintenanceStatus {
   Done
   Pending
   Missed
-}
-
-model ChecklistTemplate {
-  id             Int                     @id @default(autoincrement())
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-  name           String?
-  items          ChecklistTemplateItem[]
-  type           String                  @default("Daily")
-  entitiesDaily  Entity[]                @relation("entityDaily")
-  entitiesWeekly Entity[]                @relation("entityWeekly")
-}
-
-model ChecklistTemplateItem {
-  id                  Int               @id @default(autoincrement())
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  checklistTemplateId Int
-  checklistTemplate   ChecklistTemplate @relation(fields: [checklistTemplateId], references: [id], onDelete: Cascade)
-  name                String
-  removedAt           DateTime?
-  removedById         Int?
-  removedBy           User?             @relation(fields: [removedById], references: [id])
-}
-
-model Checklist {
-  id                  Int                @id @default(autoincrement())
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  from                DateTime
-  to                  DateTime
-  type                String             @default("Daily")
-  currentMeterReading Int?
-  dailyUsageHours     Int?
-  workingHour         Int?
-  items               ChecklistItem[]
-  comments            ChecklistComment[]
-  attachments         EntityAttachment[]
-  entity              Entity?            @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  entityId            Int?
-
-  @@unique([entityId, from, to, type])
-}
-
-model ChecklistItem {
-  id            Int                @id @default(autoincrement())
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  checklistId   Int
-  checklist     Checklist          @relation(fields: [checklistId], references: [id], onDelete: Cascade)
-  description   String
-  completedById Int?
-  completedBy   User?              @relation(fields: [completedById], references: [id])
-  completedAt   DateTime?
-  issues        ChecklistComment[]
-}
-
-model ChecklistComment {
-  id          Int            @id @default(autoincrement())
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  checklistId Int
-  checklist   Checklist      @relation(fields: [checklistId], references: [id], onDelete: Cascade)
-  type        String         @default("Comment")
-  itemId      Int?
-  item        ChecklistItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  description String
-  userId      Int?
-  user        User?          @relation(fields: [userId], references: [id])
-}
-
-model Entity {
-  id                        Int                         @id @default(autoincrement())
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime                    @updatedAt
-  createdById               Int
-  createdBy                 User                        @relation(fields: [createdById], references: [id])
-  machineNumber             String?
-  registeredDate            DateTime?
-  model                     String?
-  typeId                    Int?
-  type                      Type?                       @relation(fields: [typeId], references: [id])
-  locationId                Int?
-  location                  Location?                   @relation(fields: [locationId], references: [id])
-  currentRunning            Int?
-  lastService               Int?
-  interService              Int?
-  divisionId                Int?
-  division                  Division?                   @relation(fields: [divisionId], references: [id])
-  engine                    String?
-  status                    String?                     @default("Working")
-  statusChangedAt           DateTime?
-  measurement               String?                     @default("km")
-  deletedAt                 DateTime?
-  parentEntityId            Int?
-  note                      String?
-  parentEntity              Entity?                     @relation("entityLink", fields: [parentEntityId], references: [id], onDelete: Cascade)
-  subEntities               Entity[]                    @relation("entityLink")
-  dailyChecklistTemplateId  Int?
-  dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id], onDelete: SetNull)
-  weeklyChecklistTemplateId Int?
-  weeklyChecklistTemplate   ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id], onDelete: SetNull)
-  hullTypeId                Int?
-  hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
-  dimension                 Float?
-  registryNumber            String?
-  transit                   Boolean?                    @default(false)
-  brand                     Brand?                      @relation(fields: [brandId], references: [id])
-  brandId                   Int?
-  checklists                Checklist[]
-  assignees                 EntityAssignment[]
-  periodicMaintenancePlans  EntityPeriodicMaintenance[]
-  histories                 EntityHistory[]
-  attachments               EntityAttachment[]
-  repairsRequests           EntityRepairRequest[]
-  sparePRs                  SparePR[]
-  periodicMaintenances      PeriodicMaintenance[]
-  breakdowns                Breakdown[]
-  repairs                   Repair[]
-}
-
-model EntityAssignment {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  removedAt DateTime?
-  type      String    @default("User")
-  userId    Int
-  user      User      @relation(fields: [userId], references: [id])
-  entityId  Int
-  entity    Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
-}
-
-model EntityPeriodicMaintenance {
-  id                            Int                             @id @default(autoincrement())
-  createdAt                     DateTime                        @default(now())
-  updatedAt                     DateTime                        @updatedAt
-  entityId                      Int
-  entity                        Entity                          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title                         String
-  measurement                   String?
-  value                         Int?
-  startDate                     DateTime?
-  completedById                 Int?
-  completedBy                   User?                           @relation(fields: [completedById], references: [id])
-  completedAt                   DateTime?
-  status                        PeriodicMaintenanceStatus       @default(Pending)
-  verifiedById                  Int?
-  verifiedBy                    User?                           @relation(name: "entityVerifiedBy", fields: [verifiedById], references: [id])
-  verifiedAt                    DateTime?
-  entityPeriodicMaintenanceTask EntityPeriodicMaintenanceTask[]
-}
-
-model EntityAttachment {
-  id                 Int        @id @default(autoincrement())
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-  userId             Int
-  user               User       @relation(fields: [userId], references: [id])
-  entityId           Int
-  entity             Entity     @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  checklistId        Int?
-  checklist          Checklist? @relation(fields: [checklistId], references: [id], onDelete: Cascade)
-  description        String
-  mimeType           String?
-  originalName       String?
-  sharepointFileName String?
-  mode               String     @default("Public")
-  favourite          Boolean?   @default(false)
-}
-
-model EntityPeriodicMaintenanceTask {
-  id                    Int                             @id @default(autoincrement())
-  periodicMaintenanceId Int
-  periodicMaintenance   EntityPeriodicMaintenance       @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
-  parentTaskId          Int?
-  name                  String
-  completedById         Int?
-  completedBy           User?                           @relation(fields: [completedById], references: [id])
-  completedAt           DateTime?
-  parentTask            EntityPeriodicMaintenanceTask?  @relation("entityTaskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subTasks              EntityPeriodicMaintenanceTask[] @relation("entityTaskLink")
-}
-
-model EntityHistory {
-  id            Int       @id @default(autoincrement())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  entityId      Int
-  entity        Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  completedById Int?
-  completedBy   User?     @relation(fields: [completedById], references: [id])
-  type          String
-  description   String
-  entityStatus  String?
-  entityType    String?
-  workingHour   Float?
-  idleHour      Float?
-  breakdownHour Float?
-  locationId    Int?
-  location      Location? @relation(fields: [locationId], references: [id])
-}
-
-model EntityRepairRequest {
-  id               Int       @id @default(autoincrement())
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  entityId         Int
-  entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  internal         Boolean   @default(true)
-  projectName      String?
-  location         String?
-  reason           String?
-  additionalInfo   String?
-  attendInfo       String?
-  operatorId       Int?
-  repairedById     Int?
-  repairedBy       User?     @relation("repairedBy", fields: [repairedById], references: [id])
-  repairedAt       DateTime?
-  operator         User?     @relation("operator", fields: [operatorId], references: [id])
-  supervisorId     Int?
-  supervisor       User?     @relation("supervisor", fields: [supervisorId], references: [id])
-  projectManagerId Int?
-  projectManager   User?     @relation("projectManager", fields: [projectManagerId], references: [id])
-  requestorId      Int?
-  requestedBy      User?     @relation("requestedBy", fields: [requestorId], references: [id])
-  approverId       Int?
-  approvedBy       User?     @relation("approvedBy", fields: [approverId], references: [id])
-  approvedAt       DateTime?
-}
-
-model SparePR {
-  id             Int             @id @default(autoincrement())
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  entityId       Int
-  entity         Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  requestedDate  DateTime?
-  completedAt    DateTime?
-  name           String
-  createdById    Int?
-  createdBy      User?           @relation(fields: [createdById], references: [id])
-  sparePRDetails SparePRDetail[]
-}
-
-model SparePRDetail {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  sparePRId   Int
-  sparePR     SparePR  @relation(fields: [sparePRId], references: [id], onDelete: Cascade)
-  description String
-  createdById Int?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-}
-
-model PeriodicMaintenanceTask {
-  id                    Int                          @id @default(autoincrement())
-  createdAt             DateTime                     @default(now())
-  updatedAt             DateTime                     @updatedAt
-  periodicMaintenanceId Int
-  periodicMaintenance   PeriodicMaintenance          @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
-  parentTaskId          Int?
-  name                  String
-  completedById         Int?
-  completedBy           User?                        @relation(fields: [completedById], references: [id])
-  completedAt           DateTime?
-  parentTask            PeriodicMaintenanceTask?     @relation("taskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subTasks              PeriodicMaintenanceTask[]    @relation("taskLink")
-  remarks               PeriodicMaintenanceComment[]
-}
-
-model PeriodicMaintenanceComment {
-  id                    Int                      @id @default(autoincrement())
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-  taskId                Int?
-  task                  PeriodicMaintenanceTask? @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  type                  String                   @default("Remark")
-  description           String
-  createdById           Int?
-  createdBy             User?                    @relation(fields: [createdById], references: [id])
-  periodicMaintenance   PeriodicMaintenance?     @relation(fields: [periodicMaintenanceId], references: [id])
-  periodicMaintenanceId Int?
-}
-
-model PeriodicMaintenance {
-  id                        Int                          @id @unique @default(autoincrement())
-  createdAt                 DateTime                     @default(now())
-  updatedAt                 DateTime                     @updatedAt
-  from                      DateTime?
-  to                        DateTime?
-  name                      String
-  originId                  Int?
-  originPeriodicMaintenance PeriodicMaintenance?         @relation("originPM", fields: [originId], references: [id], onDelete: Cascade)
-  measurement               String?
-  value                     Int?
-  currentMeterReading       Int?
-  type                      String?
-  verifiedById              Int?
-  verifiedBy                User?                        @relation(name: "verifiedBy", fields: [verifiedById], references: [id])
-  verifiedAt                DateTime?
-  tasks                     PeriodicMaintenanceTask[]
-  comments                  PeriodicMaintenanceComment[]
-  entity                    Entity?                      @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  entityId                  Int?
-  status                    String?
-  recur                     Boolean                      @default(true)
-  removedAt                 DateTime?
-  removedById               Int?
-  removedBy                 User?                        @relation(fields: [removedById], references: [id])
-  periodicMaintenance       PeriodicMaintenance[]        @relation("originPM")
-  notificationReminder      Reminder[]                   @relation("notificationPM")
-
-  @@unique([entityId, originId, from, to, measurement, type])
-}
-
-model Reminder {
-  id                    Int                  @id @default(autoincrement())
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
-  originId              Int?
-  origin                Reminder?            @relation("originReminder", fields: [originId], references: [id], onDelete: Cascade)
-  type                  String?
-  measurement           String?
-  previousValue         Int?
-  value                 Int?
-  periodicMaintenanceId Int?
-  periodicMaintenance   PeriodicMaintenance? @relation("notificationPM", fields: [periodicMaintenanceId], references: [id])
-  Reminder              Reminder[]           @relation("originReminder")
-}
-
-model Repair {
-  id                Int              @id @default(autoincrement())
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  entityId          Int
-  breakdownId       Int?
-  breakdownDetailId Int?
-  name              String
-  createdById       Int?
-  createdBy         User?            @relation(fields: [createdById], references: [id])
-  entity            Entity?          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  breakdown         Breakdown?       @relation(fields: [breakdownId], references: [id], onDelete: Cascade)
-  breakdownDetail   BreakdownDetail? @relation(fields: [breakdownDetailId], references: [id], onDelete: Cascade)
-  comments          RepairComment[]
-}
-
-model RepairComment {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  type        String   @default("Remark")
-  description String
-  repairId    Int?
-  repair      Repair?  @relation(fields: [repairId], references: [id])
-  createdById Int?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-}
-
-model Breakdown {
-  id                    Int                @id @default(autoincrement())
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  entityId              Int
-  type                  String
-  estimatedDateOfRepair DateTime?
-  completedAt           DateTime?
-  entity                Entity?            @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  createdById           Int?
-  createdBy             User?              @relation(fields: [createdById], references: [id])
-  details               BreakdownDetail[]
-  comments              BreakdownComment[]
-  repairs               Repair[]
-}
-
-model BreakdownDetail {
-  id          Int                @id @default(autoincrement())
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  breakdownId Int
-  breakdown   Breakdown          @relation(fields: [breakdownId], references: [id], onDelete: Cascade)
-  description String
-  createdById Int?
-  createdBy   User?              @relation(fields: [createdById], references: [id])
-  comments    BreakdownComment[]
-  repairs     Repair[]
-}
-
-model BreakdownComment {
-  id          Int              @id @default(autoincrement())
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  type        String           @default("Remark")
-  description String
-  breakdownId Int?
-  breakdown   Breakdown?       @relation(fields: [breakdownId], references: [id])
-  detailId    Int?
-  detail      BreakdownDetail? @relation(fields: [detailId], references: [id], onDelete: Cascade)
-  createdById Int?
-  createdBy   User?            @relation(fields: [createdById], references: [id])
-}
-
-model ApiKey {
-  id          Int                @id @default(autoincrement())
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  name        String
-  apiKeyStart String
-  hash        String
-  calls       Int                @default(0)
-  permissions ApiKeyPermission[]
-  createdById Int?
-  createdBy   User?              @relation(fields: [createdById], references: [id])
-  active      Boolean            @default(true)
-  expiresAt   DateTime?
-}
-
-model ApiKeyPermission {
-  id         Int    @id @default(autoincrement())
-  apiKeyId   Int
-  apiKey     ApiKey @relation(fields: [apiKeyId], references: [id])
-  permission String
-}
-
-model Division {
-  id          Int             @id @default(autoincrement())
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  name        String
-  createdById Int?
-  createdBy   User?           @relation(name: "divisionCreated", fields: [createdById], references: [id])
-  active      Boolean         @default(true)
-  assignees   DivisionUsers[]
-  entity      Entity[]
-}
-
-model DivisionUsers {
-  id         Int       @id @default(autoincrement())
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  removedAt  DateTime?
-  divisionId Int
-  userId     Int
-  division   Division? @relation(fields: [divisionId], references: [id])
-  user       User?     @relation(fields: [userId], references: [id])
-}
-
-model LocationUsers {
-  id         Int       @id @default(autoincrement())
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  removedAt  DateTime?
-  locationId Int
-  userId     Int
-  location   Location? @relation(fields: [locationId], references: [id])
-  user       User?     @relation(fields: [userId], references: [id])
-}
-
-model HullType {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String
-  active      Boolean  @default(true)
-  createdById Int?
-  createdBy   User?    @relation(name: "hullTypeCreated", fields: [createdById], references: [id])
-  entity      Entity[]
-}
-
-model Brand {
-  id                Int                 @id @default(autoincrement())
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  name              String
-  createdById       Int?
-  createdBy         User?               @relation(name: "brandCreated", fields: [createdById], references: [id])
-  active            Boolean             @default(true)
-  entity            Entity[]
-  interServiceColor InterServiceColor[]
-}
-
-model InterServiceColor {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  removedAt   DateTime?
-  typeId      Int
-  brandId     Int
-  measurement String
-  greaterThan Int?
-  lessThan    Int?
-  createdById Int?
-  createdBy   User?     @relation(name: "interServiceColorCreated", fields: [createdById], references: [id])
-  type        Type?     @relation(fields: [typeId], references: [id])
-  brand       Brand?    @relation(fields: [brandId], references: [id])
 }
