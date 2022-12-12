@@ -1002,7 +1002,6 @@ type Mutation {
   updateType(updateTypeInput: UpdateTypeInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
   updateZone(input: UpdateZoneInput!): String!
-  upsertPMNotificationReminder(day: Int, hour: Int, kilometer: Int, month: Int, periodicMaintenanceId: Int, type: String, week: Int): String!
 }
 
 type Notification {
@@ -2032,6 +2031,32 @@ type Query {
     last: Int
     name: String
   ): PaginatedType!
+  upcomingPeriodicMaintenances(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    divisionIds: [Int!]
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+    from: Date
+    gteInterService: String
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteInterService: String
+    measurement: [String!]
+    pmStatus: [String!]
+    search: String
+    to: Date
+    type: String
+    type2Ids: [Int!]
+    zoneIds: [Int!]
+  ): PeriodicMaintenanceConnection!
   zone(id: Int!): Zone!
   zones(
     """Paginate after opaque cursor"""

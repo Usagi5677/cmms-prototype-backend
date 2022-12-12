@@ -176,6 +176,120 @@ export class PeriodicMaintenanceService {
     };
   }
 
+  async upcomingPeriodicMaintenances(
+    user: User,
+    args: PeriodicMaintenanceConnectionArgs
+  ): Promise<PeriodicMaintenanceConnection> {
+    const { limit, offset } = getPagingParameters(args);
+    const limitPlusOne = limit + 1;
+    const { search, type, from, to, entityId } = args;
+    const fromDate = moment(from).startOf('day');
+    const toDate = moment(to).endOf('day');
+    const where: any = {};
+
+    where.removedAt = null;
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+    if (type) {
+      where.type = type;
+    }
+
+    if (from && to) {
+      where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
+    }
+
+    if (entityId) {
+      where.entityId = entityId;
+    }
+
+    const tempPM = await this.prisma.periodicMaintenance.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where,
+      orderBy: { id: 'desc' },
+      include: {
+        entity: {
+          include: {
+            type: {
+              include: {
+                interServiceColor: { include: { brand: true, type: true } },
+              },
+            },
+            brand: true,
+          },
+        },
+      },
+    });
+    const newPeriodicMaintenances = [];
+    for (const p of tempPM) {
+      const interService =
+        (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
+        (p?.entity?.lastService ? p?.entity?.lastService : 0);
+      if (p?.entity?.type?.interServiceColor.length > 0) {
+        for (const intColor of p.entity?.type?.interServiceColor) {
+          if (
+            intColor?.brand?.name === p?.entity?.brand?.name &&
+            intColor?.type?.name === p?.entity?.type?.name &&
+            intColor?.measurement === p?.entity?.measurement
+          ) {
+            if (
+              interService >= intColor?.lessThan &&
+              interService <= intColor?.greaterThan
+            ) {
+              newPeriodicMaintenances.push(p);
+            }
+          }
+        }
+      }
+    }
+    const newPeriodicMaintenanceIds = newPeriodicMaintenances?.map((p) => p.id);
+    const pm = await this.prisma.periodicMaintenance.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where: {
+        id: { in: newPeriodicMaintenanceIds },
+      },
+      include: {
+        tasks: {
+          where: { parentTaskId: null },
+          include: {
+            subTasks: {
+              include: {
+                subTasks: {
+                  orderBy: { id: 'asc' },
+                },
+              },
+              orderBy: { id: 'asc' },
+            },
+          },
+          orderBy: { id: 'asc' },
+        },
+      },
+      orderBy: { id: 'desc' },
+    });
+
+    const count = await this.prisma.periodicMaintenance.count({ where });
+    const { edges, pageInfo } = connectionFromArraySlice(
+      pm.slice(0, limit),
+      args,
+      {
+        arrayLength: count,
+        sliceStart: offset,
+      }
+    );
+    return {
+      edges,
+      pageInfo: {
+        ...pageInfo,
+        count,
+        hasNextPage: offset + limit < count,
+        hasPreviousPage: offset >= limit,
+      },
+    };
+  }
+
   //** get all templates of origin id of periodic maintenance. */
   async getAllTemplatesOfOriginPM(
     user: User,
@@ -1164,6 +1278,7 @@ export class PeriodicMaintenanceService {
 
   //update or create reminder
   //add removedAt check later
+  /*
   async upsertPMNotificationReminder(
     user?: User,
     periodicMaintenanceId?: number,
@@ -1593,7 +1708,7 @@ export class PeriodicMaintenanceService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
-
+  */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async generatePeriodicMaintenancesCron() {
     this.logger.verbose('Periodic Maintenance generation cron job started');

@@ -34,6 +34,17 @@ export class PeriodicMaintenanceResolver {
     return await this.periodicMaintenanceService.findAll(user, args);
   }
 
+  @Query(() => PeriodicMaintenanceConnection)
+  async upcomingPeriodicMaintenances(
+    @UserEntity() user: User,
+    @Args() args: PeriodicMaintenanceConnectionArgs
+  ) {
+    return await this.periodicMaintenanceService.upcomingPeriodicMaintenances(
+      user,
+      args
+    );
+  }
+
   @Query(() => [PeriodicMaintenance])
   async getAllTemplatesOfOriginPM(
     @UserEntity() user: User,
@@ -257,6 +268,7 @@ export class PeriodicMaintenanceResolver {
     return this.periodicMaintenanceService.allPeriodicMaintenanceSummary(args);
   }
 
+  /*
   @Mutation(() => String)
   async upsertPMNotificationReminder(
     @UserEntity() user: User,
@@ -281,7 +293,7 @@ export class PeriodicMaintenanceResolver {
     );
     return `Periodic maintenance notification reminder upserted.`;
   }
-
+*/
   @Mutation(() => String)
   async activatePM(
     @UserEntity() user: User,
