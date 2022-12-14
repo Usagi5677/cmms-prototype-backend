@@ -31,6 +31,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export interface UpdatePMTaskInterface {
   pm: PeriodicMaintenanceWithTasks;
   copyPM: PeriodicMaintenanceWithTasks | PeriodicMaintenanceModel;
+  isDay?: boolean;
 }
 
 @Injectable()
@@ -929,11 +930,10 @@ export class PeriodicMaintenanceService {
       },
       data: { currentMeterReading: reading },
     });
-
     //update last service to currentReading
     await this.prisma.entity.update({
       where: { id: periodicMaintenance.entity.id },
-      data: { lastService: reading },
+      data: { lastService: reading, lastServiceUpdateAt: new Date() },
     });
   }
 
@@ -1838,7 +1838,7 @@ export class PeriodicMaintenanceService {
           const diff = Math.abs(todayStart.diff(createdAtStart, 'days'));
           const flag = diff % pm.value;
           if (flag == 0) {
-            this.createPM(pm);
+            this.createPM(pm, true);
           }
         } else if (pm.measurement === 'Week') {
           const todayStart = moment().startOf('day');
@@ -1847,7 +1847,7 @@ export class PeriodicMaintenanceService {
           //multiplying by 7 since a week has 7 days
           const flag = diff % (pm.value * 7);
           if (flag == 0) {
-            this.createPM(pm);
+            this.createPM(pm, true);
           }
         } else if (pm.measurement === 'Month') {
           const todayStart = moment().startOf('day');
@@ -1856,7 +1856,7 @@ export class PeriodicMaintenanceService {
           //multiplying by 30 since a month has 30 days
           const flag = diff % (pm.value * 30);
           if (flag == 0) {
-            this.createPM(pm);
+            this.createPM(pm, true);
           }
         }
       }
@@ -2009,29 +2009,54 @@ export class PeriodicMaintenanceService {
   }
   */
 
-  async createPM(pm: PeriodicMaintenanceWithTasks) {
+  async createPM(pm: PeriodicMaintenanceWithTasks, isDay?: boolean) {
     const todayStart = moment().startOf('day');
     const todayEnd = moment().endOf('day');
     try {
       //when pm copy is created it will use same reading.
       //so it won't make a copy when template created because it doesn't fulfill the requirements eg. hour, km
-      const copyPM = await this.prisma.periodicMaintenance.create({
-        data: {
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          name: pm.name,
-          entityId: pm.entityId,
-          originId: pm.id,
-          measurement: pm.measurement,
-          value: pm?.value,
-          currentMeterReading: null,
-          type: 'Copy',
-          recur: false,
-          status: 'Ongoing',
-        },
-      });
-
-      await this.updatePMTaskInBackground({ pm, copyPM });
+      if (isDay) {
+        const entity = await this.prisma.entity.findFirst({
+          where: { id: pm?.entityId },
+        });
+        const computedReading = await this.entityService.getLatestReading(
+          entity
+        );
+        const copyPM = await this.prisma.periodicMaintenance.create({
+          data: {
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+            name: pm.name,
+            entityId: pm.entityId,
+            originId: pm.id,
+            measurement: pm.measurement,
+            value: pm?.value,
+            currentMeterReading: computedReading,
+            type: 'Copy',
+            recur: false,
+            status: 'Completed',
+            verifiedAt: new Date(),
+          },
+        });
+        await this.updatePMTaskInBackground({ pm, copyPM, isDay: true });
+      } else {
+        const copyPM = await this.prisma.periodicMaintenance.create({
+          data: {
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+            name: pm.name,
+            entityId: pm.entityId,
+            originId: pm.id,
+            measurement: pm.measurement,
+            value: pm?.value,
+            currentMeterReading: null,
+            type: 'Copy',
+            recur: false,
+            status: 'Ongoing',
+          },
+        });
+        await this.updatePMTaskInBackground({ pm, copyPM });
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -2139,36 +2164,80 @@ export class PeriodicMaintenanceService {
     }
   }
 
-  async createInnerTasks({ pm, copyPM }: UpdatePMTaskInterface) {
+  async createInnerTasks({ pm, copyPM, isDay }: UpdatePMTaskInterface) {
     let level1;
     let level2;
-    for (let index = 0; index < pm.tasks.length; index++) {
-      level1 = await this.prisma.periodicMaintenanceTask.create({
-        data: {
-          periodicMaintenanceId: copyPM.id,
-          name: pm.tasks[index].name,
-        },
-      });
-      for (let index2 = 0; index2 < pm.tasks[index].subTasks.length; index2++) {
-        level2 = await this.prisma.periodicMaintenanceTask.create({
+    if (isDay) {
+      for (let index = 0; index < pm.tasks.length; index++) {
+        level1 = await this.prisma.periodicMaintenanceTask.create({
           data: {
             periodicMaintenanceId: copyPM.id,
-            parentTaskId: level1.id,
-            name: pm.tasks[index].subTasks[index2].name,
+            name: pm.tasks[index].name,
+            completedAt: new Date(),
           },
         });
         for (
-          let index3 = 0;
-          index3 < pm.tasks[index].subTasks[index2].subTasks.length;
-          index3++
+          let index2 = 0;
+          index2 < pm.tasks[index].subTasks.length;
+          index2++
         ) {
-          await this.prisma.periodicMaintenanceTask.create({
+          level2 = await this.prisma.periodicMaintenanceTask.create({
             data: {
               periodicMaintenanceId: copyPM.id,
-              parentTaskId: level2.id,
-              name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+              parentTaskId: level1.id,
+              name: pm.tasks[index].subTasks[index2].name,
+              completedAt: new Date(),
             },
           });
+          for (
+            let index3 = 0;
+            index3 < pm.tasks[index].subTasks[index2].subTasks.length;
+            index3++
+          ) {
+            await this.prisma.periodicMaintenanceTask.create({
+              data: {
+                periodicMaintenanceId: copyPM.id,
+                parentTaskId: level2.id,
+                name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+                completedAt: new Date(),
+              },
+            });
+          }
+        }
+      }
+    } else {
+      for (let index = 0; index < pm.tasks.length; index++) {
+        level1 = await this.prisma.periodicMaintenanceTask.create({
+          data: {
+            periodicMaintenanceId: copyPM.id,
+            name: pm.tasks[index].name,
+          },
+        });
+        for (
+          let index2 = 0;
+          index2 < pm.tasks[index].subTasks.length;
+          index2++
+        ) {
+          level2 = await this.prisma.periodicMaintenanceTask.create({
+            data: {
+              periodicMaintenanceId: copyPM.id,
+              parentTaskId: level1.id,
+              name: pm.tasks[index].subTasks[index2].name,
+            },
+          });
+          for (
+            let index3 = 0;
+            index3 < pm.tasks[index].subTasks[index2].subTasks.length;
+            index3++
+          ) {
+            await this.prisma.periodicMaintenanceTask.create({
+              data: {
+                periodicMaintenanceId: copyPM.id,
+                parentTaskId: level2.id,
+                name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+              },
+            });
+          }
         }
       }
     }

@@ -232,6 +232,7 @@ Table Entity {
   registryNumber String
   transit Boolean [default: false]
   brandId Int
+  lastServiceUpdateAt DateTime
   breakdowns Breakdown [not null]
   checklists Checklist [not null]
   brand Brand

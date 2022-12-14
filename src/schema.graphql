@@ -483,6 +483,7 @@ type Entity {
   id: Int!
   interService: Int
   lastService: Int
+  lastServiceUpdateAt: Date
   location: Location
   machineNumber: String
   measurement: String

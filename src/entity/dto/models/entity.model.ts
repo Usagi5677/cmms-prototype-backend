@@ -39,6 +39,7 @@ export class Entity extends BaseModel {
   dimension?: typeof GraphQLFloat;
   registryNumber?: string;
   transit?: boolean;
+  lastServiceUpdateAt?: Date;
   hullType?: HullType;
   statusChangedAt?: Date;
   assignees?: EntityAssignment[];

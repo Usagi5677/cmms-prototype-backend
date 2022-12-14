@@ -237,6 +237,7 @@ model Entity {
   registryNumber            String?
   transit                   Boolean?                    @default(false)
   brandId                   Int?
+  lastServiceUpdateAt       DateTime?
   breakdowns                Breakdown[]
   checklists                Checklist[]
   brand                     Brand?                      @relation(fields: [brandId], references: [id])
