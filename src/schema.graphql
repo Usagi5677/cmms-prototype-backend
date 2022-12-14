@@ -491,7 +491,6 @@ type Entity {
   note: String
   parentEntity: Entity
   parentEntityId: Int
-  periodicMaintenancePlans: [EntityPeriodicMaintenance!]
   periodicMaintenances: [PeriodicMaintenance!]
   registeredDate: Date
   registryNumber: String
@@ -1948,6 +1947,32 @@ type Query {
     type2Ids: [Int!]
     zoneIds: [Int!]
   ): PeriodicMaintenanceConnection!
+  periodicMaintenancesCalendar(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+    divisionIds: [Int!]
+    entityId: Int
+
+    """Paginate first"""
+    first: Int
+    from: Date
+    gteInterService: String
+
+    """Paginate last"""
+    last: Int
+    locationIds: [Int!]
+    lteInterService: String
+    measurement: [String!]
+    pmStatus: [String!]
+    search: String
+    to: Date
+    type: String
+    type2Ids: [Int!]
+    zoneIds: [Int!]
+  ): [Entity!]!
   permissions: [PermissionWithDescription!]!
   profile: Profile!
   redisGet(key: String!): String

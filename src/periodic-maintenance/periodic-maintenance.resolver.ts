@@ -10,6 +10,7 @@ import { PeriodicMaintenanceConnection } from './dto/periodic-maintenance-connec
 import { PeriodicMaintenanceConnectionArgs } from './dto/periodic-maintenance.connection.args';
 import { PeriodicMaintenanceSummary } from './dto/models/periodic-maintenance-summary.model';
 import { pmStatusCount } from './dto/models/pmStatusCount.model';
+import { Entity } from 'src/entity/dto/models/entity.model';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => PeriodicMaintenance)
@@ -325,5 +326,16 @@ export class PeriodicMaintenanceResolver {
     @Args() args: PeriodicMaintenanceConnectionArgs
   ): Promise<pmStatusCount> {
     return this.periodicMaintenanceService.getAllPMStatusCount(user, args);
+  }
+
+  @Query(() => [Entity])
+  periodicMaintenancesCalendar(
+    @UserEntity() user: User,
+    @Args() args: PeriodicMaintenanceConnectionArgs
+  ) {
+    return this.periodicMaintenanceService.periodicMaintenancesCalendar(
+      user,
+      args
+    );
   }
 }

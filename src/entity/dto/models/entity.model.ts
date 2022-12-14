@@ -44,7 +44,6 @@ export class Entity extends BaseModel {
   statusChangedAt?: Date;
   assignees?: EntityAssignment[];
   checklistItems?: ChecklistItem[];
-  periodicMaintenancePlans?: EntityPeriodicMaintenance[];
   repairs?: Repair[];
   breakdowns?: Breakdown[];
   sparePRs?: SparePr[];
