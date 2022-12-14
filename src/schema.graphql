@@ -883,7 +883,6 @@ type Mutation {
   addChecklistComment(checklistId: Int!, comment: String!): String!
   addChecklistIssue(checklistId: Int!, comment: String!, itemId: Int!): String!
   addChecklistTemplateItem(entityId: Int, id: Int!, name: String!): String!
-  addEntityPeriodicMaintenance(entityId: Int!, measurement: String!, startDate: Date!, tasks: [String!], title: String!, value: Int!): String!
   addEntityRepairRequest(additionalInfo: String, attendInfo: String, entityId: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   addPeriodicMaintenanceComment(description: String!, periodicMaintenanceId: Int!, taskId: Int, type: String!): String!
   addRepairComment(createRepairCommentInput: CreateRepairCommentInput!): String!
@@ -912,7 +911,6 @@ type Mutation {
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createDivision(input: CreateDivisionInput!): String!
   createEntity(brandId: Int, currentRunning: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, registryNumber: String, typeId: Int): String!
-  createEntityPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createHullType(createHullTypeInput: CreateHullTypeInput!): String!
   createInterServiceColor(input: CreateInterServiceColorInput!): String!
   createLocation(input: CreateLocationInput!): String!
@@ -923,15 +921,12 @@ type Mutation {
   createType(createTypeInput: CreateTypeInput!): String!
   createZone(input: CreateZoneInput!): String!
   deactivateApiKey(id: Int!): String!
-  deleteEntityPMTask(id: Int!): String!
-  deleteEntityPeriodicMaintenance(id: Int!): String!
   deleteEntityRepairRequest(id: Int!): String!
   deleteOriginPeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
   editEntity(brandId: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, registryNumber: String, typeId: Int): String!
   editEntityAttachment(description: String!, id: Int!): String!
-  editEntityPeriodicMaintenance(id: Int!, measurement: String!, startDate: Date!, title: String!, value: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editKey(input: EditApiKeyInput!): String!
   editPeriodicMaintenance(currentMeterReading: Int, id: Int!, measurement: String, name: String!, recur: Boolean, value: Int): String!
@@ -962,19 +957,16 @@ type Mutation {
   removeType(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
   removeZone(id: Int!): String!
-  setEntityPeriodicMaintenanceStatus(id: Int!, status: PeriodicMaintenanceStatus!): String!
   setEntityStatus(entityId: Int!, status: String!): String!
   setFavouriteAttachment(flag: Boolean!, id: Int!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleComplete(complete: Boolean!, id: Int!): String!
   toggleCompleteEntityRepairRequest(complete: Boolean!, id: Int!): String!
-  toggleEntityPMTask(complete: Boolean!, id: Int!): String!
   toggleEntityTransit(complete: Boolean!, id: Int!): String!
   togglePeriodicMaintenanceTask(complete: Boolean!, id: Int!): String!
   togglePermission(complete: Boolean!, permission: String!, roleId: Int!): String!
   toggleSparePRComplete(complete: Boolean!, id: Int!): String!
-  toggleVerifyEntityPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   toggleVerifyPeriodicMaintenance(id: Int!, verify: Boolean!): String!
   unassignUserFromDivision(id: Int!): String!
   unassignUserFromEntity(entityId: Int!, type: String!, userId: Int!): String!
@@ -1304,7 +1296,6 @@ type Profile {
 
 type Query {
   allEntityBreakdownCount: entityBreakdownCount!
-  allEntityPMStatusCount: maintenanceStatusCount!
   allEntityPMTaskStatusCount(
     """Paginate after opaque cursor"""
     after: String
@@ -1805,25 +1796,6 @@ type Query {
     type2Ids: [Int!]
     zoneIds: [Int!]
   ): PeriodicMaintenanceConnection!
-  getAllPeriodicMaintenanceOfEntity(
-    """Paginate after opaque cursor"""
-    after: String
-    assignedToId: Int
-
-    """Paginate before opaque cursor"""
-    before: String
-    complete: Boolean
-    entityId: Int
-
-    """Paginate first"""
-    first: Int
-
-    """Paginate last"""
-    last: Int
-    locationIds: [Int!]
-    search: String
-    zoneIds: [Int!]
-  ): PaginatedEntityPeriodicMaintenance!
   getAllRepairRequestOfEntity(
     """Paginate after opaque cursor"""
     after: String
@@ -2386,12 +2358,6 @@ type entityStatusCount {
   critical: Int
   dispose: Int
   working: Int
-}
-
-type maintenanceStatusCount {
-  done: Int
-  missed: Int
-  pending: Int
 }
 
 type pmStatusCount {

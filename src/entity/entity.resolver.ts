@@ -183,77 +183,6 @@ export class EntityResolver {
 
   // Permission checked in service
   @Mutation(() => String)
-  async addEntityPeriodicMaintenance(
-    @UserEntity() user: User,
-    @Args('entityId') entityId: number,
-    @Args('title') title: string,
-    @Args('measurement') measurement: string,
-    @Args('value') value: number,
-    @Args('startDate') startDate: Date,
-    @Args('tasks', { nullable: true, type: () => [String] })
-    tasks: string[]
-  ): Promise<String> {
-    await this.entityService.createEntityPeriodicMaintenance(
-      user,
-      entityId,
-      title,
-      measurement,
-      value,
-      startDate,
-      tasks
-    );
-    return `Added periodic maintenance.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async editEntityPeriodicMaintenance(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('title') title: string,
-    @Args('measurement') measurement: string,
-    @Args('value') value: number,
-    @Args('startDate') startDate: Date
-  ): Promise<String> {
-    await this.entityService.editEntityPeriodicMaintenance(
-      user,
-      id,
-      title,
-      measurement,
-      value,
-      startDate
-    );
-    return `Periodic maintenance updated.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async deleteEntityPeriodicMaintenance(
-    @UserEntity() user: User,
-    @Args('id') id: number
-  ): Promise<String> {
-    await this.entityService.deleteEntityPeriodicMaintenance(user, id);
-    return `Periodic maintenance deleted.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
-  async setEntityPeriodicMaintenanceStatus(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('status', { type: () => PeriodicMaintenanceStatus })
-    status: PeriodicMaintenanceStatus
-  ): Promise<String> {
-    await this.entityService.setEntityPeriodicMaintenanceStatus(
-      user,
-      id,
-      status
-    );
-    return `Periodic maintenance status updated.`;
-  }
-
-  // Permission checked in service
-  @Mutation(() => String)
   async addEntityRepairRequest(
     @UserEntity() user: User,
     @Args('entityId') entityId: number,
@@ -322,17 +251,6 @@ export class EntityResolver {
   ): Promise<String> {
     await this.entityService.deleteEntityRepairRequest(user, id);
     return `Repair request deleted.`;
-  }
-
-  @Query(() => PaginatedEntityPeriodicMaintenance)
-  async getAllPeriodicMaintenanceOfEntity(
-    @UserEntity() user: User,
-    @Args() args: EntityPeriodicMaintenanceConnectionArgs
-  ): Promise<PaginatedEntityPeriodicMaintenance> {
-    return await this.entityService.getEntityPeriodicMaintenanceWithPagination(
-      user,
-      args
-    );
   }
 
   @Query(() => PaginatedEntityRepair)
@@ -447,41 +365,6 @@ export class EntityResolver {
     @Args('to') to: Date
   ): Promise<EntityUsageHistory[]> {
     return this.entityService.getEntityUsage(user, entityId, from, to);
-  }
-
-  @Mutation(() => String)
-  async createEntityPeriodicMaintenanceTask(
-    @UserEntity() user: User,
-    @Args('periodicMaintenanceId') periodicMaintenanceId: number,
-    @Args('name') name: string,
-    @Args('parentTaskId', { nullable: true }) parentTaskId?: number
-  ): Promise<String> {
-    await this.entityService.createEntityPeriodicMaintenanceTask(
-      user,
-      periodicMaintenanceId,
-      name,
-      parentTaskId
-    );
-    return `Added task to periodic maintenance.`;
-  }
-
-  @Mutation(() => String)
-  async toggleEntityPMTask(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('complete') complete: boolean
-  ): Promise<string> {
-    await this.entityService.toggleEntityPMTask(user, id, complete);
-    return `Task updated.`;
-  }
-
-  @Mutation(() => String)
-  async deleteEntityPMTask(
-    @UserEntity() user: User,
-    @Args('id') id: number
-  ): Promise<string> {
-    await this.entityService.deleteEntityPMTask(user, id);
-    return `Task deleted.`;
   }
 
   @Query(() => PaginatedEntity)
@@ -626,20 +509,6 @@ export class EntityResolver {
     return await this.entityService.getAllEntityWithoutPagination(user, args);
   }
 
-  @Mutation(() => String)
-  async toggleVerifyEntityPeriodicMaintenance(
-    @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('verify') verify: boolean
-  ): Promise<string> {
-    await this.entityService.toggleVerifyEntityPeriodicMaintenance(
-      user,
-      id,
-      verify
-    );
-    return `Periodic maintenance verification updated.`;
-  }
-
   @Query(() => PaginatedEntityPeriodicMaintenance)
   async getAllEntityPeriodicMaintenance(
     @UserEntity() user: User,
@@ -668,11 +537,6 @@ export class EntityResolver {
     @Args() args: EntityPeriodicMaintenanceConnectionArgs
   ): Promise<PMTaskStatusCount> {
     return this.entityService.getAllEntityPMTaskStatusCount(user, args);
-  }
-
-  @Query(() => maintenanceStatusCount)
-  async allEntityPMStatusCount(): Promise<maintenanceStatusCount> {
-    return this.entityService.getAllEntityPMStatusCount();
   }
 
   @Query(() => PaginatedEntity)

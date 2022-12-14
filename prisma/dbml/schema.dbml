@@ -24,9 +24,6 @@ Table User {
   entityAssignment EntityAssignment [not null]
   entityAttachment EntityAttachment [not null]
   entityHistory EntityHistory [not null]
-  entityPeriodicMaintenances EntityPeriodicMaintenance [not null]
-  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance [not null]
-  entityPeriodicMaintenanceTasks EntityPeriodicMaintenanceTask [not null]
   entityRepairRequestApprovedBy EntityRepairRequest [not null]
   entityRepairRequestOperator EntityRepairRequest [not null]
   entityRepairRequestProjectManager EntityRepairRequest [not null]
@@ -248,7 +245,6 @@ Table Entity {
   assignees EntityAssignment [not null]
   attachments EntityAttachment [not null]
   histories EntityHistory [not null]
-  periodicMaintenancePlans EntityPeriodicMaintenance [not null]
   repairsRequests EntityRepairRequest [not null]
   periodicMaintenances PeriodicMaintenance [not null]
   repairs Repair [not null]
@@ -267,26 +263,6 @@ Table EntityAssignment {
   user User [not null]
 }
 
-Table EntityPeriodicMaintenance {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  entityId Int [not null]
-  title String [not null]
-  measurement String
-  value Int
-  startDate DateTime
-  completedById Int
-  completedAt DateTime
-  status PeriodicMaintenanceStatus [not null, default: 'Pending']
-  verifiedById Int
-  verifiedAt DateTime
-  completedBy User
-  entity Entity [not null]
-  verifiedBy User
-  entityPeriodicMaintenanceTask EntityPeriodicMaintenanceTask [not null]
-}
-
 Table EntityAttachment {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
@@ -303,19 +279,6 @@ Table EntityAttachment {
   checklist Checklist
   entity Entity [not null]
   user User [not null]
-}
-
-Table EntityPeriodicMaintenanceTask {
-  id Int [pk, increment]
-  periodicMaintenanceId Int [not null]
-  parentTaskId Int
-  name String [not null]
-  completedById Int
-  completedAt DateTime
-  completedBy User
-  parentTask EntityPeriodicMaintenanceTask
-  subTasks EntityPeriodicMaintenanceTask [not null]
-  periodicMaintenance EntityPeriodicMaintenance [not null]
 }
 
 Table EntityHistory {
@@ -710,23 +673,11 @@ Ref: EntityAssignment.entityId > Entity.id
 
 Ref: EntityAssignment.userId > User.id
 
-Ref: EntityPeriodicMaintenance.completedById > User.id
-
-Ref: EntityPeriodicMaintenance.entityId > Entity.id
-
-Ref: EntityPeriodicMaintenance.verifiedById > User.id
-
 Ref: EntityAttachment.checklistId > Checklist.id
 
 Ref: EntityAttachment.entityId > Entity.id
 
 Ref: EntityAttachment.userId > User.id
-
-Ref: EntityPeriodicMaintenanceTask.completedById > User.id
-
-Ref: EntityPeriodicMaintenanceTask.parentTaskId - EntityPeriodicMaintenanceTask.id
-
-Ref: EntityPeriodicMaintenanceTask.periodicMaintenanceId > EntityPeriodicMaintenance.id
 
 Ref: EntityHistory.completedById > User.id
 

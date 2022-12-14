@@ -33,9 +33,6 @@ model User {
   entityAssignment                     EntityAssignment[]
   entityAttachment                     EntityAttachment[]
   entityHistory                        EntityHistory[]
-  entityPeriodicMaintenances           EntityPeriodicMaintenance[]
-  entityPeriodicMaintenanceCompletions EntityPeriodicMaintenance[]     @relation("entityVerifiedBy")
-  entityPeriodicMaintenanceTasks       EntityPeriodicMaintenanceTask[]
   entityRepairRequestApprovedBy        EntityRepairRequest[]           @relation("approvedBy")
   entityRepairRequestOperator          EntityRepairRequest[]           @relation("operator")
   entityRepairRequestProjectManager    EntityRepairRequest[]           @relation("projectManager")
@@ -253,7 +250,6 @@ model Entity {
   assignees                 EntityAssignment[]
   attachments               EntityAttachment[]
   histories                 EntityHistory[]
-  periodicMaintenancePlans  EntityPeriodicMaintenance[]
   repairsRequests           EntityRepairRequest[]
   periodicMaintenances      PeriodicMaintenance[]
   repairs                   Repair[]
@@ -272,25 +268,7 @@ model EntityAssignment {
   user      User      @relation(fields: [userId], references: [id])
 }
 
-model EntityPeriodicMaintenance {
-  id                            Int                             @id @default(autoincrement())
-  createdAt                     DateTime                        @default(now())
-  updatedAt                     DateTime                        @updatedAt
-  entityId                      Int
-  title                         String
-  measurement                   String?
-  value                         Int?
-  startDate                     DateTime?
-  completedById                 Int?
-  completedAt                   DateTime?
-  status                        PeriodicMaintenanceStatus       @default(Pending)
-  verifiedById                  Int?
-  verifiedAt                    DateTime?
-  completedBy                   User?                           @relation(fields: [completedById], references: [id])
-  entity                        Entity                          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  verifiedBy                    User?                           @relation("entityVerifiedBy", fields: [verifiedById], references: [id])
-  entityPeriodicMaintenanceTask EntityPeriodicMaintenanceTask[]
-}
+
 
 model EntityAttachment {
   id                 Int        @id @default(autoincrement())
@@ -310,18 +288,6 @@ model EntityAttachment {
   user               User       @relation(fields: [userId], references: [id])
 }
 
-model EntityPeriodicMaintenanceTask {
-  id                    Int                             @id @default(autoincrement())
-  periodicMaintenanceId Int
-  parentTaskId          Int?
-  name                  String
-  completedById         Int?
-  completedAt           DateTime?
-  completedBy           User?                           @relation(fields: [completedById], references: [id])
-  parentTask            EntityPeriodicMaintenanceTask?  @relation("entityTaskLink", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subTasks              EntityPeriodicMaintenanceTask[] @relation("entityTaskLink")
-  periodicMaintenance   EntityPeriodicMaintenance       @relation(fields: [periodicMaintenanceId], references: [id], onDelete: Cascade)
-}
 
 model EntityHistory {
   id            Int       @id @default(autoincrement())
