@@ -624,6 +624,7 @@ export class ChecklistService {
       select: {
         id: true,
         location: true,
+        measurement: true,
       },
     });
     const skipFridayEntities = entities.filter((e) => {
@@ -633,6 +634,10 @@ export class ChecklistService {
     });
 
     const skipFridayIds = skipFridayEntities.map((m) => m.id);
+
+    // Find ids of entities whose measurement is in days
+    const dayUnitEntities = entities.filter((e) => e.measurement === 'days');
+    const dayUnitEntityIds = new Set(dayUnitEntities.map((e) => e.id));
 
     const entityIds = entities.map((m) => m.id);
 
@@ -666,21 +671,26 @@ export class ChecklistService {
           entityId,
           type: 'Daily',
         });
-      await this.prisma.checklist.create({
-        data: {
-          type: 'Daily',
-          entityId,
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          items: {
-            createMany: {
-              data: dailyTemplate.items.map((item) => ({
-                description: item.name,
-              })),
-            },
+      let data: any = {
+        type: 'Daily',
+        entityId,
+        from: todayStart.toDate(),
+        to: todayEnd.toDate(),
+        items: {
+          createMany: {
+            data: dailyTemplate.items.map((item) => ({
+              description: item.name,
+            })),
           },
         },
-      });
+      };
+      // If entity's measurement is in days, automatically update daily reading
+      // with a value of 1
+      if (dayUnitEntityIds.has(entityId)) {
+        console.log(entityId);
+        data.workingHour = 1;
+      }
+      await this.prisma.checklist.create({ data });
     }
 
     // Weekly
