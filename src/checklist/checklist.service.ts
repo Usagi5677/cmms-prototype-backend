@@ -687,7 +687,6 @@ export class ChecklistService {
       // If entity's measurement is in days, automatically update daily reading
       // with a value of 1
       if (dayUnitEntityIds.has(entityId)) {
-        console.log(entityId);
         data.workingHour = 1;
       }
       await this.prisma.checklist.create({ data });
