@@ -108,7 +108,7 @@ export class AttachmentService {
   async getFile(filePath: string) {
     const token = await this.getSharePointAccessToken();
     const [path, fileName] = this.getFileNameAndPath(filePath);
-    const url = `${this.siteUrl}/_api/web/getFolderByServerRelativeUrl('${this.serverRelativeUrlToFolder}${path}')/Files('${fileName}')/$value`;
+    const url = `${this.siteUrl}/_api/web/GetFileByServerRelativeUrl('/sites/${process.env.SP_SITE_NAME}/${this.serverRelativeUrlToFolder}${path}/${fileName}')/$value`;
     try {
       http;
       return await lastValueFrom(
