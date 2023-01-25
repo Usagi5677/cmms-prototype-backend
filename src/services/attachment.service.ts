@@ -120,6 +120,7 @@ export class AttachmentService {
         })
       );
     } catch (e) {
+      this.logger.error(`Sharepoint: ${e}`);
       throw new NotFoundException('File not found');
     }
   }
