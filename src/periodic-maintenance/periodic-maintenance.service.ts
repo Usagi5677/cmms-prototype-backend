@@ -28,6 +28,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Entity } from 'src/entity/dto/models/entity.model';
+import { PaginatedEntity } from 'src/entity/dto/paginations/entity-connection.model';
 
 export interface UpdatePMTaskInterface {
   pm: PeriodicMaintenanceWithTasks;
@@ -2255,7 +2256,7 @@ export class PeriodicMaintenanceService {
   async getAllPMWithPagination(
     user: User,
     args: PeriodicMaintenanceConnectionArgs
-  ): Promise<PeriodicMaintenanceConnection> {
+  ): Promise<PaginatedEntity> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
     const {
@@ -2424,56 +2425,76 @@ export class PeriodicMaintenanceService {
       }
     }
     const newPeriodicMaintenanceIds = newPeriodicMaintenances.map((p) => p.id);
-    const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
-      {
-        skip: offset,
-        take: limitPlusOne,
-        where: {
-          id: { in: newPeriodicMaintenanceIds },
+    const entities = await this.prisma.entity.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where: {
+        periodicMaintenances: {
+          some: {
+            id: { in: newPeriodicMaintenanceIds },
+          },
         },
-        include: {
-          entity: {
-            include: {
-              type: {
-                include: {
-                  interServiceColor: {
-                    where: { removedAt: null },
-                    include: { brand: true, type: true },
-                  },
-                },
-              },
-              location: { include: { zone: true } },
-              division: true,
-              assignees: {
-                include: {
-                  user: true,
-                },
-                where: {
-                  removedAt: null,
-                },
-              },
-              brand: true,
+      },
+      include: {
+        periodicMaintenances: {
+          include: { verifiedBy: true },
+          where,
+        },
+        type: {
+          include: {
+            interServiceColor: {
+              where: { removedAt: null },
+              include: { brand: true, type: true },
             },
           },
-          verifiedBy: true,
         },
-        orderBy: [{ id: 'desc' }],
-      }
-    );
+        location: { include: { zone: true } },
+        division: true,
+        sparePRs: {
+          orderBy: { id: 'desc' },
+          where: { completedAt: null },
+          include: { sparePRDetails: true },
+        },
+        breakdowns: {
+          orderBy: { id: 'desc' },
+          where: { completedAt: null },
+          include: {
+            createdBy: true,
+            details: { include: { repairs: true } },
+            repairs: { include: { breakdownDetail: true } },
+          },
+        },
+        assignees: {
+          include: {
+            user: true,
+          },
+          where: {
+            removedAt: null,
+          },
+        },
+        brand: true,
+      },
+
+      orderBy: [{ id: 'desc' }],
+    });
     //apply calculated reading
-    for (const pm of periodicMaintenances) {
-      const reading = await this.entityService.getLatestReading(pm?.entity);
+    for (const e of entities) {
+      const reading = await this.entityService.getLatestReading(e);
       if (reading !== null) {
-        pm.entity.currentRunning = reading;
+        e.currentRunning = reading;
       }
     }
-    const count = await this.prisma.periodicMaintenance.count({
+    const count = await this.prisma.entity.count({
       where: {
-        id: { in: newPeriodicMaintenanceIds },
+        periodicMaintenances: {
+          some: {
+            id: { in: newPeriodicMaintenanceIds },
+          },
+        },
       },
     });
     const { edges, pageInfo } = connectionFromArraySlice(
-      periodicMaintenances.slice(0, limit),
+      entities.slice(0, limit),
       args,
       {
         arrayLength: count,
@@ -2664,32 +2685,42 @@ export class PeriodicMaintenanceService {
       }
     }
     const newPeriodicMaintenanceIds = newPeriodicMaintenances.map((p) => p.id);
-    const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
-      {
-        skip: offset,
-        take: limitPlusOne,
-        where: {
-          id: { in: newPeriodicMaintenanceIds },
+    const entities = await this.prisma.entity.findMany({
+      skip: offset,
+      take: limitPlusOne,
+      where: {
+        periodicMaintenances: {
+          some: {
+            id: { in: newPeriodicMaintenanceIds },
+          },
         },
-        orderBy: [{ id: 'desc' }],
-      }
-    );
-
+      },
+      include: {
+        periodicMaintenances: {
+          include: { verifiedBy: true },
+          where,
+        },
+      },
+      orderBy: [{ id: 'desc' }],
+    });
     let completed = 0;
     let ongoing = 0;
     let upcoming = 0;
     let overdue = 0;
-    periodicMaintenances.filter((e) => {
-      if (e.status === 'Completed') {
-        completed += 1;
-      } else if (e.status === 'Ongoing') {
-        ongoing += 1;
-      } else if (e.status === 'Upcoming') {
-        upcoming += 1;
-      } else if (e.status === 'Overdue') {
-        overdue += 1;
-      }
+    entities.map((e) => {
+      e?.periodicMaintenances?.filter((e) => {
+        if (e.status === 'Completed') {
+          completed += 1;
+        } else if (e.status === 'Ongoing') {
+          ongoing += 1;
+        } else if (e.status === 'Upcoming') {
+          upcoming += 1;
+        } else if (e.status === 'Overdue') {
+          overdue += 1;
+        }
+      });
     });
+
     const statusCount = {
       completed,
       ongoing,

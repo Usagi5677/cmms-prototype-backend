@@ -1794,7 +1794,7 @@ type Query {
     type: String
     type2Ids: [Int!]
     zoneIds: [Int!]
-  ): PeriodicMaintenanceConnection!
+  ): PaginatedEntity!
   getAllRepairRequestOfEntity(
     """Paginate after opaque cursor"""
     after: String

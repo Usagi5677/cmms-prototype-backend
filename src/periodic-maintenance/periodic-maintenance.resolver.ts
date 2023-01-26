@@ -11,6 +11,7 @@ import { PeriodicMaintenanceConnectionArgs } from './dto/periodic-maintenance.co
 import { PeriodicMaintenanceSummary } from './dto/models/periodic-maintenance-summary.model';
 import { pmStatusCount } from './dto/models/pmStatusCount.model';
 import { Entity } from 'src/entity/dto/models/entity.model';
+import { PaginatedEntity } from 'src/entity/dto/paginations/entity-connection.model';
 
 @UseGuards(GqlAuthGuard)
 @Resolver(() => PeriodicMaintenance)
@@ -309,7 +310,7 @@ export class PeriodicMaintenanceResolver {
     return await this.periodicMaintenanceService.checkCopyPMExist(id);
   }
 
-  @Query(() => PeriodicMaintenanceConnection)
+  @Query(() => PaginatedEntity)
   async getAllPMWithPagination(
     @UserEntity() user: User,
     @Args() args: PeriodicMaintenanceConnectionArgs
