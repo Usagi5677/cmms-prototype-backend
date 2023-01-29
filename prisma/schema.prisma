@@ -410,6 +410,7 @@ model PeriodicMaintenance {
   status                    String?
   removedById               Int?
   removedAt                 DateTime?
+  dueAt                     Int?
   entity                    Entity?                      @relation(fields: [entityId], references: [id], onDelete: Cascade)
   originPeriodicMaintenance PeriodicMaintenance?         @relation("originPM", fields: [originId], references: [id], onDelete: Cascade)
   periodicMaintenance       PeriodicMaintenance[]        @relation("originPM")

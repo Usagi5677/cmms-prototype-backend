@@ -1132,6 +1132,7 @@ type PeriodicMaintenance {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
+  dueAt: Int
   entity: Entity
   entityId: Int
   from: Date
@@ -1217,6 +1218,7 @@ type PeriodicMaintenanceSummary {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
   currentMeterReading: Int
+  dueAt: Int
   entity: Entity
   entityId: Int
   from: Date

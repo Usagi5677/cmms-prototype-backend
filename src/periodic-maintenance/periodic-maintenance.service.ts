@@ -746,6 +746,7 @@ export class PeriodicMaintenanceService {
           type: 'Template',
           recur: pm.recur,
           status: 'Upcoming',
+          dueAt: reading + pm.value,
         },
       });
 
@@ -843,6 +844,7 @@ export class PeriodicMaintenanceService {
             type: 'Template',
             recur: pm.recur,
             status: 'Upcoming',
+            dueAt: reading + pm.value,
           },
         });
         await this.updatePMTaskInBackground({ pm: pm, copyPM: newPM });
@@ -2015,15 +2017,13 @@ export class PeriodicMaintenanceService {
     const todayStart = moment().startOf('day');
     const todayEnd = moment().endOf('day');
     try {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: pm?.entityId },
+      });
+      const computedReading = await this.entityService.getLatestReading(entity);
       //when pm copy is created it will use same reading.
       //so it won't make a copy when template created because it doesn't fulfill the requirements eg. hour, km
       if (isDay) {
-        const entity = await this.prisma.entity.findFirst({
-          where: { id: pm?.entityId },
-        });
-        const computedReading = await this.entityService.getLatestReading(
-          entity
-        );
         const copyPM = await this.prisma.periodicMaintenance.create({
           data: {
             from: todayStart.toDate(),
@@ -2038,7 +2038,13 @@ export class PeriodicMaintenanceService {
             recur: false,
             status: 'Completed',
             verifiedAt: new Date(),
+            dueAt: pm?.value + (pm?.dueAt ?? 0),
           },
+        });
+        //update the dueAt value in template pm
+        await this.prisma.periodicMaintenance.update({
+          where: { id: pm.id },
+          data: { dueAt: computedReading + pm.value },
         });
         await this.updatePMTaskInBackground({ pm, copyPM, isDay: true });
       } else {
@@ -2055,7 +2061,13 @@ export class PeriodicMaintenanceService {
             type: 'Copy',
             recur: false,
             status: 'Ongoing',
+            dueAt: pm?.value + (pm?.dueAt ?? 0),
           },
+        });
+        //update the dueAt value in template pm
+        await this.prisma.periodicMaintenance.update({
+          where: { id: pm.id },
+          data: { dueAt: computedReading + pm.value },
         });
         await this.updatePMTaskInBackground({ pm, copyPM });
       }
@@ -2104,6 +2116,7 @@ export class PeriodicMaintenanceService {
           type: 'Copy',
           recur: false,
           status: 'Ongoing',
+          dueAt: pm?.dueAt,
         },
       });
       let level1;

@@ -402,6 +402,7 @@ Table PeriodicMaintenance {
   status String
   removedById Int
   removedAt DateTime
+  dueAt Int
   entity Entity
   originPeriodicMaintenance PeriodicMaintenance
   periodicMaintenance PeriodicMaintenance [not null]

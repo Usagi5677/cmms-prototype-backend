@@ -25,4 +25,5 @@ export class PeriodicMaintenance extends BaseModel {
   entity?: Entity;
   comments?: PeriodicMaintenanceComment[];
   notificationReminder?: PeriodicMaintenanceNotification[];
+  dueAt?: number;
 }
