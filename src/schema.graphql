@@ -1851,6 +1851,7 @@ type Query {
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
   getSingleEntity(entityId: Int!): Entity!
+  getUserTypeCount: userTypeCount!
   getUsersWithPermission(permissions: [String!]!, search: String): [User!]!
   hullType(id: Int!): HullType!
   hullTypes(
@@ -2384,6 +2385,18 @@ type entityStatusCount {
   breakdown: Int
   critical: Int
   dispose: Int
+  machineBreakdown: Int
+  machineCritical: Int
+  machineDispose: Int
+  machineWorking: Int
+  vehicleBreakdown: Int
+  vehicleCritical: Int
+  vehicleDispose: Int
+  vehicleWorking: Int
+  vesselBreakdown: Int
+  vesselCritical: Int
+  vesselDispose: Int
+  vesselWorking: Int
   working: Int
 }
 
@@ -2392,4 +2405,12 @@ type pmStatusCount {
   ongoing: Int
   overdue: Int
   upcoming: Int
+}
+
+type userTypeCount {
+  admin: Int
+  engineer: Int
+  technician: Int
+  total: Int
+  user: Int
 }

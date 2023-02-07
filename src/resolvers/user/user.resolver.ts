@@ -14,6 +14,7 @@ import { Permissions } from 'src/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/guards/permissions.guard';
 import { RedisCacheService } from 'src/redisCache.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { userTypeCount } from 'src/entity/dto/models/userTypeCount.model';
 
 @Resolver(() => User)
 @UseGuards(GqlAuthGuard, PermissionsGuard)
@@ -197,5 +198,9 @@ export class UserResolver {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
+  }
+  @Query(() => userTypeCount)
+  async getUserTypeCount(): Promise<userTypeCount> {
+    return this.userService.getUserTypeCount();
   }
 }

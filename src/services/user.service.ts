@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
 } from '@nestjs/common';
 
 import { RedisCacheService } from 'src/redisCache.service';
@@ -15,6 +16,7 @@ import { UsersConnectionArgs } from 'src/models/args/user-connection.args';
 import { PaginatedUsers } from 'src/models/pagination/user-connection.model';
 import { User } from 'src/models/user.model';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { userTypeCount } from 'src/entity/dto/models/userTypeCount.model';
 @Injectable()
 export class UserService {
   constructor(
@@ -199,5 +201,49 @@ export class UserService {
         hasPreviousPage: offset >= limit,
       },
     };
+  }
+
+  async getUserTypeCount(): Promise<userTypeCount> {
+    try {
+      const key = `userTypeCount`;
+      let userTypeCount = await this.redisCacheService.get(key);
+      if (!userTypeCount) {
+        const entities = await this.prisma.entity.findMany({
+          where: { deletedAt: null },
+          select: { assignees: true },
+        });
+        let admin = 0;
+        let engineer = 0;
+        let technician = 0;
+        let user = 0;
+        entities.map((e) => {
+          e?.assignees?.map((u) => {
+            if (u.type === 'Admin') {
+              admin += 1;
+            } else if (u.type === 'Engineer') {
+              engineer += 1;
+            } else if (u.type === 'Technician') {
+              technician += 1;
+            } else if (u.type === 'User') {
+              user += 1;
+            }
+          });
+        });
+        const total = await this.prisma.user.count();
+        userTypeCount = {
+          admin,
+          engineer,
+          technician,
+          user,
+          total,
+        };
+        await this.redisCacheService.setForHour(key, userTypeCount);
+        return userTypeCount;
+      }
+      return userTypeCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

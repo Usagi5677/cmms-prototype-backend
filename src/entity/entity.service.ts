@@ -3163,19 +3163,89 @@ export class EntityService {
         });
       }
       //use cache later
-      const key = `allEntityStatusCount`;
+      const key = `allEntityStatusCount_${createdById}_${search}_${assignedToId}_${entityType}_${status}_${locationIds}_${divisionIds}_${isAssigned}_${typeIds}_${zoneIds}_${brandIds}_${engine}_${measurement}_${lteInterService}_${gteInterService}_${isIncompleteChecklistTask}_${entityIds}`;
       let statusCount = await this.redisCacheService.get(key);
 
-      const entities = await this.prisma.entity.findMany({
-        where,
-      });
-
-      statusCount = {
-        working: entities.filter((e) => e.status === 'Working').length ?? 0,
-        critical: entities.filter((e) => e.status === 'Critical').length ?? 0,
-        breakdown: entities.filter((e) => e.status === 'Breakdown').length ?? 0,
-        dispose: entities.filter((e) => e.status === 'Dispose').length ?? 0,
-      };
+      if (!statusCount) {
+        const entities = await this.prisma.entity.findMany({
+          where,
+          include: { type: true },
+        });
+        let working = 0;
+        let critical = 0;
+        let breakdown = 0;
+        let dispose = 0;
+        let machineWorking = 0;
+        let machineCritical = 0;
+        let machineBreakdown = 0;
+        let machineDispose = 0;
+        let vehicleWorking = 0;
+        let vehicleCritical = 0;
+        let vehicleBreakdown = 0;
+        let vehicleDispose = 0;
+        let vesselWorking = 0;
+        let vesselCritical = 0;
+        let vesselBreakdown = 0;
+        let vesselDispose = 0;
+        entities.map((e) => {
+          if (e?.status === 'Working') {
+            working += 1;
+            if (e?.type?.entityType === 'Machine') {
+              machineWorking += 1;
+            } else if (e?.type?.entityType === 'Vehicle') {
+              vehicleWorking += 1;
+            } else if (e?.type?.entityType === 'Vessel') {
+              vesselWorking += 1;
+            }
+          } else if (e?.status === 'Critical') {
+            critical += 1;
+            if (e?.type?.entityType === 'Machine') {
+              machineCritical += 1;
+            } else if (e?.type?.entityType === 'Vehicle') {
+              vehicleCritical += 1;
+            } else if (e?.type?.entityType === 'Vessel') {
+              vesselCritical += 1;
+            }
+          } else if (e?.status === 'Breakdown') {
+            breakdown += 1;
+            if (e?.type?.entityType === 'Machine') {
+              machineBreakdown += 1;
+            } else if (e?.type?.entityType === 'Vehicle') {
+              vehicleBreakdown += 1;
+            } else if (e?.type?.entityType === 'Vessel') {
+              vesselBreakdown += 1;
+            }
+          } else if (e?.status === 'Dispose') {
+            dispose += 1;
+            if (e?.type?.entityType === 'Machine') {
+              machineDispose += 1;
+            } else if (e?.type?.entityType === 'Vehicle') {
+              vehicleDispose += 1;
+            } else if (e?.type?.entityType === 'Vessel') {
+              vesselDispose += 1;
+            }
+          }
+        });
+        statusCount = {
+          working,
+          critical,
+          breakdown,
+          dispose,
+          machineWorking,
+          machineCritical,
+          machineBreakdown,
+          machineDispose,
+          vehicleWorking,
+          vehicleCritical,
+          vehicleBreakdown,
+          vehicleDispose,
+          vesselWorking,
+          vesselCritical,
+          vesselBreakdown,
+          vesselDispose,
+        };
+        return statusCount;
+      }
       return statusCount;
     } catch (e) {
       console.log(e);

@@ -6,4 +6,16 @@ export class entityStatusCount {
   critical?: number;
   breakdown?: number;
   dispose?: number;
+  machineWorking?: number;
+  machineCritical?: number;
+  machineBreakdown?: number;
+  machineDispose?: number;
+  vehicleWorking?: number;
+  vehicleCritical?: number;
+  vehicleBreakdown?: number;
+  vehicleDispose?: number;
+  vesselWorking?: number;
+  vesselCritical?: number;
+  vesselBreakdown?: number;
+  vesselDispose?: number;
 }
