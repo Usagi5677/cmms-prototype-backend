@@ -3244,6 +3244,7 @@ export class EntityService {
           vesselBreakdown,
           vesselDispose,
         };
+        await this.redisCacheService.setForHour(key, statusCount);
         return statusCount;
       }
       return statusCount;
