@@ -2270,259 +2270,268 @@ export class PeriodicMaintenanceService {
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PaginatedEntity> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const {
-      search,
-      type2Ids,
-      measurement,
-      locationIds,
-      zoneIds,
-      divisionIds,
-      gteInterService,
-      lteInterService,
-      pmStatus,
-      from,
-      to,
-    } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const {
+        search,
+        type2Ids,
+        measurement,
+        locationIds,
+        zoneIds,
+        divisionIds,
+        gteInterService,
+        lteInterService,
+        pmStatus,
+        from,
+        to,
+      } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    const todayStart = moment(from).startOf('day');
-    const todayEnd = moment(to).endOf('day');
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      const todayStart = moment(from).startOf('day');
+      const todayEnd = moment(to).endOf('day');
 
-    where.AND.push({
-      removedAt: null,
-      entityId: { not: null },
-    });
-
-    if (search) {
-      const or: any = [
-        { entity: { model: { contains: search, mode: 'insensitive' } } },
-        {
-          entity: { machineNumber: { contains: search, mode: 'insensitive' } },
-        },
-        { name: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
       where.AND.push({
-        OR: or,
+        removedAt: null,
+        entityId: { not: null },
       });
-    }
 
-    if (type2Ids?.length > 0) {
-      where.AND.push({
-        entity: { typeId: { in: type2Ids } },
-      });
-    }
-
-    if (measurement?.length > 0) {
-      where.AND.push({
-        entity: { measurement: { in: measurement } },
-      });
-    }
-
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        entity: { locationId: { in: locationIds } },
-      });
-    }
-
-    if (zoneIds?.length > 0) {
-      where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
-    }
-
-    if (divisionIds?.length > 0) {
-      where.AND.push({
-        entity: { divisionId: { in: divisionIds } },
-      });
-    }
-
-    if (pmStatus?.length > 0) {
-      where.AND.push({
-        status: { in: pmStatus },
-      });
-    }
-
-    if (gteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        entity: {
-          interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
-        },
-      });
-    }
-
-    if (lteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        entity: {
-          interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
-        },
-      });
-    }
-
-    if (
-      gteInterService?.replace(/\D/g, '') &&
-      lteInterService?.replace(/\D/g, '')
-    ) {
-      where.AND.push({
-        entity: {
-          interService: {
-            gte: parseInt(gteInterService.replace(/\D/g, '')),
-            lte: parseInt(lteInterService.replace(/\D/g, '')),
+      if (search) {
+        const or: any = [
+          { entity: { model: { contains: search, mode: 'insensitive' } } },
+          {
+            entity: {
+              machineNumber: { contains: search, mode: 'insensitive' },
+            },
           },
-        },
-      });
-    }
+          { name: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
 
-    if (from) {
-      where.AND.push({
-        createdAt: { gte: todayStart.toDate() },
-      });
-    }
+      if (type2Ids?.length > 0) {
+        where.AND.push({
+          entity: { typeId: { in: type2Ids } },
+        });
+      }
 
-    if (to) {
-      where.AND.push({
-        createdAt: { lte: todayEnd.toDate() },
-      });
-    }
-    if (from && to) {
-      where.AND.push({
-        createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
-      });
-    }
-    const newPeriodicMaintenances = [];
-    const pm = await this.prisma.periodicMaintenance.findMany({
-      where,
-      include: {
-        entity: {
-          include: {
-            type: {
-              include: {
-                interServiceColor: {
-                  where: { removedAt: null },
-                  include: { brand: true, type: true },
+      if (measurement?.length > 0) {
+        where.AND.push({
+          entity: { measurement: { in: measurement } },
+        });
+      }
+
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          entity: { locationId: { in: locationIds } },
+        });
+      }
+
+      if (zoneIds?.length > 0) {
+        where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
+      }
+
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          entity: { divisionId: { in: divisionIds } },
+        });
+      }
+
+      if (pmStatus?.length > 0) {
+        where.AND.push({
+          status: { in: pmStatus },
+        });
+      }
+
+      if (gteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          entity: {
+            interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+          },
+        });
+      }
+
+      if (lteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          entity: {
+            interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+          },
+        });
+      }
+
+      if (
+        gteInterService?.replace(/\D/g, '') &&
+        lteInterService?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          entity: {
+            interService: {
+              gte: parseInt(gteInterService.replace(/\D/g, '')),
+              lte: parseInt(lteInterService.replace(/\D/g, '')),
+            },
+          },
+        });
+      }
+
+      if (from) {
+        where.AND.push({
+          createdAt: { gte: todayStart.toDate() },
+        });
+      }
+
+      if (to) {
+        where.AND.push({
+          createdAt: { lte: todayEnd.toDate() },
+        });
+      }
+      if (from && to) {
+        where.AND.push({
+          createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+        });
+      }
+      const newPeriodicMaintenances = [];
+      const pm = await this.prisma.periodicMaintenance.findMany({
+        where,
+        include: {
+          entity: {
+            include: {
+              type: {
+                include: {
+                  interServiceColor: {
+                    where: { removedAt: null },
+                    include: { brand: true, type: true },
+                  },
                 },
               },
+              brand: true,
             },
-            brand: true,
           },
         },
-      },
-      orderBy: [{ id: 'desc' }],
-    });
-    //get all pm that doesn't have green color in interservice
-    for (const p of pm) {
-      const interService =
-        (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
-        (p?.entity?.lastService ? p?.entity?.lastService : 0);
-      if (p.entity?.type?.interServiceColor.length > 0) {
-        for (const intColor of p.entity?.type?.interServiceColor) {
-          if (
-            intColor?.brand?.name === p?.entity?.brand?.name &&
-            intColor?.type?.name === p?.entity?.type?.name &&
-            intColor?.measurement === p?.entity?.measurement
-          ) {
+        orderBy: [{ id: 'desc' }],
+      });
+      //get all pm that doesn't have green color in interservice
+      for (const p of pm) {
+        const interService =
+          (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
+          (p?.entity?.lastService ? p?.entity?.lastService : 0);
+        if (p.entity?.type?.interServiceColor.length > 0) {
+          for (const intColor of p.entity?.type?.interServiceColor) {
             if (
-              interService >= intColor?.lessThan &&
-              interService <= intColor?.greaterThan
+              intColor?.brand?.name === p?.entity?.brand?.name &&
+              intColor?.type?.name === p?.entity?.type?.name &&
+              intColor?.measurement === p?.entity?.measurement
             ) {
-              newPeriodicMaintenances.push(p);
-            } else if (interService >= intColor?.greaterThan) {
-              newPeriodicMaintenances.push(p);
+              if (
+                interService >= intColor?.lessThan &&
+                interService <= intColor?.greaterThan
+              ) {
+                newPeriodicMaintenances.push(p);
+              } else if (interService >= intColor?.greaterThan) {
+                newPeriodicMaintenances.push(p);
+              }
             }
           }
         }
       }
-    }
-    const newPeriodicMaintenanceIds = newPeriodicMaintenances.map((p) => p.id);
-    const entities = await this.prisma.entity.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where: {
-        periodicMaintenances: {
-          some: {
-            id: { in: newPeriodicMaintenanceIds },
-          },
-        },
-      },
-      include: {
-        periodicMaintenances: {
-          include: { verifiedBy: true },
-          where,
-        },
-        type: {
-          include: {
-            interServiceColor: {
-              where: { removedAt: null },
-              include: { brand: true, type: true },
+      const newPeriodicMaintenanceIds = newPeriodicMaintenances.map(
+        (p) => p.id
+      );
+      const entities = await this.prisma.entity.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where: {
+          periodicMaintenances: {
+            some: {
+              id: { in: newPeriodicMaintenanceIds },
             },
           },
         },
-        location: { include: { zone: true } },
-        division: true,
-        sparePRs: {
-          orderBy: { id: 'desc' },
-          where: { completedAt: null },
-          include: { sparePRDetails: true },
-        },
-        breakdowns: {
-          orderBy: { id: 'desc' },
-          where: { completedAt: null },
-          include: {
-            createdBy: true,
-            details: { include: { repairs: true } },
-            repairs: { include: { breakdownDetail: true } },
+        include: {
+          periodicMaintenances: {
+            include: { verifiedBy: true },
+            where,
           },
-        },
-        assignees: {
-          include: {
-            user: true,
+          type: {
+            include: {
+              interServiceColor: {
+                where: { removedAt: null },
+                include: { brand: true, type: true },
+              },
+            },
           },
-          where: {
-            removedAt: null,
+          location: { include: { zone: true } },
+          division: true,
+          sparePRs: {
+            orderBy: { id: 'desc' },
+            where: { completedAt: null },
+            include: { sparePRDetails: true },
           },
+          breakdowns: {
+            orderBy: { id: 'desc' },
+            where: { completedAt: null },
+            include: {
+              createdBy: true,
+              details: { include: { repairs: true } },
+              repairs: { include: { breakdownDetail: true } },
+            },
+          },
+          assignees: {
+            include: {
+              user: true,
+            },
+            where: {
+              removedAt: null,
+            },
+          },
+          brand: true,
         },
-        brand: true,
-      },
 
-      orderBy: [{ id: 'desc' }],
-    });
-    //apply calculated reading
-    for (const e of entities) {
-      const reading = await this.entityService.getLatestReading(e);
-      if (reading !== null) {
-        e.currentRunning = reading;
+        orderBy: [{ id: 'desc' }],
+      });
+      //apply calculated reading
+      for (const e of entities) {
+        const reading = await this.entityService.getLatestReading(e);
+        if (reading !== null) {
+          e.currentRunning = reading;
+        }
       }
-    }
-    const count = await this.prisma.entity.count({
-      where: {
-        periodicMaintenances: {
-          some: {
-            id: { in: newPeriodicMaintenanceIds },
+      const count = await this.prisma.entity.count({
+        where: {
+          periodicMaintenances: {
+            some: {
+              id: { in: newPeriodicMaintenanceIds },
+            },
           },
         },
-      },
-    });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      entities.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        entities.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get all pm status count */
