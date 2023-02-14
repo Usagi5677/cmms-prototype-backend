@@ -898,6 +898,29 @@ export class EntityService {
         where.AND.push({
           OR: or,
         });
+      } else if (
+        assignedToId ||
+        (hasViewAllDivisionEntity && !hasViewAllVessels)
+      ) {
+        const userDivision = await this.prisma.divisionUsers.findMany({
+          where: { userId: user.id },
+        });
+        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+        const or: any = [
+          { divisionId: { in: userDivisionIds } },
+          {
+            assignees: {
+              some: {
+                userId:
+                  !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                removedAt: null,
+              },
+            },
+          },
+        ];
+        where.AND.push({
+          OR: or,
+        });
       }
     }
 
@@ -2993,6 +3016,29 @@ export class EntityService {
           (hasViewAllDivisionEntity &&
             entityType?.some((type) => type === 'Vessel') &&
             !hasViewAllVessels)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findMany({
+            where: { userId: user.id },
+          });
+          const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+          const or: any = [
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                  removedAt: null,
+                },
+              },
+            },
+          ];
+          where.AND.push({
+            OR: or,
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity && !hasViewAllVessels)
         ) {
           const userDivision = await this.prisma.divisionUsers.findMany({
             where: { userId: user.id },
