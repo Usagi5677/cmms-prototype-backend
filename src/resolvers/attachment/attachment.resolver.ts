@@ -44,10 +44,17 @@ export class AttachmentResolver {
 
   @Mutation(() => String)
   async setFavouriteAttachment(
+    @UserEntity() user: User,
     @Args('id') id: number,
-    @Args('flag') flag: boolean
+    @Args('flag') flag: boolean,
+    @Args('entityId') entityId: number
   ): Promise<string> {
-    await this.attachmentService.setFavouriteAttachment(id, flag);
+    await this.attachmentService.setFavouriteAttachment(
+      user,
+      id,
+      flag,
+      entityId
+    );
     return `Successfuly updated favourite attachment`;
   }
 }

@@ -957,7 +957,7 @@ type Mutation {
   removeUserRole(roleId: Int!, userId: Int!): String!
   removeZone(id: Int!): String!
   setEntityStatus(entityId: Int!, status: String!): String!
-  setFavouriteAttachment(flag: Boolean!, id: Int!): String!
+  setFavouriteAttachment(entityId: Int!, flag: Boolean!, id: Int!): String!
   toggleApproveEntityRepairRequest(approve: Boolean!, id: Int!): String!
   toggleChecklistItem(complete: Boolean!, id: Int!): String!
   toggleComplete(complete: Boolean!, id: Int!): String!

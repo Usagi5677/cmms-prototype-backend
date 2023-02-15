@@ -215,10 +215,23 @@ export class AttachmentService {
       where: { entityId, favourite: true },
       orderBy: { id: 'desc' },
     });
-    return entityAttachment;
+    if (entityAttachment) {
+      return entityAttachment;
+    }
+    //if there is no favourite, get the latest image
+    const latestAttachment = await this.prisma.entityAttachment.findFirst({
+      where: { entityId },
+      orderBy: { id: 'desc' },
+    });
+    return latestAttachment;
   }
 
-  async setFavouriteAttachment(id: number, flag: boolean) {
+  async setFavouriteAttachment(
+    user: User,
+    id: number,
+    flag: boolean,
+    entityId: number
+  ) {
     try {
       const attachments = await this.prisma.entityAttachment.findMany({
         where: { favourite: true },
@@ -233,6 +246,15 @@ export class AttachmentService {
       await this.prisma.entityAttachment.update({
         where: { id },
         data: flag ? { favourite: true } : { favourite: false },
+      });
+      //add to history
+      await this.entityService.createEntityHistoryInBackground({
+        type: 'Set Favourite Image',
+        description: `Main image (${id}) has been ${
+          flag ? 'actived' : 'inactivated'
+        }`,
+        entityId: entityId,
+        completedById: user.id,
       });
     } catch (e) {
       console.log(e);
