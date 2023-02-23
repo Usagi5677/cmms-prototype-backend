@@ -3596,7 +3596,6 @@ export class EntityService {
 
       if (!checklistAndPMSummary) {
         checklistAndPMSummary = '';
-        console.log('start');
         const pm = await this.prisma.periodicMaintenance.findMany({
           where: {
             NOT: [{ entityId: null }],
