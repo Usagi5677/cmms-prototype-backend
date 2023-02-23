@@ -874,6 +874,11 @@ type LocationPageInfo {
   startCursor: String
 }
 
+type MachineDetail {
+  id: Int!
+  machineNumber: String!
+}
+
 type Mutation {
   activatePM(id: Int!): String!
   addAppUser(roles: [Int!]!, userId: String!): String!
@@ -2366,14 +2371,8 @@ type entityBreakdownCount {
 }
 
 type entityChecklistAndPMSummary {
-  checklist: [String!]
-  machineChecklistComplete: Boolean
-  machineTaskComplete: Boolean
-  pm: [String!]
-  vehicleChecklistComplete: Boolean
-  vehicleTaskComplete: Boolean
-  vesselChecklistComplete: Boolean
-  vesselTaskComplete: Boolean
+  checklist: [MachineDetail!]
+  pm: [MachineDetail!]
 }
 
 type entityPMSummary {

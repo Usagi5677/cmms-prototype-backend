@@ -3596,7 +3596,78 @@ export class EntityService {
 
       if (!checklistAndPMSummary) {
         checklistAndPMSummary = '';
+        console.log('start');
+        const pm = await this.prisma.periodicMaintenance.findMany({
+          where: {
+            NOT: [{ entityId: null }],
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+          },
+          select: {
+            id: true,
+          },
+        });
 
+        const pmIds = pm.map((id) => id.id);
+
+        const periodicMaintenanceTask =
+          await this.prisma.periodicMaintenanceTask.findMany({
+            where: {
+              periodicMaintenanceId: {
+                in: pmIds,
+              },
+              completedAt: null,
+            },
+            select: {
+              periodicMaintenanceId: true,
+            },
+          });
+        const pmTaskPMIds = periodicMaintenanceTask.map(
+          (id) => id?.periodicMaintenanceId
+        );
+
+        const newPM = await this.prisma.periodicMaintenance.findMany({
+          where: {
+            id: {
+              in: pmTaskPMIds,
+            },
+          },
+          select: {
+            id: true,
+            entityId: true,
+          },
+        });
+
+        const newPMIds = newPM.map((c) => c.entityId);
+
+        const pmEntities = await this.prisma.entityAssignment.findMany({
+          where: {
+            entityId: {
+              in: newPMIds,
+            },
+            userId: user.id,
+            removedAt: null,
+          },
+          select: {
+            id: true,
+            entityId: true,
+            entity: {
+              select: {
+                machineNumber: true,
+              },
+            },
+          },
+        });
+        const incompletePMTaskEntity = [];
+        pmEntities.map((e) => {
+          incompletePMTaskEntity.push({
+            id: e?.entityId,
+            machineNumber: e?.entity?.machineNumber,
+          });
+        });
+        //const incompletePMTaskEntityIds = pmEntities.map((e) => e.entityId);
+
+        /*
         const pm = await this.prisma.periodicMaintenance.findMany({
           where: {
             from: { gte: todayStart.toDate() },
@@ -3623,6 +3694,74 @@ export class EntityService {
             },
           },
         });
+        */
+        const checklist = await this.prisma.checklist.findMany({
+          where: {
+            NOT: [{ entityId: null }],
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        const checklistIds = checklist.map((id) => id.id);
+
+        const checklistItems = await this.prisma.checklistItem.findMany({
+          where: {
+            checklistId: {
+              in: checklistIds,
+            },
+            completedAt: null,
+          },
+          select: {
+            checklistId: true,
+          },
+        });
+        const checklistItemIds = checklistItems.map((id) => id.checklistId);
+
+        const newChecklist = await this.prisma.checklist.findMany({
+          where: {
+            id: {
+              in: checklistItemIds,
+            },
+          },
+          select: {
+            id: true,
+            entityId: true,
+          },
+        });
+
+        const newChecklistEntityIds = newChecklist.map((c) => c.entityId);
+
+        const entities = await this.prisma.entityAssignment.findMany({
+          where: {
+            entityId: {
+              in: newChecklistEntityIds,
+            },
+            userId: user.id,
+            removedAt: null,
+          },
+          select: {
+            id: true,
+            entityId: true,
+            entity: {
+              select: {
+                machineNumber: true,
+              },
+            },
+          },
+        });
+        const incompleteTaskEntity = [];
+        entities.map((e) => {
+          incompleteTaskEntity.push({
+            id: e?.entityId,
+            machineNumber: e?.entity?.machineNumber,
+          });
+        });
+        //const incompleteTaskEntityIds = entities.map((e) => e.entityId);
+        /*
         const checklist = await this.prisma.checklist.findMany({
           where: {
             from: todayStart.toDate(),
@@ -3644,13 +3783,15 @@ export class EntityService {
             },
           },
         });
-
+        */
+        /*
         let machineTaskComplete = false;
         let vehicleTaskComplete = false;
         let vesselTaskComplete = false;
         let machineChecklistComplete = false;
         let vehicleChecklistComplete = false;
         let vesselChecklistComplete = false;
+       
         for (const p of pm) {
           if (p?.entity?.type?.entityType === 'Machine') {
             if (p?.tasks?.flat(2).every((task) => task?.completedAt === null)) {
@@ -3672,6 +3813,8 @@ export class EntityService {
             break;
           }
         }
+        */
+        /*
         for (const ck of checklist) {
           if (ck.entity.type.entityType === 'Machine') {
             machineChecklistComplete = true;
@@ -3687,20 +3830,12 @@ export class EntityService {
             break;
           }
         }
-
-        const pmUnique = [...new Set(pm.map((m) => m.entityId))];
-        const pmChecklistUnique = [
-          ...new Set(checklist.map((m) => m.entityId)),
-        ];
+        */
+        const pmUnique = [...new Set(incompletePMTaskEntity)];
+        const pmChecklistUnique = [...new Set(incompleteTaskEntity)];
         checklistAndPMSummary = {
           pm: pmUnique,
           checklist: pmChecklistUnique,
-          machineTaskComplete,
-          vehicleTaskComplete,
-          vesselTaskComplete,
-          machineChecklistComplete,
-          vehicleChecklistComplete,
-          vesselChecklistComplete,
         };
 
         await this.redisCacheService.setForHour(key, checklistAndPMSummary);

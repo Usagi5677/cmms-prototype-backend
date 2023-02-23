@@ -1,13 +1,13 @@
 import { ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
+class MachineDetail {
+  id: number;
+  machineNumber: string;
+}
+
+@ObjectType()
 export class entityChecklistAndPMSummary {
-  pm?: string[];
-  checklist?: string[];
-  machineTaskComplete?: boolean;
-  machineChecklistComplete?: boolean;
-  vehicleTaskComplete?: boolean;
-  vehicleChecklistComplete?: boolean;
-  vesselTaskComplete?: boolean;
-  vesselChecklistComplete?: boolean;
+  pm?: MachineDetail[];
+  checklist?: MachineDetail[];
 }
