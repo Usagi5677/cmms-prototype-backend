@@ -133,7 +133,7 @@ export class ChecklistService {
     //update interservice so that filter will work
     await this.prisma.entity.update({
       where: { id: checklist.entityId },
-      data: { interService },
+      data: { interService, currentRunningUpdateAt: new Date() },
     });
   }
 
@@ -159,7 +159,7 @@ export class ChecklistService {
     //update interservice so that filter will work
     await this.prisma.entity.update({
       where: { id: checklist.entityId },
-      data: { interService },
+      data: { interService, currentRunningUpdateAt: new Date() },
     });
   }
 
@@ -185,7 +185,7 @@ export class ChecklistService {
     //update interservice so that filter will work
     await this.prisma.entity.update({
       where: { id: checklist.entityId },
-      data: { interService },
+      data: { interService, currentRunningUpdateAt: new Date() },
     });
   }
 

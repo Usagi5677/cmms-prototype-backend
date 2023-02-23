@@ -12,49 +12,49 @@ datasource db {
 }
 
 model User {
-  id                                   Int                             @id @default(autoincrement())
-  createdAt                            DateTime                        @default(now())
-  updatedAt                            DateTime                        @updatedAt
-  userId                               String                          @unique
-  rcno                                 Int
-  fullName                             String
-  email                                String
-  keysCreated                          ApiKey[]
-  brandCreated                         Brand[]                         @relation("brandCreated")
-  breakdownCreated                     Breakdown[]
-  breakdownComments                    BreakdownComment[]
-  breakdownDetails                     BreakdownDetail[]
-  checklistComments                    ChecklistComment[]
-  checklistCompletions                 ChecklistItem[]
-  removedChecklistTemplateItem         ChecklistTemplateItem[]
-  divisionCreated                      Division[]                      @relation("divisionCreated")
-  divisionUsers                        DivisionUsers[]
-  entityCreated                        Entity[]
-  entityAssignment                     EntityAssignment[]
-  entityAttachment                     EntityAttachment[]
-  entityHistory                        EntityHistory[]
-  entityRepairRequestApprovedBy        EntityRepairRequest[]           @relation("approvedBy")
-  entityRepairRequestOperator          EntityRepairRequest[]           @relation("operator")
-  entityRepairRequestProjectManager    EntityRepairRequest[]           @relation("projectManager")
-  entityRepairRequestRepairedBy        EntityRepairRequest[]           @relation("repairedBy")
-  entityRepairRequestRequestedBy       EntityRepairRequest[]           @relation("requestedBy")
-  entityRepairRequestSupervisor        EntityRepairRequest[]           @relation("supervisor")
-  hullTypeCreated                      HullType[]                      @relation("hullTypeCreated")
-  interServiceColor                    InterServiceColor[]             @relation("interServiceColorCreated")
-  locationsCreated                     Location[]                      @relation("locationCreated")
-  locationUsers                        LocationUsers[]
-  notifications                        Notification[]
-  removedPeriodicMaintenance           PeriodicMaintenance[]
-  verifiedPeriodicMaintenance          PeriodicMaintenance[]           @relation("verifiedBy")
-  periodicMaintenanceComment           PeriodicMaintenanceComment[]
-  periodicMaintenanceTask              PeriodicMaintenanceTask[]
-  repairCreated                        Repair[]
-  repairComments                       RepairComment[]
-  roleCreated                          Role[]
-  sparePRCreated                       SparePR[]
-  SparePRDetail                        SparePRDetail[]
-  roles                                UserRole[]
-  zonesCreated                         Zone[]
+  id                                Int                          @id @default(autoincrement())
+  createdAt                         DateTime                     @default(now())
+  updatedAt                         DateTime                     @updatedAt
+  userId                            String                       @unique
+  rcno                              Int
+  fullName                          String
+  email                             String
+  keysCreated                       ApiKey[]
+  brandCreated                      Brand[]                      @relation("brandCreated")
+  breakdownCreated                  Breakdown[]
+  breakdownComments                 BreakdownComment[]
+  breakdownDetails                  BreakdownDetail[]
+  checklistComments                 ChecklistComment[]
+  checklistCompletions              ChecklistItem[]
+  removedChecklistTemplateItem      ChecklistTemplateItem[]
+  divisionCreated                   Division[]                   @relation("divisionCreated")
+  divisionUsers                     DivisionUsers[]
+  entityCreated                     Entity[]
+  entityAssignment                  EntityAssignment[]
+  entityAttachment                  EntityAttachment[]
+  entityHistory                     EntityHistory[]
+  entityRepairRequestApprovedBy     EntityRepairRequest[]        @relation("approvedBy")
+  entityRepairRequestOperator       EntityRepairRequest[]        @relation("operator")
+  entityRepairRequestProjectManager EntityRepairRequest[]        @relation("projectManager")
+  entityRepairRequestRepairedBy     EntityRepairRequest[]        @relation("repairedBy")
+  entityRepairRequestRequestedBy    EntityRepairRequest[]        @relation("requestedBy")
+  entityRepairRequestSupervisor     EntityRepairRequest[]        @relation("supervisor")
+  hullTypeCreated                   HullType[]                   @relation("hullTypeCreated")
+  interServiceColor                 InterServiceColor[]          @relation("interServiceColorCreated")
+  locationsCreated                  Location[]                   @relation("locationCreated")
+  locationUsers                     LocationUsers[]
+  notifications                     Notification[]
+  removedPeriodicMaintenance        PeriodicMaintenance[]
+  verifiedPeriodicMaintenance       PeriodicMaintenance[]        @relation("verifiedBy")
+  periodicMaintenanceComment        PeriodicMaintenanceComment[]
+  periodicMaintenanceTask           PeriodicMaintenanceTask[]
+  repairCreated                     Repair[]
+  repairComments                    RepairComment[]
+  roleCreated                       Role[]
+  sparePRCreated                    SparePR[]
+  SparePRDetail                     SparePRDetail[]
+  roles                             UserRole[]
+  zonesCreated                      Zone[]
 }
 
 model Notification {
@@ -207,9 +207,9 @@ model ChecklistComment {
 }
 
 model Entity {
-  id                        Int                         @id @default(autoincrement())
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime                    @updatedAt
+  id                        Int                   @id @default(autoincrement())
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
   createdById               Int
   machineNumber             String?
   registeredDate            DateTime?
@@ -219,12 +219,12 @@ model Entity {
   lastService               Int?
   engine                    String?
   statusChangedAt           DateTime?
-  measurement               String?                     @default("km")
+  measurement               String?               @default("km")
   deletedAt                 DateTime?
   dailyChecklistTemplateId  Int?
   weeklyChecklistTemplateId Int?
   locationId                Int?
-  status                    String?                     @default("Working")
+  status                    String?               @default("Working")
   parentEntityId            Int?
   interService              Int?
   divisionId                Int?
@@ -232,21 +232,22 @@ model Entity {
   dimension                 Float?
   hullTypeId                Int?
   registryNumber            String?
-  transit                   Boolean?                    @default(false)
+  transit                   Boolean?              @default(false)
   brandId                   Int?
   lastServiceUpdateAt       DateTime?
+  currentRunningUpdateAt    DateTime?
   breakdowns                Breakdown[]
   checklists                Checklist[]
-  brand                     Brand?                      @relation(fields: [brandId], references: [id])
-  createdBy                 User                        @relation(fields: [createdById], references: [id])
-  dailyChecklistTemplate    ChecklistTemplate?          @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id])
-  division                  Division?                   @relation(fields: [divisionId], references: [id])
-  hullType                  HullType?                   @relation(fields: [hullTypeId], references: [id])
-  location                  Location?                   @relation(fields: [locationId], references: [id])
-  parentEntity              Entity?                     @relation("entityLink", fields: [parentEntityId], references: [id], onDelete: Cascade)
-  subEntities               Entity[]                    @relation("entityLink")
-  type                      Type?                       @relation(fields: [typeId], references: [id])
-  weeklyChecklistTemplate   ChecklistTemplate?          @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id])
+  brand                     Brand?                @relation(fields: [brandId], references: [id])
+  createdBy                 User                  @relation(fields: [createdById], references: [id])
+  dailyChecklistTemplate    ChecklistTemplate?    @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id])
+  division                  Division?             @relation(fields: [divisionId], references: [id])
+  hullType                  HullType?             @relation(fields: [hullTypeId], references: [id])
+  location                  Location?             @relation(fields: [locationId], references: [id])
+  parentEntity              Entity?               @relation("entityLink", fields: [parentEntityId], references: [id], onDelete: Cascade)
+  subEntities               Entity[]              @relation("entityLink")
+  type                      Type?                 @relation(fields: [typeId], references: [id])
+  weeklyChecklistTemplate   ChecklistTemplate?    @relation("entityWeekly", fields: [weeklyChecklistTemplateId], references: [id])
   assignees                 EntityAssignment[]
   attachments               EntityAttachment[]
   histories                 EntityHistory[]
@@ -268,8 +269,6 @@ model EntityAssignment {
   user      User      @relation(fields: [userId], references: [id])
 }
 
-
-
 model EntityAttachment {
   id                 Int        @id @default(autoincrement())
   createdAt          DateTime   @default(now())
@@ -287,7 +286,6 @@ model EntityAttachment {
   entity             Entity     @relation(fields: [entityId], references: [id], onDelete: Cascade)
   user               User       @relation(fields: [userId], references: [id])
 }
-
 
 model EntityHistory {
   id            Int       @id @default(autoincrement())

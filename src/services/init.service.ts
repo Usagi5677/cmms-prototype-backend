@@ -12,7 +12,7 @@ export class InitService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     await this.checklistService.generateChecklists();
-    await this.periodicMaintenanceService.generatePeriodicMaintenances();
+    //await this.periodicMaintenanceService.generatePeriodicMaintenances();
     //await this.periodicMaintenanceService.notificationReminder();
   }
 }

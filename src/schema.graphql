@@ -474,6 +474,7 @@ type Entity {
   createdAt: Date!
   createdBy: User
   currentRunning: Int
+  currentRunningUpdateAt: Date
   deletedAt: Date
   dimension: Float
   division: Division

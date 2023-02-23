@@ -40,6 +40,7 @@ export class Entity extends BaseModel {
   registryNumber?: string;
   transit?: boolean;
   lastServiceUpdateAt?: Date;
+  currentRunningUpdateAt?: Date;
   hullType?: HullType;
   statusChangedAt?: Date;
   assignees?: EntityAssignment[];

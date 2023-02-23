@@ -230,6 +230,7 @@ Table Entity {
   transit Boolean [default: false]
   brandId Int
   lastServiceUpdateAt DateTime
+  currentRunningUpdateAt DateTime
   breakdowns Breakdown [not null]
   checklists Checklist [not null]
   brand Brand
