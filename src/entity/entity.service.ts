@@ -3589,7 +3589,7 @@ export class EntityService {
   //** to check if assigned user has checklist or tasks to be done*/
   async getAllEntityChecklistAndPMSummary(user: User) {
     try {
-      const key = `allEntityChecklistAndPMSummary`;
+      const key = `allEntityChecklistAndPMSummary_${user?.id}`;
       let checklistAndPMSummary = await this.redisCacheService.get(key);
       const todayStart = moment().startOf('day');
       const todayEnd = moment().endOf('day');
