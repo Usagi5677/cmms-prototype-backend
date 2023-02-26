@@ -3601,6 +3601,7 @@ export class EntityService {
             NOT: [{ entityId: null }],
             from: todayStart.toDate(),
             to: todayEnd.toDate(),
+            type: 'Copy',
           },
           select: {
             id: true,
