@@ -2563,7 +2563,6 @@ export class EntityService {
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
-    console.log(assignedToId);
     if (assignedToId) {
       where.AND.push({
         periodicMaintenance: {
