@@ -2563,12 +2563,12 @@ export class EntityService {
 
     // eslint-disable-next-line prefer-const
     let where: any = { AND: [] };
-
+    console.log(assignedToId);
     if (assignedToId) {
       where.AND.push({
         periodicMaintenance: {
           entity: {
-            assignees: { some: { userId: assignedToId } },
+            assignees: { some: { userId: assignedToId, removedAt: null } },
           },
         },
       });
@@ -2629,6 +2629,9 @@ export class EntityService {
               entity: {
                 include: {
                   assignees: {
+                    where: {
+                      removedAt: null,
+                    },
                     include: {
                       user: true,
                     },
@@ -2703,7 +2706,7 @@ export class EntityService {
         where.AND.push({
           periodicMaintenance: {
             entity: {
-              assignees: { some: { userId: assignedToId } },
+              assignees: { some: { userId: assignedToId, removedAt: null } },
             },
           },
         });
@@ -2730,10 +2733,18 @@ export class EntityService {
       const pmTask = await this.prisma.periodicMaintenanceTask.findMany({
         where,
       });
-
+      let ongoing = 0;
+      let completed = 0;
+      pmTask?.map((e) => {
+        if (e.completedAt !== null) {
+          completed += 1;
+        } else {
+          ongoing += 1;
+        }
+      });
       const pmTaskStatusCount = {
-        ongoing: pmTask.filter((e) => e.completedAt == null).length ?? 0,
-        complete: pmTask.filter((e) => e.completedAt !== null).length ?? 0,
+        ongoing: ongoing,
+        complete: completed,
       };
       return pmTaskStatusCount;
     } catch (e) {
