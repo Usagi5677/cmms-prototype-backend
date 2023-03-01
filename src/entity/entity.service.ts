@@ -3219,7 +3219,7 @@ export class EntityService {
         });
       }
       //use cache later
-      const key = `allEntityStatusCount_${createdById}_${search}_${assignedToId}_${entityType}_${status}_${locationIds}_${divisionIds}_${isAssigned}_${typeIds}_${zoneIds}_${brandIds}_${engine}_${measurement}_${lteInterService}_${gteInterService}_${isIncompleteChecklistTask}_${entityIds}`;
+      const key = `allEntityStatusCount_${user.id}_${createdById}_${search}_${assignedToId}_${entityType}_${status}_${locationIds}_${divisionIds}_${isAssigned}_${typeIds}_${zoneIds}_${brandIds}_${engine}_${measurement}_${lteInterService}_${gteInterService}_${isIncompleteChecklistTask}_${entityIds}`;
       let statusCount = await this.redisCacheService.get(key);
 
       if (!statusCount) {
