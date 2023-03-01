@@ -5,8 +5,9 @@ import ConnectionArgs from 'src/common/pagination/connection-args';
 export class EntityPeriodicMaintenanceConnectionArgs extends ConnectionArgs {
   search?: string;
   entityId?: number;
-  complete?: boolean;
   locationIds?: number[];
   zoneIds?: number[];
   assignedToId?: number;
+  from?: Date;
+  to?: Date;
 }

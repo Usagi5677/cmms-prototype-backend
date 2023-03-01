@@ -566,13 +566,6 @@ export class EntityResolver {
     return this.entityService.getAllEntityChecklistAndPMSummary(user);
   }
 
-  @Query(() => entityPMSummary)
-  async getAllEntityPMSummary(
-    @UserEntity() user: User
-  ): Promise<entityPMSummary> {
-    return this.entityService.getAllEntityPMSummary(user);
-  }
-
   @Mutation(() => String)
   async toggleCompleteEntityRepairRequest(
     @UserEntity() user: User,

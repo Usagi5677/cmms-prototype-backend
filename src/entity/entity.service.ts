@@ -2557,114 +2557,150 @@ export class EntityService {
     user: User,
     args: EntityPeriodicMaintenanceConnectionArgs
   ): Promise<PaginatedEntityPeriodicMaintenanceTask> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, complete, locationIds, zoneIds, assignedToId } = args;
-
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    if (assignedToId) {
-      where.AND.push({
-        periodicMaintenance: {
-          entity: {
-            assignees: { some: { userId: assignedToId, removedAt: null } },
-          },
-        },
-      });
-    }
-
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        periodicMaintenance: {
-          entity: {
-            locationId: {
-              in: locationIds,
-            },
-          },
-        },
-      });
-    }
-
-    if (zoneIds?.length > 0) {
-      where.AND.push({
-        periodicMaintenance: {
-          entity: { location: { zoneId: { in: zoneIds } } },
-        },
-      });
-    }
-
-    if (complete) {
-      where.AND.push({
-        NOT: [{ completedAt: null }],
-      });
-    }
-
-    if (search) {
-      const or: any = [
-        {
-          periodicMaintenance: {
-            entity: {
-              machineNumber: { contains: search, mode: 'insensitive' },
-            },
-          },
-        },
-      ];
-      // If search contains all numbers, search the task ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const periodicMaintenanceTask =
-      await this.prisma.periodicMaintenanceTask.findMany({
-        skip: offset,
-        take: limitPlusOne,
-        where,
-        include: {
-          periodicMaintenance: {
-            include: {
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { search, locationIds, zoneIds, assignedToId, from, to } = args;
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `myPMTask_${user?.id}_${limit}_${offset}_${search}_${locationIds}_${zoneIds}_${from}_${to}`;
+      let myPMTask = await this.redisCacheService.get(key);
+      if (!myPMTask) {
+        // eslint-disable-next-line prefer-const
+        let where: any = { AND: [] };
+        where.AND.push({
+          completedAt: null,
+        });
+        if (assignedToId) {
+          where.AND.push({
+            periodicMaintenance: {
               entity: {
-                include: {
-                  assignees: {
-                    where: {
-                      removedAt: null,
-                    },
-                    include: {
-                      user: true,
-                    },
-                  },
-                  type: true,
-                  location: { include: { zone: true } },
+                assignees: { some: { userId: assignedToId, removedAt: null } },
+              },
+            },
+          });
+        }
+        if (from && to) {
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: {
+              NOT: [{ entityId: null }],
+              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+              type: 'Copy',
+            },
+            select: {
+              id: true,
+            },
+          });
+
+          const pmIds = pm.map((id) => id?.id);
+          where.AND.push({
+            periodicMaintenanceId: {
+              in: pmIds,
+            },
+          });
+        }
+        if (locationIds?.length > 0) {
+          where.AND.push({
+            periodicMaintenance: {
+              entity: {
+                locationId: {
+                  in: locationIds,
                 },
               },
             },
-          },
-        },
-        orderBy: { id: 'desc' },
-      });
+          });
+        }
 
-    const count = await this.prisma.periodicMaintenanceTask.count({
-      where,
-    });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      periodicMaintenanceTask.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+        if (zoneIds?.length > 0) {
+          where.AND.push({
+            periodicMaintenance: {
+              entity: { location: { zoneId: { in: zoneIds } } },
+            },
+          });
+        }
+
+        if (search) {
+          const or: any = [
+            {
+              periodicMaintenance: {
+                entity: {
+                  machineNumber: { contains: search, mode: 'insensitive' },
+                },
+              },
+            },
+          ];
+          // If search contains all numbers, search the task ids as well
+          if (/^(0|[1-9]\d*)$/.test(search)) {
+            or.push({ id: parseInt(search) });
+          }
+          where.AND.push({
+            OR: or,
+          });
+        }
+        const periodicMaintenanceTask =
+          await this.prisma.periodicMaintenanceTask.findMany({
+            skip: offset,
+            take: limitPlusOne,
+            where,
+            include: {
+              periodicMaintenance: {
+                include: {
+                  entity: {
+                    include: {
+                      assignees: {
+                        where: {
+                          removedAt: null,
+                        },
+                        include: {
+                          user: true,
+                        },
+                      },
+                      type: true,
+                      location: { include: { zone: true } },
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { id: 'desc' },
+          });
+
+        const count = await this.prisma.periodicMaintenanceTask.count({
+          where,
+        });
+        const { edges, pageInfo } = connectionFromArraySlice(
+          periodicMaintenanceTask.slice(0, limit),
+          args,
+          {
+            arrayLength: count,
+            sliceStart: offset,
+          }
+        );
+        myPMTask = {
+          edges,
+          pageInfo: {
+            ...pageInfo,
+            count,
+            hasNextPage: offset + limit < count,
+            hasPreviousPage: offset >= limit,
+          },
+        };
+        await this.redisCacheService.setForHour(key, myPMTask);
+        return {
+          edges,
+          pageInfo: {
+            ...pageInfo,
+            count,
+            hasNextPage: offset + limit < count,
+            hasPreviousPage: offset >= limit,
+          },
+        };
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      return myPMTask;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get all entity pm task status count*/
@@ -2673,79 +2709,103 @@ export class EntityService {
     args: EntityPeriodicMaintenanceConnectionArgs
   ) {
     try {
-      const { search, complete, locationIds, zoneIds, assignedToId } = args;
+      const { search, locationIds, zoneIds, assignedToId, from, to } = args;
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `myPMTaskStatusCount_${user?.id}_${search}_${locationIds}_${zoneIds}_${from}_${to}`;
+      let myPMTaskStatusCount = await this.redisCacheService.get(key);
+      if (!myPMTaskStatusCount) {
+        // eslint-disable-next-line prefer-const
+        let where: any = { AND: [] };
+        where.AND.push({
+          completedAt: null,
+        });
 
-      // eslint-disable-next-line prefer-const
-      let where: any = { AND: [] };
+        if (search) {
+          const or: any = [
+            {
+              periodicMaintenance: {
+                entity: {
+                  machineNumber: { contains: search, mode: 'insensitive' },
+                },
+              },
+            },
+          ];
+          // If search contains all numbers, search the task ids as well
+          if (/^(0|[1-9]\d*)$/.test(search)) {
+            or.push({ id: parseInt(search) });
+          }
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (from && to) {
+          const pm = await this.prisma.periodicMaintenance.findMany({
+            where: {
+              NOT: [{ entityId: null }],
+              createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+              type: 'Copy',
+            },
+            select: {
+              id: true,
+            },
+          });
 
-      if (search) {
-        const or: any = [
-          {
+          const pmIds = pm.map((id) => id?.id);
+          where.AND.push({
+            periodicMaintenanceId: {
+              in: pmIds,
+            },
+          });
+        }
+        if (assignedToId) {
+          where.AND.push({
             periodicMaintenance: {
               entity: {
-                machineNumber: { contains: search, mode: 'insensitive' },
+                assignees: { some: { userId: assignedToId, removedAt: null } },
               },
             },
-          },
-        ];
-        // If search contains all numbers, search the task ids as well
-        if (/^(0|[1-9]\d*)$/.test(search)) {
-          or.push({ id: parseInt(search) });
+          });
         }
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (complete) {
-        where.AND.push({
-          completedAt: { not: null },
-        });
-      }
-      if (assignedToId) {
-        where.AND.push({
-          periodicMaintenance: {
-            entity: {
-              assignees: { some: { userId: assignedToId, removedAt: null } },
-            },
-          },
-        });
-      }
-      if (locationIds?.length > 0) {
-        where.AND.push({
-          periodicMaintenance: {
-            entity: {
-              locationId: {
-                in: locationIds,
+        if (locationIds?.length > 0) {
+          where.AND.push({
+            periodicMaintenance: {
+              entity: {
+                locationId: {
+                  in: locationIds,
+                },
               },
             },
-          },
-        });
-      }
+          });
+        }
 
-      if (zoneIds?.length > 0) {
-        where.AND.push({
-          periodicMaintenance: {
-            entity: { location: { zoneId: { in: zoneIds } } },
-          },
-        });
-      }
-      const pmTask = await this.prisma.periodicMaintenanceTask.findMany({
-        where,
-      });
-      let ongoing = 0;
-      let completed = 0;
-      pmTask?.map((e) => {
-        if (e.completedAt !== null) {
-          completed += 1;
-        } else {
-          ongoing += 1;
+        if (zoneIds?.length > 0) {
+          where.AND.push({
+            periodicMaintenance: {
+              entity: { location: { zoneId: { in: zoneIds } } },
+            },
+          });
         }
-      });
-      const pmTaskStatusCount = {
-        ongoing: ongoing,
-        complete: completed,
-      };
-      return pmTaskStatusCount;
+        const pmTask = await this.prisma.periodicMaintenanceTask.findMany({
+          where,
+        });
+        let ongoing = 0;
+        let completed = 0;
+        pmTask?.map((e) => {
+          if (e.completedAt !== null) {
+            completed += 1;
+          } else {
+            ongoing += 1;
+          }
+        });
+        myPMTaskStatusCount = {
+          ongoing: ongoing,
+          complete: completed,
+        };
+        await this.redisCacheService.setForHour(key, myPMTaskStatusCount);
+        return myPMTaskStatusCount;
+      }
+      return myPMTaskStatusCount;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -3529,67 +3589,6 @@ export class EntityService {
         };
       }
       return breakdownCount;
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
-    }
-  }
-
-  //** to check if assigned user has tasks to be done*/
-  async getAllEntityPMSummary(user: User) {
-    try {
-      const pm = await this.prisma.periodicMaintenance.findMany({
-        where: {
-          entity: {
-            assignees: { some: { userId: user.id, removedAt: null } },
-          },
-          status: { not: 'Upcoming' },
-          tasks: {
-            some: {
-              completedAt: null,
-              subTasks: {
-                some: {
-                  completedAt: null,
-                  subTasks: {
-                    some: { completedAt: null },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-      const todayStart = moment().startOf('day');
-      const todayEnd = moment().endOf('day');
-      const checklist = await this.prisma.checklist.findMany({
-        where: {
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-          entity: {
-            assignees: { some: { userId: user.id, removedAt: null } },
-          },
-          items: {
-            some: {
-              completedAt: null,
-            },
-          },
-        },
-        include: {
-          entity: {
-            include: {
-              type: true,
-            },
-          },
-        },
-      });
-      const pmUnique = [...new Set(pm.map((m) => m.id))];
-      const pmChecklistUnique = [...new Set(checklist.map((m) => m.entityId))];
-
-      const checklistAndPMSummary = {
-        pm: pmUnique,
-        checklist: pmChecklistUnique,
-      };
-      return checklistAndPMSummary;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

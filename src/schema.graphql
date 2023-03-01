@@ -1310,16 +1310,17 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    complete: Boolean
     entityId: Int
 
     """Paginate first"""
     first: Int
+    from: Date
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
     search: String
+    to: Date
     zoneIds: [Int!]
   ): PMTaskStatusCount!
   allEntityStatusCount(
@@ -1649,7 +1650,6 @@ type Query {
     zoneIds: [Int!]
   ): PaginatedEntity!
   getAllEntityChecklistAndPMSummary: entityChecklistAndPMSummary!
-  getAllEntityPMSummary: entityPMSummary!
   getAllEntityPeriodicMaintenance(
     """Paginate after opaque cursor"""
     after: String
@@ -1657,16 +1657,17 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    complete: Boolean
     entityId: Int
 
     """Paginate first"""
     first: Int
+    from: Date
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
     search: String
+    to: Date
     zoneIds: [Int!]
   ): PaginatedEntityPeriodicMaintenance!
   getAllEntityPeriodicMaintenanceTask(
@@ -1676,16 +1677,17 @@ type Query {
 
     """Paginate before opaque cursor"""
     before: String
-    complete: Boolean
     entityId: Int
 
     """Paginate first"""
     first: Int
+    from: Date
 
     """Paginate last"""
     last: Int
     locationIds: [Int!]
     search: String
+    to: Date
     zoneIds: [Int!]
   ): PaginatedEntityPeriodicMaintenanceTask!
   getAllEntityUtilization(
@@ -2374,11 +2376,6 @@ type entityBreakdownCount {
 type entityChecklistAndPMSummary {
   checklist: [MachineDetail!]
   pm: [MachineDetail!]
-}
-
-type entityPMSummary {
-  checklist: [Int!]
-  pm: [Int!]
 }
 
 type entityStatusCount {
