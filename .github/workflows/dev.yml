@@ -26,3 +26,9 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: bash /home/neon/runners/cmms/magic-cmmsapi.sh
+  newenv:
+  # for new Dev migration
+    runs-on: [self-hosted, development, devenv]
+    
+    steps:
+      - uses: actions/checkout@v2
