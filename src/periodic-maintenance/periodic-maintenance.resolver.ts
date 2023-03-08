@@ -301,7 +301,7 @@ export class PeriodicMaintenanceResolver {
     @UserEntity() user: User,
     @Args('id') id: number
   ): Promise<string> {
-    await this.periodicMaintenanceService.activatePM(id);
+    await this.periodicMaintenanceService.activatePM(user, id);
     return `Activated periodic maintenance.`;
   }
 

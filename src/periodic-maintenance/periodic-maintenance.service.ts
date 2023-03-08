@@ -1713,6 +1713,8 @@ export class PeriodicMaintenanceService {
     }
   }
   */
+
+  /*
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async generatePeriodicMaintenancesCron() {
     this.logger.verbose('Periodic Maintenance generation cron job started');
@@ -1720,7 +1722,8 @@ export class PeriodicMaintenanceService {
     // Should be run in the background by a queue instead
     await this.generatePeriodicMaintenances();
   }
-
+*/
+  /*
   async generatePeriodicMaintenances() {
     try {
       //using original periodic maintenance as template to make its copies
@@ -1869,6 +1872,9 @@ export class PeriodicMaintenanceService {
       console.log(e);
     }
   }
+  
+  
+  */
 
   /*
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -2077,7 +2083,7 @@ export class PeriodicMaintenanceService {
     }
   }
 
-  async activatePM(id: number) {
+  async activatePM(user: User, id: number) {
     try {
       const todayStart = moment().startOf('day');
       const todayEnd = moment().endOf('day');
@@ -2155,6 +2161,12 @@ export class PeriodicMaintenanceService {
           }
         }
       }
+      await this.entityService.createEntityHistoryInBackground({
+        type: 'Periodic maintenance verify',
+        description: `Periodic maintenance (${id}) has been activated.`,
+        entityId: pm?.entityId,
+        completedById: user.id,
+      });
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

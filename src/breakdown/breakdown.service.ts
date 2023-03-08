@@ -122,8 +122,9 @@ export class BreakdownService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `${type} added`,
-        description: `${user.fullName} (${user.rcno}) added ${type}.`,
+        description: `${type} added.`,
         entityId: entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -258,7 +259,7 @@ export class BreakdownService {
           type: 'Breakdown Edit',
           description: `Type changed from ${beforeBreakdown.type} to ${type}.`,
           entityId: entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (
@@ -275,7 +276,7 @@ export class BreakdownService {
             'DD MMMM YYYY'
           )}.`,
           entityId: entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       await this.prisma.breakdown.update({
@@ -332,8 +333,9 @@ export class BreakdownService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `${breakdown.type} deleted`,
-        description: `${user.fullName} (${user.rcno}) deleted ${breakdown.type} (${id}).`,
+        description: `deleted (${id}) ${breakdown.type}.`,
         entityId: breakdown.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -369,8 +371,9 @@ export class BreakdownService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `${breakdown.type} added`,
-        description: `${user.fullName} (${user.rcno}) added ${type} in ${breakdown.breakdown.type} (${breakdownId}).`,
+        description: `${type} added in (${breakdownId}) ${breakdown.breakdown.type}.`,
         entityId: breakdown.breakdown.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -396,8 +399,9 @@ export class BreakdownService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `${breakdown.type} deleted`,
-        description: `${user.fullName} (${user.rcno}) deleted ${breakdown.type} (${id}) in ${breakdown.breakdown.type}.`,
+        description: `deleted (${id}) ${breakdown.type} in ${breakdown.breakdown.type}.`,
         entityId: breakdown.breakdown.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -448,8 +452,9 @@ export class BreakdownService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `Breakdown detail added`,
-        description: `${user.fullName} (${user.rcno}) added breakdown detail in ${breakdown.breakdown.type} (${breakdownId}).`,
+        description: `added breakdown detail in (${breakdownId}) ${breakdown.breakdown.type} `,
         entityId: breakdown.breakdown.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -487,8 +492,9 @@ export class BreakdownService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `Breakdown detail deleted`,
-        description: `${user.fullName} (${user.rcno}) deleted breakdown detail (${id}) in ${breakdown.breakdown.type} (${breakdown.breakdown.id}).`,
+        description: `Breakdown detail deleted (${id}) in (${breakdown?.id}) ${breakdown?.description}.`,
         entityId: breakdown.breakdown.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -535,6 +541,7 @@ export class BreakdownService {
           ? `Breakdown (${id}) has been completed.`
           : `Breakdown (${id}) has been incompleted.`,
         entityId: breakdown.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
