@@ -540,6 +540,7 @@ export class PeriodicMaintenanceService {
           ? `Periodic maintenance (${id}) has been verified to be completed.`
           : `Periodic maintenance (${id}) has been unverified.`,
         entityId: pm.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -2165,7 +2166,7 @@ export class PeriodicMaintenanceService {
         type: 'Periodic maintenance verify',
         description: `Periodic maintenance (${id}) has been activated.`,
         entityId: pm?.entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
