@@ -2470,6 +2470,7 @@ export class PeriodicMaintenanceService {
           periodicMaintenances: {
             include: { verifiedBy: true },
             where,
+            orderBy: [{ id: 'desc' }],
           },
           type: {
             include: {
