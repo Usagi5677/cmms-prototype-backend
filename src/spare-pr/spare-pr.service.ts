@@ -261,7 +261,7 @@ export class SparePrService {
         });
       }
       await this.entityService.createEntityHistoryInBackground({
-        type: `Spare pr detail added`,
+        type: `Spare PR detail added`,
         description: `Spare PR detail added in (${sparePRId}) Spare PR.`,
         entityId: sparePRDetail.sparePR.entityId,
         completedById: user?.id,
@@ -301,7 +301,7 @@ export class SparePrService {
         });
       }
       await this.entityService.createEntityHistoryInBackground({
-        type: `Spare pr detail deleted`,
+        type: `Spare PR detail deleted`,
         description: `(${id}) Spare PR detail deleted in Spare PR (${sparePRDetail?.sparePR?.id}).`,
         entityId: sparePRDetail.sparePR.entityId,
         completedById: user?.id,
@@ -346,10 +346,10 @@ export class SparePrService {
         });
       }
       await this.entityService.createEntityHistoryInBackground({
-        type: `Spare pr ${complete ? 'completed' : 'incompleted'} `,
+        type: `Spare PR ${complete ? 'completed' : 'incompleted'} `,
         description: complete
-          ? `Spare pr (${id}) has been completed.`
-          : `Spare pr (${id}) has been incompleted.`,
+          ? `Spare PR (${id}) has been completed.`
+          : `Spare PR (${id}) has been incompleted.`,
         entityId: sparePR.entityId,
         completedById: user?.id,
       });
