@@ -57,9 +57,10 @@ export class SparePrService {
       });
     }
     await this.entityService.createEntityHistoryInBackground({
-      type: `Spare pr added`,
-      description: `${user.fullName} (${user.rcno}) added spare pr.`,
+      type: `Spare PR added`,
+      description: `Spare PR added.`,
       entityId: entityId,
+      completedById: user?.id,
     });
   }
 
@@ -147,10 +148,10 @@ export class SparePrService {
       });
       if (name && before.name != name) {
         await this.entityService.createEntityHistoryInBackground({
-          type: 'Spare pr Edit',
+          type: 'Spare PR Edit',
           description: `Name changed from ${before.name} to ${name}.`,
           entityId: before.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (
@@ -159,14 +160,14 @@ export class SparePrService {
           moment(requestedDate).format('DD MMMM YYYY HH:mm:ss')
       ) {
         await this.entityService.createEntityHistoryInBackground({
-          type: 'Spare pr Edit',
+          type: 'Spare PR Edit',
           description: `Requested date changed from ${moment(
             before.requestedDate
           ).format('DD MMMM YYYY')} to ${moment(requestedDate).format(
             'DD MMMM YYYY'
           )}.`,
           entityId: before.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       await this.prisma.sparePR.update({
@@ -208,9 +209,10 @@ export class SparePrService {
         });
       }
       await this.entityService.createEntityHistoryInBackground({
-        type: `Spare pr deleted`,
-        description: `${user.fullName} (${user.rcno}) deleted Spare pr (${id}).`,
+        type: `Spare PR deleted`,
+        description: `(${id}) Spare PR deleted.`,
         entityId: sparePR.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -260,8 +262,9 @@ export class SparePrService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `Spare pr detail added`,
-        description: `${user.fullName} (${user.rcno}) added spare pr detail in spare pr (${sparePRId}).`,
+        description: `Spare PR detail added in (${sparePRId}) Spare PR.`,
         entityId: sparePRDetail.sparePR.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -299,8 +302,9 @@ export class SparePrService {
       }
       await this.entityService.createEntityHistoryInBackground({
         type: `Spare pr detail deleted`,
-        description: `${user.fullName} (${user.rcno}) deleted spare pr detail (${id}) in spare pr (${sparePRDetail.sparePR.id}).`,
+        description: `(${id}) Spare PR detail deleted in Spare PR (${sparePRDetail?.sparePR?.id}).`,
         entityId: sparePRDetail.sparePR.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -347,6 +351,7 @@ export class SparePrService {
           ? `Spare pr (${id}) has been completed.`
           : `Spare pr (${id}) has been incompleted.`,
         entityId: sparePR.entityId,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
