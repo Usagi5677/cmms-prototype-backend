@@ -2019,7 +2019,7 @@ export class PeriodicMaintenanceService {
     this.logger.verbose('Notification Reminder Complete');
   }
   */
-
+  /*
   async createPM(pm: PeriodicMaintenanceWithTasks, isDay?: boolean) {
     const todayStart = moment().startOf('day');
     const todayEnd = moment().endOf('day');
@@ -2083,7 +2083,7 @@ export class PeriodicMaintenanceService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
-
+*/
   async activatePM(user: User, id: number) {
     try {
       const todayStart = moment().startOf('day');
