@@ -21,8 +21,6 @@ import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
-import { PeriodicMaintenanceStatus } from 'src/common/enums/periodicMaintenanceStatus';
-import { SparePRStatus } from 'src/common/enums/sparePRStatus';
 import { PaginatedEntityRepair } from './dto/paginations/entity-repair-connection.model';
 import { EntityHistoryConnectionArgs } from './dto/args/entity-history-connection.args';
 import { PaginatedEntityHistory } from './dto/paginations/entity-history-connection.model';
@@ -380,15 +378,45 @@ export class EntityService {
           data: { transit: true },
         });
         await this.createEntityHistoryInBackground({
-          type: 'Transit start',
+          type: 'Transition start',
           description: `Transition started on ${moment().format(
             'YYYY-MM-DD HH:mm:ss'
-          )}. Location to change from ${newLocation.name} to ${
+          )}. Location change from ${newLocation.name} to ${
             entity?.location?.name
           }`,
           entityId: id,
           completedById: user.id,
         });
+
+        //get all users from location
+        const locAssignments = await this.prisma.locationUsers.findMany({
+          where: {
+            locationId,
+            removedAt: null,
+          },
+          include: { location: true },
+        });
+        //remove all assigned users in entity
+        await this.prisma.entityAssignment.updateMany({
+          where: { entityId: id, removedAt: null },
+          data: { removedAt: new Date() },
+        });
+        //create new assign for entity and notify user
+        for (const loc of locAssignments) {
+          await this.prisma.entityAssignment.create({
+            data: {
+              entityId: id,
+              userId: loc?.userId,
+              type: loc?.userType,
+            },
+          });
+          if (user?.id !== loc?.userId) {
+            await this.notificationService.createInBackground({
+              userId: loc?.userId,
+              body: `Entity (${id}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
+            });
+          }
+        }
       }
       if (engine && entity?.engine != engine) {
         await this.createEntityHistoryInBackground({
@@ -1168,7 +1196,7 @@ export class EntityService {
           orderBy: { id: 'desc' },
         },
       },
-      orderBy: [{ id: 'asc' }],
+      orderBy: { updatedAt: 'desc' },
     });
     for (const entity of entities) {
       const reading = await this.getLatestReading(entity);
@@ -5154,7 +5182,7 @@ export class EntityService {
       }
       if (complete) {
         await this.createEntityHistoryInBackground({
-          type: 'Transit start',
+          type: 'Transition start',
           description: `Transition started on ${moment().format(
             'YYYY-MM-DD HH:mm:ss'
           )}`,
@@ -5163,7 +5191,7 @@ export class EntityService {
         });
       } else {
         await this.createEntityHistoryInBackground({
-          type: 'Transit finish',
+          type: 'Transition finish',
           description: `Transition finished on ${moment().format(
             'YYYY-MM-DD HH:mm:ss'
           )}`,

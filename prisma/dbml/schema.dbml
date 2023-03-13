@@ -556,6 +556,7 @@ Table LocationUsers {
   removedAt DateTime
   locationId Int [not null]
   userId Int [not null]
+  userType String [not null, default: 'User']
   location Location [not null]
   user User [not null]
 }

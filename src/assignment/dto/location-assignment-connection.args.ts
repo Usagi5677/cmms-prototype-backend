@@ -5,5 +5,6 @@ import ConnectionArgs from '../../common/pagination/connection-args';
 export class LocationAssignmentConnectionArgs extends ConnectionArgs {
   userIds: number[];
   current: boolean;
+  userTypes?: string[];
   locationIds?: number[];
 }

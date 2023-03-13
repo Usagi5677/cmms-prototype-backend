@@ -4,6 +4,8 @@ import { InputType } from '@nestjs/graphql';
 export class LocationAssignInput {
   userIds?: number[];
   entityIds?: number[];
-  locationId: number;
+  locationId?: number;
+  locationIds?: number[];
+  userType?: string;
   transit?: boolean;
 }

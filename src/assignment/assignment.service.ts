@@ -214,7 +214,7 @@ export class AssignmentService {
   ): Promise<PaginatedLocationAssignment> {
     const { limit, offset } = getPagingParameters(args);
     const limitPlusOne = limit + 1;
-    const { userIds, current, locationIds } = args;
+    const { userIds, current, locationIds, userTypes } = args;
     const where: any = { AND: [] };
     if (current) {
       where.AND.push({ removedAt: null });
@@ -224,6 +224,9 @@ export class AssignmentService {
     }
     if (locationIds?.length > 0) {
       where.AND.push({ locationId: { in: locationIds } });
+    }
+    if (userTypes?.length > 0) {
+      where.AND.push({ userType: { in: userTypes } });
     }
     const results = await this.prisma.locationUsers.findMany({
       skip: offset,

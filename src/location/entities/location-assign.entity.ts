@@ -9,5 +9,6 @@ export class LocationAssign extends BaseModel {
   locationId?: number;
   location?: Location;
   user?: User;
+  userType?: string;
   removedAt?: Date;
 }

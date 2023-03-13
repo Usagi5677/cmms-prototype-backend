@@ -840,6 +840,7 @@ type LocationAssign {
   updatedAt: Date!
   user: User
   userId: Int
+  userType: String
 }
 
 type LocationAssignEdge {
@@ -849,9 +850,11 @@ type LocationAssignEdge {
 
 input LocationAssignInput {
   entityIds: [Int!]
-  locationId: Int!
+  locationId: Int
+  locationIds: [Int!]
   transit: Boolean
   userIds: [Int!]
+  userType: String
 }
 
 type LocationAssignPageInfo {
@@ -1910,6 +1913,7 @@ type Query {
     last: Int
     locationIds: [Int!]
     userIds: [Int!]!
+    userTypes: [String!]
   ): PaginatedLocationAssignment!
   locations(
     """Paginate after opaque cursor"""
