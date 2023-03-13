@@ -143,7 +143,7 @@ export class LocationService {
               type: 'Transit finished',
               description: `Transition finished on ${moment().format(
                 'YYYY-MM-DD HH:mm:ss'
-              )}. Location to changed from ${entity?.location?.name} to ${
+              )}. Location changed from ${entity?.location?.name} to ${
                 newLocation.name
               }`,
               entityId: id,
@@ -158,8 +158,8 @@ export class LocationService {
               type: 'Transit start',
               description: `Transition started on ${moment().format(
                 'YYYY-MM-DD HH:mm:ss'
-              )}. Location to change from ${newLocation.name} to ${
-                entity?.location?.name
+              )}. Location changed from ${entity?.location?.name} to ${
+                newLocation.name
               }`,
               entityId: id,
               completedById: user.id,
