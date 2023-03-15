@@ -27,86 +27,103 @@ export class InterServiceColorService {
       lessThan,
     }: CreateInterServiceColorInput
   ) {
-    const existing = await this.prisma.interServiceColor.findFirst({
-      where: {
-        typeId,
-        brandId,
-        measurement,
-      },
-    });
-    if (existing) {
-      throw new BadRequestException('This inter service color already exists.');
+    try {
+      const existing = await this.prisma.interServiceColor.findFirst({
+        where: {
+          typeId,
+          brandId,
+          measurement,
+        },
+      });
+      if (existing) {
+        throw new BadRequestException(
+          'This inter service color already exists.'
+        );
+      }
+      await this.prisma.interServiceColor.create({
+        data: {
+          typeId,
+          brandId,
+          measurement,
+          greaterThan,
+          lessThan,
+          createdById: user.id,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.interServiceColor.create({
-      data: {
-        typeId,
-        brandId,
-        measurement,
-        greaterThan,
-        lessThan,
-        createdById: user.id,
-      },
-    });
   }
 
   async findAll(
     args: InterServiceColorConnectionArgs
   ): Promise<PaginatedInterServiceColor> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { name } = args;
-    const where: any = { AND: [{ removedAt: null }] };
-    if (name) {
-      const or: any = [
-        {
-          type: {
-            name: { contains: name, mode: 'insensitive' },
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { name } = args;
+      const where: any = { AND: [{ removedAt: null }] };
+      if (name) {
+        const or: any = [
+          {
+            type: {
+              name: { contains: name, mode: 'insensitive' },
+            },
           },
-        },
-        {
-          brand: {
-            name: { contains: name, mode: 'insensitive' },
+          {
+            brand: {
+              name: { contains: name, mode: 'insensitive' },
+            },
           },
-        },
-      ];
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const interServiceColors = await this.prisma.interServiceColor.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: { type: true, brand: true },
-    });
-    const count = await this.prisma.interServiceColor.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      interServiceColors.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+        ];
+        where.AND.push({
+          OR: or,
+        });
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const interServiceColors = await this.prisma.interServiceColor.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: { type: true, brand: true },
+      });
+      const count = await this.prisma.interServiceColor.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        interServiceColors.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(id: number) {
-    const interServiceColor = await this.prisma.interServiceColor.findFirst({
-      where: { id },
-    });
-    if (!interServiceColor) {
-      throw new BadRequestException('Invalid interService color.');
+    try {
+      const interServiceColor = await this.prisma.interServiceColor.findFirst({
+        where: { id },
+      });
+      if (!interServiceColor) {
+        throw new BadRequestException('Invalid interService color.');
+      }
+      return interServiceColor;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return interServiceColor;
   }
 
   async update({

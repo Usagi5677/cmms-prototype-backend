@@ -33,35 +33,45 @@ export class UserService {
     email: string,
     roles?: number[]
   ): Promise<User> {
-    if (!roles) roles = [];
-    return await this.prisma.user.create({
-      data: {
-        rcno,
-        userId,
-        fullName,
-        email,
-      },
-    });
+    try {
+      if (!roles) roles = [];
+      return await this.prisma.user.create({
+        data: {
+          rcno,
+          userId,
+          fullName,
+          email,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get permissions of user roles. First checks cache. If not in cache, gets from db and adds to cache */
   async getUserRolesPermissionsList(id: number): Promise<string[]> {
-    let permissions = [];
-    // let permissions = await this.redisCacheService.get(`permissions-${id}`);
-    const userRoleIds = await this.getUserRolesList(id);
-    for (const roleId of userRoleIds) {
-      const key = `permissions-${roleId}`;
-      let rolePermissions: string[] = await this.redisCacheService.get(key);
-      if (!rolePermissions) {
-        const rp = await this.prisma.permissionRole.findMany({
-          where: { roleId },
-        });
-        rolePermissions = rp.map((r) => r.permission);
-        await this.redisCacheService.setForMonth(key, rolePermissions);
+    try {
+      let permissions = [];
+      // let permissions = await this.redisCacheService.get(`permissions-${id}`);
+      const userRoleIds = await this.getUserRolesList(id);
+      for (const roleId of userRoleIds) {
+        const key = `permissions-${roleId}`;
+        let rolePermissions: string[] = await this.redisCacheService.get(key);
+        if (!rolePermissions) {
+          const rp = await this.prisma.permissionRole.findMany({
+            where: { roleId },
+          });
+          rolePermissions = rp.map((r) => r.permission);
+          await this.redisCacheService.setForMonth(key, rolePermissions);
+        }
+        permissions = [...permissions, ...rolePermissions];
       }
-      permissions = [...permissions, ...rolePermissions];
+      return permissions;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return permissions;
   }
 
   // Check if user has the input permission. If not, throw Forbidden exception.
@@ -70,60 +80,77 @@ export class UserService {
     permission: string,
     returnFalse = false
   ) {
-    const userPermissions = await this.getUserRolesPermissionsList(userId);
-    if (!userPermissions.includes(permission)) {
-      if (returnFalse) return false;
-      throw new ForbiddenException('You do not have access to this resource.');
+    try {
+      const userPermissions = await this.getUserRolesPermissionsList(userId);
+      if (!userPermissions.includes(permission)) {
+        if (returnFalse) return false;
+        throw new ForbiddenException(
+          'You do not have access to this resource.'
+        );
+      }
+      return true;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return true;
   }
 
   //** Get roles of user. First checks cache. If not in cache, gets from db and adds to cache */
   async getUserRolesList(id: number): Promise<number[]> {
-    const key = `roles-${id}`;
-    let roles = await this.redisCacheService.get(key);
-    if (!roles) {
-      const userRoles = await this.prisma.userRole.findMany({
-        where: { userId: id },
-      });
-      roles = userRoles.map((r) => r.roleId);
-      await this.redisCacheService.setForMonth(key, roles);
+    try {
+      const key = `roles-${id}`;
+      let roles = await this.redisCacheService.get(key);
+      if (!roles) {
+        const userRoles = await this.prisma.userRole.findMany({
+          where: { userId: id },
+        });
+        roles = userRoles.map((r) => r.roleId);
+        await this.redisCacheService.setForMonth(key, roles);
+      }
+      return roles;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return roles;
   }
 
   async addAppUser(userId: string, roles: number[]) {
-    const user = await this.prisma.user.findFirst({
-      where: { userId },
-      include: { roles: true },
-    });
-
-    // If user doesn't exist on the system, fetch from APS, then create user with roles.
-    if (!user) {
-      const profile = await this.apsService.getProfile(userId);
-      if (!profile) {
-        throw new BadRequestException('Invalid user.');
-      }
-      const newUser = await this.createUser(
-        profile.rcno,
-        profile.userId,
-        profile.fullName,
-        profile.email
-      );
-      await this.prisma.userRole.createMany({
-        data: roles.map((roleId) => ({ userId: newUser.id, roleId })),
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: { userId },
+        include: { roles: true },
       });
 
-      return;
-    }
+      // If user doesn't exist on the system, fetch from APS, then create user with roles.
+      if (!user) {
+        const profile = await this.apsService.getProfile(userId);
+        if (!profile) {
+          throw new BadRequestException('Invalid user.');
+        }
+        const newUser = await this.createUser(
+          profile.rcno,
+          profile.userId,
+          profile.fullName,
+          profile.email
+        );
+        await this.prisma.userRole.createMany({
+          data: roles.map((roleId) => ({ userId: newUser.id, roleId })),
+        });
 
-    // If user does exist, remove existing roles and add new roles.
-    await this.prisma.userRole.deleteMany({ where: { userId: user.id } });
-    await this.prisma.userRole.createMany({
-      data: roles.map((role) => ({ userId: user.id, roleId: role })),
-    });
-    await this.redisCacheService.del(`user-uuid-${userId}`);
-    await this.redisCacheService.del(`roles-${user.id}`);
+        return;
+      }
+
+      // If user does exist, remove existing roles and add new roles.
+      await this.prisma.userRole.deleteMany({ where: { userId: user.id } });
+      await this.prisma.userRole.createMany({
+        data: roles.map((role) => ({ userId: user.id, roleId: role })),
+      });
+      await this.redisCacheService.del(`user-uuid-${userId}`);
+      await this.redisCacheService.del(`roles-${user.id}`);
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get user. Results are paginated. User cursor argument to go forward/backward. */
@@ -131,76 +158,83 @@ export class UserService {
     user: User,
     args: UsersConnectionArgs
   ): Promise<PaginatedUsers> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, locationIds, divisionIds } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { search, locationIds, divisionIds } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    //for now these only
-    if (search) {
-      const or: any = [{ fullName: { contains: search, mode: 'insensitive' } }];
-      // If search contains all numbers, search the rcno as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ rcno: parseInt(search) });
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      //for now these only
+      if (search) {
+        const or: any = [
+          { fullName: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the rcno as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ rcno: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    if (locationIds) {
-      where.AND.push({
-        locationUsers: {
-          some: {
-            locationId: {
-              in: locationIds,
+      if (locationIds) {
+        where.AND.push({
+          locationUsers: {
+            some: {
+              locationId: {
+                in: locationIds,
+              },
+            },
+          },
+        });
+      }
+      if (divisionIds) {
+        where.AND.push({
+          divisionUsers: {
+            some: {
+              divisionId: {
+                in: divisionIds,
+              },
+            },
+          },
+        });
+      }
+      const users = await this.prisma.user.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { id: 'desc' },
+        include: {
+          roles: {
+            include: {
+              role: true,
             },
           },
         },
       });
-    }
-    if (divisionIds) {
-      where.AND.push({
-        divisionUsers: {
-          some: {
-            divisionId: {
-              in: divisionIds,
-            },
-          },
+      const count = await this.prisma.user.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        users.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
         },
-      });
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const users = await this.prisma.user.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      orderBy: { id: 'desc' },
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
-    const count = await this.prisma.user.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      users.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
   }
 
   async getUserTypeCount(): Promise<userTypeCount> {

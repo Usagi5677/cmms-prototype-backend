@@ -63,54 +63,59 @@ export class PermissionRoleService {
     user: User,
     args: PermissionRoleConnectionArgs
   ): Promise<PaginatedPermissionRole> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { createdById, search } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { createdById, search } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    if (createdById) {
-      where.AND.push({ createdById });
-    }
-    //for now these only
-    if (search) {
-      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
-      // If search contains all numbers, search ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      if (createdById) {
+        where.AND.push({ createdById });
       }
-      where.AND.push({
-        OR: or,
+      //for now these only
+      if (search) {
+        const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
+        // If search contains all numbers, search ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      const permissionRoles = await this.prisma.role.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          permissionRoles: true,
+          createdBy: true,
+          userRoles: true,
+        },
       });
+      const count = await this.prisma.role.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        permissionRoles.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const permissionRoles = await this.prisma.role.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        permissionRoles: true,
-        createdBy: true,
-        userRoles: true,
-      },
-    });
-    const count = await this.prisma.role.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      permissionRoles.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
   }
 
   //** assign permission. */

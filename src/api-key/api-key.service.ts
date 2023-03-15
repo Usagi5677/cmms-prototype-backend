@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { RedisCacheService } from 'src/redisCache.service';
 import { ApiKey } from './entities/api-key.model';
 import * as crypto from 'crypto';
@@ -37,140 +41,184 @@ export class ApiKeyService {
     user: User,
     { name, permissions, expiresAt }: CreateApiKeyInput
   ): Promise<string> {
-    if (!name) {
-      throw new BadRequestException('Key name is required.');
+    try {
+      if (!name) {
+        throw new BadRequestException('Key name is required.');
+      }
+      if (permissions.length === 0) {
+        throw new BadRequestException('At lease one permission is required.');
+      }
+      const validPermissions = permissions.every((p) =>
+        PERMISSIONS.includes(p)
+      );
+      if (!validPermissions) {
+        throw new BadRequestException('Invalid permissions.');
+      }
+      const [key, hash] = this.keyGen();
+      await this.prisma.apiKey.create({
+        data: {
+          name,
+          apiKeyStart: key.substring(0, 8),
+          hash,
+          createdById: user.id,
+          permissions: { create: permissions.map((p) => ({ permission: p })) },
+          expiresAt,
+        },
+      });
+      return key;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    if (permissions.length === 0) {
-      throw new BadRequestException('At lease one permission is required.');
-    }
-    const validPermissions = permissions.every((p) => PERMISSIONS.includes(p));
-    if (!validPermissions) {
-      throw new BadRequestException('Invalid permissions.');
-    }
-    const [key, hash] = this.keyGen();
-    await this.prisma.apiKey.create({
-      data: {
-        name,
-        apiKeyStart: key.substring(0, 8),
-        hash,
-        createdById: user.id,
-        permissions: { create: permissions.map((p) => ({ permission: p })) },
-        expiresAt,
-      },
-    });
-    return key;
   }
 
   async findAll(input: ApiKeyConnectionArgs): Promise<PaginatedApiKey> {
-    const { limit, offset } = getPagingParameters(input);
-    const limitPlusOne = limit + 1;
-    const { search } = input;
-    const where: any = {
-      OR: [
-        { name: { contains: search ?? '', mode: 'insensitive' } },
-        { apiKeyStart: { contains: search ?? '', mode: 'insensitive' } },
-      ],
-    };
-    const results = await this.prisma.apiKey.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      orderBy: { createdAt: 'asc' },
-      include: { permissions: true },
-    });
-    const count = await this.prisma.apiKey.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      results.slice(0, limit),
-      input,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+    try {
+      const { limit, offset } = getPagingParameters(input);
+      const limitPlusOne = limit + 1;
+      const { search } = input;
+      const where: any = {
+        OR: [
+          { name: { contains: search ?? '', mode: 'insensitive' } },
+          { apiKeyStart: { contains: search ?? '', mode: 'insensitive' } },
+        ],
+      };
+      const results = await this.prisma.apiKey.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { createdAt: 'asc' },
+        include: { permissions: true },
+      });
+      const count = await this.prisma.apiKey.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        results.slice(0, limit),
+        input,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(inputKey: string): Promise<ApiKey> {
-    const redisKey = `apiKey-${inputKey}`;
-    let key = await this.redisCacheService.get(redisKey);
-    if (key) return key;
-    const matches = await this.prisma.apiKey.findMany({
-      where: { apiKeyStart: inputKey.substring(0, 8) },
-    });
-    if (matches.length === 0) {
-      throw new BadRequestException('Key not found.');
-    }
-    for (const match of matches) {
-      if (this.keyMatches(inputKey, match.hash)) {
-        await this.redisCacheService.setForDay(redisKey, match);
-        return match;
+    try {
+      const redisKey = `apiKey-${inputKey}`;
+      let key = await this.redisCacheService.get(redisKey);
+      if (key) return key;
+      const matches = await this.prisma.apiKey.findMany({
+        where: { apiKeyStart: inputKey.substring(0, 8) },
+      });
+      if (matches.length === 0) {
+        throw new BadRequestException('Key not found.');
       }
+      for (const match of matches) {
+        if (this.keyMatches(inputKey, match.hash)) {
+          await this.redisCacheService.setForDay(redisKey, match);
+          return match;
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
   async callCountIncrease(key: ApiKey) {
-    await this.prisma.apiKey.update({
-      where: { id: key.id },
-      data: { calls: { increment: 1 } },
-    });
+    try {
+      await this.prisma.apiKey.update({
+        where: { id: key.id },
+        data: { calls: { increment: 1 } },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async keyPermissions(key: ApiKey): Promise<string[]> {
-    const redisKey = `keyPermissionsStrings-${key.id}`;
-    let keyPermissionStrings = await this.redisCacheService.get(redisKey);
-    if (!keyPermissionStrings) {
-      const keyPermissions = await this.prisma.apiKeyPermission.findMany({
-        where: { apiKeyId: key.id },
-      });
-      keyPermissionStrings = keyPermissions.map((kp) => kp.permission);
-      await this.redisCacheService.setForDay(redisKey, keyPermissionStrings);
+    try {
+      const redisKey = `keyPermissionsStrings-${key.id}`;
+      let keyPermissionStrings = await this.redisCacheService.get(redisKey);
+      if (!keyPermissionStrings) {
+        const keyPermissions = await this.prisma.apiKeyPermission.findMany({
+          where: { apiKeyId: key.id },
+        });
+        keyPermissionStrings = keyPermissions.map((kp) => kp.permission);
+        await this.redisCacheService.setForDay(redisKey, keyPermissionStrings);
+      }
+      return keyPermissionStrings;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return keyPermissionStrings;
   }
 
   async hasPermissions(key: ApiKey, permissions: string[]) {
-    const keyPermissions = await this.keyPermissions(key);
-    return permissions.every((p) => keyPermissions.includes(p));
+    try {
+      const keyPermissions = await this.keyPermissions(key);
+      return permissions.every((p) => keyPermissions.includes(p));
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async editKey({ keyId, name, permissions }: EditApiKeyInput) {
-    const invalidPermissions = permissions.filter(
-      (p) => !PERMISSIONS.includes(p)
-    );
-    if (invalidPermissions.length > 0) {
-      throw new BadRequestException(
-        `Invalid permissions: ${invalidPermissions.join(', ')}`
+    try {
+      const invalidPermissions = permissions.filter(
+        (p) => !PERMISSIONS.includes(p)
       );
+      if (invalidPermissions.length > 0) {
+        throw new BadRequestException(
+          `Invalid permissions: ${invalidPermissions.join(', ')}`
+        );
+      }
+      const key = await this.prisma.apiKey.findFirst({ where: { id: keyId } });
+      if (!key) {
+        throw new BadRequestException('Invalid key.');
+      }
+      await this.prisma.$transaction([
+        this.prisma.apiKey.update({ where: { id: keyId }, data: { name } }),
+        this.prisma.apiKeyPermission.deleteMany({ where: { apiKeyId: keyId } }),
+        this.prisma.apiKeyPermission.createMany({
+          data: permissions.map((p) => ({ apiKeyId: keyId, permission: p })),
+        }),
+      ]);
+      await this.redisCacheService.delPattern(`apiKey-${key.apiKeyStart}*`);
+      await this.redisCacheService.delPattern(
+        `keyPermissionsStrings-${key.id}`
+      );
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const key = await this.prisma.apiKey.findFirst({ where: { id: keyId } });
-    if (!key) {
-      throw new BadRequestException('Invalid key.');
-    }
-    await this.prisma.$transaction([
-      this.prisma.apiKey.update({ where: { id: keyId }, data: { name } }),
-      this.prisma.apiKeyPermission.deleteMany({ where: { apiKeyId: keyId } }),
-      this.prisma.apiKeyPermission.createMany({
-        data: permissions.map((p) => ({ apiKeyId: keyId, permission: p })),
-      }),
-    ]);
-    await this.redisCacheService.delPattern(`apiKey-${key.apiKeyStart}*`);
-    await this.redisCacheService.delPattern(`keyPermissionsStrings-${key.id}`);
   }
 
   async deactivate(keyId: number) {
-    const key = await this.prisma.apiKey.update({
-      where: { id: keyId },
-      data: { active: false },
-    });
-    const redisKey = `apiKey-${key.apiKeyStart}*`;
-    await this.redisCacheService.delPattern(redisKey);
+    try {
+      const key = await this.prisma.apiKey.update({
+        where: { id: keyId },
+        data: { active: false },
+      });
+      const redisKey = `apiKey-${key.apiKeyStart}*`;
+      await this.redisCacheService.delPattern(redisKey);
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

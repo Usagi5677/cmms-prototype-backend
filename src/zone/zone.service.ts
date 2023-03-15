@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -15,65 +19,90 @@ export class ZoneService {
   constructor(private prisma: PrismaService) {}
 
   async create(user: User, { name }: CreateZoneInput) {
-    const existing = await this.prisma.zone.findFirst({
-      where: { name, active: true },
-    });
-    if (existing) {
-      throw new BadRequestException(`${name} already exists.`);
+    try {
+      const existing = await this.prisma.zone.findFirst({
+        where: { name, active: true },
+      });
+      if (existing) {
+        throw new BadRequestException(`${name} already exists.`);
+      }
+      await this.prisma.zone.create({ data: { name, createdById: user.id } });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.zone.create({ data: { name, createdById: user.id } });
   }
 
   async findAll(args: ZoneConnectionArgs): Promise<PaginatedZone> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { name } = args;
-    const where: any = { AND: [{ active: true }] };
-    if (name) {
-      where.AND.push({ name: { contains: name, mode: 'insensitive' } });
-    }
-    const zones = await this.prisma.zone.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      orderBy: { name: 'asc' },
-    });
-    const count = await this.prisma.zone.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      zones.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { name } = args;
+      const where: any = { AND: [{ active: true }] };
+      if (name) {
+        where.AND.push({ name: { contains: name, mode: 'insensitive' } });
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const zones = await this.prisma.zone.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { name: 'asc' },
+      });
+      const count = await this.prisma.zone.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        zones.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(id: number) {
-    const zone = await this.prisma.zone.findFirst({ where: { id } });
-    if (!zone) {
-      throw new BadRequestException('Invalid zone.');
+    try {
+      const zone = await this.prisma.zone.findFirst({ where: { id } });
+      if (!zone) {
+        throw new BadRequestException('Invalid zone.');
+      }
+      return zone;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return zone;
   }
 
   async update({ id, name }: UpdateZoneInput) {
-    await this.prisma.zone.update({ where: { id }, data: { name } });
+    try {
+      await this.prisma.zone.update({ where: { id }, data: { name } });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async remove(id: number) {
-    await this.prisma.zone.update({
-      where: { id },
-      data: { active: false },
-    });
+    try {
+      await this.prisma.zone.update({
+        where: { id },
+        data: { active: false },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

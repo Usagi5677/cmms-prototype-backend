@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import {
   connectionFromArraySlice,
   getPagingParameters,
@@ -14,77 +18,107 @@ export class TypeService {
   constructor(private prisma: PrismaService) {}
 
   async create({ entityType, name }: CreateTypeInput) {
-    const existing = await this.prisma.type.findFirst({
-      where: { name, entityType, active: true },
-    });
-    if (existing) {
-      throw new BadRequestException('This type already exists.');
+    try {
+      const existing = await this.prisma.type.findFirst({
+        where: { name, entityType, active: true },
+      });
+      if (existing) {
+        throw new BadRequestException('This type already exists.');
+      }
+      await this.prisma.type.create({ data: { entityType, name } });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.type.create({ data: { entityType, name } });
   }
 
   async findAll(args: TypeConnectionArgs): Promise<PaginatedType> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { name, entityType } = args;
-    const where: any = { AND: [{ active: true }] };
-    if (entityType) {
-      where.AND.push({ entityType });
-    }
-    if (name) {
-      where.AND.push({ name: { contains: name, mode: 'insensitive' } });
-    }
-    const types = await this.prisma.type.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-    });
-    const count = await this.prisma.type.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      types.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { name, entityType } = args;
+      const where: any = { AND: [{ active: true }] };
+      if (entityType) {
+        where.AND.push({ entityType });
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      if (name) {
+        where.AND.push({ name: { contains: name, mode: 'insensitive' } });
+      }
+      const types = await this.prisma.type.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+      });
+      const count = await this.prisma.type.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        types.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findEvery() {
-    return await this.prisma.type.findMany({
-      where: { active: true },
-      orderBy: { name: 'asc' },
-    });
+    try {
+      return await this.prisma.type.findMany({
+        where: { active: true },
+        orderBy: { name: 'asc' },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(id: number) {
-    const type = await this.prisma.type.findFirst({ where: { id } });
-    if (!type) {
-      throw new BadRequestException('Invalid type.');
+    try {
+      const type = await this.prisma.type.findFirst({ where: { id } });
+      if (!type) {
+        throw new BadRequestException('Invalid type.');
+      }
+      return type;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return type;
   }
 
   async update({ id, entityType, name }: UpdateTypeInput) {
-    await this.prisma.type.update({
-      where: { id },
-      data: { entityType, name },
-    });
+    try {
+      await this.prisma.type.update({
+        where: { id },
+        data: { entityType, name },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async remove(id: number) {
-    await this.prisma.type.update({
-      where: { id },
-      data: { active: false },
-    });
+    try {
+      await this.prisma.type.update({
+        where: { id },
+        data: { active: false },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

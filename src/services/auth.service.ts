@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from './../prisma/prisma.service';
 import { APSService } from './aps.service';
@@ -15,27 +19,32 @@ export class AuthService {
   ) {}
 
   async validateUser(uuid: string): Promise<User> {
-    // First check cache
-    let user = await this.redisCacheService.get(`user-uuid-${uuid}`);
-    if (!user) {
-      // If not in cache, call database
-      user = await this.prisma.user.findUnique({ where: { userId: uuid } });
+    try {
+      // First check cache
+      let user = await this.redisCacheService.get(`user-uuid-${uuid}`);
       if (!user) {
-        // If user not found in cmms system database, call APS
-        const profile = await this.apsService.getProfile(uuid);
-        // Create new user based on APS response
-        user = await this.userService.createUser(
-          profile.rcno,
-          profile.userId,
-          profile.fullName,
-          profile.email
-        );
+        // If not in cache, call database
+        user = await this.prisma.user.findUnique({ where: { userId: uuid } });
         if (!user) {
-          throw new BadRequestException('Invalid user.');
+          // If user not found in cmms system database, call APS
+          const profile = await this.apsService.getProfile(uuid);
+          // Create new user based on APS response
+          user = await this.userService.createUser(
+            profile.rcno,
+            profile.userId,
+            profile.fullName,
+            profile.email
+          );
+          if (!user) {
+            throw new BadRequestException('Invalid user.');
+          }
         }
+        await this.redisCacheService.setForMonth(`user-uuid-${uuid}`, user);
       }
-      await this.redisCacheService.setForMonth(`user-uuid-${uuid}`, user);
+      return user;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return user;
   }
 }

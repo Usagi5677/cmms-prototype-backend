@@ -29,39 +29,44 @@ export class SparePrService {
     user: User,
     { entityId, name, requestedDate, details }: CreateSparePrInput
   ) {
-    await this.prisma.sparePR.create({
-      data: {
-        entityId,
-        createdById: user.id,
-        name,
-        requestedDate,
-        sparePRDetails: {
-          createMany: {
-            data: details.map((detail) => ({
-              createdById: user.id,
-              description: detail,
-            })),
+    try {
+      await this.prisma.sparePR.create({
+        data: {
+          entityId,
+          createdById: user.id,
+          name,
+          requestedDate,
+          sparePRDetails: {
+            createMany: {
+              data: details.map((detail) => ({
+                createdById: user.id,
+                description: detail,
+              })),
+            },
           },
         },
-      },
-    });
-    const users = await this.entityService.getEntityAssignmentIds(
-      entityId,
-      user.id
-    );
-    for (let index = 0; index < users.length; index++) {
-      await this.notificationService.createInBackground({
-        userId: users[index],
-        body: `${user.fullName} (${user.rcno}) added spare pr.`,
-        link: `/entity/${entityId}`,
       });
+      const users = await this.entityService.getEntityAssignmentIds(
+        entityId,
+        user.id
+      );
+      for (let index = 0; index < users.length; index++) {
+        await this.notificationService.createInBackground({
+          userId: users[index],
+          body: `${user.fullName} (${user.rcno}) added spare pr.`,
+          link: `/entity/${entityId}`,
+        });
+      }
+      await this.entityService.createEntityHistoryInBackground({
+        type: `Spare PR added`,
+        description: `Spare PR added.`,
+        entityId: entityId,
+        completedById: user?.id,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.entityService.createEntityHistoryInBackground({
-      type: `Spare PR added`,
-      description: `Spare PR added.`,
-      entityId: entityId,
-      completedById: user?.id,
-    });
   }
 
   async findAll(

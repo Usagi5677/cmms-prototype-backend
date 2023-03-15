@@ -50,247 +50,264 @@ export class PeriodicMaintenanceService {
   ) {}
 
   async findOne({ entityId, from, to }: PeriodicMaintenanceInput) {
-    await this.entityService.findOne(entityId);
-    let periodicMaintenance: null | PeriodicMaintenance = null;
-    from = moment(from).toDate();
-    to = moment(to).toDate();
+    try {
+      await this.entityService.findOne(entityId);
+      let periodicMaintenance: null | PeriodicMaintenance = null;
+      from = moment(from).toDate();
+      to = moment(to).toDate();
 
-    periodicMaintenance = await this.prisma.periodicMaintenance.findFirst({
-      where: {
-        entityId,
-        from,
-        to,
-      },
-      include: {
-        tasks: {
-          include: {
-            completedBy: true,
-            remarks: { include: { createdBy: true } },
-          },
-          orderBy: { id: 'asc' },
+      periodicMaintenance = await this.prisma.periodicMaintenance.findFirst({
+        where: {
+          entityId,
+          from,
+          to,
         },
-        comments: {
-          where: { type: 'Comment' },
-          include: {
-            createdBy: true,
+        include: {
+          tasks: {
+            include: {
+              completedBy: true,
+              remarks: { include: { createdBy: true } },
+            },
+            orderBy: { id: 'asc' },
           },
-          orderBy: { id: 'desc' },
+          comments: {
+            where: { type: 'Comment' },
+            include: {
+              createdBy: true,
+            },
+            orderBy: { id: 'desc' },
+          },
         },
-      },
-    });
-    return periodicMaintenance;
+      });
+      return periodicMaintenance;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findAll(
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PeriodicMaintenanceConnection> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, type, from, to, entityId } = args;
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-    const where: any = {};
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { search, type, from, to, entityId } = args;
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const where: any = {};
 
-    where.removedAt = null;
+      where.removedAt = null;
 
-    if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
-    }
-    if (type) {
-      where.type = type;
-    }
+      if (search) {
+        where.name = { contains: search, mode: 'insensitive' };
+      }
+      if (type) {
+        where.type = type;
+      }
 
-    if (from && to) {
-      where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
-    }
+      if (from && to) {
+        where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
+      }
 
-    if (entityId) {
-      where.entityId = entityId;
-    }
+      if (entityId) {
+        where.entityId = entityId;
+      }
 
-    const pm = await this.prisma.periodicMaintenance.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        notificationReminder: true,
-        tasks: {
-          where: { parentTaskId: null },
-          include: {
-            subTasks: {
-              include: {
-                subTasks: {
-                  include: {
-                    completedBy: true,
-                    remarks: {
-                      include: {
-                        createdBy: true,
+      const pm = await this.prisma.periodicMaintenance.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          notificationReminder: true,
+          tasks: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: {
+                    include: {
+                      completedBy: true,
+                      remarks: {
+                        include: {
+                          createdBy: true,
+                        },
                       },
                     },
+                    orderBy: { id: 'asc' },
                   },
-                  orderBy: { id: 'asc' },
+                  completedBy: true,
+                  remarks: {
+                    include: {
+                      createdBy: true,
+                    },
+                  },
                 },
-                completedBy: true,
-                remarks: {
-                  include: {
-                    createdBy: true,
-                  },
+                orderBy: { id: 'asc' },
+              },
+              completedBy: true,
+              remarks: {
+                include: {
+                  createdBy: true,
                 },
               },
-              orderBy: { id: 'asc' },
             },
-            completedBy: true,
-            remarks: {
-              include: {
-                createdBy: true,
-              },
+            orderBy: { id: 'asc' },
+          },
+          verifiedBy: true,
+          comments: {
+            include: {
+              createdBy: true,
             },
           },
-          orderBy: { id: 'asc' },
         },
-        verifiedBy: true,
-        comments: {
-          include: {
-            createdBy: true,
-          },
-        },
-      },
-      orderBy: { id: 'desc' },
-    });
+        orderBy: { id: 'desc' },
+      });
 
-    const count = await this.prisma.periodicMaintenance.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      pm.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const count = await this.prisma.periodicMaintenance.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        pm.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async upcomingPeriodicMaintenances(
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PeriodicMaintenanceConnection> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, type, from, to, entityId } = args;
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-    const where: any = {};
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { search, type, from, to, entityId } = args;
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const where: any = {};
 
-    where.removedAt = null;
+      where.removedAt = null;
 
-    if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
-    }
-    if (type) {
-      where.type = type;
-    }
+      if (search) {
+        where.name = { contains: search, mode: 'insensitive' };
+      }
+      if (type) {
+        where.type = type;
+      }
 
-    if (from && to) {
-      where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
-    }
+      if (from && to) {
+        where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
+      }
 
-    if (entityId) {
-      where.entityId = entityId;
-    }
+      if (entityId) {
+        where.entityId = entityId;
+      }
 
-    const tempPM = await this.prisma.periodicMaintenance.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      orderBy: { id: 'desc' },
-      include: {
-        entity: {
-          include: {
-            type: {
-              include: {
-                interServiceColor: { include: { brand: true, type: true } },
+      const tempPM = await this.prisma.periodicMaintenance.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { id: 'desc' },
+        include: {
+          entity: {
+            include: {
+              type: {
+                include: {
+                  interServiceColor: { include: { brand: true, type: true } },
+                },
               },
+              brand: true,
             },
-            brand: true,
           },
         },
-      },
-    });
-    const newPeriodicMaintenances = [];
-    for (const p of tempPM) {
-      const interService =
-        (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
-        (p?.entity?.lastService ? p?.entity?.lastService : 0);
-      if (p?.entity?.type?.interServiceColor.length > 0) {
-        for (const intColor of p.entity?.type?.interServiceColor) {
-          if (
-            intColor?.brand?.name === p?.entity?.brand?.name &&
-            intColor?.type?.name === p?.entity?.type?.name &&
-            intColor?.measurement === p?.entity?.measurement
-          ) {
+      });
+      const newPeriodicMaintenances = [];
+      for (const p of tempPM) {
+        const interService =
+          (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
+          (p?.entity?.lastService ? p?.entity?.lastService : 0);
+        if (p?.entity?.type?.interServiceColor.length > 0) {
+          for (const intColor of p.entity?.type?.interServiceColor) {
             if (
-              interService >= intColor?.lessThan &&
-              interService <= intColor?.greaterThan
+              intColor?.brand?.name === p?.entity?.brand?.name &&
+              intColor?.type?.name === p?.entity?.type?.name &&
+              intColor?.measurement === p?.entity?.measurement
             ) {
-              newPeriodicMaintenances.push(p);
+              if (
+                interService >= intColor?.lessThan &&
+                interService <= intColor?.greaterThan
+              ) {
+                newPeriodicMaintenances.push(p);
+              }
             }
           }
         }
       }
-    }
-    const newPeriodicMaintenanceIds = newPeriodicMaintenances?.map((p) => p.id);
-    const pm = await this.prisma.periodicMaintenance.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where: {
-        id: { in: newPeriodicMaintenanceIds },
-      },
-      include: {
-        tasks: {
-          where: { parentTaskId: null },
-          include: {
-            subTasks: {
-              include: {
-                subTasks: {
-                  orderBy: { id: 'asc' },
-                },
-              },
-              orderBy: { id: 'asc' },
-            },
-          },
-          orderBy: { id: 'asc' },
+      const newPeriodicMaintenanceIds = newPeriodicMaintenances?.map(
+        (p) => p.id
+      );
+      const pm = await this.prisma.periodicMaintenance.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where: {
+          id: { in: newPeriodicMaintenanceIds },
         },
-      },
-      orderBy: { id: 'desc' },
-    });
+        include: {
+          tasks: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: {
+                    orderBy: { id: 'asc' },
+                  },
+                },
+                orderBy: { id: 'asc' },
+              },
+            },
+            orderBy: { id: 'asc' },
+          },
+        },
+        orderBy: { id: 'desc' },
+      });
 
-    const count = await this.prisma.periodicMaintenance.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      pm.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const count = await this.prisma.periodicMaintenance.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        pm.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** get all templates of origin id of periodic maintenance. */
@@ -385,34 +402,34 @@ export class PeriodicMaintenanceService {
     id: number,
     complete: boolean
   ) {
-    const completion = complete
-      ? { completedById: user.id, completedAt: new Date() }
-      : { completedById: null, completedAt: null };
-    const transactions: any = [
-      this.prisma.periodicMaintenanceTask.update({
-        where: { id },
-        data: completion,
-      }),
-    ];
-    const subTasks = await this.prisma.periodicMaintenanceTask.findMany({
-      where: { parentTaskId: id },
-      select: { id: true },
-    });
-    const subTaskIds = subTasks.map((st) => st.id);
-    if (subTaskIds.length > 0) {
-      transactions.push(
-        this.prisma.periodicMaintenanceTask.updateMany({
-          where: {
-            OR: [
-              { id: { in: subTaskIds } },
-              { parentTaskId: { in: subTaskIds } },
-            ],
-          },
-          data: completion,
-        })
-      );
-    }
     try {
+      const completion = complete
+        ? { completedById: user.id, completedAt: new Date() }
+        : { completedById: null, completedAt: null };
+      const transactions: any = [
+        this.prisma.periodicMaintenanceTask.update({
+          where: { id },
+          data: completion,
+        }),
+      ];
+      const subTasks = await this.prisma.periodicMaintenanceTask.findMany({
+        where: { parentTaskId: id },
+        select: { id: true },
+      });
+      const subTaskIds = subTasks.map((st) => st.id);
+      if (subTaskIds.length > 0) {
+        transactions.push(
+          this.prisma.periodicMaintenanceTask.updateMany({
+            where: {
+              OR: [
+                { id: { in: subTaskIds } },
+                { parentTaskId: { in: subTaskIds } },
+              ],
+            },
+            data: completion,
+          })
+        );
+      }
       await this.prisma.$transaction(transactions);
     } catch (e) {
       console.log(e);
@@ -554,76 +571,84 @@ export class PeriodicMaintenanceService {
     pmIncluded?: boolean,
     taskIncluded?: boolean
   ) {
-    const originPM = await this.prisma.periodicMaintenance.findFirst({
-      where: {
-        id: originId,
-        type: 'Origin',
-      },
-      include: {
-        tasks: {
-          where: { parentTaskId: null },
-          include: {
-            subTasks: {
-              include: {
-                subTasks: { include: { completedBy: true } },
-                completedBy: true,
-              },
-              orderBy: { id: 'asc' },
-            },
-            completedBy: true,
-          },
-          orderBy: { id: 'asc' },
+    try {
+      const originPM = await this.prisma.periodicMaintenance.findFirst({
+        where: {
+          id: originId,
+          type: 'Origin',
         },
-      },
-    });
-    const templatesToChange = await this.prisma.periodicMaintenance.findMany({
-      where: {
-        originId,
-        type: 'Template',
-        removedAt: null,
-      },
-      include: {
-        tasks: {
-          where: { parentTaskId: null },
-          include: {
-            subTasks: {
-              include: {
-                subTasks: { include: { completedBy: true } },
-                completedBy: true,
+        include: {
+          tasks: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: { include: { completedBy: true } },
+                  completedBy: true,
+                },
+                orderBy: { id: 'asc' },
               },
-              orderBy: { id: 'asc' },
+              completedBy: true,
             },
-            completedBy: true,
+            orderBy: { id: 'asc' },
           },
-          orderBy: { id: 'asc' },
         },
-      },
-    });
-    for (const template of templatesToChange) {
-      //if pm variable changes
-      if (pmIncluded) {
-        await this.prisma.periodicMaintenance.update({
-          where: {
-            id: template.id,
+      });
+      const templatesToChange = await this.prisma.periodicMaintenance.findMany({
+        where: {
+          originId,
+          type: 'Template',
+          removedAt: null,
+        },
+        include: {
+          tasks: {
+            where: { parentTaskId: null },
+            include: {
+              subTasks: {
+                include: {
+                  subTasks: { include: { completedBy: true } },
+                  completedBy: true,
+                },
+                orderBy: { id: 'asc' },
+              },
+              completedBy: true,
+            },
+            orderBy: { id: 'asc' },
           },
-          data: {
-            name: originPM.name,
-            measurement: originPM.measurement,
-            value: originPM.value,
-            currentMeterReading: originPM.currentMeterReading,
-            recur: originPM.recur,
-          },
-        });
+        },
+      });
+      for (const template of templatesToChange) {
+        //if pm variable changes
+        if (pmIncluded) {
+          await this.prisma.periodicMaintenance.update({
+            where: {
+              id: template.id,
+            },
+            data: {
+              name: originPM.name,
+              measurement: originPM.measurement,
+              value: originPM.value,
+              currentMeterReading: originPM.currentMeterReading,
+              recur: originPM.recur,
+            },
+          });
+        }
+        //if task changes
+        if (taskIncluded) {
+          await this.prisma.periodicMaintenanceTask.deleteMany({
+            where: {
+              periodicMaintenanceId: template.id,
+            },
+          });
+          await this.updatePMTaskInBackground({
+            pm: originPM,
+            copyPM: template,
+          });
+        }
       }
-      //if task changes
-      if (taskIncluded) {
-        await this.prisma.periodicMaintenanceTask.deleteMany({
-          where: {
-            periodicMaintenanceId: template.id,
-          },
-        });
-        await this.updatePMTaskInBackground({ pm: originPM, copyPM: template });
-      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
   //** Delete originperiodic maintenance. */
@@ -880,19 +905,24 @@ export class PeriodicMaintenanceService {
     periodicMaintenanceId: number,
     to?: Date
   ) {
-    if (!to) {
-      to = (
-        await this.prisma.periodicMaintenance.findFirst({
-          where: { id: periodicMaintenanceId },
-          select: { to: true },
-        })
-      ).to;
-    }
-    const now = moment();
-    if (moment(to).isBefore(now, 'second')) {
-      throw new BadRequestException(
-        'Cannot update older periodic maintenances.'
-      );
+    try {
+      if (!to) {
+        to = (
+          await this.prisma.periodicMaintenance.findFirst({
+            where: { id: periodicMaintenanceId },
+            select: { to: true },
+          })
+        ).to;
+      }
+      const now = moment();
+      if (moment(to).isBefore(now, 'second')) {
+        throw new BadRequestException(
+          'Cannot update older periodic maintenances.'
+        );
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
@@ -901,45 +931,49 @@ export class PeriodicMaintenanceService {
     id: number,
     reading: number
   ) {
-    const periodicMaintenance = await this.prisma.periodicMaintenance.findFirst(
-      {
-        where: { id },
-        select: {
-          entity: {
-            select: {
-              id: true,
-              currentRunning: true,
+    try {
+      const periodicMaintenance =
+        await this.prisma.periodicMaintenance.findFirst({
+          where: { id },
+          select: {
+            entity: {
+              select: {
+                id: true,
+                currentRunning: true,
+              },
             },
+            originId: true,
           },
-          originId: true,
+        });
+      await this.entityService.checkEntityAssignmentOrPermission(
+        periodicMaintenance.entity.id,
+        user.id,
+        undefined,
+        []
+      );
+
+      //update copy with new values. (Not necessary to update previous reading for copies)
+      await this.prisma.periodicMaintenance.update({
+        where: { id },
+        data: { currentMeterReading: reading },
+      });
+
+      //update the template as well so that it will make copy when it fulfills the requirement
+      await this.prisma.periodicMaintenance.update({
+        where: {
+          id: periodicMaintenance.originId,
         },
-      }
-    );
-    await this.entityService.checkEntityAssignmentOrPermission(
-      periodicMaintenance.entity.id,
-      user.id,
-      undefined,
-      []
-    );
-
-    //update copy with new values. (Not necessary to update previous reading for copies)
-    await this.prisma.periodicMaintenance.update({
-      where: { id },
-      data: { currentMeterReading: reading },
-    });
-
-    //update the template as well so that it will make copy when it fulfills the requirement
-    await this.prisma.periodicMaintenance.update({
-      where: {
-        id: periodicMaintenance.originId,
-      },
-      data: { currentMeterReading: reading },
-    });
-    //update last service to currentReading
-    await this.prisma.entity.update({
-      where: { id: periodicMaintenance.entity.id },
-      data: { lastService: reading, lastServiceUpdateAt: new Date() },
-    });
+        data: { currentMeterReading: reading },
+      });
+      //update last service to currentReading
+      await this.prisma.entity.update({
+        where: { id: periodicMaintenance.entity.id },
+        data: { lastService: reading, lastServiceUpdateAt: new Date() },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async addPeriodicMaintenanceComment(
@@ -949,43 +983,53 @@ export class PeriodicMaintenanceService {
     taskId: number,
     description: string
   ) {
-    const pm = await this.prisma.periodicMaintenance.findFirst({
-      where: { id: periodicMaintenanceId },
-    });
-    if (!pm) {
-      throw new BadRequestException('Invalid periodic maintenance.');
-    }
-    if (type === 'Remark') {
-      await this.prisma.periodicMaintenanceComment.create({
-        data: {
-          periodicMaintenanceId,
-          taskId,
-          type: 'Remark',
-          description,
-          createdById: user.id,
-        },
+    try {
+      const pm = await this.prisma.periodicMaintenance.findFirst({
+        where: { id: periodicMaintenanceId },
       });
-    } else if (type === 'Observation') {
-      await this.prisma.periodicMaintenanceComment.create({
-        data: {
-          periodicMaintenanceId,
-          type: 'Observation',
-          description,
-          createdById: user.id,
-        },
-      });
+      if (!pm) {
+        throw new BadRequestException('Invalid periodic maintenance.');
+      }
+      if (type === 'Remark') {
+        await this.prisma.periodicMaintenanceComment.create({
+          data: {
+            periodicMaintenanceId,
+            taskId,
+            type: 'Remark',
+            description,
+            createdById: user.id,
+          },
+        });
+      } else if (type === 'Observation') {
+        await this.prisma.periodicMaintenanceComment.create({
+          data: {
+            periodicMaintenanceId,
+            type: 'Observation',
+            description,
+            createdById: user.id,
+          },
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
   async removePeriodicMaintenanceComment(user: User, id: number) {
-    const comment = await this.prisma.periodicMaintenanceComment.findFirst({
-      where: { id },
-      select: { createdById: true },
-    });
-    if (comment.createdById !== user.id) {
-      throw new ForbiddenError("Cannot delete other user's comments.");
+    try {
+      const comment = await this.prisma.periodicMaintenanceComment.findFirst({
+        where: { id },
+        select: { createdById: true },
+      });
+      if (comment.createdById !== user.id) {
+        throw new ForbiddenError("Cannot delete other user's comments.");
+      }
+      await this.prisma.periodicMaintenanceComment.delete({ where: { id } });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.periodicMaintenanceComment.delete({ where: { id } });
   }
 
   async periodicMaintenanceSummary(
@@ -993,94 +1037,100 @@ export class PeriodicMaintenanceService {
     from: Date,
     to: Date
   ): Promise<PeriodicMaintenanceSummary[]> {
-    await this.entityService.findOne(entityId);
+    try {
+      await this.entityService.findOne(entityId);
 
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
 
-    const where: any = {};
+      const where: any = {};
 
-    where.type = 'Copy';
-    where.removedAt = null;
-    if (from && to) {
-      where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
-    }
+      where.type = 'Copy';
+      where.removedAt = null;
+      if (from && to) {
+        where.createdAt = { gte: fromDate.toDate(), lte: toDate.toDate() };
+      }
 
-    if (entityId) {
-      where.entityId = entityId;
-    }
+      if (entityId) {
+        where.entityId = entityId;
+      }
 
-    const periodicMaintenances = await this.prisma.periodicMaintenance.findMany(
-      {
-        where,
-        include: {
-          tasks: {
-            where: { parentTaskId: null },
-            include: {
-              subTasks: {
-                include: {
-                  subTasks: {
-                    include: {
-                      completedBy: true,
-                      remarks: {
-                        include: {
-                          createdBy: true,
+      const periodicMaintenances =
+        await this.prisma.periodicMaintenance.findMany({
+          where,
+          include: {
+            tasks: {
+              where: { parentTaskId: null },
+              include: {
+                subTasks: {
+                  include: {
+                    subTasks: {
+                      include: {
+                        completedBy: true,
+                        remarks: {
+                          include: {
+                            createdBy: true,
+                          },
                         },
                       },
                     },
-                  },
-                  completedBy: true,
-                  remarks: {
-                    include: {
-                      createdBy: true,
+                    completedBy: true,
+                    remarks: {
+                      include: {
+                        createdBy: true,
+                      },
                     },
                   },
+                  orderBy: { id: 'asc' },
                 },
-                orderBy: { id: 'asc' },
+                completedBy: true,
+                remarks: {
+                  include: {
+                    createdBy: true,
+                  },
+                },
               },
-              completedBy: true,
-              remarks: {
-                include: {
-                  createdBy: true,
-                },
+              orderBy: { id: 'asc' },
+            },
+            verifiedBy: true,
+            comments: {
+              include: {
+                createdBy: true,
               },
             },
-            orderBy: { id: 'asc' },
           },
-          verifiedBy: true,
-          comments: {
-            include: {
-              createdBy: true,
-            },
-          },
-        },
+        });
+      const summaries: PeriodicMaintenanceSummary[] = [];
+      for (const pm of periodicMaintenances) {
+        const summary = new PeriodicMaintenanceSummary();
+        Object.assign(summary, pm);
+        if (pm.tasks.length === 0) {
+          summary.taskCompletion = 'empty';
+        } else if (
+          pm.tasks.flat(2).every((task) => task.completedAt !== null)
+        ) {
+          summary.taskCompletion = 'all';
+        } else if (pm.tasks.flat(2).some((task) => task.completedAt !== null)) {
+          summary.taskCompletion = 'some';
+        } else {
+          summary.taskCompletion = 'none';
+        }
+        summary.hasObservations =
+          pm.comments.filter((c) => c.type === 'Observation').length > 0
+            ? true
+            : false;
+        summary.hasRemarks =
+          pm.comments.filter((c) => c.type === 'Remark').length > 0
+            ? true
+            : false;
+        summary.hasVerify = pm.verifiedAt !== null;
+        summaries.push(summary);
       }
-    );
-    const summaries: PeriodicMaintenanceSummary[] = [];
-    for (const pm of periodicMaintenances) {
-      const summary = new PeriodicMaintenanceSummary();
-      Object.assign(summary, pm);
-      if (pm.tasks.length === 0) {
-        summary.taskCompletion = 'empty';
-      } else if (pm.tasks.flat(2).every((task) => task.completedAt !== null)) {
-        summary.taskCompletion = 'all';
-      } else if (pm.tasks.flat(2).some((task) => task.completedAt !== null)) {
-        summary.taskCompletion = 'some';
-      } else {
-        summary.taskCompletion = 'none';
-      }
-      summary.hasObservations =
-        pm.comments.filter((c) => c.type === 'Observation').length > 0
-          ? true
-          : false;
-      summary.hasRemarks =
-        pm.comments.filter((c) => c.type === 'Remark').length > 0
-          ? true
-          : false;
-      summary.hasVerify = pm.verifiedAt !== null;
-      summaries.push(summary);
+      return summaries;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return summaries;
   }
 
   async allPeriodicMaintenanceSummary(
@@ -2193,89 +2243,99 @@ export class PeriodicMaintenanceService {
   }
 
   async createInnerTasks({ pm, copyPM, isDay }: UpdatePMTaskInterface) {
-    let level1;
-    let level2;
-    if (isDay) {
-      for (let index = 0; index < pm.tasks.length; index++) {
-        level1 = await this.prisma.periodicMaintenanceTask.create({
-          data: {
-            periodicMaintenanceId: copyPM.id,
-            name: pm.tasks[index].name,
-            completedAt: new Date(),
-          },
-        });
-        for (
-          let index2 = 0;
-          index2 < pm.tasks[index].subTasks.length;
-          index2++
-        ) {
-          level2 = await this.prisma.periodicMaintenanceTask.create({
+    try {
+      let level1;
+      let level2;
+      if (isDay) {
+        for (let index = 0; index < pm.tasks.length; index++) {
+          level1 = await this.prisma.periodicMaintenanceTask.create({
             data: {
               periodicMaintenanceId: copyPM.id,
-              parentTaskId: level1.id,
-              name: pm.tasks[index].subTasks[index2].name,
+              name: pm.tasks[index].name,
               completedAt: new Date(),
             },
           });
           for (
-            let index3 = 0;
-            index3 < pm.tasks[index].subTasks[index2].subTasks.length;
-            index3++
+            let index2 = 0;
+            index2 < pm.tasks[index].subTasks.length;
+            index2++
           ) {
-            await this.prisma.periodicMaintenanceTask.create({
+            level2 = await this.prisma.periodicMaintenanceTask.create({
               data: {
                 periodicMaintenanceId: copyPM.id,
-                parentTaskId: level2.id,
-                name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+                parentTaskId: level1.id,
+                name: pm.tasks[index].subTasks[index2].name,
                 completedAt: new Date(),
               },
             });
+            for (
+              let index3 = 0;
+              index3 < pm.tasks[index].subTasks[index2].subTasks.length;
+              index3++
+            ) {
+              await this.prisma.periodicMaintenanceTask.create({
+                data: {
+                  periodicMaintenanceId: copyPM.id,
+                  parentTaskId: level2.id,
+                  name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+                  completedAt: new Date(),
+                },
+              });
+            }
           }
         }
-      }
-    } else {
-      for (let index = 0; index < pm.tasks.length; index++) {
-        level1 = await this.prisma.periodicMaintenanceTask.create({
-          data: {
-            periodicMaintenanceId: copyPM.id,
-            name: pm.tasks[index].name,
-          },
-        });
-        for (
-          let index2 = 0;
-          index2 < pm.tasks[index].subTasks.length;
-          index2++
-        ) {
-          level2 = await this.prisma.periodicMaintenanceTask.create({
+      } else {
+        for (let index = 0; index < pm.tasks.length; index++) {
+          level1 = await this.prisma.periodicMaintenanceTask.create({
             data: {
               periodicMaintenanceId: copyPM.id,
-              parentTaskId: level1.id,
-              name: pm.tasks[index].subTasks[index2].name,
+              name: pm.tasks[index].name,
             },
           });
           for (
-            let index3 = 0;
-            index3 < pm.tasks[index].subTasks[index2].subTasks.length;
-            index3++
+            let index2 = 0;
+            index2 < pm.tasks[index].subTasks.length;
+            index2++
           ) {
-            await this.prisma.periodicMaintenanceTask.create({
+            level2 = await this.prisma.periodicMaintenanceTask.create({
               data: {
                 periodicMaintenanceId: copyPM.id,
-                parentTaskId: level2.id,
-                name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+                parentTaskId: level1.id,
+                name: pm.tasks[index].subTasks[index2].name,
               },
             });
+            for (
+              let index3 = 0;
+              index3 < pm.tasks[index].subTasks[index2].subTasks.length;
+              index3++
+            ) {
+              await this.prisma.periodicMaintenanceTask.create({
+                data: {
+                  periodicMaintenanceId: copyPM.id,
+                  parentTaskId: level2.id,
+                  name: pm.tasks[index].subTasks[index2].subTasks[index3].name,
+                },
+              });
+            }
           }
         }
       }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
   //** Update pm task in all entity in background */
   async updatePMTaskInBackground(updatePMTask: UpdatePMTaskInterface) {
-    await this.pmQueue.add('updatePMTask', {
-      updatePMTask,
-    });
+    try {
+      await this.pmQueue.add('updatePMTask', {
+        updatePMTask,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get all pm. Results are paginated. User cursor argument to go forward/backward. */
@@ -2553,359 +2613,373 @@ export class PeriodicMaintenanceService {
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<PeriodicMaintenanceConnection> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const {
-      search,
-      type2Ids,
-      measurement,
-      locationIds,
-      zoneIds,
-      divisionIds,
-      gteInterService,
-      lteInterService,
-      pmStatus,
-      from,
-      to,
-    } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const {
+        search,
+        type2Ids,
+        measurement,
+        locationIds,
+        zoneIds,
+        divisionIds,
+        gteInterService,
+        lteInterService,
+        pmStatus,
+        from,
+        to,
+      } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    const todayStart = moment(from).startOf('day');
-    const todayEnd = moment(to).endOf('day');
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      const todayStart = moment(from).startOf('day');
+      const todayEnd = moment(to).endOf('day');
 
-    where.AND.push({
-      removedAt: null,
-      entityId: { not: null },
-    });
-
-    if (search) {
-      const or: any = [
-        { entity: { model: { contains: search, mode: 'insensitive' } } },
-        {
-          entity: { machineNumber: { contains: search, mode: 'insensitive' } },
-        },
-        { name: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
       where.AND.push({
-        OR: or,
+        removedAt: null,
+        entityId: { not: null },
       });
-    }
 
-    if (type2Ids?.length > 0) {
-      where.AND.push({
-        entity: { typeId: { in: type2Ids } },
-      });
-    }
-
-    if (measurement?.length > 0) {
-      where.AND.push({
-        entity: { measurement: { in: measurement } },
-      });
-    }
-
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        entity: { locationId: { in: locationIds } },
-      });
-    }
-
-    if (zoneIds?.length > 0) {
-      where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
-    }
-
-    if (divisionIds?.length > 0) {
-      where.AND.push({
-        entity: { divisionId: { in: divisionIds } },
-      });
-    }
-
-    if (pmStatus?.length > 0) {
-      where.AND.push({
-        status: { in: pmStatus },
-      });
-    }
-
-    if (gteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        entity: {
-          interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
-        },
-      });
-    }
-
-    if (lteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        entity: {
-          interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
-        },
-      });
-    }
-
-    if (
-      gteInterService?.replace(/\D/g, '') &&
-      lteInterService?.replace(/\D/g, '')
-    ) {
-      where.AND.push({
-        entity: {
-          interService: {
-            gte: parseInt(gteInterService.replace(/\D/g, '')),
-            lte: parseInt(lteInterService.replace(/\D/g, '')),
+      if (search) {
+        const or: any = [
+          { entity: { model: { contains: search, mode: 'insensitive' } } },
+          {
+            entity: {
+              machineNumber: { contains: search, mode: 'insensitive' },
+            },
           },
-        },
-      });
-    }
-    if (from) {
-      where.AND.push({
-        createdAt: { gte: todayStart.toDate() },
-      });
-    }
+          { name: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
 
-    if (to) {
-      where.AND.push({
-        createdAt: { lte: todayEnd.toDate() },
-      });
-    }
-    if (from && to) {
-      where.AND.push({
-        createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
-      });
-    }
+      if (type2Ids?.length > 0) {
+        where.AND.push({
+          entity: { typeId: { in: type2Ids } },
+        });
+      }
 
-    const newPeriodicMaintenances = [];
-    const pm = await this.prisma.periodicMaintenance.findMany({
-      where,
-      include: {
-        entity: {
-          include: {
-            type: {
-              include: {
-                interServiceColor: {
-                  where: { removedAt: null },
-                  include: { brand: true, type: true },
+      if (measurement?.length > 0) {
+        where.AND.push({
+          entity: { measurement: { in: measurement } },
+        });
+      }
+
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          entity: { locationId: { in: locationIds } },
+        });
+      }
+
+      if (zoneIds?.length > 0) {
+        where.AND.push({ entity: { location: { zoneId: { in: zoneIds } } } });
+      }
+
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          entity: { divisionId: { in: divisionIds } },
+        });
+      }
+
+      if (pmStatus?.length > 0) {
+        where.AND.push({
+          status: { in: pmStatus },
+        });
+      }
+
+      if (gteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          entity: {
+            interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+          },
+        });
+      }
+
+      if (lteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          entity: {
+            interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+          },
+        });
+      }
+
+      if (
+        gteInterService?.replace(/\D/g, '') &&
+        lteInterService?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          entity: {
+            interService: {
+              gte: parseInt(gteInterService.replace(/\D/g, '')),
+              lte: parseInt(lteInterService.replace(/\D/g, '')),
+            },
+          },
+        });
+      }
+      if (from) {
+        where.AND.push({
+          createdAt: { gte: todayStart.toDate() },
+        });
+      }
+
+      if (to) {
+        where.AND.push({
+          createdAt: { lte: todayEnd.toDate() },
+        });
+      }
+      if (from && to) {
+        where.AND.push({
+          createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+        });
+      }
+
+      const newPeriodicMaintenances = [];
+      const pm = await this.prisma.periodicMaintenance.findMany({
+        where,
+        include: {
+          entity: {
+            include: {
+              type: {
+                include: {
+                  interServiceColor: {
+                    where: { removedAt: null },
+                    include: { brand: true, type: true },
+                  },
                 },
               },
+              brand: true,
             },
-            brand: true,
           },
         },
-      },
-      orderBy: [{ id: 'desc' }],
-    });
-    //get all pm that doesn't have green color in interservice
-    for (const p of pm) {
-      const interService =
-        (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
-        (p?.entity?.lastService ? p?.entity?.lastService : 0);
-      if (p.entity?.type?.interServiceColor.length > 0) {
-        for (const intColor of p.entity.type.interServiceColor) {
-          if (
-            intColor?.brand?.name === p?.entity?.brand?.name &&
-            intColor?.type?.name === p?.entity?.type?.name &&
-            intColor?.measurement === p?.entity?.measurement
-          ) {
+        orderBy: [{ id: 'desc' }],
+      });
+      //get all pm that doesn't have green color in interservice
+      for (const p of pm) {
+        const interService =
+          (p?.entity?.currentRunning ? p?.entity?.currentRunning : 0) -
+          (p?.entity?.lastService ? p?.entity?.lastService : 0);
+        if (p.entity?.type?.interServiceColor.length > 0) {
+          for (const intColor of p.entity.type.interServiceColor) {
             if (
-              interService >= intColor?.lessThan &&
-              interService <= intColor?.greaterThan
+              intColor?.brand?.name === p?.entity?.brand?.name &&
+              intColor?.type?.name === p?.entity?.type?.name &&
+              intColor?.measurement === p?.entity?.measurement
             ) {
-              newPeriodicMaintenances.push(p);
-            } else if (interService >= intColor?.greaterThan) {
-              newPeriodicMaintenances.push(p);
+              if (
+                interService >= intColor?.lessThan &&
+                interService <= intColor?.greaterThan
+              ) {
+                newPeriodicMaintenances.push(p);
+              } else if (interService >= intColor?.greaterThan) {
+                newPeriodicMaintenances.push(p);
+              }
             }
           }
         }
       }
-    }
-    const newPeriodicMaintenanceIds = newPeriodicMaintenances.map((p) => p.id);
-    const entities = await this.prisma.entity.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where: {
-        periodicMaintenances: {
-          some: {
-            id: { in: newPeriodicMaintenanceIds },
+      const newPeriodicMaintenanceIds = newPeriodicMaintenances.map(
+        (p) => p.id
+      );
+      const entities = await this.prisma.entity.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where: {
+          periodicMaintenances: {
+            some: {
+              id: { in: newPeriodicMaintenanceIds },
+            },
           },
         },
-      },
-      include: {
-        periodicMaintenances: {
-          include: { verifiedBy: true },
-          where,
+        include: {
+          periodicMaintenances: {
+            include: { verifiedBy: true },
+            where,
+          },
         },
-      },
-      orderBy: [{ id: 'desc' }],
-    });
-    let completed = 0;
-    let ongoing = 0;
-    let upcoming = 0;
-    let overdue = 0;
-    entities.map((e) => {
-      e?.periodicMaintenances?.filter((e) => {
-        if (e.status === 'Completed') {
-          completed += 1;
-        } else if (e.status === 'Ongoing') {
-          ongoing += 1;
-        } else if (e.status === 'Upcoming') {
-          upcoming += 1;
-        } else if (e.status === 'Overdue') {
-          overdue += 1;
-        }
+        orderBy: [{ id: 'desc' }],
       });
-    });
+      let completed = 0;
+      let ongoing = 0;
+      let upcoming = 0;
+      let overdue = 0;
+      entities.map((e) => {
+        e?.periodicMaintenances?.filter((e) => {
+          if (e.status === 'Completed') {
+            completed += 1;
+          } else if (e.status === 'Ongoing') {
+            ongoing += 1;
+          } else if (e.status === 'Upcoming') {
+            upcoming += 1;
+          } else if (e.status === 'Overdue') {
+            overdue += 1;
+          }
+        });
+      });
 
-    const statusCount = {
-      completed,
-      ongoing,
-      upcoming,
-      overdue,
-    };
-    return statusCount;
+      const statusCount = {
+        completed,
+        ongoing,
+        upcoming,
+        overdue,
+      };
+      return statusCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async periodicMaintenancesCalendar(
     user: User,
     args: PeriodicMaintenanceConnectionArgs
   ): Promise<Entity[]> {
-    const {
-      search,
-      type2Ids,
-      measurement,
-      locationIds,
-      zoneIds,
-      divisionIds,
-      gteInterService,
-      lteInterService,
-      pmStatus,
-      from,
-      to,
-    } = args;
+    try {
+      const {
+        search,
+        type2Ids,
+        measurement,
+        locationIds,
+        zoneIds,
+        divisionIds,
+        gteInterService,
+        lteInterService,
+        pmStatus,
+        from,
+        to,
+      } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    // eslint-disable-next-line prefer-const
-    let where2: any = { AND: [] };
-    const todayStart = moment(from).startOf('day');
-    const todayEnd = moment(to).endOf('day');
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      // eslint-disable-next-line prefer-const
+      let where2: any = { AND: [] };
+      const todayStart = moment(from).startOf('day');
+      const todayEnd = moment(to).endOf('day');
 
-    where.AND.push({
-      deletedAt: null,
-      machineNumber: { not: null },
-      parentEntityId: null,
-    });
-    where2.AND.push({
-      removedAt: null,
-      entityId: { not: null },
-      currentMeterReading: { not: null },
-      type: 'Copy',
-    });
-    if (search) {
-      const or: any = [
-        { model: { contains: search, mode: 'insensitive' } },
-        {
-          machineNumber: { contains: search, mode: 'insensitive' },
-        },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+      where.AND.push({
+        deletedAt: null,
+        machineNumber: { not: null },
+        parentEntityId: null,
+      });
+      where2.AND.push({
+        removedAt: null,
+        entityId: { not: null },
+        currentMeterReading: { not: null },
+        type: 'Copy',
+      });
+      if (search) {
+        const or: any = [
+          { model: { contains: search, mode: 'insensitive' } },
+          {
+            machineNumber: { contains: search, mode: 'insensitive' },
+          },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
 
-    if (type2Ids?.length > 0) {
-      where.AND.push({
-        typeId: { in: type2Ids },
-      });
-    }
+      if (type2Ids?.length > 0) {
+        where.AND.push({
+          typeId: { in: type2Ids },
+        });
+      }
 
-    if (measurement?.length > 0) {
-      where.AND.push({
-        measurement: { in: measurement },
-      });
-    }
+      if (measurement?.length > 0) {
+        where.AND.push({
+          measurement: { in: measurement },
+        });
+      }
 
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: { in: locationIds },
-      });
-    }
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: { in: locationIds },
+        });
+      }
 
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
 
-    if (divisionIds?.length > 0) {
-      where.AND.push({
-        divisionId: { in: divisionIds },
-      });
-    }
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          divisionId: { in: divisionIds },
+        });
+      }
 
-    if (pmStatus?.length > 0) {
-      where2.AND.push({
-        status: { in: pmStatus },
-      });
-    }
+      if (pmStatus?.length > 0) {
+        where2.AND.push({
+          status: { in: pmStatus },
+        });
+      }
 
-    if (gteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
-      });
-    }
+      if (gteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+        });
+      }
 
-    if (lteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
-      });
-    }
+      if (lteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+        });
+      }
 
-    if (
-      gteInterService?.replace(/\D/g, '') &&
-      lteInterService?.replace(/\D/g, '')
-    ) {
-      where.AND.push({
-        interService: {
-          gte: parseInt(gteInterService.replace(/\D/g, '')),
-          lte: parseInt(lteInterService.replace(/\D/g, '')),
+      if (
+        gteInterService?.replace(/\D/g, '') &&
+        lteInterService?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          interService: {
+            gte: parseInt(gteInterService.replace(/\D/g, '')),
+            lte: parseInt(lteInterService.replace(/\D/g, '')),
+          },
+        });
+      }
+
+      if (from) {
+        where2.AND.push({
+          createdAt: { gte: todayStart.toDate() },
+        });
+      }
+
+      if (to) {
+        where2.AND.push({
+          createdAt: { lte: todayEnd.toDate() },
+        });
+      }
+      if (from && to) {
+        where2.AND.push({
+          createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+        });
+      }
+
+      const entities = await this.prisma.entity.findMany({
+        where,
+        include: {
+          periodicMaintenances: {
+            where: where2,
+            take: 1,
+          },
+          type: true,
+          location: { include: { zone: true } },
         },
+        orderBy: { machineNumber: 'asc' },
       });
-    }
 
-    if (from) {
-      where2.AND.push({
-        createdAt: { gte: todayStart.toDate() },
-      });
+      return entities as unknown as Entity[];
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-
-    if (to) {
-      where2.AND.push({
-        createdAt: { lte: todayEnd.toDate() },
-      });
-    }
-    if (from && to) {
-      where2.AND.push({
-        createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
-      });
-    }
-
-    const entities = await this.prisma.entity.findMany({
-      where,
-      include: {
-        periodicMaintenances: {
-          where: where2,
-          take: 1,
-        },
-        type: true,
-        location: { include: { zone: true } },
-      },
-      orderBy: { machineNumber: 'asc' },
-    });
-
-    return entities as unknown as Entity[];
   }
 }

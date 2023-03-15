@@ -1,5 +1,10 @@
 import { InjectQueue } from '@nestjs/bull';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { Queue } from 'bull';
 import nm, { SendMailOptions, Transporter } from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
@@ -44,20 +49,25 @@ export class NotificationService {
   }
 
   async create(notification: Notification, emailOptions?: SendMailOptions) {
-    const notif = await this.prisma.notification.create({
-      data: {
-        body: notification.body,
-        userId: notification.userId,
-        link: notification.link,
-      },
-    });
+    try {
+      const notif = await this.prisma.notification.create({
+        data: {
+          body: notification.body,
+          userId: notification.userId,
+          link: notification.link,
+        },
+      });
 
-    if (emailOptions) {
-      this.sendEmail(emailOptions);
+      if (emailOptions) {
+        this.sendEmail(emailOptions);
+      }
+      await this.pubSub.publish('cmms-notificationCreated', {
+        notificationCreated: notif,
+      });
+    } catch (e) {
+      console.log(e);
+      this.logger.error(e);
     }
-    await this.pubSub.publish('cmms-notificationCreated', {
-      notificationCreated: notif,
-    });
   }
 
   async sendEmail(options: SendMailOptions) {
@@ -89,10 +99,23 @@ export class NotificationService {
     notification: Notification,
     emailOptions?: SendMailOptions
   ) {
-    await this.notificationQueue.add('create', { notification, emailOptions });
+    try {
+      await this.notificationQueue.add('create', {
+        notification,
+        emailOptions,
+      });
+    } catch (e) {
+      console.log(e);
+      this.logger.error(e);
+    }
   }
 
   async sendEmailInBackground(options: SendMailOptions) {
-    await this.notificationQueue.add('sendEmail', { options });
+    try {
+      await this.notificationQueue.add('sendEmail', { options });
+    } catch (e) {
+      console.log(e);
+      this.logger.error(e);
+    }
   }
 }

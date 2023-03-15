@@ -20,54 +20,69 @@ import { UpdateBrandInput } from './dto/update-brand.input';
 export class BrandService {
   constructor(private prisma: PrismaService) {}
   async create(user: User, { name }: CreateBrandInput) {
-    const existing = await this.prisma.brand.findFirst({
-      where: { name, active: true },
-    });
-    if (existing) {
-      throw new BadRequestException('This brand already exists.');
+    try {
+      const existing = await this.prisma.brand.findFirst({
+        where: { name, active: true },
+      });
+      if (existing) {
+        throw new BadRequestException('This brand already exists.');
+      }
+      await this.prisma.brand.create({ data: { name, createdById: user.id } });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.brand.create({ data: { name, createdById: user.id } });
   }
 
   async findAll(args: BrandConnectionArgs): Promise<PaginatedBrand> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { name } = args;
-    const where: any = { AND: [{ active: true }] };
-    if (name) {
-      where.AND.push({ name: { contains: name, mode: 'insensitive' } });
-    }
-    const brands = await this.prisma.brand.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-    });
-    const count = await this.prisma.brand.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      brands.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { name } = args;
+      const where: any = { AND: [{ active: true }] };
+      if (name) {
+        where.AND.push({ name: { contains: name, mode: 'insensitive' } });
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const brands = await this.prisma.brand.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+      });
+      const count = await this.prisma.brand.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        brands.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(id: number) {
-    const brand = await this.prisma.brand.findFirst({ where: { id } });
-    if (!brand) {
-      throw new BadRequestException('Invalid brand.');
+    try {
+      const brand = await this.prisma.brand.findFirst({ where: { id } });
+      if (!brand) {
+        throw new BadRequestException('Invalid brand.');
+      }
+      return brand;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return brand;
   }
 
   async update({ id, name }: UpdateBrandInput) {
@@ -119,9 +134,14 @@ export class BrandService {
     }
   }
   async updateEntityBrand(user: User, entityId: number, brandId: number) {
-    await this.prisma.entity.update({
-      where: { id: entityId },
-      data: { brandId },
-    });
+    try {
+      await this.prisma.entity.update({
+        where: { id: entityId },
+        data: { brandId },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 }

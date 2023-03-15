@@ -610,133 +610,143 @@ export class EntityService {
   }
 
   async getLatestReading(entity: any, untill?: Date): Promise<number> {
-    let reading = entity.currentRunning;
-    const latestDailyChecklistWithReading =
-      await this.prisma.checklist.findFirst({
+    try {
+      let reading = entity.currentRunning;
+      const latestDailyChecklistWithReading =
+        await this.prisma.checklist.findFirst({
+          where: {
+            entityId: entity.id,
+            type: 'Daily',
+            currentMeterReading: { not: null },
+          },
+          orderBy: { from: 'desc' },
+        });
+      // First get the latest checklist which has meter reading added
+      if (latestDailyChecklistWithReading) {
+        reading = latestDailyChecklistWithReading.currentMeterReading;
+      }
+      // Then get all the checklists since then which have daily readings added
+      const checklistsSince = await this.prisma.checklist.findMany({
         where: {
           entityId: entity.id,
           type: 'Daily',
-          currentMeterReading: { not: null },
+          from: latestDailyChecklistWithReading
+            ? { gt: latestDailyChecklistWithReading.from }
+            : undefined,
+          workingHour: { not: null },
+          to: untill ? { lt: untill } : undefined,
         },
-        orderBy: { from: 'desc' },
+        select: { workingHour: true },
       });
-    // First get the latest checklist which has meter reading added
-    if (latestDailyChecklistWithReading) {
-      reading = latestDailyChecklistWithReading.currentMeterReading;
+      checklistsSince.forEach((c) => {
+        reading += c.workingHour;
+      });
+      return reading;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    // Then get all the checklists since then which have daily readings added
-    const checklistsSince = await this.prisma.checklist.findMany({
-      where: {
-        entityId: entity.id,
-        type: 'Daily',
-        from: latestDailyChecklistWithReading
-          ? { gt: latestDailyChecklistWithReading.from }
-          : undefined,
-        workingHour: { not: null },
-        to: untill ? { lt: untill } : undefined,
-      },
-      select: { workingHour: true },
-    });
-    checklistsSince.forEach((c) => {
-      reading += c.workingHour;
-    });
-    return reading;
   }
 
   // Get entity details
   async getSingleEntity(user: User, entityId: number) {
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: entityId },
-      include: {
-        createdBy: true,
-        dailyChecklistTemplate: {
-          include: {
-            items: true,
+    try {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+        include: {
+          createdBy: true,
+          dailyChecklistTemplate: {
+            include: {
+              items: true,
+            },
           },
-        },
-        weeklyChecklistTemplate: {
-          include: {
-            items: true,
+          weeklyChecklistTemplate: {
+            include: {
+              items: true,
+            },
           },
-        },
-        assignees: { include: { user: true }, where: { removedAt: null } },
-        type: true,
-        location: { include: { zone: true } },
-        brand: true,
-        subEntities: {
-          where: { deletedAt: null },
-          include: {
-            sparePRs: {
-              orderBy: { id: 'desc' },
-              where: { completedAt: null },
-              include: { sparePRDetails: true },
-            },
-            breakdowns: {
-              orderBy: { id: 'desc' },
-              where: { completedAt: null },
-              include: {
-                createdBy: true,
-                details: { include: { repairs: true } },
-                repairs: { include: { breakdownDetail: true } },
+          assignees: { include: { user: true }, where: { removedAt: null } },
+          type: true,
+          location: { include: { zone: true } },
+          brand: true,
+          subEntities: {
+            where: { deletedAt: null },
+            include: {
+              sparePRs: {
+                orderBy: { id: 'desc' },
+                where: { completedAt: null },
+                include: { sparePRDetails: true },
               },
-            },
-            assignees: {
-              include: {
-                user: true,
+              breakdowns: {
+                orderBy: { id: 'desc' },
+                where: { completedAt: null },
+                include: {
+                  createdBy: true,
+                  details: { include: { repairs: true } },
+                  repairs: { include: { breakdownDetail: true } },
+                },
               },
-              where: {
-                removedAt: null,
+              assignees: {
+                include: {
+                  user: true,
+                },
+                where: {
+                  removedAt: null,
+                },
               },
+              type: true,
+              location: { include: { zone: true } },
+              repairs: {
+                orderBy: { id: 'desc' },
+                where: { breakdownId: null, breakdownDetailId: null },
+                take: 10,
+              },
+              hullType: true,
+              brand: true,
+              parentEntity: true,
             },
-            type: true,
-            location: { include: { zone: true } },
-            repairs: {
-              orderBy: { id: 'desc' },
-              where: { breakdownId: null, breakdownDetailId: null },
-              take: 10,
-            },
-            hullType: true,
-            brand: true,
-            parentEntity: true,
+            orderBy: { id: 'desc' },
           },
-          orderBy: { id: 'desc' },
+          division: true,
+          hullType: true,
         },
-        division: true,
-        hullType: true,
-      },
-    });
-    if (entity?.type?.entityType === 'Machine') {
-      await this.checkEntityAssignmentOrPermission(
-        entityId,
-        user.id,
-        entity,
-        [],
-        ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
-      );
-    } else if (entity?.type?.entityType === 'Vehicle') {
-      await this.checkEntityAssignmentOrPermission(
-        entityId,
-        user.id,
-        entity,
-        [],
-        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
-      );
-    } else if (entity?.type?.entityType === 'Vessel') {
-      await this.checkEntityAssignmentOrPermission(
-        entityId,
-        user.id,
-        entity,
-        [],
-        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VESSELS']
-      );
+      });
+      if (entity?.type?.entityType === 'Machine') {
+        await this.checkEntityAssignmentOrPermission(
+          entityId,
+          user.id,
+          entity,
+          [],
+          ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
+        );
+      } else if (entity?.type?.entityType === 'Vehicle') {
+        await this.checkEntityAssignmentOrPermission(
+          entityId,
+          user.id,
+          entity,
+          [],
+          ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
+        );
+      } else if (entity?.type?.entityType === 'Vessel') {
+        await this.checkEntityAssignmentOrPermission(
+          entityId,
+          user.id,
+          entity,
+          [],
+          ['VIEW_ALL_ENTITY', 'VIEW_ALL_VESSELS']
+        );
+      }
+      if (!entity) throw new BadRequestException('Entity not found.');
+      const reading = await this.getLatestReading(entity);
+      entity.currentRunning = reading;
+      for (const e of entity.subEntities) {
+        e.currentRunning = await this.getLatestReading(e);
+      }
+      return entity;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    if (!entity) throw new BadRequestException('Entity not found.');
-    const reading = await this.getLatestReading(entity);
-    entity.currentRunning = reading;
-    for (const e of entity.subEntities) {
-      e.currentRunning = await this.getLatestReading(e);
-    }
-    return entity;
   }
 
   //** Get all entity. Results are paginated. User cursor argument to go forward/backward. */
@@ -744,126 +754,76 @@ export class EntityService {
     user: User,
     args: EntityConnectionArgs
   ): Promise<PaginatedEntity> {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
-    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
-    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
+    try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
 
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const {
-      createdById,
-      search,
-      assignedToId,
-      entityType,
-      status,
-      locationIds,
-      divisionIds,
-      isAssigned,
-      typeIds,
-      zoneIds,
-      brandIds,
-      engine,
-      measurement,
-      lteInterService,
-      gteInterService,
-      isIncompleteChecklistTask,
-      entityIds,
-      divisionExist,
-      locationExist,
-      brandExist,
-    } = args;
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const {
+        createdById,
+        search,
+        assignedToId,
+        entityType,
+        status,
+        locationIds,
+        divisionIds,
+        isAssigned,
+        typeIds,
+        zoneIds,
+        brandIds,
+        engine,
+        measurement,
+        lteInterService,
+        gteInterService,
+        isIncompleteChecklistTask,
+        entityIds,
+        divisionExist,
+        locationExist,
+        brandExist,
+      } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    const todayStart = moment().startOf('day');
-    const todayEnd = moment().endOf('day');
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      const todayStart = moment().startOf('day');
+      const todayEnd = moment().endOf('day');
 
-    where.AND.push({
-      deletedAt: null,
-    });
-
-    if (search) {
-      const or: any = [
-        { model: { contains: search, mode: 'insensitive' } },
-        { machineNumber: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
       where.AND.push({
-        OR: or,
+        deletedAt: null,
       });
-    }
-    if (createdById) {
-      where.AND.push({ createdById });
-    }
-    if (assignedToId || !hasViewAll) {
-      if (
-        assignedToId ||
-        (!hasViewAllMachinery &&
-          entityType?.some((type) => type === 'Machine') &&
-          !hasViewAllDivisionEntity)
-      ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId:
-                !hasViewAll || !hasViewAllMachinery ? user.id : assignedToId,
-              removedAt: null,
-            },
-          },
-        });
-      } else if (
-        assignedToId ||
-        (!hasViewAllVehicles &&
-          entityType?.some((type) => type === 'Vehicle') &&
-          !hasViewAllDivisionEntity)
-      ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId:
-                !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
-              removedAt: null,
-            },
-          },
-        });
-      } else if (
-        assignedToId ||
-        (!hasViewAllVessels &&
-          entityType?.some((type) => type === 'Vessel') &&
-          !hasViewAllDivisionEntity)
-      ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId:
-                !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
-              removedAt: null,
-            },
-          },
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity &&
-          entityType?.some((type) => type === 'Machine') &&
-          !hasViewAllMachinery)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findMany({
-          where: { userId: user.id },
-        });
-        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+
+      if (search) {
         const or: any = [
-          { divisionId: { in: userDivisionIds } },
-          {
+          { model: { contains: search, mode: 'insensitive' } },
+          { machineNumber: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (createdById) {
+        where.AND.push({ createdById });
+      }
+      if (assignedToId || !hasViewAll) {
+        if (
+          assignedToId ||
+          (!hasViewAllMachinery &&
+            entityType?.some((type) => type === 'Machine') &&
+            !hasViewAllDivisionEntity)
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId:
@@ -871,24 +831,14 @@ export class EntityService {
                 removedAt: null,
               },
             },
-          },
-        ];
-        where.AND.push({
-          OR: or,
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity &&
-          entityType?.some((type) => type === 'Vehicle') &&
-          !hasViewAllVehicles)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findMany({
-          where: { userId: user.id },
-        });
-        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-        const or: any = [
-          { divisionId: { in: userDivisionIds } },
-          {
+          });
+        } else if (
+          assignedToId ||
+          (!hasViewAllVehicles &&
+            entityType?.some((type) => type === 'Vehicle') &&
+            !hasViewAllDivisionEntity)
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId:
@@ -896,24 +846,14 @@ export class EntityService {
                 removedAt: null,
               },
             },
-          },
-        ];
-        where.AND.push({
-          OR: or,
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity &&
-          entityType?.some((type) => type === 'Vessel') &&
-          !hasViewAllVessels)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findMany({
-          where: { userId: user.id },
-        });
-        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-        const or: any = [
-          { divisionId: { in: userDivisionIds } },
-          {
+          });
+        } else if (
+          assignedToId ||
+          (!hasViewAllVessels &&
+            entityType?.some((type) => type === 'Vessel') &&
+            !hasViewAllDivisionEntity)
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId:
@@ -921,305 +861,382 @@ export class EntityService {
                 removedAt: null,
               },
             },
-          },
-        ];
-        where.AND.push({
-          OR: or,
-        });
-      } else if (
-        assignedToId ||
-        (hasViewAllDivisionEntity && !hasViewAllVessels)
-      ) {
-        const userDivision = await this.prisma.divisionUsers.findMany({
-          where: { userId: user.id },
-        });
-        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-        const or: any = [
-          { divisionId: { in: userDivisionIds } },
-          {
-            assignees: {
-              some: {
-                userId:
-                  !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
-                removedAt: null,
-              },
-            },
-          },
-        ];
-        where.AND.push({
-          OR: or,
-        });
-      }
-    }
-
-    if (status?.length > 0) {
-      where.AND.push({
-        status: { in: status },
-      });
-    }
-
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
-
-    if (brandIds?.length > 0) {
-      where.AND.push({
-        brandId: {
-          in: brandIds,
-        },
-      });
-    }
-
-    if (divisionIds?.length > 0) {
-      where.AND.push({
-        divisionId: {
-          in: divisionIds,
-        },
-      });
-    }
-
-    if (isAssigned) {
-      where.AND.push({
-        assignees: {
-          some: {
-            removedAt: null,
-          },
-        },
-      });
-    }
-
-    if (entityType?.length > 0) {
-      where.AND.push({
-        type: {
-          entityType: {
-            in: entityType,
-          },
-        },
-      });
-    }
-
-    if (typeIds?.length > 0) {
-      where.AND.push({
-        typeId: { in: typeIds },
-      });
-    }
-
-    if (engine?.length > 0) {
-      where.AND.push({
-        engine: { in: engine },
-      });
-    }
-
-    if (measurement?.length > 0) {
-      where.AND.push({
-        measurement: { in: measurement },
-      });
-    }
-
-    if (gteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
-      });
-    }
-
-    if (lteInterService?.replace(/\D/g, '')) {
-      where.AND.push({
-        interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
-      });
-    }
-
-    if (
-      gteInterService?.replace(/\D/g, '') &&
-      lteInterService?.replace(/\D/g, '')
-    ) {
-      where.AND.push({
-        interService: {
-          gte: parseInt(gteInterService.replace(/\D/g, '')),
-          lte: parseInt(lteInterService.replace(/\D/g, '')),
-        },
-      });
-    }
-
-    if (isIncompleteChecklistTask) {
-      const checklist = await this.prisma.checklist.findMany({
-        where: {
-          NOT: [{ entityId: null }],
-          from: todayStart.toDate(),
-          to: todayEnd.toDate(),
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      const checklistIds = checklist.map((id) => id.id);
-
-      const checklistItem = await this.prisma.checklistItem.findMany({
-        where: {
-          checklistId: {
-            in: checklistIds,
-          },
-          completedAt: null,
-        },
-        select: {
-          checklistId: true,
-        },
-      });
-      const checklistItemIds = checklistItem.map((id) => id.checklistId);
-
-      const entity = await this.prisma.checklist.findMany({
-        where: {
-          id: {
-            in: checklistItemIds,
-          },
-        },
-        select: {
-          entityId: true,
-        },
-      });
-      const entityIds = entity.map((id) => id.entityId);
-      where.AND.push({
-        id: {
-          in: entityIds,
-        },
-      });
-    }
-
-    if (entityIds?.length > 0) {
-      where.AND.push({ id: { in: entityIds } });
-    }
-    if (divisionExist) {
-      where.AND.push({ divisionId: { not: null } });
-    }
-    if (locationExist) {
-      where.AND.push({ locationId: { not: null } });
-    }
-    if (brandExist) {
-      where.AND.push({ brandId: { not: null } });
-    }
-    const entities = await this.prisma.entity.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        createdBy: true,
-        sparePRs: {
-          orderBy: { id: 'desc' },
-          where: { completedAt: null },
-          include: { sparePRDetails: true },
-        },
-        breakdowns: {
-          orderBy: { id: 'desc' },
-          where: { completedAt: null },
-          include: {
-            createdBy: true,
-            details: { include: { repairs: true } },
-            repairs: { include: { breakdownDetail: true } },
-          },
-        },
-        assignees: {
-          include: {
-            user: true,
-          },
-          where: {
-            removedAt: null,
-          },
-        },
-        type: {
-          include: {
-            interServiceColor: {
-              where: { removedAt: null },
-              include: { brand: true, type: true },
-            },
-          },
-        },
-        hullType: true,
-        location: { include: { zone: true } },
-        repairs: {
-          orderBy: { id: 'desc' },
-          where: { breakdownId: null, breakdownDetailId: null },
-          take: 10,
-        },
-        brand: true,
-        division: true,
-        subEntities: {
-          where: { deletedAt: null },
-          include: {
-            sparePRs: {
-              orderBy: { id: 'desc' },
-              where: { completedAt: null },
-              include: { sparePRDetails: true },
-            },
-            breakdowns: {
-              orderBy: { id: 'desc' },
-              where: { completedAt: null },
-              include: {
-                createdBy: true,
-                details: { include: { repairs: true } },
-                repairs: { include: { breakdownDetail: true } },
-              },
-            },
-            assignees: {
-              include: {
-                user: true,
-              },
-              where: {
-                removedAt: null,
-              },
-            },
-            type: {
-              include: {
-                interServiceColor: {
-                  where: { removedAt: null },
-                  include: { brand: true, type: true },
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity &&
+            entityType?.some((type) => type === 'Machine') &&
+            !hasViewAllMachinery)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findMany({
+            where: { userId: user.id },
+          });
+          const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+          const or: any = [
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllMachinery
+                      ? user.id
+                      : assignedToId,
+                  removedAt: null,
                 },
               },
             },
-            location: { include: { zone: true } },
-            repairs: {
-              orderBy: { id: 'desc' },
-              where: { breakdownId: null, breakdownDetailId: null },
-              take: 10,
+          ];
+          where.AND.push({
+            OR: or,
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity &&
+            entityType?.some((type) => type === 'Vehicle') &&
+            !hasViewAllVehicles)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findMany({
+            where: { userId: user.id },
+          });
+          const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+          const or: any = [
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllVehicles ? user.id : assignedToId,
+                  removedAt: null,
+                },
+              },
             },
-            hullType: true,
-            parentEntity: true,
-            brand: true,
-          },
-          orderBy: { id: 'desc' },
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
-    for (const entity of entities) {
-      const reading = await this.getLatestReading(entity);
-      entity.currentRunning = reading;
-    }
-    const count = await this.prisma.entity.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      entities.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+          ];
+          where.AND.push({
+            OR: or,
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity &&
+            entityType?.some((type) => type === 'Vessel') &&
+            !hasViewAllVessels)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findMany({
+            where: { userId: user.id },
+          });
+          const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+          const or: any = [
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                  removedAt: null,
+                },
+              },
+            },
+          ];
+          where.AND.push({
+            OR: or,
+          });
+        } else if (
+          assignedToId ||
+          (hasViewAllDivisionEntity && !hasViewAllVessels)
+        ) {
+          const userDivision = await this.prisma.divisionUsers.findMany({
+            where: { userId: user.id },
+          });
+          const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+          const or: any = [
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId:
+                    !hasViewAll || !hasViewAllVessels ? user.id : assignedToId,
+                  removedAt: null,
+                },
+              },
+            },
+          ];
+          where.AND.push({
+            OR: or,
+          });
+        }
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+
+      if (status?.length > 0) {
+        where.AND.push({
+          status: { in: status },
+        });
+      }
+
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
+
+      if (brandIds?.length > 0) {
+        where.AND.push({
+          brandId: {
+            in: brandIds,
+          },
+        });
+      }
+
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          divisionId: {
+            in: divisionIds,
+          },
+        });
+      }
+
+      if (isAssigned) {
+        where.AND.push({
+          assignees: {
+            some: {
+              removedAt: null,
+            },
+          },
+        });
+      }
+
+      if (entityType?.length > 0) {
+        where.AND.push({
+          type: {
+            entityType: {
+              in: entityType,
+            },
+          },
+        });
+      }
+
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
+        });
+      }
+
+      if (engine?.length > 0) {
+        where.AND.push({
+          engine: { in: engine },
+        });
+      }
+
+      if (measurement?.length > 0) {
+        where.AND.push({
+          measurement: { in: measurement },
+        });
+      }
+
+      if (gteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          interService: { gte: parseInt(gteInterService.replace(/\D/g, '')) },
+        });
+      }
+
+      if (lteInterService?.replace(/\D/g, '')) {
+        where.AND.push({
+          interService: { lte: parseInt(lteInterService.replace(/\D/g, '')) },
+        });
+      }
+
+      if (
+        gteInterService?.replace(/\D/g, '') &&
+        lteInterService?.replace(/\D/g, '')
+      ) {
+        where.AND.push({
+          interService: {
+            gte: parseInt(gteInterService.replace(/\D/g, '')),
+            lte: parseInt(lteInterService.replace(/\D/g, '')),
+          },
+        });
+      }
+
+      if (isIncompleteChecklistTask) {
+        const checklist = await this.prisma.checklist.findMany({
+          where: {
+            NOT: [{ entityId: null }],
+            from: todayStart.toDate(),
+            to: todayEnd.toDate(),
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        const checklistIds = checklist.map((id) => id.id);
+
+        const checklistItem = await this.prisma.checklistItem.findMany({
+          where: {
+            checklistId: {
+              in: checklistIds,
+            },
+            completedAt: null,
+          },
+          select: {
+            checklistId: true,
+          },
+        });
+        const checklistItemIds = checklistItem.map((id) => id.checklistId);
+
+        const entity = await this.prisma.checklist.findMany({
+          where: {
+            id: {
+              in: checklistItemIds,
+            },
+          },
+          select: {
+            entityId: true,
+          },
+        });
+        const entityIds = entity.map((id) => id.entityId);
+        where.AND.push({
+          id: {
+            in: entityIds,
+          },
+        });
+      }
+
+      if (entityIds?.length > 0) {
+        where.AND.push({ id: { in: entityIds } });
+      }
+      if (divisionExist) {
+        where.AND.push({ divisionId: { not: null } });
+      }
+      if (locationExist) {
+        where.AND.push({ locationId: { not: null } });
+      }
+      if (brandExist) {
+        where.AND.push({ brandId: { not: null } });
+      }
+      const entities = await this.prisma.entity.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          createdBy: true,
+          sparePRs: {
+            orderBy: { id: 'desc' },
+            where: { completedAt: null },
+            include: { sparePRDetails: true },
+          },
+          breakdowns: {
+            orderBy: { id: 'desc' },
+            where: { completedAt: null },
+            include: {
+              createdBy: true,
+              details: { include: { repairs: true } },
+              repairs: { include: { breakdownDetail: true } },
+            },
+          },
+          assignees: {
+            include: {
+              user: true,
+            },
+            where: {
+              removedAt: null,
+            },
+          },
+          type: {
+            include: {
+              interServiceColor: {
+                where: { removedAt: null },
+                include: { brand: true, type: true },
+              },
+            },
+          },
+          hullType: true,
+          location: { include: { zone: true } },
+          repairs: {
+            orderBy: { id: 'desc' },
+            where: { breakdownId: null, breakdownDetailId: null },
+            take: 10,
+          },
+          brand: true,
+          division: true,
+          subEntities: {
+            where: { deletedAt: null },
+            include: {
+              sparePRs: {
+                orderBy: { id: 'desc' },
+                where: { completedAt: null },
+                include: { sparePRDetails: true },
+              },
+              breakdowns: {
+                orderBy: { id: 'desc' },
+                where: { completedAt: null },
+                include: {
+                  createdBy: true,
+                  details: { include: { repairs: true } },
+                  repairs: { include: { breakdownDetail: true } },
+                },
+              },
+              assignees: {
+                include: {
+                  user: true,
+                },
+                where: {
+                  removedAt: null,
+                },
+              },
+              type: {
+                include: {
+                  interServiceColor: {
+                    where: { removedAt: null },
+                    include: { brand: true, type: true },
+                  },
+                },
+              },
+              location: { include: { zone: true } },
+              repairs: {
+                orderBy: { id: 'desc' },
+                where: { breakdownId: null, breakdownDetailId: null },
+                take: 10,
+              },
+              hullType: true,
+              parentEntity: true,
+              brand: true,
+            },
+            orderBy: { id: 'desc' },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+      for (const entity of entities) {
+        const reading = await this.getLatestReading(entity);
+        entity.currentRunning = reading;
+      }
+      const count = await this.prisma.entity.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        entities.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Create entity repair request. */
@@ -1470,70 +1487,75 @@ export class EntityService {
     user: User,
     args: EntityRepairConnectionArgs
   ): Promise<PaginatedEntityRepair> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { entityId, search, approve, complete } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { entityId, search, approve, complete } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    if (entityId) {
-      where.AND.push({ entityId });
-    }
-    if (search) {
-      const or: any = [
-        { projectName: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      if (entityId) {
+        where.AND.push({ entityId });
       }
-      where.AND.push({
-        OR: or,
+      if (search) {
+        const or: any = [
+          { projectName: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (approve) {
+        where.AND.push({
+          NOT: [{ approvedAt: null }],
+        });
+      }
+      if (complete) {
+        where.AND.push({
+          NOT: [{ repairedAt: null }],
+        });
+      }
+      const repair = await this.prisma.entityRepairRequest.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { id: 'desc' },
+        include: {
+          requestedBy: true,
+          supervisor: true,
+          projectManager: true,
+          approvedBy: true,
+          operator: true,
+          repairedBy: true,
+        },
       });
-    }
-    if (approve) {
-      where.AND.push({
-        NOT: [{ approvedAt: null }],
-      });
-    }
-    if (complete) {
-      where.AND.push({
-        NOT: [{ repairedAt: null }],
-      });
-    }
-    const repair = await this.prisma.entityRepairRequest.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      orderBy: { id: 'desc' },
-      include: {
-        requestedBy: true,
-        supervisor: true,
-        projectManager: true,
-        approvedBy: true,
-        operator: true,
-        repairedBy: true,
-      },
-    });
 
-    const count = await this.prisma.entityRepairRequest.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      repair.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const count = await this.prisma.entityRepairRequest.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        repair.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get entity history. Results are paginated. User cursor argument to go forward/backward. */
@@ -1541,74 +1563,79 @@ export class EntityService {
     user: User,
     args: EntityHistoryConnectionArgs
   ): Promise<PaginatedEntityHistory> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, entityId, locationIds, from, to } = args;
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { search, entityId, locationIds, from, to } = args;
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
 
-    if (entityId) {
-      where.AND.push({ entityId });
-    }
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
+      if (entityId) {
+        where.AND.push({ entityId });
+      }
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+
+      if (from && to) {
+        where.AND.push({
+          createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
+        });
+      }
+      //for now these only
+      if (search) {
+        const or: any = [
+          { type: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the entity ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      const history = await this.prisma.entityHistory.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          completedBy: true,
+          location: true,
         },
+        orderBy: { id: 'desc' },
       });
-    }
 
-    if (from && to) {
-      where.AND.push({
-        createdAt: { gte: fromDate.toDate(), lte: toDate.toDate() },
-      });
+      const count = await this.prisma.entityHistory.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        history.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    //for now these only
-    if (search) {
-      const or: any = [
-        { type: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the entity ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const history = await this.prisma.entityHistory.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        completedBy: true,
-        location: true,
-      },
-      orderBy: { id: 'desc' },
-    });
-
-    const count = await this.prisma.entityHistory.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      history.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
   }
 
   //** Assign 'user' to entity and return transactions. Meant to be used with the bulk assign function in assignment.service */
@@ -1620,99 +1647,109 @@ export class EntityService {
   ): Promise<
     [PrismaPromise<Prisma.BatchPayload>, Promise<void>[], Promise<void>[]]
   > {
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: entityId },
-      include: { type: true },
-    });
-    if (!entity) {
-      throw new BadRequestException('Invalid entity.');
-    }
+    try {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+        include: { type: true },
+      });
+      if (!entity) {
+        throw new BadRequestException('Invalid entity.');
+      }
 
-    // Filter out existing assignments of type
-    const existingAssignmentIds = await this.getEntityAssignmentIds(
-      entityId,
-      undefined,
-      type
-    );
-    const newIds = userIds.filter((id) => !existingAssignmentIds.includes(id));
-    if (newIds.length === 0) {
-      return [null, [], []];
-    }
-    const newAssignments = await this.prisma.user.findMany({
-      where: {
-        id: { in: newIds },
-      },
-      select: {
-        id: true,
-        fullName: true,
-        rcno: true,
-        email: true,
-      },
-    });
-
-    const assignPromise = this.prisma.entityAssignment.createMany({
-      data: newIds.map((userId) => ({
+      // Filter out existing assignments of type
+      const existingAssignmentIds = await this.getEntityAssignmentIds(
         entityId,
-        userId,
-        type,
-      })),
-    });
+        undefined,
+        type
+      );
+      const newIds = userIds.filter(
+        (id) => !existingAssignmentIds.includes(id)
+      );
+      if (newIds.length === 0) {
+        return [null, [], []];
+      }
+      const newAssignments = await this.prisma.user.findMany({
+        where: {
+          id: { in: newIds },
+        },
+        select: {
+          id: true,
+          fullName: true,
+          rcno: true,
+          email: true,
+        },
+      });
 
-    const entityUserIds = await this.getEntityAssignmentIds(entityId, user.id);
-    const entityUsersExceptNewAssignments = entityUserIds.filter(
-      (id) => !userIds.includes(id)
-    );
+      const assignPromise = this.prisma.entityAssignment.createMany({
+        data: newIds.map((userId) => ({
+          entityId,
+          userId,
+          type,
+        })),
+      });
 
-    const entityHistory: Promise<void>[] = [];
-    // Text format new assignments into a readable list with commas and 'and'
-    // at the end.
-    const newAssignmentsFormatted = newAssignments
-      .map((a) => `${a.fullName} (${a.rcno})`)
-      .join(', ')
-      .replace(/, ([^,]*)$/, ' and $1');
+      const entityUserIds = await this.getEntityAssignmentIds(
+        entityId,
+        user.id
+      );
+      const entityUsersExceptNewAssignments = entityUserIds.filter(
+        (id) => !userIds.includes(id)
+      );
 
-    entityHistory.push(
-      this.createEntityHistoryInBackground({
-        type: 'User Assign',
-        description: `${newAssignmentsFormatted} assigned as ${type}.`,
-        entityId: entityId,
-        completedById: user.id,
-      })
-    );
+      const entityHistory: Promise<void>[] = [];
+      // Text format new assignments into a readable list with commas and 'and'
+      // at the end.
+      const newAssignmentsFormatted = newAssignments
+        .map((a) => `${a.fullName} (${a.rcno})`)
+        .join(', ')
+        .replace(/, ([^,]*)$/, ' and $1');
 
-    const notifications: Promise<void>[] = [];
-    // Notification to entity assigned users except new assignments
-    for (const id of entityUsersExceptNewAssignments) {
-      notifications.push(
-        this.notificationService.createInBackground({
-          userId: id,
-          body: `${user.fullName} (${
-            user.rcno
-          }) assigned ${newAssignmentsFormatted} to ${
-            `${entity.type?.name} ` ?? ''
-          }${entity.machineNumber} as ${type}.`,
-          link: `/entity/${entityId}`,
+      entityHistory.push(
+        this.createEntityHistoryInBackground({
+          type: 'User Assign',
+          description: `${newAssignmentsFormatted} assigned as ${type}.`,
+          entityId: entityId,
+          completedById: user.id,
         })
       );
-    }
 
-    // Notification to new assignments
-    const newAssignmentsWithoutCurrentUser = newAssignments.filter(
-      (na) => na.id !== user.id
-    );
-    const emailBody = `You have been assigned to ${
-      `${entity.type?.name} ` ?? ''
-    }${entity.machineNumber} as ${type}.`;
-    for (const newAssignment of newAssignmentsWithoutCurrentUser) {
-      notifications.push(
-        this.notificationService.createInBackground({
-          userId: newAssignment.id,
-          body: emailBody,
-          link: `/entity/${entityId}`,
-        })
+      const notifications: Promise<void>[] = [];
+      // Notification to entity assigned users except new assignments
+      for (const id of entityUsersExceptNewAssignments) {
+        notifications.push(
+          this.notificationService.createInBackground({
+            userId: id,
+            body: `${user.fullName} (${
+              user.rcno
+            }) assigned ${newAssignmentsFormatted} to ${
+              `${entity.type?.name} ` ?? ''
+            }${entity.machineNumber} as ${type}.`,
+            link: `/entity/${entityId}`,
+          })
+        );
+      }
+
+      // Notification to new assignments
+      const newAssignmentsWithoutCurrentUser = newAssignments.filter(
+        (na) => na.id !== user.id
       );
+      const emailBody = `You have been assigned to ${
+        `${entity.type?.name} ` ?? ''
+      }${entity.machineNumber} as ${type}.`;
+      for (const newAssignment of newAssignmentsWithoutCurrentUser) {
+        notifications.push(
+          this.notificationService.createInBackground({
+            userId: newAssignment.id,
+            body: emailBody,
+            link: `/entity/${entityId}`,
+          })
+        );
+      }
+      return [assignPromise, notifications, entityHistory];
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return [assignPromise, notifications, entityHistory];
   }
 
   //** Unassign 'user' from entity and return transactions. Meant to be used with the bulk unassign function in assignment.service */
@@ -1724,100 +1761,108 @@ export class EntityService {
   ): Promise<
     [PrismaPromise<Prisma.BatchPayload>, Promise<void>[], Promise<void>[]]
   > {
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: entityId },
-      include: { type: true },
-    });
-    if (!entity) {
-      throw new BadRequestException('Invalid entity.');
-    }
+    try {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+        include: { type: true },
+      });
+      if (!entity) {
+        throw new BadRequestException('Invalid entity.');
+      }
 
-    // Filter out existing assignments of type
-    const existingAssignmentIds = await this.getEntityAssignmentIds(
-      entityId,
-      undefined,
-      type
-    );
-    const existingIds = userIds.filter((id) =>
-      existingAssignmentIds.includes(id)
-    );
-    if (existingIds.length === 0) {
-      return [null, [], []];
-    }
-    const newUnassignments = await this.prisma.user.findMany({
-      where: {
-        id: { in: existingIds },
-      },
-      select: {
-        id: true,
-        fullName: true,
-        rcno: true,
-        email: true,
-      },
-    });
+      // Filter out existing assignments of type
+      const existingAssignmentIds = await this.getEntityAssignmentIds(
+        entityId,
+        undefined,
+        type
+      );
+      const existingIds = userIds.filter((id) =>
+        existingAssignmentIds.includes(id)
+      );
+      if (existingIds.length === 0) {
+        return [null, [], []];
+      }
+      const newUnassignments = await this.prisma.user.findMany({
+        where: {
+          id: { in: existingIds },
+        },
+        select: {
+          id: true,
+          fullName: true,
+          rcno: true,
+          email: true,
+        },
+      });
 
-    const unassignPromise = this.prisma.entityAssignment.updateMany({
-      where: { entityId, userId: { in: existingIds } },
-      data: {
-        removedAt: new Date(),
-      },
-    });
+      const unassignPromise = this.prisma.entityAssignment.updateMany({
+        where: { entityId, userId: { in: existingIds } },
+        data: {
+          removedAt: new Date(),
+        },
+      });
 
-    const entityUserIds = await this.getEntityAssignmentIds(entityId, user.id);
-    const entityUsersExceptNewAssignments = entityUserIds.filter(
-      (id) => !userIds.includes(id)
-    );
+      const entityUserIds = await this.getEntityAssignmentIds(
+        entityId,
+        user.id
+      );
+      const entityUsersExceptNewAssignments = entityUserIds.filter(
+        (id) => !userIds.includes(id)
+      );
 
-    const entityHistory: Promise<void>[] = [];
-    // Text format new assignments into a readable list with commas and 'and'
-    // at the end.
-    const newAssignmentsFormatted = newUnassignments
-      .map((a) => `${a.fullName} (${a.rcno})`)
-      .join(', ')
-      .replace(/, ([^,]*)$/, ' and $1');
+      const entityHistory: Promise<void>[] = [];
+      // Text format new assignments into a readable list with commas and 'and'
+      // at the end.
+      const newAssignmentsFormatted = newUnassignments
+        .map((a) => `${a.fullName} (${a.rcno})`)
+        .join(', ')
+        .replace(/, ([^,]*)$/, ' and $1');
 
-    entityHistory.push(
-      this.createEntityHistoryInBackground({
-        type: 'User Unassigned',
-        description: `${newAssignmentsFormatted} removed as ${type}.`,
-        entityId: entityId,
-        completedById: user.id,
-      })
-    );
-
-    const notifications: Promise<void>[] = [];
-    // Notification to entity assigned users except new assignments
-    for (const id of entityUsersExceptNewAssignments) {
-      notifications.push(
-        this.notificationService.createInBackground({
-          userId: id,
-          body: `${user.fullName} (${
-            user.rcno
-          }) removed ${newAssignmentsFormatted} from ${
-            `${entity.type?.name} ` ?? ''
-          }${entity.machineNumber} as ${type}.`,
-          link: `/entity/${entityId}`,
+      entityHistory.push(
+        this.createEntityHistoryInBackground({
+          type: 'User Unassigned',
+          description: `${newAssignmentsFormatted} removed as ${type}.`,
+          entityId: entityId,
+          completedById: user.id,
         })
       );
-    }
 
-    // Notification to new assignments
-    const newUnassignmentsWithoutCurrentUser = newUnassignments.filter(
-      (na) => na.id !== user.id
-    );
-    const emailBody = `You have been removed from ${
-      `${entity.type?.name} ` ?? ''
-    }${entity.machineNumber} as ${type}.`;
-    for (const newUnassignment of newUnassignmentsWithoutCurrentUser) {
-      notifications.push(
-        this.notificationService.createInBackground({
-          userId: newUnassignment.id,
-          body: emailBody,
-          link: `/entity/${entityId}`,
-        })
+      const notifications: Promise<void>[] = [];
+      // Notification to entity assigned users except new assignments
+      for (const id of entityUsersExceptNewAssignments) {
+        notifications.push(
+          this.notificationService.createInBackground({
+            userId: id,
+            body: `${user.fullName} (${
+              user.rcno
+            }) removed ${newAssignmentsFormatted} from ${
+              `${entity.type?.name} ` ?? ''
+            }${entity.machineNumber} as ${type}.`,
+            link: `/entity/${entityId}`,
+          })
+        );
+      }
+
+      // Notification to new assignments
+      const newUnassignmentsWithoutCurrentUser = newUnassignments.filter(
+        (na) => na.id !== user.id
       );
+      const emailBody = `You have been removed from ${
+        `${entity.type?.name} ` ?? ''
+      }${entity.machineNumber} as ${type}.`;
+      for (const newUnassignment of newUnassignmentsWithoutCurrentUser) {
+        notifications.push(
+          this.notificationService.createInBackground({
+            userId: newUnassignment.id,
+            body: emailBody,
+            link: `/entity/${entityId}`,
+          })
+        );
+      }
+      return [unassignPromise, notifications, entityHistory];
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return [unassignPromise, notifications, entityHistory];
   }
 
   //** Assign 'user' to entity. */
@@ -1945,30 +1990,35 @@ export class EntityService {
     userUuid,
     type,
   }: UnassignExternalInput) {
-    const user = await this.authService.validateUser(requestingUserUuid);
-    if (!user) {
-      throw new BadRequestException('Invalid requesting user.');
+    try {
+      const user = await this.authService.validateUser(requestingUserUuid);
+      if (!user) {
+        throw new BadRequestException('Invalid requesting user.');
+      }
+      const unassign = await this.prisma.user.findFirst({
+        where: {
+          userId: userUuid,
+        },
+        select: {
+          id: true,
+          fullName: true,
+          rcno: true,
+        },
+      });
+      await this.prisma.entityAssignment.updateMany({
+        where: { entityId, userId: unassign.id, type, removedAt: null },
+        data: { removedAt: new Date() },
+      });
+      await this.createEntityHistoryInBackground({
+        type: 'User Unassigned',
+        description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
+        entityId: entityId,
+        completedById: user.id,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const unassign = await this.prisma.user.findFirst({
-      where: {
-        userId: userUuid,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        rcno: true,
-      },
-    });
-    await this.prisma.entityAssignment.updateMany({
-      where: { entityId, userId: unassign.id, type, removedAt: null },
-      data: { removedAt: new Date() },
-    });
-    await this.createEntityHistoryInBackground({
-      type: 'User Unassigned',
-      description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
-      entityId: entityId,
-      completedById: user.id,
-    });
   }
 
   //** unassign user from entity. */
@@ -2013,70 +2063,80 @@ export class EntityService {
 
   //** Create Entity history */
   async createEntityHistory(entityHistory: EntityHistoryInterface) {
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: entityHistory.entityId },
-      select: {
-        status: true,
-        typeId: true,
-        locationId: true,
-        id: true,
-      },
-    });
-
-    const now = moment();
-    //not using these anymore but coding it anyway
-    let workingHour = await this.getLatestReading(entity);
-    let idleHour = 0;
-    let breakdownHour = 0;
-    if (workingHour < 60) {
-      idleHour = 60 - workingHour;
-    }
-
-    if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-      const fromDate = await this.prisma.entityHistory.findFirst({
-        where: {
-          entityStatus: 'Working',
-        },
-        orderBy: {
-          id: 'desc',
+    try {
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityHistory.entityId },
+        select: {
+          status: true,
+          typeId: true,
+          locationId: true,
+          id: true,
         },
       });
-      const duration = moment.duration(now.diff(fromDate.createdAt));
-      breakdownHour = parseInt(duration.asHours().toFixed(0));
-      if (breakdownHour >= 60) {
-        breakdownHour = 60;
-        workingHour = 0;
-        idleHour = 0;
-      } else {
-        if (workingHour < 60) {
-          idleHour = 60 - workingHour - breakdownHour;
+
+      const now = moment();
+      //not using these anymore but coding it anyway
+      let workingHour = await this.getLatestReading(entity);
+      let idleHour = 0;
+      let breakdownHour = 0;
+      if (workingHour < 60) {
+        idleHour = 60 - workingHour;
+      }
+
+      if (entity.status === 'Breakdown' || entity.status === 'Critical') {
+        const fromDate = await this.prisma.entityHistory.findFirst({
+          where: {
+            entityStatus: 'Working',
+          },
+          orderBy: {
+            id: 'desc',
+          },
+        });
+        const duration = moment.duration(now.diff(fromDate.createdAt));
+        breakdownHour = parseInt(duration.asHours().toFixed(0));
+        if (breakdownHour >= 60) {
+          breakdownHour = 60;
+          workingHour = 0;
+          idleHour = 0;
+        } else {
+          if (workingHour < 60) {
+            idleHour = 60 - workingHour - breakdownHour;
+          }
         }
       }
-    }
 
-    await this.prisma.entityHistory.create({
-      data: {
-        entityId: entityHistory.entityId,
-        type: entityHistory.type,
-        description: entityHistory.description,
-        completedById: entityHistory.completedById,
-        entityStatus: entityHistory.entityStatus
-          ? entityHistory.entityStatus
-          : entity.status,
-        entityType: entityHistory.entityType,
-        workingHour: await this.getLatestReading(entity),
-        idleHour: idleHour,
-        breakdownHour: breakdownHour,
-        locationId: entity.locationId,
-      },
-    });
+      await this.prisma.entityHistory.create({
+        data: {
+          entityId: entityHistory.entityId,
+          type: entityHistory.type,
+          description: entityHistory.description,
+          completedById: entityHistory.completedById,
+          entityStatus: entityHistory.entityStatus
+            ? entityHistory.entityStatus
+            : entity.status,
+          entityType: entityHistory.entityType,
+          workingHour: await this.getLatestReading(entity),
+          idleHour: idleHour,
+          breakdownHour: breakdownHour,
+          locationId: entity.locationId,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Create entity history in background */
   async createEntityHistoryInBackground(entityHistory: EntityHistoryInterface) {
-    await this.entityHistoryQueue.add('createEntityHistory', {
-      entityHistory,
-    });
+    try {
+      await this.entityHistoryQueue.add('createEntityHistory', {
+        entityHistory,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Delete entity attachment. */
@@ -2162,28 +2222,33 @@ export class EntityService {
     removeUserId?: number,
     type?: string
   ): Promise<number[]> {
-    const getAssignedUsers = await this.prisma.entityAssignment.findMany({
-      where: {
-        entityId,
-        type: type ?? undefined,
-        removedAt: null,
-      },
-    });
+    try {
+      const getAssignedUsers = await this.prisma.entityAssignment.findMany({
+        where: {
+          entityId,
+          type: type ?? undefined,
+          removedAt: null,
+        },
+      });
 
-    const combinedIDs = [...getAssignedUsers.map((a) => a.userId)];
+      const combinedIDs = [...getAssignedUsers.map((a) => a.userId)];
 
-    // get unique ids only
-    const unique = [...new Set(combinedIDs)];
+      // get unique ids only
+      const unique = [...new Set(combinedIDs)];
 
-    // If removeUserId variable has not been passed, return array
-    if (!removeUserId) {
-      return unique;
+      // If removeUserId variable has not been passed, return array
+      if (!removeUserId) {
+        return unique;
+      }
+
+      // Otherwise remove the given user id from array and then return
+      return unique.filter((id) => {
+        return id != removeUserId;
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-
-    // Otherwise remove the given user id from array and then return
-    return unique.filter((id) => {
-      return id != removeUserId;
-    });
   }
 
   //** Get entity usage */
@@ -2194,152 +2259,158 @@ export class EntityService {
     to: Date,
     entity?: Entity
   ) {
-    // Start one day earlier to build up cumulative hours
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-    const entityFromCheck = await this.prisma.entity.findFirst({
-      where: { id: entityId },
-      include: { type: true },
-    });
-    if (entityFromCheck?.type?.entityType === 'Machine') {
-      await this.checkEntityAssignmentOrPermission(
-        entityId,
-        user.id,
-        entity,
-        [],
-        ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
-      );
-    } else if (entityFromCheck?.type?.entityType === 'Vehicle') {
-      await this.checkEntityAssignmentOrPermission(
-        entityId,
-        user.id,
-        entity,
-        [],
-        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
-      );
-    } else if (entityFromCheck?.type?.entityType === 'Vessel') {
-      await this.checkEntityAssignmentOrPermission(
-        entityId,
-        user.id,
-        entity,
-        [],
-        ['VIEW_ALL_ENTITY', 'VIEW_ALL_VESSELS']
-      );
-    }
-    if (!entity) {
-      entity = entityFromCheck;
-    }
-    const key = `usage_${entityId}_${fromDate.toISOString()}_${toDate.toISOString()}`;
-    let usage = await this.redisCacheService.get(key);
-    if (!usage) {
-      usage = [];
-      const days = toDate.diff(fromDate, 'days') + 1;
-      let cumulative = 0;
-      if (entity?.measurement === 'hr') {
-        cumulative += await this.getLatestReading(entity, fromDate.toDate());
-      }
-      const breakdowns = await this.prisma.breakdown.findMany({
-        where: { entityId: entity.id, type: 'Breakdown' },
-        orderBy: { id: 'desc' },
+    try {
+      // Start one day earlier to build up cumulative hours
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const entityFromCheck = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+        include: { type: true },
       });
-      for (let i = 0; i < days; i++) {
-        const day = fromDate.clone().add(i, 'day');
-        const dayStart = day.clone().startOf('day');
-        const dayEnd = day.clone().endOf('day');
-        const checklist = await this.prisma.checklist.findFirst({
-          where: {
-            entityId,
-            type: 'Daily',
-            from: dayStart.toDate(),
-            to: dayEnd.toDate(),
-          },
-        });
-        let workingHour = 0;
-        let idleHour = 0;
-        let breakdownHour = 0;
-        let na = 0;
-        if (checklist) {
-          if (entity?.measurement === 'hr') {
-            if (checklist.workingHour) {
-              workingHour = checklist.workingHour;
-            } else if (checklist.currentMeterReading) {
-              workingHour = checklist.currentMeterReading - cumulative;
-            } else {
-              workingHour = null;
-            }
-          } else {
-            if (checklist.dailyUsageHours) {
-              workingHour = checklist?.dailyUsageHours;
-            } else {
-              workingHour = null;
-            }
-          }
-        } else {
-          workingHour = null;
-          idleHour = null;
-          breakdownHour = null;
-        }
-        if (workingHour !== null) {
-          cumulative += workingHour;
-          workingHour = workingHour <= 24 && workingHour >= 0 ? workingHour : 0;
-          if (workingHour >= 0 && workingHour <= 10) {
-            idleHour = 10 - workingHour;
-          }
-        } else {
-          na += 10;
-        }
-
-        const now = moment();
-        const bd = breakdowns.find((b) =>
-          dayStart.isBetween(
-            moment(b.createdAt).startOf('day'),
-            b?.completedAt
-              ? moment(b?.completedAt).endOf('day')
-              : now.endOf('day')
-          )
+      if (entityFromCheck?.type?.entityType === 'Machine') {
+        await this.checkEntityAssignmentOrPermission(
+          entityId,
+          user.id,
+          entity,
+          [],
+          ['VIEW_ALL_ENTITY', 'VIEW_ALL_MACHINERY']
         );
-        if (bd) {
-          if (bd?.completedAt) {
-            const duration = moment.duration(
-              moment(bd?.completedAt).diff(bd.createdAt)
-            );
-            breakdownHour = parseInt(duration.asHours().toFixed(0));
+      } else if (entityFromCheck?.type?.entityType === 'Vehicle') {
+        await this.checkEntityAssignmentOrPermission(
+          entityId,
+          user.id,
+          entity,
+          [],
+          ['VIEW_ALL_ENTITY', 'VIEW_ALL_VEHICLES']
+        );
+      } else if (entityFromCheck?.type?.entityType === 'Vessel') {
+        await this.checkEntityAssignmentOrPermission(
+          entityId,
+          user.id,
+          entity,
+          [],
+          ['VIEW_ALL_ENTITY', 'VIEW_ALL_VESSELS']
+        );
+      }
+      if (!entity) {
+        entity = entityFromCheck;
+      }
+      const key = `usage_${entityId}_${fromDate.toISOString()}_${toDate.toISOString()}`;
+      let usage = await this.redisCacheService.get(key);
+      if (!usage) {
+        usage = [];
+        const days = toDate.diff(fromDate, 'days') + 1;
+        let cumulative = 0;
+        if (entity?.measurement === 'hr') {
+          cumulative += await this.getLatestReading(entity, fromDate.toDate());
+        }
+        const breakdowns = await this.prisma.breakdown.findMany({
+          where: { entityId: entity.id, type: 'Breakdown' },
+          orderBy: { id: 'desc' },
+        });
+        for (let i = 0; i < days; i++) {
+          const day = fromDate.clone().add(i, 'day');
+          const dayStart = day.clone().startOf('day');
+          const dayEnd = day.clone().endOf('day');
+          const checklist = await this.prisma.checklist.findFirst({
+            where: {
+              entityId,
+              type: 'Daily',
+              from: dayStart.toDate(),
+              to: dayEnd.toDate(),
+            },
+          });
+          let workingHour = 0;
+          let idleHour = 0;
+          let breakdownHour = 0;
+          let na = 0;
+          if (checklist) {
+            if (entity?.measurement === 'hr') {
+              if (checklist.workingHour) {
+                workingHour = checklist.workingHour;
+              } else if (checklist.currentMeterReading) {
+                workingHour = checklist.currentMeterReading - cumulative;
+              } else {
+                workingHour = null;
+              }
+            } else {
+              if (checklist.dailyUsageHours) {
+                workingHour = checklist?.dailyUsageHours;
+              } else {
+                workingHour = null;
+              }
+            }
           } else {
-            const duration = moment.duration(now.diff(bd.createdAt));
-            breakdownHour = parseInt(duration.asHours().toFixed(0));
+            workingHour = null;
+            idleHour = null;
+            breakdownHour = null;
+          }
+          if (workingHour !== null) {
+            cumulative += workingHour;
+            workingHour =
+              workingHour <= 24 && workingHour >= 0 ? workingHour : 0;
+            if (workingHour >= 0 && workingHour <= 10) {
+              idleHour = 10 - workingHour;
+            }
+          } else {
+            na += 10;
           }
 
-          if (breakdownHour >= 10) {
-            breakdownHour = 10;
-            na = 0;
-            breakdownHour = breakdownHour - workingHour;
-            idleHour =
-              10 - workingHour - breakdownHour > 0
-                ? 10 - workingHour - breakdownHour
-                : 0;
-          } else {
-            if (breakdownHour > 0) {
+          const now = moment();
+          const bd = breakdowns.find((b) =>
+            dayStart.isBetween(
+              moment(b.createdAt).startOf('day'),
+              b?.completedAt
+                ? moment(b?.completedAt).endOf('day')
+                : now.endOf('day')
+            )
+          );
+          if (bd) {
+            if (bd?.completedAt) {
+              const duration = moment.duration(
+                moment(bd?.completedAt).diff(bd.createdAt)
+              );
+              breakdownHour = parseInt(duration.asHours().toFixed(0));
+            } else {
+              const duration = moment.duration(now.diff(bd.createdAt));
+              breakdownHour = parseInt(duration.asHours().toFixed(0));
+            }
+
+            if (breakdownHour >= 10) {
+              breakdownHour = 10;
               na = 0;
-              breakdownHour = Math.abs(breakdownHour - workingHour);
+              breakdownHour = breakdownHour - workingHour;
               idleHour =
                 10 - workingHour - breakdownHour > 0
                   ? 10 - workingHour - breakdownHour
                   : 0;
+            } else {
+              if (breakdownHour > 0) {
+                na = 0;
+                breakdownHour = Math.abs(breakdownHour - workingHour);
+                idleHour =
+                  10 - workingHour - breakdownHour > 0
+                    ? 10 - workingHour - breakdownHour
+                    : 0;
+              }
             }
           }
-        }
 
-        usage.push({
-          date: day.toDate(),
-          workingHour,
-          idleHour,
-          breakdownHour,
-          na,
-        });
+          usage.push({
+            date: day.toDate(),
+            workingHour,
+            idleHour,
+            breakdownHour,
+            na,
+          });
+        }
+        await this.redisCacheService.setForHour(key, usage);
       }
-      await this.redisCacheService.setForHour(key, usage);
+      return usage;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return usage;
   }
 
   //** Get entity utilization. Results are paginated. User cursor argument to go forward/backward. */
@@ -2347,87 +2418,92 @@ export class EntityService {
     user: User,
     args: EntityConnectionArgs
   ): Promise<PaginatedEntity> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { createdById, search, assignedToId, status, locationIds } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { createdById, search, assignedToId, status, locationIds } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      parentEntityId: null,
-    });
-    if (createdById) {
-      where.AND.push({ createdById });
-    }
-
-    if (assignedToId) {
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
       where.AND.push({
-        assignees: { some: { userId: assignedToId, removedAt: null } },
+        deletedAt: null,
+        parentEntityId: null,
       });
-    }
-
-    if (status) {
-      where.AND.push({ status });
-    }
-
-    if (locationIds.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-
-    if (search) {
-      const or: any = [
-        { model: { contains: search, mode: 'insensitive' } },
-        { machineNumber: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+      if (createdById) {
+        where.AND.push({ createdById });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const entity = await this.prisma.entity.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        histories: {
-          take: 1,
-          orderBy: {
-            id: 'desc',
+
+      if (assignedToId) {
+        where.AND.push({
+          assignees: { some: { userId: assignedToId, removedAt: null } },
+        });
+      }
+
+      if (status) {
+        where.AND.push({ status });
+      }
+
+      if (locationIds.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+
+      if (search) {
+        const or: any = [
+          { model: { contains: search, mode: 'insensitive' } },
+          { machineNumber: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      const entity = await this.prisma.entity.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          histories: {
+            take: 1,
+            orderBy: {
+              id: 'desc',
+            },
+          },
+          type: true,
+          location: {
+            include: { zone: true },
           },
         },
-        type: true,
-        location: {
-          include: { zone: true },
-        },
-      },
-    });
+      });
 
-    const count = await this.prisma.entity.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      entity.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const count = await this.prisma.entity.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        entity.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get all entity usage*/
@@ -2437,44 +2513,49 @@ export class EntityService {
     to: Date,
     locationIds: number[]
   ) {
-    const usageHistoryByDate = [];
+    try {
+      const usageHistoryByDate = [];
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      parentEntityId: null,
-    });
-    if (locationIds?.length > 0) {
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
       where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
+        deletedAt: null,
+        parentEntityId: null,
       });
-    }
-    const allEntities = await this.prisma.entity.findMany({
-      where,
-    });
-    for (const [i, entity] of allEntities.entries()) {
-      const entityUsage = await this.getEntityUsage(
-        user,
-        entity.id,
-        from,
-        to,
-        entity
-      );
-      for (const dayUsage of entityUsage) {
-        if (i === 0) {
-          usageHistoryByDate.push(dayUsage);
-        } else {
-          const day = usageHistoryByDate.find(
-            (a) => a.date.getTime() === dayUsage.date.getTime()
-          );
-          day.workingHour += dayUsage.workingHour;
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+      const allEntities = await this.prisma.entity.findMany({
+        where,
+      });
+      for (const [i, entity] of allEntities.entries()) {
+        const entityUsage = await this.getEntityUsage(
+          user,
+          entity.id,
+          from,
+          to,
+          entity
+        );
+        for (const dayUsage of entityUsage) {
+          if (i === 0) {
+            usageHistoryByDate.push(dayUsage);
+          } else {
+            const day = usageHistoryByDate.find(
+              (a) => a.date.getTime() === dayUsage.date.getTime()
+            );
+            day.workingHour += dayUsage.workingHour;
+          }
         }
       }
+      return usageHistoryByDate;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return usageHistoryByDate;
   }
 
   //** Get all entity periodic maintenance. Results are paginated. User cursor argument to go forward/backward. */
@@ -2482,46 +2563,56 @@ export class EntityService {
     user: User,
     args: EntityPeriodicMaintenanceConnectionArgs
   ): Promise<PaginatedEntityPeriodicMaintenance> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { search, locationIds } = args;
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { search, locationIds } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
 
-    where.createdAt = { gte: moment().toDate(), lte: moment().toDate() };
+      where.createdAt = { gte: moment().toDate(), lte: moment().toDate() };
 
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-
-    if (search) {
-      const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    const periodicMaintenance = await this.prisma.periodicMaintenance.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        notificationReminder: true,
-        tasks: {
-          where: { parentTaskId: null },
+
+      if (search) {
+        const or: any = [{ name: { contains: search, mode: 'insensitive' } }];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      const periodicMaintenance =
+        await this.prisma.periodicMaintenance.findMany({
+          skip: offset,
+          take: limitPlusOne,
+          where,
           include: {
-            subTasks: {
+            notificationReminder: true,
+            tasks: {
+              where: { parentTaskId: null },
               include: {
                 subTasks: {
                   include: {
+                    subTasks: {
+                      include: {
+                        completedBy: true,
+                        remarks: {
+                          include: {
+                            createdBy: true,
+                          },
+                        },
+                      },
+                    },
                     completedBy: true,
                     remarks: {
                       include: {
@@ -2529,6 +2620,7 @@ export class EntityService {
                       },
                     },
                   },
+                  orderBy: { id: 'asc' },
                 },
                 completedBy: true,
                 remarks: {
@@ -2539,45 +2631,40 @@ export class EntityService {
               },
               orderBy: { id: 'asc' },
             },
-            completedBy: true,
-            remarks: {
+            verifiedBy: true,
+            comments: {
               include: {
                 createdBy: true,
               },
             },
           },
-          orderBy: { id: 'asc' },
-        },
-        verifiedBy: true,
-        comments: {
-          include: {
-            createdBy: true,
-          },
-        },
-      },
-      orderBy: { id: 'desc' },
-    });
+          orderBy: { id: 'desc' },
+        });
 
-    const count = await this.prisma.periodicMaintenance.count({
-      where,
-    });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      periodicMaintenance.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
-      }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const count = await this.prisma.periodicMaintenance.count({
+        where,
+      });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        periodicMaintenance.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   //** Get all entity periodic maintenance tasks. Results are paginated. User cursor argument to go forward/backward. */
@@ -2846,109 +2933,114 @@ export class EntityService {
     users,
     newLocationId,
   }: EntityTransferInput) {
-    const entity = (await this.findOne(entityId, {
-      location: true,
-    })) as unknown as Entity & {
-      location: Location;
-    };
-    const newLocation = await this.locationService.findOne(newLocationId);
-    const user = await this.authService.validateUser(requestingUserUuid);
-    const transactions: any = [
-      this.prisma.entity.update({
-        where: { id: entityId },
-        data: { locationId: newLocationId },
-      }),
-    ];
-    const removedAssignments = [];
-    const newAssignments: EntityTransferUserInput[] = [];
-    if (users) {
-      for (const u of users) {
-        u.user = await this.authService.validateUser(u.userUuid);
-        if (!ENTITY_ASSIGNMENT_TYPES.includes(u.type)) {
-          throw new BadRequestException(`Invalid assignment type: ${u.type}`);
-        }
-      }
-      // Remove duplicates
-      users = users.filter(
-        (value, index, self) =>
-          index ===
-          self.findIndex(
-            (t) => t.user.id === value.user.id && t.type === value.type
-          )
-      );
-
-      // Find current assignments to find assignments to be created/removed
-      const currentAssignments = await this.prisma.entityAssignment.findMany({
-        where: { entityId, removedAt: null },
-        include: { user: true },
-      });
-      for (const u of users) {
-        let exists = false;
-        for (const assignment of currentAssignments) {
-          if (u.type === assignment.type && u.user.id === assignment.userId) {
-            exists = true;
-            break;
-          }
-        }
-        if (!exists) {
-          newAssignments.push(u);
-        }
-      }
-      for (const assignment of currentAssignments) {
-        let exists = false;
-        for (const u of users) {
-          if (u.type === assignment.type && u.user.id === assignment.userId) {
-            exists = true;
-            break;
-          }
-        }
-        if (!exists) {
-          removedAssignments.push(assignment);
-        }
-      }
-      transactions.push(
-        this.prisma.entityAssignment.updateMany({
-          where: { id: { in: removedAssignments.map((a) => a.id) } },
-          data: { removedAt: new Date() },
+    try {
+      const entity = (await this.findOne(entityId, {
+        location: true,
+      })) as unknown as Entity & {
+        location: Location;
+      };
+      const newLocation = await this.locationService.findOne(newLocationId);
+      const user = await this.authService.validateUser(requestingUserUuid);
+      const transactions: any = [
+        this.prisma.entity.update({
+          where: { id: entityId },
+          data: { locationId: newLocationId },
         }),
-        this.prisma.entityAssignment.createMany({
-          data: newAssignments.map((a) => ({
-            entityId,
-            type: a.type,
-            userId: a.user.id,
-          })),
-        })
-      );
-    }
+      ];
+      const removedAssignments = [];
+      const newAssignments: EntityTransferUserInput[] = [];
+      if (users) {
+        for (const u of users) {
+          u.user = await this.authService.validateUser(u.userUuid);
+          if (!ENTITY_ASSIGNMENT_TYPES.includes(u.type)) {
+            throw new BadRequestException(`Invalid assignment type: ${u.type}`);
+          }
+        }
+        // Remove duplicates
+        users = users.filter(
+          (value, index, self) =>
+            index ===
+            self.findIndex(
+              (t) => t.user.id === value.user.id && t.type === value.type
+            )
+        );
 
-    await this.prisma.$transaction(transactions);
-    if (entity.locationId != newLocationId) {
-      await this.createEntityHistoryInBackground({
-        type: 'Entity Edit',
-        description: `Location changed${
-          entity.locationId ? ` from ${entity.location.name}` : ``
-        } to ${newLocation.name}.`,
-        entityId,
-        completedById: user.id,
-      });
-    }
-    if (users) {
-      for (const assignment of removedAssignments) {
+        // Find current assignments to find assignments to be created/removed
+        const currentAssignments = await this.prisma.entityAssignment.findMany({
+          where: { entityId, removedAt: null },
+          include: { user: true },
+        });
+        for (const u of users) {
+          let exists = false;
+          for (const assignment of currentAssignments) {
+            if (u.type === assignment.type && u.user.id === assignment.userId) {
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            newAssignments.push(u);
+          }
+        }
+        for (const assignment of currentAssignments) {
+          let exists = false;
+          for (const u of users) {
+            if (u.type === assignment.type && u.user.id === assignment.userId) {
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            removedAssignments.push(assignment);
+          }
+        }
+        transactions.push(
+          this.prisma.entityAssignment.updateMany({
+            where: { id: { in: removedAssignments.map((a) => a.id) } },
+            data: { removedAt: new Date() },
+          }),
+          this.prisma.entityAssignment.createMany({
+            data: newAssignments.map((a) => ({
+              entityId,
+              type: a.type,
+              userId: a.user.id,
+            })),
+          })
+        );
+      }
+
+      await this.prisma.$transaction(transactions);
+      if (entity.locationId != newLocationId) {
         await this.createEntityHistoryInBackground({
-          type: 'User Unassigned',
-          description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
-          entityId: entityId,
+          type: 'Entity Edit',
+          description: `Location changed${
+            entity.locationId ? ` from ${entity.location.name}` : ``
+          } to ${newLocation.name}.`,
+          entityId,
           completedById: user.id,
         });
       }
-      for (const assignment of newAssignments) {
-        await this.createEntityHistoryInBackground({
-          type: 'User Assign',
-          description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
-          entityId: entityId,
-          completedById: user.id,
-        });
+      if (users) {
+        for (const assignment of removedAssignments) {
+          await this.createEntityHistoryInBackground({
+            type: 'User Unassigned',
+            description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
+            entityId: entityId,
+            completedById: user.id,
+          });
+        }
+        for (const assignment of newAssignments) {
+          await this.createEntityHistoryInBackground({
+            type: 'User Assign',
+            description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
+            entityId: entityId,
+            completedById: user.id,
+          });
+        }
       }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
@@ -3406,63 +3498,69 @@ export class EntityService {
     assignments?: ('User' | 'Technician' | 'Engineer' | 'Admin')[],
     permissions?: string[]
   ): Promise<Entity> {
-    if (!entity) {
-      entity = await this.findOne(entityId);
-    }
-    let hasAssignment = true;
-    if (assignments) {
-      const currentAssignments = await this.prisma.entityAssignment.findMany({
-        where: {
-          entityId,
-          userId,
-          type: assignments.length === 0 ? undefined : { in: assignments },
-          removedAt: null,
-        },
-      });
-      if (currentAssignments.length === 0) hasAssignment = false;
-      const currentAssignmentsArray = currentAssignments.map((a) => a.type);
-      for (const assignment of assignments) {
-        if (!currentAssignmentsArray.includes(assignment)) {
-          hasAssignment = false;
+    try {
+      if (!entity) {
+        entity = await this.findOne(entityId);
+      }
+      let hasAssignment = true;
+      if (assignments) {
+        const currentAssignments = await this.prisma.entityAssignment.findMany({
+          where: {
+            entityId,
+            userId,
+            type: assignments.length === 0 ? undefined : { in: assignments },
+            removedAt: null,
+          },
+        });
+        if (currentAssignments.length === 0) hasAssignment = false;
+        const currentAssignmentsArray = currentAssignments.map((a) => a.type);
+        for (const assignment of assignments) {
+          if (!currentAssignmentsArray.includes(assignment)) {
+            hasAssignment = false;
+          }
         }
       }
-    }
-    let hasPermission = true;
-    if (permissions) {
+      let hasPermission = true;
+      if (permissions) {
+        const userPermissions =
+          await this.userService.getUserRolesPermissionsList(userId);
+        for (const permission of permissions) {
+          if (!userPermissions.includes(permission)) {
+            hasPermission = false;
+          } else {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+      let hasDivisionPermission = false;
       const userPermissions =
         await this.userService.getUserRolesPermissionsList(userId);
-      for (const permission of permissions) {
-        if (!userPermissions.includes(permission)) {
-          hasPermission = false;
-        } else {
-          hasPermission = true;
-          break;
-        }
+      if (userPermissions.includes('VIEW_ALL_DIVISION_ENTITY')) {
+        const entity = await this.prisma.entity.findFirst({
+          where: { id: entityId },
+          select: { divisionId: true },
+        });
+        const user = await this.prisma.divisionUsers.findMany({
+          where: { userId },
+          select: { divisionId: true },
+        });
+        user.filter((u) => {
+          if (u?.divisionId === entity?.divisionId) {
+            hasDivisionPermission = true;
+          }
+        });
       }
+      if (!hasAssignment && !hasPermission && !hasDivisionPermission) {
+        throw new ForbiddenException(
+          'You do not have access to this resource.'
+        );
+      }
+      return entity;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    let hasDivisionPermission = false;
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      userId
-    );
-    if (userPermissions.includes('VIEW_ALL_DIVISION_ENTITY')) {
-      const entity = await this.prisma.entity.findFirst({
-        where: { id: entityId },
-        select: { divisionId: true },
-      });
-      const user = await this.prisma.divisionUsers.findMany({
-        where: { userId },
-        select: { divisionId: true },
-      });
-      user.filter((u) => {
-        if (u?.divisionId === entity?.divisionId) {
-          hasDivisionPermission = true;
-        }
-      });
-    }
-    if (!hasAssignment && !hasPermission && !hasDivisionPermission) {
-      throw new ForbiddenException('You do not have access to this resource.');
-    }
-    return entity;
   }
 
   // Throw an error if user does not have assignment to any entity.
@@ -3470,11 +3568,16 @@ export class EntityService {
     userId: number,
     assignments: ('User' | 'Engineer' | 'Admin')[]
   ) {
-    const userAssignments = await this.prisma.entityAssignment.count({
-      where: { userId, type: { in: assignments }, removedAt: null },
-    });
-    if (userAssignments === 0) {
-      throw new ForbiddenException('You do not have access to this resource');
+    try {
+      const userAssignments = await this.prisma.entityAssignment.count({
+        where: { userId, type: { in: assignments }, removedAt: null },
+      });
+      if (userAssignments === 0) {
+        throw new ForbiddenException('You do not have access to this resource');
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
@@ -3895,189 +3998,524 @@ export class EntityService {
     typeIds: number[],
     measurement: string[]
   ) {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
-    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
-    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      machineNumber: { not: null },
-      parentEntityId: null,
-    });
-    if (search) {
-      const or: any = [
-        { model: { contains: search, mode: 'insensitive' } },
-        { machineNumber: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+    try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      where.AND.push({
+        deletedAt: null,
+        machineNumber: { not: null },
+        parentEntityId: null,
+      });
+      if (search) {
+        const or: any = [
+          { model: { contains: search, mode: 'insensitive' } },
+          { machineNumber: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
-    if (typeIds?.length > 0) {
-      where.AND.push({
-        typeId: { in: typeIds },
-      });
-    }
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
+        });
+      }
 
-    if (!hasViewAll) {
-      const userDivision = await this.prisma.divisionUsers.findMany({
-        where: { userId: user.id },
-      });
-      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-      const or: any = [];
-      if (hasViewAllMachinery) {
-        or.push({ type: { entityType: 'Machine' } });
-        where.AND.push({
-          OR: or,
+      if (!hasViewAll) {
+        const userDivision = await this.prisma.divisionUsers.findMany({
+          where: { userId: user.id },
         });
-      }
-      if (hasViewAllVehicles) {
-        or.push({ type: { entityType: 'Vehicle' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllVessels) {
-        or.push({ type: { entityType: 'Vessel' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllDivisionEntity) {
-        or.push(
-          { divisionId: { in: userDivisionIds } },
-          {
+        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+        const or: any = [];
+        if (hasViewAllMachinery) {
+          or.push({ type: { entityType: 'Machine' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVehicles) {
+          or.push({ type: { entityType: 'Vehicle' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVessels) {
+          or.push({ type: { entityType: 'Vessel' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllDivisionEntity) {
+          or.push(
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId: user.id,
+                  removedAt: null,
+                },
+              },
+            }
+          );
+
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (
+          !hasViewAllDivisionEntity &&
+          !hasViewAllMachinery &&
+          !hasViewAllVehicles &&
+          !hasViewAllVessels
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId: user.id,
                 removedAt: null,
               },
             },
-          }
-        );
+          });
+        }
+      }
+      const allEntities = await this.prisma.entity.findMany({
+        where,
+        orderBy: { machineNumber: 'asc' },
+      });
 
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+
+      const key = `usage_${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      let usage = await this.redisCacheService.get(key);
+      if (!usage) {
+        usage = [];
+        //working hours don't have max, while breakdown, idle, and na have 60 hr max
+        for (const entity of allEntities) {
+          const days = toDate.diff(fromDate, 'days') + 1;
+          let cumulative = 0;
+          if (entity.measurement === 'hr') {
+            cumulative += await this.getLatestReading(
+              entity,
+              fromDate.toDate()
+            );
+          }
+          let workingHour = 0;
+          let idleHour = 0;
+          let breakdownHour = 0;
+          let na = 0;
+          const breakdowns = await this.prisma.breakdown.findMany({
+            where: { entityId: entity.id, type: 'Breakdown' },
+            orderBy: { id: 'desc' },
+          });
+          for (let i = 0; i < days; i++) {
+            const day = fromDate.clone().add(i, 'day');
+            const dayStart = day.clone().startOf('day');
+            const dayEnd = day.clone().endOf('day');
+            const checklist = await this.prisma.checklist.findFirst({
+              orderBy: { id: 'desc' },
+              where: {
+                entityId: entity.id,
+                type: 'Daily',
+                from: dayStart.toDate(),
+                to: dayEnd.toDate(),
+              },
+            });
+
+            //each day max is 10 except for working hr
+            let tempWorkingHour = 0;
+            let tempIdleHour = 0;
+            let tempBreakdownHour = 0;
+            if (checklist) {
+              if (entity.measurement === 'hr') {
+                if (checklist.workingHour !== null) {
+                  tempWorkingHour = checklist.workingHour;
+                } else if (checklist.currentMeterReading !== null) {
+                  tempWorkingHour = checklist.currentMeterReading - cumulative;
+                } else {
+                  tempWorkingHour = null;
+                }
+              } else {
+                if (checklist.dailyUsageHours !== null) {
+                  tempWorkingHour = checklist?.dailyUsageHours;
+                } else {
+                  tempWorkingHour = null;
+                }
+              }
+            } else {
+              tempWorkingHour = null;
+              tempIdleHour = null;
+              tempBreakdownHour = null;
+            }
+            if (tempWorkingHour !== null) {
+              cumulative += tempWorkingHour;
+              tempWorkingHour =
+                tempWorkingHour <= 24 && tempWorkingHour >= 0
+                  ? tempWorkingHour
+                  : 0;
+              if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
+                tempIdleHour = 10 - tempWorkingHour;
+              }
+            } else {
+              na += 10;
+            }
+            const now = moment();
+            if (tempWorkingHour < 10) {
+              const bd = breakdowns.find((b) =>
+                dayStart.isBetween(
+                  moment(b.createdAt).startOf('day'),
+                  b?.completedAt
+                    ? moment(b?.completedAt).endOf('day')
+                    : now.endOf('day')
+                )
+              );
+              if (bd) {
+                if (bd?.completedAt) {
+                  const duration = moment.duration(
+                    moment(bd?.completedAt).diff(bd.createdAt)
+                  );
+                  tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+                } else {
+                  const duration = moment.duration(now.diff(bd.createdAt));
+                  tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+                }
+
+                if (tempBreakdownHour >= 10) {
+                  tempBreakdownHour = 10;
+                  na = 0;
+                  tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
+                  tempIdleHour =
+                    10 - tempWorkingHour - tempBreakdownHour > 0
+                      ? 10 - tempWorkingHour - tempBreakdownHour
+                      : 0;
+                } else {
+                  if (tempBreakdownHour > 0) {
+                    na = 0;
+                    tempBreakdownHour = Math.abs(
+                      tempBreakdownHour - tempWorkingHour
+                    );
+                    tempIdleHour =
+                      10 - tempWorkingHour - tempBreakdownHour > 0
+                        ? 10 - tempWorkingHour - tempBreakdownHour
+                        : 0;
+                  }
+                }
+              }
+              /*
+              if (entity.status === 'Breakdown' || entity.status === 'Critical') {
+                const fromDate = await this.prisma.breakdown.findFirst({
+                  where: {
+                    entityId: entity.id,
+                    OR: [
+                      {
+                        createdAt: {
+                          gte: dayStart.toDate(),
+                          lte: dayEnd.toDate(),
+                        },
+                      },
+                      { completedAt: null },
+                    ],
+                  },
+                  orderBy: {
+                    id: 'desc',
+                  },
+                });
+                if (fromDate) {
+                  if (fromDate?.completedAt) {
+                    const duration = moment.duration(
+                      moment(fromDate?.completedAt).diff(fromDate.createdAt)
+                    );
+                    tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+                  } else {
+                    const duration = moment.duration(
+                      dayStart.diff(fromDate.createdAt)
+                    );
+                    tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
+                  }
+  
+                  if (tempBreakdownHour >= 10) {
+                    console.log(fromDate.createdAt);
+                    console.log(tempBreakdownHour);
+                    tempBreakdownHour = 10;
+                    na = 0;
+                    tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
+                    tempIdleHour =
+                      10 - tempWorkingHour - tempBreakdownHour > 0
+                        ? 10 - tempWorkingHour - tempBreakdownHour
+                        : 0;
+                    console.log('here1');
+                  } else {
+                    console.log('here');
+                    if (tempBreakdownHour > 0) {
+                      na = 0;
+                      tempBreakdownHour = Math.abs(
+                        tempBreakdownHour - tempWorkingHour
+                      );
+                      tempIdleHour =
+                        10 - tempWorkingHour - tempBreakdownHour > 0
+                          ? 10 - tempWorkingHour - tempBreakdownHour
+                          : 0;
+                    }
+                  }
+                }
+              }
+              */
+            }
+
+            workingHour += tempWorkingHour;
+            idleHour += tempIdleHour;
+            breakdownHour += tempBreakdownHour;
+          }
+          usage.push({
+            machineNumber: entity.machineNumber,
+            workingHour: workingHour,
+            idleHour: idleHour,
+            breakdownHour: breakdownHour,
+            na: na,
+            total: workingHour + idleHour + breakdownHour + na,
+            id: entity.id,
+          });
+        }
+        await this.redisCacheService.setForHour(key, usage);
+      }
+      return usage;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  //** Get all grouped entity usage*/
+  async getAllGroupedEntityUsage(
+    user: User,
+    from: Date,
+    to: Date,
+    search: string,
+    locationIds: number[],
+    zoneIds: number[],
+    typeIds: number[],
+    measurement: string[],
+    entityTypes: string[]
+  ) {
+    try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      where.AND.push({
+        deletedAt: null,
+        machineNumber: { not: null },
+        parentEntityId: null,
+      });
+      if (search) {
+        const or: any = [
+          { type: { name: { contains: search, mode: 'insensitive' } } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
         where.AND.push({
           OR: or,
         });
       }
-      if (
-        !hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
+      if (locationIds?.length > 0) {
         where.AND.push({
-          assignees: {
-            some: {
-              userId: user.id,
-              removedAt: null,
-            },
+          locationId: {
+            in: locationIds,
           },
         });
       }
-    }
-    const allEntities = await this.prisma.entity.findMany({
-      where,
-      orderBy: { machineNumber: 'asc' },
-    });
-
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-
-    const key = `usage_${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
-    let usage = await this.redisCacheService.get(key);
-    if (!usage) {
-      usage = [];
-      //working hours don't have max, while breakdown, idle, and na have 60 hr max
-      for (const entity of allEntities) {
-        const days = toDate.diff(fromDate, 'days') + 1;
-        let cumulative = 0;
-        if (entity.measurement === 'hr') {
-          cumulative += await this.getLatestReading(entity, fromDate.toDate());
-        }
-        let workingHour = 0;
-        let idleHour = 0;
-        let breakdownHour = 0;
-        let na = 0;
-        const breakdowns = await this.prisma.breakdown.findMany({
-          where: { entityId: entity.id, type: 'Breakdown' },
-          orderBy: { id: 'desc' },
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
         });
-        for (let i = 0; i < days; i++) {
-          const day = fromDate.clone().add(i, 'day');
-          const dayStart = day.clone().startOf('day');
-          const dayEnd = day.clone().endOf('day');
-          const checklist = await this.prisma.checklist.findFirst({
-            orderBy: { id: 'desc' },
-            where: {
-              entityId: entity.id,
-              type: 'Daily',
-              from: dayStart.toDate(),
-              to: dayEnd.toDate(),
+      }
+
+      if (!hasViewAll) {
+        const userDivision = await this.prisma.divisionUsers.findMany({
+          where: { userId: user.id },
+        });
+        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+        const or: any = [];
+        if (hasViewAllMachinery) {
+          or.push({ type: { entityType: 'Machine' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVehicles) {
+          or.push({ type: { entityType: 'Vehicle' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVessels) {
+          or.push({ type: { entityType: 'Vessel' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllDivisionEntity) {
+          or.push(
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId: user.id,
+                  removedAt: null,
+                },
+              },
+            }
+          );
+
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (
+          !hasViewAllDivisionEntity &&
+          !hasViewAllMachinery &&
+          !hasViewAllVehicles &&
+          !hasViewAllVessels
+        ) {
+          where.AND.push({
+            assignees: {
+              some: {
+                userId: user.id,
+                removedAt: null,
+              },
             },
           });
+        }
+      }
+      if (entityTypes?.length > 0) {
+        where.AND.push({
+          type: {
+            entityType: { in: entityTypes },
+          },
+        });
+      }
 
-          //each day max is 10 except for working hr
-          let tempWorkingHour = 0;
-          let tempIdleHour = 0;
-          let tempBreakdownHour = 0;
-          if (checklist) {
-            if (entity.measurement === 'hr') {
-              if (checklist.workingHour !== null) {
-                tempWorkingHour = checklist.workingHour;
-              } else if (checklist.currentMeterReading !== null) {
-                tempWorkingHour = checklist.currentMeterReading - cumulative;
+      const allEntities = await this.prisma.entity.findMany({
+        where,
+        include: { type: true },
+        orderBy: { machineNumber: 'asc' },
+      });
+
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+
+      const key = `usage2_EntityType${entityTypes}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      let usage = await this.redisCacheService.get(key);
+      if (!usage) {
+        usage = [];
+        //working hours don't have max, while breakdown, idle, and na have 60 hr max
+        for (const entity of allEntities) {
+          const days = toDate.diff(fromDate, 'days') + 1;
+          let cumulative = 0;
+          if (entity.measurement === 'hr') {
+            cumulative += await this.getLatestReading(
+              entity,
+              fromDate.toDate()
+            );
+          }
+          let workingHour = 0;
+          let idleHour = 0;
+          let breakdownHour = 0;
+          let na = 0;
+          const breakdowns = await this.prisma.breakdown.findMany({
+            where: { entityId: entity.id, type: 'Breakdown' },
+            orderBy: { id: 'desc' },
+          });
+          for (let i = 0; i < days; i++) {
+            const day = fromDate.clone().add(i, 'day');
+            const dayStart = day.clone().startOf('day');
+            const dayEnd = day.clone().endOf('day');
+            const checklist = await this.prisma.checklist.findFirst({
+              orderBy: { id: 'desc' },
+              where: {
+                entityId: entity.id,
+                type: 'Daily',
+                from: dayStart.toDate(),
+                to: dayEnd.toDate(),
+              },
+            });
+
+            //each day max is 10 except for working hr
+            let tempWorkingHour = 0;
+            let tempIdleHour = 0;
+            let tempBreakdownHour = 0;
+            if (checklist) {
+              if (entity.measurement === 'hr') {
+                if (checklist.workingHour !== null) {
+                  tempWorkingHour = checklist.workingHour;
+                } else if (checklist.currentMeterReading !== null) {
+                  tempWorkingHour = checklist.currentMeterReading - cumulative;
+                } else {
+                  tempWorkingHour = null;
+                }
               } else {
-                tempWorkingHour = null;
+                if (checklist.dailyUsageHours !== null) {
+                  tempWorkingHour = checklist?.dailyUsageHours;
+                } else {
+                  tempWorkingHour = null;
+                }
               }
             } else {
-              if (checklist.dailyUsageHours !== null) {
-                tempWorkingHour = checklist?.dailyUsageHours;
-              } else {
-                tempWorkingHour = null;
+              tempWorkingHour = null;
+              tempIdleHour = null;
+              tempBreakdownHour = null;
+            }
+            if (tempWorkingHour !== null) {
+              cumulative += tempWorkingHour;
+              tempWorkingHour =
+                tempWorkingHour <= 24 && tempWorkingHour >= 0
+                  ? tempWorkingHour
+                  : 0;
+              if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
+                tempIdleHour = 10 - tempWorkingHour;
               }
+            } else {
+              na += 10;
             }
-          } else {
-            tempWorkingHour = null;
-            tempIdleHour = null;
-            tempBreakdownHour = null;
-          }
-          if (tempWorkingHour !== null) {
-            cumulative += tempWorkingHour;
-            tempWorkingHour =
-              tempWorkingHour <= 24 && tempWorkingHour >= 0
-                ? tempWorkingHour
-                : 0;
-            if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
-              tempIdleHour = 10 - tempWorkingHour;
-            }
-          } else {
-            na += 10;
-          }
-          const now = moment();
-          if (tempWorkingHour < 10) {
+
+            const now = moment();
             const bd = breakdowns.find((b) =>
               dayStart.isBetween(
                 moment(b.createdAt).startOf('day'),
@@ -4118,561 +4556,253 @@ export class EntityService {
                 }
               }
             }
-            /*
-            if (entity.status === 'Breakdown' || entity.status === 'Critical') {
-              const fromDate = await this.prisma.breakdown.findFirst({
-                where: {
-                  entityId: entity.id,
-                  OR: [
-                    {
-                      createdAt: {
-                        gte: dayStart.toDate(),
-                        lte: dayEnd.toDate(),
-                      },
-                    },
-                    { completedAt: null },
-                  ],
-                },
-                orderBy: {
-                  id: 'desc',
-                },
-              });
-              if (fromDate) {
-                if (fromDate?.completedAt) {
-                  const duration = moment.duration(
-                    moment(fromDate?.completedAt).diff(fromDate.createdAt)
-                  );
-                  tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
-                } else {
-                  const duration = moment.duration(
-                    dayStart.diff(fromDate.createdAt)
-                  );
-                  tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
-                }
-
-                if (tempBreakdownHour >= 10) {
-                  console.log(fromDate.createdAt);
-                  console.log(tempBreakdownHour);
-                  tempBreakdownHour = 10;
-                  na = 0;
-                  tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
-                  tempIdleHour =
-                    10 - tempWorkingHour - tempBreakdownHour > 0
-                      ? 10 - tempWorkingHour - tempBreakdownHour
-                      : 0;
-                  console.log('here1');
-                } else {
-                  console.log('here');
-                  if (tempBreakdownHour > 0) {
-                    na = 0;
-                    tempBreakdownHour = Math.abs(
-                      tempBreakdownHour - tempWorkingHour
-                    );
-                    tempIdleHour =
-                      10 - tempWorkingHour - tempBreakdownHour > 0
-                        ? 10 - tempWorkingHour - tempBreakdownHour
-                        : 0;
-                  }
-                }
-              }
-            }
-            */
+            workingHour += tempWorkingHour;
+            idleHour += tempIdleHour;
+            breakdownHour += tempBreakdownHour;
           }
-
-          workingHour += tempWorkingHour;
-          idleHour += tempIdleHour;
-          breakdownHour += tempBreakdownHour;
+          usage.push({
+            machineNumber: entity.machineNumber,
+            typeId: entity?.typeId,
+            name: entity?.type?.name,
+            workingHour: workingHour,
+            idleHour: idleHour,
+            breakdownHour: breakdownHour,
+            na: na,
+          });
         }
-        usage.push({
-          machineNumber: entity.machineNumber,
+        await this.redisCacheService.setForHour(key, usage);
+      }
+      const tempUsage = [];
+      for (const u of usage) {
+        const entities = usage.filter(
+          (a) => a.typeId === u.typeId && a.name === u.name
+        );
+
+        const count = usage.filter(
+          (a) => a.typeId === u.typeId && a.name === u.name
+        ).length;
+
+        const workingHour = entities.reduce(function (prev, cur) {
+          return prev + cur.workingHour;
+        }, 0);
+        const idleHour = entities.reduce(function (prev, cur) {
+          return prev + cur.idleHour;
+        }, 0);
+        const breakdownHour = entities.reduce(function (prev, cur) {
+          return prev + cur.breakdownHour;
+        }, 0);
+        const na = entities.reduce(function (prev, cur) {
+          return prev + cur.na;
+        }, 0);
+
+        tempUsage.push({
+          machineNumber: u?.machineNumber,
+          typeId: u?.typeId,
+          name: u?.name,
           workingHour: workingHour,
           idleHour: idleHour,
           breakdownHour: breakdownHour,
           na: na,
           total: workingHour + idleHour + breakdownHour + na,
-          id: entity.id,
+          count: count,
         });
       }
-      await this.redisCacheService.setForHour(key, usage);
-    }
-    return usage;
-  }
-
-  //** Get all grouped entity usage*/
-  async getAllGroupedEntityUsage(
-    user: User,
-    from: Date,
-    to: Date,
-    search: string,
-    locationIds: number[],
-    zoneIds: number[],
-    typeIds: number[],
-    measurement: string[],
-    entityTypes: string[]
-  ) {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
-    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
-    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      machineNumber: { not: null },
-      parentEntityId: null,
-    });
-    if (search) {
-      const or: any = [
-        { type: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
-    if (typeIds?.length > 0) {
-      where.AND.push({
-        typeId: { in: typeIds },
-      });
-    }
-
-    if (!hasViewAll) {
-      const userDivision = await this.prisma.divisionUsers.findMany({
-        where: { userId: user.id },
-      });
-      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-      const or: any = [];
-      if (hasViewAllMachinery) {
-        or.push({ type: { entityType: 'Machine' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllVehicles) {
-        or.push({ type: { entityType: 'Vehicle' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllVessels) {
-        or.push({ type: { entityType: 'Vessel' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllDivisionEntity) {
-        or.push(
-          { divisionId: { in: userDivisionIds } },
-          {
-            assignees: {
-              some: {
-                userId: user.id,
-                removedAt: null,
-              },
-            },
-          }
-        );
-
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (
-        !hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId: user.id,
-              removedAt: null,
-            },
-          },
-        });
-      }
-    }
-    if (entityTypes?.length > 0) {
-      where.AND.push({
-        type: {
-          entityType: { in: entityTypes },
-        },
-      });
-    }
-
-    const allEntities = await this.prisma.entity.findMany({
-      where,
-      include: { type: true },
-      orderBy: { machineNumber: 'asc' },
-    });
-
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-
-    const key = `usage2_EntityType${entityTypes}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
-    let usage = await this.redisCacheService.get(key);
-    if (!usage) {
-      usage = [];
-      //working hours don't have max, while breakdown, idle, and na have 60 hr max
-      for (const entity of allEntities) {
-        const days = toDate.diff(fromDate, 'days') + 1;
-        let cumulative = 0;
-        if (entity.measurement === 'hr') {
-          cumulative += await this.getLatestReading(entity, fromDate.toDate());
-        }
-        let workingHour = 0;
-        let idleHour = 0;
-        let breakdownHour = 0;
-        let na = 0;
-        const breakdowns = await this.prisma.breakdown.findMany({
-          where: { entityId: entity.id, type: 'Breakdown' },
-          orderBy: { id: 'desc' },
-        });
-        for (let i = 0; i < days; i++) {
-          const day = fromDate.clone().add(i, 'day');
-          const dayStart = day.clone().startOf('day');
-          const dayEnd = day.clone().endOf('day');
-          const checklist = await this.prisma.checklist.findFirst({
-            orderBy: { id: 'desc' },
-            where: {
-              entityId: entity.id,
-              type: 'Daily',
-              from: dayStart.toDate(),
-              to: dayEnd.toDate(),
-            },
-          });
-
-          //each day max is 10 except for working hr
-          let tempWorkingHour = 0;
-          let tempIdleHour = 0;
-          let tempBreakdownHour = 0;
-          if (checklist) {
-            if (entity.measurement === 'hr') {
-              if (checklist.workingHour !== null) {
-                tempWorkingHour = checklist.workingHour;
-              } else if (checklist.currentMeterReading !== null) {
-                tempWorkingHour = checklist.currentMeterReading - cumulative;
-              } else {
-                tempWorkingHour = null;
-              }
-            } else {
-              if (checklist.dailyUsageHours !== null) {
-                tempWorkingHour = checklist?.dailyUsageHours;
-              } else {
-                tempWorkingHour = null;
-              }
-            }
-          } else {
-            tempWorkingHour = null;
-            tempIdleHour = null;
-            tempBreakdownHour = null;
-          }
-          if (tempWorkingHour !== null) {
-            cumulative += tempWorkingHour;
-            tempWorkingHour =
-              tempWorkingHour <= 24 && tempWorkingHour >= 0
-                ? tempWorkingHour
-                : 0;
-            if (tempWorkingHour >= 0 && tempWorkingHour < 10) {
-              tempIdleHour = 10 - tempWorkingHour;
-            }
-          } else {
-            na += 10;
-          }
-
-          const now = moment();
-          const bd = breakdowns.find((b) =>
-            dayStart.isBetween(
-              moment(b.createdAt).startOf('day'),
-              b?.completedAt
-                ? moment(b?.completedAt).endOf('day')
-                : now.endOf('day')
-            )
-          );
-          if (bd) {
-            if (bd?.completedAt) {
-              const duration = moment.duration(
-                moment(bd?.completedAt).diff(bd.createdAt)
-              );
-              tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
-            } else {
-              const duration = moment.duration(now.diff(bd.createdAt));
-              tempBreakdownHour = parseInt(duration.asHours().toFixed(0));
-            }
-
-            if (tempBreakdownHour >= 10) {
-              tempBreakdownHour = 10;
-              na = 0;
-              tempBreakdownHour = tempBreakdownHour - tempWorkingHour;
-              tempIdleHour =
-                10 - tempWorkingHour - tempBreakdownHour > 0
-                  ? 10 - tempWorkingHour - tempBreakdownHour
-                  : 0;
-            } else {
-              if (tempBreakdownHour > 0) {
-                na = 0;
-                tempBreakdownHour = Math.abs(
-                  tempBreakdownHour - tempWorkingHour
-                );
-                tempIdleHour =
-                  10 - tempWorkingHour - tempBreakdownHour > 0
-                    ? 10 - tempWorkingHour - tempBreakdownHour
-                    : 0;
-              }
-            }
-          }
-          workingHour += tempWorkingHour;
-          idleHour += tempIdleHour;
-          breakdownHour += tempBreakdownHour;
-        }
-        usage.push({
-          machineNumber: entity.machineNumber,
-          typeId: entity?.typeId,
-          name: entity?.type?.name,
-          workingHour: workingHour,
-          idleHour: idleHour,
-          breakdownHour: breakdownHour,
-          na: na,
-        });
-      }
-      await this.redisCacheService.setForHour(key, usage);
-    }
-    const tempUsage = [];
-    for (const u of usage) {
-      const entities = usage.filter(
-        (a) => a.typeId === u.typeId && a.name === u.name
+      const result = Object.values(
+        tempUsage.reduce((acc, obj) => ({ ...acc, [obj.typeId]: obj }), {})
       );
-
-      const count = usage.filter(
-        (a) => a.typeId === u.typeId && a.name === u.name
-      ).length;
-
-      const workingHour = entities.reduce(function (prev, cur) {
-        return prev + cur.workingHour;
-      }, 0);
-      const idleHour = entities.reduce(function (prev, cur) {
-        return prev + cur.idleHour;
-      }, 0);
-      const breakdownHour = entities.reduce(function (prev, cur) {
-        return prev + cur.breakdownHour;
-      }, 0);
-      const na = entities.reduce(function (prev, cur) {
-        return prev + cur.na;
-      }, 0);
-
-      tempUsage.push({
-        machineNumber: u?.machineNumber,
-        typeId: u?.typeId,
-        name: u?.name,
-        workingHour: workingHour,
-        idleHour: idleHour,
-        breakdownHour: breakdownHour,
-        na: na,
-        total: workingHour + idleHour + breakdownHour + na,
-        count: count,
-      });
+      //console.log(result);
+      //console.log(result.length);
+      return result;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const result = Object.values(
-      tempUsage.reduce((acc, obj) => ({ ...acc, [obj.typeId]: obj }), {})
-    );
-    //console.log(result);
-    //console.log(result.length);
-    return result;
   }
   //** Get all entity. */
   async getAllEntityWithoutPagination(
     user: User,
     args: EntityConnectionArgs
   ): Promise<EntityModel[]> {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
-    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
-    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
-    const { search, assignedToId, locationIds, typeIds, zoneIds, measurement } =
-      args;
+    try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
+      const {
+        search,
+        assignedToId,
+        locationIds,
+        typeIds,
+        zoneIds,
+        measurement,
+      } = args;
 
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      machineNumber: { not: null },
-      parentEntityId: null,
-    });
-
-    if (search) {
-      const or: any = [
-        { model: { contains: search, mode: 'insensitive' } },
-        { machineNumber: { contains: search, mode: 'insensitive' } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
-      }
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
       where.AND.push({
-        OR: or,
+        deletedAt: null,
+        machineNumber: { not: null },
+        parentEntityId: null,
       });
-    }
 
-    if (!hasViewAll) {
-      const userDivision = await this.prisma.divisionUsers.findMany({
-        where: { userId: user.id },
-      });
-      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-      const or: any = [];
-      if (hasViewAllMachinery) {
-        or.push({ type: { entityType: 'Machine' } });
+      if (search) {
+        const or: any = [
+          { model: { contains: search, mode: 'insensitive' } },
+          { machineNumber: { contains: search, mode: 'insensitive' } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
         where.AND.push({
           OR: or,
         });
       }
-      if (hasViewAllVehicles) {
-        or.push({ type: { entityType: 'Vehicle' } });
-        where.AND.push({
-          OR: or,
+
+      if (!hasViewAll) {
+        const userDivision = await this.prisma.divisionUsers.findMany({
+          where: { userId: user.id },
         });
-      }
-      if (hasViewAllVessels) {
-        or.push({ type: { entityType: 'Vessel' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllDivisionEntity) {
-        or.push(
-          { divisionId: { in: userDivisionIds } },
-          {
+        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+        const or: any = [];
+        if (hasViewAllMachinery) {
+          or.push({ type: { entityType: 'Machine' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVehicles) {
+          or.push({ type: { entityType: 'Vehicle' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVessels) {
+          or.push({ type: { entityType: 'Vessel' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllDivisionEntity) {
+          or.push(
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId: user.id,
+                  removedAt: null,
+                },
+              },
+            }
+          );
+
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (
+          !hasViewAllDivisionEntity &&
+          !hasViewAllMachinery &&
+          !hasViewAllVehicles &&
+          !hasViewAllVessels
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId: user.id,
                 removedAt: null,
               },
             },
-          }
-        );
-
-        where.AND.push({
-          OR: or,
-        });
+          });
+        }
       }
-      if (
-        !hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
+
+      if (locationIds?.length > 0) {
         where.AND.push({
-          assignees: {
-            some: {
-              userId: user.id,
-              removedAt: null,
-            },
+          locationId: {
+            in: locationIds,
           },
         });
       }
-    }
 
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
-
-    if (typeIds?.length > 0) {
-      where.AND.push({
-        typeId: { in: typeIds },
-      });
-    }
-
-    if (measurement?.length > 0) {
-      where.AND.push({
-        measurement: { in: measurement },
-      });
-    }
-
-    const key = `usage_entities_${search}_${
-      assignedToId || !hasViewAll
-    }_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
-    const entitiesCache = await this.redisCacheService.get(key);
-    if (!entitiesCache) {
-      const entities = await this.prisma.entity.findMany({
-        where,
-        include: {
-          createdBy: true,
-          sparePRs: {
-            orderBy: { id: 'desc' },
-            where: { completedAt: null },
-            include: { sparePRDetails: true },
-          },
-          breakdowns: {
-            orderBy: { id: 'desc' },
-            where: { completedAt: null },
-            include: {
-              createdBy: true,
-              details: { include: { repairs: true } },
-              repairs: { include: { breakdownDetail: true } },
-            },
-          },
-          assignees: {
-            include: {
-              user: true,
-            },
-            where: {
-              removedAt: null,
-            },
-          },
-          brand: true,
-          type: true,
-          location: { include: { zone: true } },
-          repairs: {
-            orderBy: { id: 'desc' },
-            where: { breakdownId: null, breakdownDetailId: null },
-            take: 10,
-          },
-          division: true,
-        },
-        orderBy: { machineNumber: 'asc' },
-      });
-      for (const entity of entities) {
-        const reading = await this.getLatestReading(entity);
-        entity.currentRunning = reading;
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
       }
-      await this.redisCacheService.setForHour(key, entitiesCache);
-      return entities as unknown as EntityModel[];
-    }
 
-    return entitiesCache;
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
+        });
+      }
+
+      if (measurement?.length > 0) {
+        where.AND.push({
+          measurement: { in: measurement },
+        });
+      }
+
+      const key = `usage_entities_${search}_${
+        assignedToId || !hasViewAll
+      }_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      const entitiesCache = await this.redisCacheService.get(key);
+      if (!entitiesCache) {
+        const entities = await this.prisma.entity.findMany({
+          where,
+          include: {
+            createdBy: true,
+            sparePRs: {
+              orderBy: { id: 'desc' },
+              where: { completedAt: null },
+              include: { sparePRDetails: true },
+            },
+            breakdowns: {
+              orderBy: { id: 'desc' },
+              where: { completedAt: null },
+              include: {
+                createdBy: true,
+                details: { include: { repairs: true } },
+                repairs: { include: { breakdownDetail: true } },
+              },
+            },
+            assignees: {
+              include: {
+                user: true,
+              },
+              where: {
+                removedAt: null,
+              },
+            },
+            brand: true,
+            type: true,
+            location: { include: { zone: true } },
+            repairs: {
+              orderBy: { id: 'desc' },
+              where: { breakdownId: null, breakdownDetailId: null },
+              take: 10,
+            },
+            division: true,
+          },
+          orderBy: { machineNumber: 'asc' },
+        });
+        for (const entity of entities) {
+          const reading = await this.getLatestReading(entity);
+          entity.currentRunning = reading;
+        }
+        await this.redisCacheService.setForHour(key, entitiesCache);
+        return entities as unknown as EntityModel[];
+      }
+
+      return entitiesCache;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async updateEntityNote(user: User, id: number, note: string) {
@@ -4718,218 +4848,225 @@ export class EntityService {
     measurement: string[],
     entityType: string[]
   ) {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
-    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
-    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      machineNumber: { not: null },
-      parentEntityId: null,
-    });
-    if (search) {
-      const or: any = [
-        { location: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+    try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      where.AND.push({
+        deletedAt: null,
+        machineNumber: { not: null },
+        parentEntityId: null,
+      });
+      if (search) {
+        const or: any = [
+          { location: { name: { contains: search, mode: 'insensitive' } } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    if (divisionIds?.length > 0) {
-      where.AND.push({
-        divisionId: {
-          in: divisionIds,
-        },
-      });
-    }
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
-    if (typeIds?.length > 0) {
-      where.AND.push({
-        typeId: { in: typeIds },
-      });
-    }
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          divisionId: {
+            in: divisionIds,
+          },
+        });
+      }
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
+        });
+      }
 
-    if (!hasViewAll) {
-      const userDivision = await this.prisma.divisionUsers.findMany({
-        where: { userId: user.id },
-      });
-      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-      const or: any = [];
-      if (hasViewAllMachinery) {
-        or.push({ type: { entityType: 'Machine' } });
-        where.AND.push({
-          OR: or,
+      if (!hasViewAll) {
+        const userDivision = await this.prisma.divisionUsers.findMany({
+          where: { userId: user.id },
         });
-      }
-      if (hasViewAllVehicles) {
-        or.push({ type: { entityType: 'Vehicle' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllVessels) {
-        or.push({ type: { entityType: 'Vessel' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllDivisionEntity) {
-        or.push(
-          { divisionId: { in: userDivisionIds } },
-          {
+        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+        const or: any = [];
+        if (hasViewAllMachinery) {
+          or.push({ type: { entityType: 'Machine' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVehicles) {
+          or.push({ type: { entityType: 'Vehicle' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVessels) {
+          or.push({ type: { entityType: 'Vessel' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllDivisionEntity) {
+          or.push(
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId: user.id,
+                  removedAt: null,
+                },
+              },
+            }
+          );
+
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (
+          !hasViewAllDivisionEntity &&
+          !hasViewAllMachinery &&
+          !hasViewAllVehicles &&
+          !hasViewAllVessels
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId: user.id,
                 removedAt: null,
               },
             },
-          }
-        );
-
-        where.AND.push({
-          OR: or,
-        });
+          });
+        }
       }
-      if (
-        !hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
+      if (entityType?.length > 0) {
         where.AND.push({
-          assignees: {
-            some: {
-              userId: user.id,
-              removedAt: null,
-            },
+          type: {
+            entityType: { in: entityType },
           },
         });
       }
-    }
-    if (entityType?.length > 0) {
-      where.AND.push({
-        type: {
-          entityType: { in: entityType },
-        },
-      });
-    }
 
-    const allEntities = await this.prisma.entity.findMany({
-      where,
-      include: { location: true },
-      orderBy: { machineNumber: 'asc' },
-    });
-
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-    const key = `grouped_incomplete_tasks_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
-    let stats = await this.redisCacheService.get(key);
-    if (!stats) {
-      stats = [];
-      const checklists = await this.prisma.checklist.findMany({
-        where: {
-          type: 'Daily',
-          NOT: [{ entityId: null }],
-          from: { gte: moment(from).startOf('day').toDate() },
-          to: { lte: moment(to).endOf('day').toDate() },
-        },
-        select: {
-          id: true,
-          entityId: true,
-          from: true,
-          to: true,
-        },
+      const allEntities = await this.prisma.entity.findMany({
+        where,
+        include: { location: true },
+        orderBy: { machineNumber: 'asc' },
       });
 
-      const checklistIds = checklists.map((id) => id.id);
-      const checklistItems = await this.prisma.checklistItem.findMany({
-        where: { checklistId: { in: checklistIds } },
-        select: { checklistId: true, completedAt: true },
-      });
-      for (const entity of allEntities) {
-        let completeTask = 0;
-        let incompleteTask = 0;
-        const days = toDate.diff(fromDate, 'days') + 1;
-        for (let i = 0; i < days; i++) {
-          const day = fromDate.clone().add(i, 'day');
-          const dayStart = day.clone().startOf('day');
-          const dayEnd = day.clone().endOf('day');
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `grouped_incomplete_tasks_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      let stats = await this.redisCacheService.get(key);
+      if (!stats) {
+        stats = [];
+        const checklists = await this.prisma.checklist.findMany({
+          where: {
+            type: 'Daily',
+            NOT: [{ entityId: null }],
+            from: { gte: moment(from).startOf('day').toDate() },
+            to: { lte: moment(to).endOf('day').toDate() },
+          },
+          select: {
+            id: true,
+            entityId: true,
+            from: true,
+            to: true,
+          },
+        });
 
-          const checklist = checklists.find(
-            (c) =>
-              c.entityId === entity.id &&
-              moment(c.from).startOf('day').isSame(dayStart.toDate()) &&
-              moment(c.to).endOf('day').isSame(dayEnd.toDate())
-          );
-          const ckItems = checklistItems.filter(
-            (ci) => ci.checklistId === checklist?.id
-          );
-          ckItems.map((ci) => {
-            if (ci?.completedAt !== null) {
-              completeTask = completeTask + 1;
-            } else {
-              incompleteTask = incompleteTask + 1;
-            }
+        const checklistIds = checklists.map((id) => id.id);
+        const checklistItems = await this.prisma.checklistItem.findMany({
+          where: { checklistId: { in: checklistIds } },
+          select: { checklistId: true, completedAt: true },
+        });
+        for (const entity of allEntities) {
+          let completeTask = 0;
+          let incompleteTask = 0;
+          const days = toDate.diff(fromDate, 'days') + 1;
+          for (let i = 0; i < days; i++) {
+            const day = fromDate.clone().add(i, 'day');
+            const dayStart = day.clone().startOf('day');
+            const dayEnd = day.clone().endOf('day');
+
+            const checklist = checklists.find(
+              (c) =>
+                c.entityId === entity.id &&
+                moment(c.from).startOf('day').isSame(dayStart.toDate()) &&
+                moment(c.to).endOf('day').isSame(dayEnd.toDate())
+            );
+            const ckItems = checklistItems.filter(
+              (ci) => ci.checklistId === checklist?.id
+            );
+            ckItems.map((ci) => {
+              if (ci?.completedAt !== null) {
+                completeTask = completeTask + 1;
+              } else {
+                incompleteTask = incompleteTask + 1;
+              }
+            });
+          }
+          stats.push({
+            locationId: entity?.locationId,
+            name: entity?.location?.name,
+            incompleteTask,
+            completeTask,
           });
         }
-        stats.push({
-          locationId: entity?.locationId,
-          name: entity?.location?.name,
+
+        await this.redisCacheService.setForHour(key, stats);
+      }
+      const tempUsage = [];
+      for (const u of stats) {
+        const entities = stats.filter((a) => a?.locationId === u?.locationId);
+
+        const count = stats.filter(
+          (a) => a?.locationId === u?.locationId
+        ).length;
+
+        const incompleteTask = entities.reduce(function (prev, cur) {
+          return prev + cur.incompleteTask;
+        }, 0);
+        const completeTask = entities.reduce(function (prev, cur) {
+          return prev + cur.completeTask;
+        }, 0);
+        tempUsage.push({
+          locationId: u?.locationId,
+          name: u?.name,
           incompleteTask,
           completeTask,
+          count,
+          total: incompleteTask + completeTask,
         });
       }
-
-      await this.redisCacheService.setForHour(key, stats);
+      const result = Object.values(
+        tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.locationId]: obj }), {})
+      );
+      //console.log(result);
+      //console.log(result.length);
+      return result;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const tempUsage = [];
-    for (const u of stats) {
-      const entities = stats.filter((a) => a?.locationId === u?.locationId);
-
-      const count = stats.filter((a) => a?.locationId === u?.locationId).length;
-
-      const incompleteTask = entities.reduce(function (prev, cur) {
-        return prev + cur.incompleteTask;
-      }, 0);
-      const completeTask = entities.reduce(function (prev, cur) {
-        return prev + cur.completeTask;
-      }, 0);
-      tempUsage.push({
-        locationId: u?.locationId,
-        name: u?.name,
-        incompleteTask,
-        completeTask,
-        count,
-        total: incompleteTask + completeTask,
-      });
-    }
-    const result = Object.values(
-      tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.locationId]: obj }), {})
-    );
-    //console.log(result);
-    //console.log(result.length);
-    return result;
   }
 
   //** Get all grouped type's repair stats*/
@@ -4945,220 +5082,228 @@ export class EntityService {
     measurement: string[],
     entityType: string[]
   ) {
-    const userPermissions = await this.userService.getUserRolesPermissionsList(
-      user.id
-    );
-    const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
-    const hasViewAllMachinery = userPermissions.includes('VIEW_ALL_MACHINERY');
-    const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
-    const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
-    const hasViewAllDivisionEntity = userPermissions.includes(
-      'VIEW_ALL_DIVISION_ENTITY'
-    );
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
-    where.AND.push({
-      deletedAt: null,
-      machineNumber: { not: null },
-      parentEntityId: null,
-    });
-    if (search) {
-      const or: any = [
-        { type: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-      // If search contains all numbers, search the machine ids as well
-      if (/^(0|[1-9]\d*)$/.test(search)) {
-        or.push({ id: parseInt(search) });
+    try {
+      const userPermissions =
+        await this.userService.getUserRolesPermissionsList(user.id);
+      const hasViewAll = userPermissions.includes('VIEW_ALL_ENTITY');
+      const hasViewAllMachinery =
+        userPermissions.includes('VIEW_ALL_MACHINERY');
+      const hasViewAllVehicles = userPermissions.includes('VIEW_ALL_VEHICLES');
+      const hasViewAllVessels = userPermissions.includes('VIEW_ALL_VESSELS');
+      const hasViewAllDivisionEntity = userPermissions.includes(
+        'VIEW_ALL_DIVISION_ENTITY'
+      );
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+      where.AND.push({
+        deletedAt: null,
+        machineNumber: { not: null },
+        parentEntityId: null,
+      });
+      if (search) {
+        const or: any = [
+          { type: { name: { contains: search, mode: 'insensitive' } } },
+        ];
+        // If search contains all numbers, search the machine ids as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ id: parseInt(search) });
+        }
+        where.AND.push({
+          OR: or,
+        });
       }
-      where.AND.push({
-        OR: or,
-      });
-    }
-    if (divisionIds?.length > 0) {
-      where.AND.push({
-        divisionId: {
-          in: divisionIds,
-        },
-      });
-    }
-    if (locationIds?.length > 0) {
-      where.AND.push({
-        locationId: {
-          in: locationIds,
-        },
-      });
-    }
-    if (zoneIds?.length > 0) {
-      where.AND.push({ location: { zoneId: { in: zoneIds } } });
-    }
-    if (typeIds?.length > 0) {
-      where.AND.push({
-        typeId: { in: typeIds },
-      });
-    }
+      if (divisionIds?.length > 0) {
+        where.AND.push({
+          divisionId: {
+            in: divisionIds,
+          },
+        });
+      }
+      if (locationIds?.length > 0) {
+        where.AND.push({
+          locationId: {
+            in: locationIds,
+          },
+        });
+      }
+      if (zoneIds?.length > 0) {
+        where.AND.push({ location: { zoneId: { in: zoneIds } } });
+      }
+      if (typeIds?.length > 0) {
+        where.AND.push({
+          typeId: { in: typeIds },
+        });
+      }
 
-    if (!hasViewAll) {
-      const userDivision = await this.prisma.divisionUsers.findMany({
-        where: { userId: user.id },
-      });
-      const userDivisionIds = userDivision?.map((d) => d?.divisionId);
-      const or: any = [];
-      if (hasViewAllMachinery) {
-        or.push({ type: { entityType: 'Machine' } });
-        where.AND.push({
-          OR: or,
+      if (!hasViewAll) {
+        const userDivision = await this.prisma.divisionUsers.findMany({
+          where: { userId: user.id },
         });
-      }
-      if (hasViewAllVehicles) {
-        or.push({ type: { entityType: 'Vehicle' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllVessels) {
-        or.push({ type: { entityType: 'Vessel' } });
-        where.AND.push({
-          OR: or,
-        });
-      }
-      if (hasViewAllDivisionEntity) {
-        or.push(
-          { divisionId: { in: userDivisionIds } },
-          {
+        const userDivisionIds = userDivision?.map((d) => d?.divisionId);
+        const or: any = [];
+        if (hasViewAllMachinery) {
+          or.push({ type: { entityType: 'Machine' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVehicles) {
+          or.push({ type: { entityType: 'Vehicle' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllVessels) {
+          or.push({ type: { entityType: 'Vessel' } });
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (hasViewAllDivisionEntity) {
+          or.push(
+            { divisionId: { in: userDivisionIds } },
+            {
+              assignees: {
+                some: {
+                  userId: user.id,
+                  removedAt: null,
+                },
+              },
+            }
+          );
+
+          where.AND.push({
+            OR: or,
+          });
+        }
+        if (
+          !hasViewAllDivisionEntity &&
+          !hasViewAllMachinery &&
+          !hasViewAllVehicles &&
+          !hasViewAllVessels
+        ) {
+          where.AND.push({
             assignees: {
               some: {
                 userId: user.id,
                 removedAt: null,
               },
             },
-          }
-        );
-
+          });
+        }
+      }
+      if (entityType?.length > 0) {
         where.AND.push({
-          OR: or,
+          type: {
+            entityType: { in: entityType },
+          },
         });
       }
-      if (
-        !hasViewAllDivisionEntity &&
-        !hasViewAllMachinery &&
-        !hasViewAllVehicles &&
-        !hasViewAllVessels
-      ) {
-        where.AND.push({
-          assignees: {
-            some: {
-              userId: user.id,
-              removedAt: null,
+
+      const allEntities = await this.prisma.entity.findMany({
+        where,
+        include: { type: true },
+        orderBy: { machineNumber: 'asc' },
+      });
+
+      const fromDate = moment(from).startOf('day');
+      const toDate = moment(to).endOf('day');
+      const key = `grouped_type_repair_stats_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      let stats = await this.redisCacheService.get(key);
+      if (!stats) {
+        stats = [];
+        const repairs = await this.prisma.repair.findMany({
+          where: {
+            createdAt: {
+              gte: moment(from).startOf('day').toDate(),
+              lte: moment(to).endOf('day').toDate(),
             },
           },
+          include: { breakdown: true },
         });
-      }
-    }
-    if (entityType?.length > 0) {
-      where.AND.push({
-        type: {
-          entityType: { in: entityType },
-        },
-      });
-    }
 
-    const allEntities = await this.prisma.entity.findMany({
-      where,
-      include: { type: true },
-      orderBy: { machineNumber: 'asc' },
-    });
+        for (const entity of allEntities) {
+          let averageTimeOfRepair = 0;
+          let total = 0;
+          let reading = 0;
+          let mean = 0;
+          const days = toDate.diff(fromDate, 'days') + 1;
+          for (let i = 0; i < days; i++) {
+            const day = fromDate.clone().add(i, 'day');
+            const dayStart = day.clone().startOf('day');
+            const dayEnd = day.clone().endOf('day');
 
-    const fromDate = moment(from).startOf('day');
-    const toDate = moment(to).endOf('day');
-    const key = `grouped_type_repair_stats_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
-    let stats = await this.redisCacheService.get(key);
-    if (!stats) {
-      stats = [];
-      const repairs = await this.prisma.repair.findMany({
-        where: {
-          createdAt: {
-            gte: moment(from).startOf('day').toDate(),
-            lte: moment(to).endOf('day').toDate(),
-          },
-        },
-        include: { breakdown: true },
-      });
-
-      for (const entity of allEntities) {
-        let averageTimeOfRepair = 0;
-        let total = 0;
-        let reading = 0;
-        let mean = 0;
-        const days = toDate.diff(fromDate, 'days') + 1;
-        for (let i = 0; i < days; i++) {
-          const day = fromDate.clone().add(i, 'day');
-          const dayStart = day.clone().startOf('day');
-          const dayEnd = day.clone().endOf('day');
-
-          const repairsOfEntity = repairs.filter(
-            (r) =>
-              r.entityId === entity.id &&
-              moment(r.createdAt).isBetween(dayStart.toDate(), dayEnd.toDate())
-          );
-          if (repairsOfEntity.length > 0) {
-            for (const r of repairsOfEntity) {
-              if (r?.breakdown?.completedAt) {
-                const duration = moment.duration(
-                  moment(r.createdAt).diff(r.breakdown.createdAt)
-                );
-                const durationHour = parseInt(duration.asHours().toFixed(0));
-                const finalDuration = durationHour / repairsOfEntity.length;
-                averageTimeOfRepair += finalDuration;
-              }
-            }
-            total = await this.getLatestReading(entity);
-            const entityReading = await this.getLatestReading(
-              entity,
-              dayEnd.toDate()
+            const repairsOfEntity = repairs.filter(
+              (r) =>
+                r.entityId === entity.id &&
+                moment(r.createdAt).isBetween(
+                  dayStart.toDate(),
+                  dayEnd.toDate()
+                )
             );
-            reading += entityReading;
-            mean = reading / repairsOfEntity.length;
+            if (repairsOfEntity.length > 0) {
+              for (const r of repairsOfEntity) {
+                if (r?.breakdown?.completedAt) {
+                  const duration = moment.duration(
+                    moment(r.createdAt).diff(r.breakdown.createdAt)
+                  );
+                  const durationHour = parseInt(duration.asHours().toFixed(0));
+                  const finalDuration = durationHour / repairsOfEntity.length;
+                  averageTimeOfRepair += finalDuration;
+                }
+              }
+              total = await this.getLatestReading(entity);
+              const entityReading = await this.getLatestReading(
+                entity,
+                dayEnd.toDate()
+              );
+              reading += entityReading;
+              mean = reading / repairsOfEntity.length;
+            }
           }
+          stats.push({
+            typeId: entity?.type?.id,
+            name: entity?.type?.name,
+            averageTimeOfRepair,
+            mean,
+            total,
+          });
         }
-        stats.push({
-          typeId: entity?.type?.id,
-          name: entity?.type?.name,
-          averageTimeOfRepair,
-          mean,
+
+        await this.redisCacheService.setForHour(key, stats);
+      }
+      const tempUsage = [];
+      for (const u of stats) {
+        const entities = stats.filter((a) => a?.typeId === u?.typeId);
+
+        const count = stats.filter((a) => a?.typeId === u?.typeId).length;
+
+        const averageTimeOfRepair = entities.reduce(function (prev, cur) {
+          return prev + cur.averageTimeOfRepair;
+        }, 0);
+        const mean = entities.reduce(function (prev, cur) {
+          return prev + cur.mean;
+        }, 0);
+        const total = entities.reduce(function (prev, cur) {
+          return prev + cur.total;
+        }, 0);
+        tempUsage.push({
+          typeId: u?.typeId,
+          name: u?.name,
+          averageTimeOfRepair: Math.ceil(averageTimeOfRepair),
+          mean: Math.ceil(mean),
+          count,
           total,
         });
       }
-
-      await this.redisCacheService.setForHour(key, stats);
+      const result = Object.values(
+        tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.typeId]: obj }), {})
+      );
+      return result;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    const tempUsage = [];
-    for (const u of stats) {
-      const entities = stats.filter((a) => a?.typeId === u?.typeId);
-
-      const count = stats.filter((a) => a?.typeId === u?.typeId).length;
-
-      const averageTimeOfRepair = entities.reduce(function (prev, cur) {
-        return prev + cur.averageTimeOfRepair;
-      }, 0);
-      const mean = entities.reduce(function (prev, cur) {
-        return prev + cur.mean;
-      }, 0);
-      const total = entities.reduce(function (prev, cur) {
-        return prev + cur.total;
-      }, 0);
-      tempUsage.push({
-        typeId: u?.typeId,
-        name: u?.name,
-        averageTimeOfRepair: Math.ceil(averageTimeOfRepair),
-        mean: Math.ceil(mean),
-        count,
-        total,
-      });
-    }
-    const result = Object.values(
-      tempUsage.reduce((acc, obj) => ({ ...acc, [obj?.typeId]: obj }), {})
-    );
-    return result;
   }
 
   async toggleEntityTransit(user: User, id: number, complete: boolean) {
