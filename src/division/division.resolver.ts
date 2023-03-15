@@ -11,8 +11,6 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { User } from 'src/models/user.model';
 import { PaginatedDivision } from './dto/division-connection.model';
 import { DivisionConnectionArgs } from './dto/division-connection.args';
-import { DivisionAssign } from './entities/division-assign.entity';
-import { DivisionAssignConnectionArgs } from './dto/division-assign-connection.args';
 import { DivisionAssignInput } from './dto/division-assign.input';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)

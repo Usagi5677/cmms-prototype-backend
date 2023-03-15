@@ -31,96 +31,131 @@ export class LocationService {
   ) {}
 
   async create(user: User, { name, zoneId, skipFriday }: CreateLocationInput) {
-    const existing = await this.prisma.location.findFirst({
-      where: { name, active: true },
-    });
-    if (existing) {
-      throw new BadRequestException(`${name} already exists.`);
+    try {
+      const existing = await this.prisma.location.findFirst({
+        where: { name, active: true },
+      });
+      if (existing) {
+        throw new BadRequestException(`${name} already exists.`);
+      }
+      await this.prisma.location.create({
+        data: { name, zoneId, createdById: user.id, skipFriday },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.location.create({
-      data: { name, zoneId, createdById: user.id, skipFriday },
-    });
   }
 
   async findAll(args: LocationConnectionArgs): Promise<PaginatedLocation> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { name, zoneId, showOnlyUnzoned, withSkipFriday } = args;
-    const where: any = { AND: [{ active: true }] };
-    if (name) {
-      where.AND.push({ name: { contains: name, mode: 'insensitive' } });
-    }
-    if (zoneId) {
-      where.AND.push({ zoneId });
-    } else if (showOnlyUnzoned) {
-      where.AND.push({ zoneId: null });
-    }
-    if (withSkipFriday) {
-      where.AND.push({
-        skipFriday: true,
-      });
-    }
-    const locations = await this.prisma.location.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      orderBy: { name: 'asc' },
-      include: { zone: true },
-    });
-    const count = await this.prisma.location.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      locations.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { name, zoneId, showOnlyUnzoned, withSkipFriday } = args;
+      const where: any = { AND: [{ active: true }] };
+      if (name) {
+        where.AND.push({ name: { contains: name, mode: 'insensitive' } });
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      if (zoneId) {
+        where.AND.push({ zoneId });
+      } else if (showOnlyUnzoned) {
+        where.AND.push({ zoneId: null });
+      }
+      if (withSkipFriday) {
+        where.AND.push({
+          skipFriday: true,
+        });
+      }
+      const locations = await this.prisma.location.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        orderBy: { name: 'asc' },
+        include: { zone: true },
+      });
+      const count = await this.prisma.location.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        locations.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findEvery() {
-    return await this.prisma.location.findMany({
-      where: { active: true },
-      orderBy: { name: 'asc' },
-    });
+    try {
+      return await this.prisma.location.findMany({
+        where: { active: true },
+        orderBy: { name: 'asc' },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(id: number) {
-    const location = await this.prisma.location.findFirst({ where: { id } });
-    if (!location) {
-      throw new BadRequestException('Invalid location.');
+    try {
+      const location = await this.prisma.location.findFirst({ where: { id } });
+      if (!location) {
+        throw new BadRequestException('Invalid location.');
+      }
+      return location;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return location;
   }
 
   async update({ id, name, zoneId, skipFriday }: UpdateLocationInput) {
-    await this.prisma.location.update({
-      where: { id },
-      data: { name, zoneId: zoneId ?? null, skipFriday },
-    });
+    try {
+      await this.prisma.location.update({
+        where: { id },
+        data: { name, zoneId: zoneId ?? null, skipFriday },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async remove(id: number) {
-    await this.prisma.location.update({
-      where: { id },
-      data: { active: false },
-    });
+    try {
+      await this.prisma.location.update({
+        where: { id },
+        data: { active: false },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async unassignUserFromLocation(id: number) {
-    await this.prisma.locationUsers.update({
-      where: { id },
-      data: { removedAt: new Date() },
-    });
+    try {
+      await this.prisma.locationUsers.update({
+        where: { id },
+        data: { removedAt: new Date() },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async assignEntityToLocation(
@@ -279,56 +314,73 @@ export class LocationService {
   }
 
   async updateEntityLocation(user: User, entityId: number, locationId: number) {
-    const newLocation = await this.prisma.location.findFirst({
-      where: { id: locationId },
-    });
-    const entity = await this.prisma.entity.findFirst({
-      where: { id: entityId },
-      include: { location: true },
-    });
-    await this.entityService.createEntityHistoryInBackground({
-      type: 'Transition start',
-      description: `Transition started on ${moment().format(
-        'YYYY-MM-DD HH:mm:ss'
-      )}. Location change from ${entity?.location?.name} to ${
-        newLocation.name
-      }`,
-      entityId: entityId,
-      completedById: user.id,
-    });
-    await this.prisma.entity.update({
-      where: { id: entityId },
-      data: { locationId, transit: true },
-    });
-
-    //get all users from location
-    const locAssignments = await this.prisma.locationUsers.findMany({
-      where: {
-        locationId,
-        removedAt: null,
-      },
-      include: { location: true },
-    });
-    //remove all assigned users in entity
-    await this.prisma.entityAssignment.updateMany({
-      where: { entityId, removedAt: null },
-      data: { removedAt: new Date() },
-    });
-    //create new assign for entity and notify user
-    for (const loc of locAssignments) {
-      await this.prisma.entityAssignment.create({
-        data: {
-          entityId,
-          userId: loc?.userId,
-          type: loc?.userType,
-        },
+    try {
+      const newLocation = await this.prisma.location.findFirst({
+        where: { id: locationId },
       });
-      if (user?.id !== loc?.userId) {
-        await this.notificationService.createInBackground({
-          userId: loc?.userId,
-          body: `Entity (${entityId}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
+      const entity = await this.prisma.entity.findFirst({
+        where: { id: entityId },
+        include: { location: true },
+      });
+      await this.entityService.createEntityHistoryInBackground({
+        type: 'Transition start',
+        description: `Transition started on ${moment().format(
+          'YYYY-MM-DD HH:mm:ss'
+        )}. Location change from ${entity?.location?.name} to ${
+          newLocation.name
+        }`,
+        entityId: entityId,
+        completedById: user.id,
+      });
+      await this.prisma.entity.update({
+        where: { id: entityId },
+        data: { locationId, transit: true },
+      });
+
+      //get all users from location
+      const locAssignments = await this.prisma.locationUsers.findMany({
+        where: {
+          locationId,
+          removedAt: null,
+        },
+        include: { location: true },
+      });
+      //remove all assigned users in entity
+      await this.prisma.entityAssignment.updateMany({
+        where: { entityId, removedAt: null },
+        data: { removedAt: new Date() },
+      });
+      //create new assign for entity and notify user
+      for (const loc of locAssignments) {
+        await this.prisma.entityAssignment.create({
+          data: {
+            entityId,
+            userId: loc?.userId,
+            type: loc?.userType,
+          },
         });
+        if (user?.id !== loc?.userId) {
+          await this.notificationService.createInBackground({
+            userId: loc?.userId,
+            body: `Entity (${entityId}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
+          });
+        }
       }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async updateLocationUser(id: number, locationId: number, userType: string) {
+    try {
+      await this.prisma.locationUsers.update({
+        where: { id: id },
+        data: { locationId, userType },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 }

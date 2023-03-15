@@ -996,6 +996,7 @@ type Mutation {
   updateHullType(updateHullTypeInput: UpdateHullTypeInput!): String!
   updateInterServiceColor(input: UpdateInterServiceColorInput!): String!
   updateLocation(input: UpdateLocationInput!): String!
+  updateLocationUser(id: Int!, locationId: Int!, userType: String!): String!
   updatePeriodicMaintenanceReading(id: Int!, reading: Int!): String!
   updateReading(id: Int!, reading: Int!): String!
   updateRepair(updateRepairInput: UpdateRepairInput!): String!

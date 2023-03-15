@@ -95,4 +95,14 @@ export class LocationResolver {
     await this.locationService.updateEntityLocation(user, entityId, locationId);
     return `Successfully updated entity's location.`;
   }
+
+  @Mutation(() => String)
+  async updateLocationUser(
+    @Args('id') id: number,
+    @Args('locationId') locationId: number,
+    @Args('userType') userType: string
+  ) {
+    await this.locationService.updateLocationUser(id, locationId, userType);
+    return `Successfully updated location user.`;
+  }
 }

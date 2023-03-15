@@ -25,60 +25,77 @@ export class DivisionService {
   ) {}
 
   async create(user: User, { name }: CreateDivisionInput) {
-    const existing = await this.prisma.division.findFirst({
-      where: { name, active: true },
-    });
-    if (existing) {
-      throw new BadRequestException(`${name} already exists.`);
+    try {
+      const existing = await this.prisma.division.findFirst({
+        where: { name, active: true },
+      });
+      if (existing) {
+        throw new BadRequestException(`${name} already exists.`);
+      }
+      await this.prisma.division.create({
+        data: { name, createdById: user.id },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    await this.prisma.division.create({ data: { name, createdById: user.id } });
   }
 
   async findAll(args: DivisionConnectionArgs): Promise<PaginatedDivision> {
-    const { limit, offset } = getPagingParameters(args);
-    const limitPlusOne = limit + 1;
-    const { name } = args;
-    const where: any = { AND: [{ active: true }] };
-    if (name) {
-      where.AND.push({ name: { contains: name, mode: 'insensitive' } });
-    }
-    const divisions = await this.prisma.division.findMany({
-      skip: offset,
-      take: limitPlusOne,
-      where,
-      include: {
-        assignees: {
-          include: { user: true },
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
-    const count = await this.prisma.division.count({ where });
-    const { edges, pageInfo } = connectionFromArraySlice(
-      divisions.slice(0, limit),
-      args,
-      {
-        arrayLength: count,
-        sliceStart: offset,
+    try {
+      const { limit, offset } = getPagingParameters(args);
+      const limitPlusOne = limit + 1;
+      const { name } = args;
+      const where: any = { AND: [{ active: true }] };
+      if (name) {
+        where.AND.push({ name: { contains: name, mode: 'insensitive' } });
       }
-    );
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        count,
-        hasNextPage: offset + limit < count,
-        hasPreviousPage: offset >= limit,
-      },
-    };
+      const divisions = await this.prisma.division.findMany({
+        skip: offset,
+        take: limitPlusOne,
+        where,
+        include: {
+          assignees: {
+            include: { user: true },
+          },
+        },
+        orderBy: { name: 'asc' },
+      });
+      const count = await this.prisma.division.count({ where });
+      const { edges, pageInfo } = connectionFromArraySlice(
+        divisions.slice(0, limit),
+        args,
+        {
+          arrayLength: count,
+          sliceStart: offset,
+        }
+      );
+      return {
+        edges,
+        pageInfo: {
+          ...pageInfo,
+          count,
+          hasNextPage: offset + limit < count,
+          hasPreviousPage: offset >= limit,
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async findOne(id: number) {
-    const division = await this.prisma.division.findFirst({ where: { id } });
-    if (!division) {
-      throw new BadRequestException('Invalid division.');
+    try {
+      const division = await this.prisma.division.findFirst({ where: { id } });
+      if (!division) {
+        throw new BadRequestException('Invalid division.');
+      }
+      return division;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
     }
-    return division;
   }
 
   async update({ id, name }: UpdateDivisionInput) {
@@ -181,38 +198,53 @@ export class DivisionService {
   }
 
   async search(query?: string, limit?: number) {
-    if (!limit) limit = 10;
-    // eslint-disable-next-line prefer-const
-    let where: any = { AND: [] };
+    try {
+      if (!limit) limit = 10;
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
 
-    where.AND.push({
-      active: true,
-    });
-    if (query) {
       where.AND.push({
-        name: { contains: query, mode: 'insensitive' },
+        active: true,
       });
-    }
+      if (query) {
+        where.AND.push({
+          name: { contains: query, mode: 'insensitive' },
+        });
+      }
 
-    const divisions = await this.prisma.division.findMany({
-      where,
-      take: limit,
-    });
-    return divisions;
+      const divisions = await this.prisma.division.findMany({
+        where,
+        take: limit,
+      });
+      return divisions;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async unassignUserFromDivision(id: number) {
-    await this.prisma.divisionUsers.update({
-      where: { id },
-      data: { removedAt: new Date() },
-    });
+    try {
+      await this.prisma.divisionUsers.update({
+        where: { id },
+        data: { removedAt: new Date() },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async updateEntityDivision(entityId: number, divisionId: number) {
-    await this.prisma.entity.update({
-      where: { id: entityId },
-      data: { divisionId },
-    });
+    try {
+      await this.prisma.entity.update({
+        where: { id: entityId },
+        data: { divisionId },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
   }
 
   async assignEntityToDivision({ divisionId, entityIds }: DivisionAssignInput) {
