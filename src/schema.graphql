@@ -2391,6 +2391,7 @@ type entityStatusCount {
   machineCritical: Int
   machineDispose: Int
   machineWorking: Int
+  total: Int
   vehicleBreakdown: Int
   vehicleCritical: Int
   vehicleDispose: Int

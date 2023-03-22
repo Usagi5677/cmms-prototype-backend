@@ -6,6 +6,7 @@ export class entityStatusCount {
   critical?: number;
   breakdown?: number;
   dispose?: number;
+  total?: number;
   machineWorking?: number;
   machineCritical?: number;
   machineBreakdown?: number;

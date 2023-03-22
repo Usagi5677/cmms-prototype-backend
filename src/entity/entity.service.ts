@@ -3407,6 +3407,10 @@ export class EntityService {
           where,
           include: { type: true },
         });
+        const total = await this.prisma.entity.findMany({
+          where: { deletedAt: null },
+          select: { id: true },
+        });
         let working = 0;
         let critical = 0;
         let breakdown = 0;
@@ -3467,6 +3471,7 @@ export class EntityService {
           critical,
           breakdown,
           dispose,
+          total: total?.length > 0 ? total?.length : 0,
           machineWorking,
           machineCritical,
           machineBreakdown,
