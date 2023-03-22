@@ -251,6 +251,10 @@ export class EntityService {
           link: `/entity/${id}`,
         });
       }
+      await this.prisma.entityAssignment.updateMany({
+        where: { userId: { in: users }, entityId: id },
+        data: { removedAt: new Date() },
+      });
       //use soft delete middleware later
       await this.prisma.entity.update({
         where: { id },
