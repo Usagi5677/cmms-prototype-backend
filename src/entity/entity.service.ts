@@ -391,7 +391,7 @@ export class EntityService {
           entityId: id,
           completedById: user.id,
         });
-        /*
+
         //get all users from location
         const locAssignments = await this.prisma.locationUsers.findMany({
           where: {
@@ -421,7 +421,6 @@ export class EntityService {
             });
           }
         }
-        */
       }
       if (engine && entity?.engine != engine) {
         await this.createEntityHistoryInBackground({

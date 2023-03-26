@@ -189,7 +189,6 @@ export class LocationService {
               data: { locationId, transit: false },
             });
 
-            /*
             //get all users from location
             const locAssignments = await this.prisma.locationUsers.findMany({
               where: {
@@ -219,7 +218,6 @@ export class LocationService {
                 });
               }
             }
-            */
           } else {
             await this.entityService.createEntityHistoryInBackground({
               type: 'Transition start',
@@ -235,7 +233,6 @@ export class LocationService {
               where: { id },
               data: { locationId, transit: true },
             });
-            /*
             //get all users from location
             const locAssignments = await this.prisma.locationUsers.findMany({
               where: {
@@ -265,7 +262,6 @@ export class LocationService {
                 });
               }
             }
-            */
           }
         }
       }
@@ -399,7 +395,7 @@ export class LocationService {
         where: { id: entityId },
         data: { locationId, transit: true },
       });
-      /*
+
       //get all users from location
       const locAssignments = await this.prisma.locationUsers.findMany({
         where: {
@@ -429,7 +425,6 @@ export class LocationService {
           });
         }
       }
-      */
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
