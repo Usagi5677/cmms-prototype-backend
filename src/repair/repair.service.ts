@@ -36,7 +36,7 @@ export class RepairService {
         user.id,
         undefined,
         ['Admin', 'Engineer'],
-        ['MODIFY_REPAIR_REQUEST']
+        ['MODIFY_BREAKDOWN']
       );
       const repair = await this.prisma.repair.create({
         data: {
@@ -166,7 +166,7 @@ export class RepairService {
         user.id,
         undefined,
         ['Admin', 'Engineer'],
-        ['MODIFY_REPAIR_REQUEST']
+        ['MODIFY_BREAKDOWN']
       );
       const before = await this.prisma.repair.findFirst({
         where: { id },
@@ -214,7 +214,7 @@ export class RepairService {
         user.id,
         undefined,
         ['Admin', 'Engineer'],
-        ['MODIFY_REPAIR_REQUEST']
+        ['MODIFY_BREAKDOWN']
       );
 
       const repair = await this.prisma.repair.delete({ where: { id } });
