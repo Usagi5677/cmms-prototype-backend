@@ -43,7 +43,12 @@ export class LocationService {
       });
     } catch (e) {
       console.log(e);
-      throw new InternalServerErrorException('Unexpected error occured.');
+      if (e?.response) {
+        throw new InternalServerErrorException(e?.response?.message);
+      }
+      throw new InternalServerErrorException(
+        'Unexpected while creating user assignment.'
+      );
     }
   }
 
@@ -122,12 +127,66 @@ export class LocationService {
     }
   }
 
-  async update({ id, name, zoneId, skipFriday }: UpdateLocationInput) {
+  async update(
+    user: User,
+    { id, name, zoneId, skipFriday }: UpdateLocationInput
+  ) {
     try {
       await this.prisma.location.update({
         where: { id },
         data: { name, zoneId: zoneId ?? null, skipFriday },
       });
+
+      //get all entity with location and zone
+      const entities = await this.prisma.entity.findMany({
+        where: { location: { zoneId, id }, deletedAt: null },
+        select: { id: true, divisionId: true },
+      });
+      //get their division ids
+      const divisionIds = entities.map((e) => e.divisionId);
+      //get their entity ids
+      const entityIds = entities.map((e) => e.id);
+      //get all users from user assignments
+      const userAssignments = await this.prisma.userAssignment.findMany({
+        where: {
+          user: {
+            divisionUsers: { some: { divisionId: { in: divisionIds } } },
+          },
+          type: 'Engineer',
+          zoneId,
+          active: true,
+        },
+        distinct: ['userId'],
+        orderBy: { id: 'desc' },
+      });
+      if (userAssignments.length > 0) {
+        //remove previous type assignments of entity
+        for (const entityId of entityIds) {
+          await this.prisma.entityAssignment.updateMany({
+            where: { type: 'Engineer', entityId, removedAt: null },
+            data: { removedAt: new Date() },
+          });
+        }
+      }
+
+      //insert new admins and notify them
+      for (const entityId of entityIds) {
+        for (const userAssignment of userAssignments) {
+          await this.prisma.entityAssignment.create({
+            data: {
+              entityId,
+              userId: userAssignment?.userId,
+              type: userAssignment?.type,
+            },
+          });
+          if (user?.id !== userAssignment?.userId) {
+            await this.notificationService.createInBackground({
+              userId: userAssignment?.userId,
+              body: `Entity (${id}) zone changed. You've been assigned to Entity (${id}) as ${userAssignment?.type}`,
+            });
+          }
+        }
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -188,7 +247,7 @@ export class LocationService {
               where: { id },
               data: { locationId, transit: false },
             });
-
+            /*
             //get all users from location
             const locAssignments = await this.prisma.locationUsers.findMany({
               where: {
@@ -218,6 +277,7 @@ export class LocationService {
                 });
               }
             }
+            */
           } else {
             await this.entityService.createEntityHistoryInBackground({
               type: 'Transition start',
@@ -233,6 +293,7 @@ export class LocationService {
               where: { id },
               data: { locationId, transit: true },
             });
+            /*
             //get all users from location
             const locAssignments = await this.prisma.locationUsers.findMany({
               where: {
@@ -262,6 +323,7 @@ export class LocationService {
                 });
               }
             }
+            */
           }
         }
       }
@@ -396,6 +458,7 @@ export class LocationService {
         data: { locationId, transit: true },
       });
 
+      /*
       //get all users from location
       const locAssignments = await this.prisma.locationUsers.findMany({
         where: {
@@ -425,6 +488,7 @@ export class LocationService {
           });
         }
       }
+      */
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -440,6 +504,34 @@ export class LocationService {
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async search(query?: string, limit?: number) {
+    try {
+      if (!limit) limit = 10;
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+
+      where.AND.push({
+        active: true,
+      });
+      if (query) {
+        where.AND.push({
+          name: { contains: query, mode: 'insensitive' },
+        });
+      }
+
+      const locations = await this.prisma.location.findMany({
+        where,
+        take: limit,
+      });
+      return locations;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException(
+        'Unexpected error occured while searching locations.'
+      );
     }
   }
 }

@@ -31,6 +31,7 @@ import { DivisionModule } from './division/division.module';
 import { HullTypeModule } from './hull-type/hull-type.module';
 import { BrandModule } from './brand/brand.module';
 import { InterServiceColorModule } from './inter-service-color/inter-service-color.module';
+import { UserAssignmentModule } from './user-assignment/user-assignment.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { InterServiceColorModule } from './inter-service-color/inter-service-col
     HullTypeModule,
     BrandModule,
     InterServiceColorModule,
+    UserAssignmentModule,
   ],
   providers: [DateScalar, InitService],
 })

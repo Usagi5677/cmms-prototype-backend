@@ -1,6 +1,6 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Location } from 'src/location/entities/location.entity';
 import { BaseModel } from './base.model';
+import { DivisionUser } from './division-user.model';
 import { UserRoles } from './user-roles.model';
 
 @ObjectType()
@@ -13,4 +13,5 @@ export class User extends BaseModel {
   locationId?: number;
   roles?: UserRoles[];
   permissions?: string[];
+  divisionUsers?: DivisionUser[];
 }

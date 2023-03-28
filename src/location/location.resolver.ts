@@ -40,8 +40,11 @@ export class LocationResolver {
 
   @Permissions('MODIFY_LOCATIONS')
   @Mutation(() => String)
-  async updateLocation(@Args('input') input: UpdateLocationInput) {
-    await this.locationService.update(input);
+  async updateLocation(
+    @UserEntity() user: User,
+    @Args('input') input: UpdateLocationInput
+  ) {
+    await this.locationService.update(user, input);
     return 'Successfully updated location.';
   }
 
@@ -104,5 +107,13 @@ export class LocationResolver {
   ) {
     await this.locationService.updateLocationUser(id, locationId, userType);
     return `Successfully updated location user.`;
+  }
+
+  @Query(() => [Location], { name: 'searchLocation' })
+  search(
+    @Args('query', { nullable: true }) query: string,
+    @Args('limit', { nullable: true }) limit: number
+  ) {
+    return this.locationService.search(query, limit);
   }
 }

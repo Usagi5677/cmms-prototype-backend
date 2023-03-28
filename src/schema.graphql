@@ -392,6 +392,13 @@ input CreateTypeInput {
   name: String!
 }
 
+input CreateUserAssignmentInput {
+  locationId: Int
+  type: String!
+  userId: Int
+  zoneId: Int
+}
+
 input CreateZoneInput {
   name: String!
 }
@@ -456,6 +463,17 @@ type DivisionPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+type DivisionUser {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  division: Division!
+  id: Int!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User!
 }
 
 input EditApiKeyInput {
@@ -909,6 +927,8 @@ type Mutation {
   bulkAssignBrandToEntity(input: BrandAssignInput!): String!
   bulkAssignChecklistTemplate(entityIds: [Int!]!, newChecklistId: Int!): String!
   bulkAssignPeriodicMaintenanceTemplate(entityIds: [Int!], originId: Int!): String!
+  bulkCreateUserAssignment(input: UserAssignmentBulkCreateInput!): String!
+  bulkRemoveUserAssignment(input: UserAssignmentBulkCreateInput!): String!
   bulkUnassign(input: BulkUnassignInput!): String!
   bulkUnassignUserFromDivision(input: DivisionAssignInput!): String!
   bulkUnassignUserFromLocation(input: LocationAssignInput!): String!
@@ -927,6 +947,7 @@ type Mutation {
   createRepair(createRepairInput: CreateRepairInput!): String!
   createSparePR(createSparePrInput: CreateSparePrInput!): String!
   createType(createTypeInput: CreateTypeInput!): String!
+  createUserAssignment(input: CreateUserAssignmentInput!): String!
   createZone(input: CreateZoneInput!): String!
   deactivateApiKey(id: Int!): String!
   deleteEntityRepairRequest(id: Int!): String!
@@ -963,6 +984,7 @@ type Mutation {
   removeSparePR(id: Int!): String!
   removeSparePRDetail(id: Int!): String!
   removeType(id: Int!): String!
+  removeUserAssignment(id: Int!): String!
   removeUserRole(roleId: Int!, userId: Int!): String!
   removeZone(id: Int!): String!
   setEntityStatus(entityId: Int!, status: String!): String!
@@ -1002,6 +1024,7 @@ type Mutation {
   updateRepair(updateRepairInput: UpdateRepairInput!): String!
   updateSparePR(updateSparePrInput: UpdateSparePrInput!): String!
   updateType(updateTypeInput: UpdateTypeInput!): String!
+  updateUserAssignment(input: UpdateUserAssignmentInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
   updateZone(input: UpdateZoneInput!): String!
 }
@@ -1124,6 +1147,11 @@ type PaginatedSparePR {
 type PaginatedType {
   edges: [TypeEdge!]
   pageInfo: TypePageInfo
+}
+
+type PaginatedUserAssignment {
+  edges: [UserAssignmentEdge!]
+  pageInfo: UserAssignmentPageInfo
 }
 
 type PaginatedUsers {
@@ -1858,6 +1886,7 @@ type Query {
     last: Int
     locationIds: [Int!]
     search: String
+    type: String
   ): PaginatedUsers!
   getLatestFavouriteAttachment(entityId: Int!): EntityAttachment!
   getRoleWithPermission(roleId: Int!): Roles!
@@ -2012,6 +2041,7 @@ type Query {
   searchAPSUsers(query: String!): [User!]!
   searchDivision(limit: Int, query: String): [Division!]!
   searchEntity(entityIds: [Int!], entityType: String, limit: Int, query: String): [Entity!]!
+  searchLocation(limit: Int, query: String): [Location!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
   sparePR(id: Int!): SparePr!
   sparePRs(
@@ -2071,6 +2101,21 @@ type Query {
     type2Ids: [Int!]
     zoneIds: [Int!]
   ): PeriodicMaintenanceConnection!
+  userAssignment(id: Int!): UserAssignment!
+  userAssignments(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    type: String
+  ): PaginatedUserAssignment!
   zone(id: Int!): Zone!
   zones(
     """Paginate after opaque cursor"""
@@ -2292,6 +2337,14 @@ input UpdateTypeInput {
   name: String
 }
 
+input UpdateUserAssignmentInput {
+  id: Int!
+  locationId: Int
+  type: String
+  userId: Int
+  zoneId: Int
+}
+
 input UpdateZoneInput {
   id: Int!
   name: String
@@ -2300,6 +2353,7 @@ input UpdateZoneInput {
 type User {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
+  divisionUsers: [DivisionUser!]
   email: String!
   fullName: String!
   id: Int!
@@ -2311,6 +2365,39 @@ type User {
   """Identifies the date and time when the object was last updated."""
   updatedAt: Date!
   userId: String!
+}
+
+type UserAssignment {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  location: Location
+  type: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+  user: User
+  zone: Zone
+}
+
+input UserAssignmentBulkCreateInput {
+  locationIds: [Int!]
+  type: String
+  userIds: [Int!]
+  zoneId: Int
+}
+
+type UserAssignmentEdge {
+  cursor: String
+  node: UserAssignment
+}
+
+type UserAssignmentPageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
 }
 
 type UserEdge {

@@ -46,6 +46,8 @@ Table User {
   SparePRDetail SparePRDetail [not null]
   roles UserRole [not null]
   zonesCreated Zone [not null]
+  userAssignmentCreated UserAssignment [not null]
+  userAssignment UserAssignment [not null]
 }
 
 Table Notification {
@@ -117,6 +119,7 @@ Table Location {
   createdBy User
   zone Zone
   locationUsers LocationUsers [not null]
+  userAssignment UserAssignment [not null]
 }
 
 Table Zone {
@@ -128,6 +131,7 @@ Table Zone {
   createdById Int
   locations Location [not null]
   createdBy User
+  userAssignment UserAssignment [not null]
 }
 
 Table ChecklistTemplate {
@@ -231,6 +235,8 @@ Table Entity {
   brandId Int
   lastServiceUpdateAt DateTime
   currentRunningUpdateAt DateTime
+  lastLocationId Int
+  lastZoneId Int
   breakdowns Breakdown [not null]
   checklists Checklist [not null]
   brand Brand
@@ -600,6 +606,76 @@ Table InterServiceColor {
   type Type [not null]
 }
 
+Table UserAssignment {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+  type String [not null]
+  userId Int
+  locationId Int
+  zoneId Int
+  user User
+  location Location
+  zone Zone
+  createdBy User
+}
+
+Table ServiceRequest {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table Warehouse {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table JobCard {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table Quotation {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table WarehouseRequest {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table Catalogue {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
 Enum SparePRStatus {
   Done
   Pending
@@ -783,3 +859,11 @@ Ref: InterServiceColor.brandId > Brand.id
 Ref: InterServiceColor.createdById > User.id
 
 Ref: InterServiceColor.typeId > Type.id
+
+Ref: UserAssignment.userId > User.id
+
+Ref: UserAssignment.locationId > Location.id
+
+Ref: UserAssignment.zoneId > Zone.id
+
+Ref: UserAssignment.createdById > User.id

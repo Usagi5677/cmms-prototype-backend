@@ -136,6 +136,11 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'Create, edit and delete divisions.',
   },
   {
+    name: 'MODIFY_USER_ASSIGNMENTS',
+    type: 'Config',
+    description: 'Create, edit and delete user assignments.',
+  },
+  {
     name: 'VIEW_TEMPLATES',
     type: 'Config',
     description: 'View all templates.',

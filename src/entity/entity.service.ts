@@ -372,6 +372,40 @@ export class EntityService {
           entityId: id,
           completedById: user.id,
         });
+
+        //get all users from user assignments
+        const userAssignments = await this.prisma.userAssignment.findMany({
+          where: {
+            user: { divisionUsers: { some: { divisionId: divisionId } } },
+            type: 'Admin',
+            active: true,
+          },
+          distinct: ['userId'],
+          orderBy: { id: 'desc' },
+        });
+
+        //remove previous type assignments of entity
+        await this.prisma.entityAssignment.updateMany({
+          where: { type: 'Admin', entityId: id, removedAt: null },
+          data: { removedAt: new Date() },
+        });
+
+        //insert new admins and notify them
+        for (const userAssignment of userAssignments) {
+          await this.prisma.entityAssignment.create({
+            data: {
+              entityId: id,
+              userId: userAssignment?.userId,
+              type: userAssignment?.type,
+            },
+          });
+          if (user?.id !== userAssignment?.userId) {
+            await this.notificationService.createInBackground({
+              userId: userAssignment?.userId,
+              body: `Entity (${id}) division changed. You've been assigned to Entity (${id}) as ${userAssignment?.type}`,
+            });
+          }
+        }
       }
       if (locationId && entity?.locationId != locationId) {
         const newLocation = await this.prisma.location.findFirst({
@@ -392,36 +426,45 @@ export class EntityService {
           completedById: user.id,
         });
 
-        //get all users from location
-        const locAssignments = await this.prisma.locationUsers.findMany({
+        //get all users from user assignments
+        const userAssignments = await this.prisma.userAssignment.findMany({
           where: {
+            type: { in: ['Technician', 'User'] },
             locationId,
+            active: true,
+          },
+          distinct: ['userId'],
+          orderBy: { id: 'desc' },
+        });
+
+        //remove previous type assignments of entity
+        await this.prisma.entityAssignment.updateMany({
+          where: {
+            type: { in: ['Technician', 'User'] },
+            entityId: id,
             removedAt: null,
           },
-          include: { location: true },
-        });
-        //remove all assigned users in entity
-        await this.prisma.entityAssignment.updateMany({
-          where: { entityId: id, removedAt: null },
           data: { removedAt: new Date() },
         });
-        //create new assign for entity and notify user
-        for (const loc of locAssignments) {
+
+        //insert new admins and notify them
+        for (const userAssignment of userAssignments) {
           await this.prisma.entityAssignment.create({
             data: {
               entityId: id,
-              userId: loc?.userId,
-              type: loc?.userType,
+              userId: userAssignment?.userId,
+              type: userAssignment?.type,
             },
           });
-          if (user?.id !== loc?.userId) {
+          if (user?.id !== userAssignment?.userId) {
             await this.notificationService.createInBackground({
-              userId: loc?.userId,
-              body: `Entity (${id}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
+              userId: userAssignment?.userId,
+              body: `Entity (${id}) location changed. You've been assigned to Entity (${id}) as ${userAssignment?.type}`,
             });
           }
         }
       }
+
       if (engine && entity?.engine != engine) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',

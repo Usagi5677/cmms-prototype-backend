@@ -55,6 +55,8 @@ model User {
   SparePRDetail                     SparePRDetail[]
   roles                             UserRole[]
   zonesCreated                      Zone[]
+  userAssignmentCreated             UserAssignment[]             @relation("userAssignmentCreated")
+  userAssignment                    UserAssignment[]
 }
 
 model Notification {
@@ -111,30 +113,32 @@ model Type {
 }
 
 model Location {
-  id            Int             @id @default(autoincrement())
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  name          String
-  createdById   Int?
-  active        Boolean         @default(true)
-  zoneId        Int?
-  skipFriday    Boolean?        @default(false)
-  entities      Entity[]
-  histories     EntityHistory[]
-  createdBy     User?           @relation("locationCreated", fields: [createdById], references: [id])
-  zone          Zone?           @relation(fields: [zoneId], references: [id])
-  locationUsers LocationUsers[]
+  id             Int              @id @default(autoincrement())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  name           String
+  createdById    Int?
+  active         Boolean          @default(true)
+  zoneId         Int?
+  skipFriday     Boolean?         @default(false)
+  entities       Entity[]
+  histories      EntityHistory[]
+  createdBy      User?            @relation("locationCreated", fields: [createdById], references: [id])
+  zone           Zone?            @relation(fields: [zoneId], references: [id])
+  locationUsers  LocationUsers[]
+  userAssignment UserAssignment[]
 }
 
 model Zone {
-  id          Int        @id @default(autoincrement())
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  name        String
-  active      Boolean    @default(true)
-  createdById Int?
-  locations   Location[]
-  createdBy   User?      @relation(fields: [createdById], references: [id])
+  id             Int              @id @default(autoincrement())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  name           String
+  active         Boolean          @default(true)
+  createdById    Int?
+  locations      Location[]
+  createdBy      User?            @relation(fields: [createdById], references: [id])
+  userAssignment UserAssignment[]
 }
 
 model ChecklistTemplate {
@@ -236,6 +240,8 @@ model Entity {
   brandId                   Int?
   lastServiceUpdateAt       DateTime?
   currentRunningUpdateAt    DateTime?
+  lastLocationId            Int?
+  lastZoneId                Int?
   breakdowns                Breakdown[]
   checklists                Checklist[]
   brand                     Brand?                @relation(fields: [brandId], references: [id])
@@ -552,6 +558,7 @@ model DivisionUsers {
   user       User      @relation(fields: [userId], references: [id])
 }
 
+//not using this anymore
 model LocationUsers {
   id         Int       @id @default(autoincrement())
   createdAt  DateTime  @default(now())
@@ -603,6 +610,22 @@ model InterServiceColor {
   type        Type      @relation(fields: [typeId], references: [id])
 }
 
+model UserAssignment {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById Int?
+  active      Boolean   @default(true)
+  type        String
+  userId      Int?
+  locationId  Int?
+  zoneId      Int?
+  user        User?     @relation(fields: [userId], references: [id])
+  location    Location? @relation(fields: [locationId], references: [id])
+  zone        Zone?     @relation(fields: [zoneId], references: [id])
+  createdBy   User?     @relation("userAssignmentCreated", fields: [createdById], references: [id])
+}
+
 //not using
 enum SparePRStatus {
   Done
@@ -628,3 +651,5 @@ enum PeriodicMaintenanceStatus {
   Pending
   Missed
 }
+
+

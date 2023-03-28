@@ -161,7 +161,7 @@ export class UserService {
     try {
       const { limit, offset } = getPagingParameters(args);
       const limitPlusOne = limit + 1;
-      const { search, locationIds, divisionIds } = args;
+      const { search, locationIds, divisionIds, type } = args;
 
       // eslint-disable-next-line prefer-const
       let where: any = { AND: [] };
@@ -180,11 +180,13 @@ export class UserService {
       }
       if (locationIds) {
         where.AND.push({
-          locationUsers: {
+          userAssignment: {
             some: {
               locationId: {
                 in: locationIds,
               },
+              type,
+              active: true,
             },
           },
         });
@@ -193,8 +195,11 @@ export class UserService {
         where.AND.push({
           divisionUsers: {
             some: {
-              divisionId: {
-                in: divisionIds,
+              divisionId: { in: divisionIds },
+              user: {
+                userAssignment: {
+                  some: { locationId: { in: locationIds }, type, active: true },
+                },
               },
             },
           },
