@@ -169,7 +169,7 @@ export class LocationService {
         }
       }
 
-      //insert new admins and notify them
+      //insert new users and notify them
       for (const entityId of entityIds) {
         for (const userAssignment of userAssignments) {
           await this.prisma.entityAssignment.create({
@@ -247,37 +247,6 @@ export class LocationService {
               where: { id },
               data: { locationId, transit: false },
             });
-            /*
-            //get all users from location
-            const locAssignments = await this.prisma.locationUsers.findMany({
-              where: {
-                locationId,
-                removedAt: null,
-              },
-              include: { location: true },
-            });
-            //remove all assigned users in entity
-            await this.prisma.entityAssignment.updateMany({
-              where: { entityId: id, removedAt: null },
-              data: { removedAt: new Date() },
-            });
-            //create new assign for entity and notify user
-            for (const loc of locAssignments) {
-              await this.prisma.entityAssignment.create({
-                data: {
-                  entityId: id,
-                  userId: loc?.userId,
-                  type: loc?.userType,
-                },
-              });
-              if (user?.id !== loc?.userId) {
-                await this.notificationService.createInBackground({
-                  userId: loc?.userId,
-                  body: `Entity (${id}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
-                });
-              }
-            }
-            */
           } else {
             await this.entityService.createEntityHistoryInBackground({
               type: 'Transition start',
@@ -293,37 +262,47 @@ export class LocationService {
               where: { id },
               data: { locationId, transit: true },
             });
-            /*
-            //get all users from location
-            const locAssignments = await this.prisma.locationUsers.findMany({
-              where: {
-                locationId,
-                removedAt: null,
+          }
+        }
+        //get all users from user assignments
+        const userAssignments = await this.prisma.userAssignment.findMany({
+          where: {
+            type: { in: ['Technician', 'User'] },
+            locationId,
+            active: true,
+          },
+          distinct: ['userId'],
+          orderBy: { id: 'desc' },
+        });
+
+        //remove previous type assignments of entity
+        if (userAssignments?.length > 0) {
+          await this.prisma.entityAssignment.updateMany({
+            where: {
+              type: { in: ['Technician', 'User'] },
+              entityId: { in: entityIds },
+              removedAt: null,
+            },
+            data: { removedAt: new Date() },
+          });
+        }
+
+        //insert new users and notify them
+        for (const entityId of entityIds) {
+          for (const userAssignment of userAssignments) {
+            await this.prisma.entityAssignment.create({
+              data: {
+                entityId,
+                userId: userAssignment?.userId,
+                type: userAssignment?.type,
               },
-              include: { location: true },
             });
-            //remove all assigned users in entity
-            await this.prisma.entityAssignment.updateMany({
-              where: { entityId: id, removedAt: null },
-              data: { removedAt: new Date() },
-            });
-            //create new assign for entity and notify user
-            for (const loc of locAssignments) {
-              await this.prisma.entityAssignment.create({
-                data: {
-                  entityId: id,
-                  userId: loc?.userId,
-                  type: loc?.userType,
-                },
+            if (user?.id !== userAssignment?.userId) {
+              await this.notificationService.createInBackground({
+                userId: userAssignment?.userId,
+                body: `Entity (${entityId}) location changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
               });
-              if (user?.id !== loc?.userId) {
-                await this.notificationService.createInBackground({
-                  userId: loc?.userId,
-                  body: `Entity (${id}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
-                });
-              }
             }
-            */
           }
         }
       }
@@ -458,37 +437,45 @@ export class LocationService {
         data: { locationId, transit: true },
       });
 
-      /*
-      //get all users from location
-      const locAssignments = await this.prisma.locationUsers.findMany({
+      //get all users from user assignments
+      const userAssignments = await this.prisma.userAssignment.findMany({
         where: {
+          type: { in: ['Technician', 'User'] },
           locationId,
-          removedAt: null,
+          active: true,
         },
-        include: { location: true },
+        distinct: ['userId'],
+        orderBy: { id: 'desc' },
       });
-      //remove all assigned users in entity
-      await this.prisma.entityAssignment.updateMany({
-        where: { entityId, removedAt: null },
-        data: { removedAt: new Date() },
-      });
-      //create new assign for entity and notify user
-      for (const loc of locAssignments) {
+
+      //remove previous type assignments of entity
+      if (userAssignments?.length > 0) {
+        await this.prisma.entityAssignment.updateMany({
+          where: {
+            type: { in: ['Technician', 'User'] },
+            entityId,
+            removedAt: null,
+          },
+          data: { removedAt: new Date() },
+        });
+      }
+
+      //insert new users and notify them
+      for (const userAssignment of userAssignments) {
         await this.prisma.entityAssignment.create({
           data: {
             entityId,
-            userId: loc?.userId,
-            type: loc?.userType,
+            userId: userAssignment?.userId,
+            type: userAssignment?.type,
           },
         });
-        if (user?.id !== loc?.userId) {
+        if (user?.id !== userAssignment?.userId) {
           await this.notificationService.createInBackground({
-            userId: loc?.userId,
-            body: `Entity (${entityId}) relocated. You've been assigned you to ${loc?.location?.name} as ${loc?.userType}`,
+            userId: userAssignment?.userId,
+            body: `Entity (${entityId}) location changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
           });
         }
       }
-      */
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

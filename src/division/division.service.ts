@@ -144,6 +144,52 @@ export class DivisionService {
             body: `${user.fullName} (${user.rcno}) assigned you to division ${division?.name}`,
           });
         }
+
+        //get all users from user assignments
+        const userAssignments = await this.prisma.userAssignment.findMany({
+          where: {
+            user: { divisionUsers: { some: { divisionId } } },
+            type: 'Admin',
+            active: true,
+          },
+          distinct: ['userId'],
+          orderBy: { id: 'desc' },
+        });
+
+        //remove previous type assignments of entity
+        if (userAssignments?.length > 0) {
+          const entities = await this.prisma.entity.findMany({
+            where: { divisionId },
+          });
+          const entityIds = entities.map((e) => e.id);
+          await this.prisma.entityAssignment.updateMany({
+            where: {
+              type: 'Admin',
+              entityId: { in: entityIds },
+              removedAt: null,
+            },
+            data: { removedAt: new Date() },
+          });
+
+          //insert new users and notify them
+          for (const entityId of entityIds) {
+            for (const userAssignment of userAssignments) {
+              await this.prisma.entityAssignment.create({
+                data: {
+                  entityId,
+                  userId: userAssignment?.userId,
+                  type: userAssignment?.type,
+                },
+              });
+              if (user?.id !== userAssignment?.userId) {
+                await this.notificationService.createInBackground({
+                  userId: userAssignment?.userId,
+                  body: `User's division changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
+                });
+              }
+            }
+          }
+        }
       }
     } catch (e) {
       if (
@@ -181,6 +227,51 @@ export class DivisionService {
             userId: id,
             body: `${user.fullName} (${user.rcno}) removed you from division ${division?.name}`,
           });
+        }
+        //get all users from user assignments
+        const userAssignments = await this.prisma.userAssignment.findMany({
+          where: {
+            user: { divisionUsers: { some: { divisionId } } },
+            type: 'Admin',
+            active: true,
+          },
+          distinct: ['userId'],
+          orderBy: { id: 'desc' },
+        });
+
+        //remove previous type assignments of entity
+        if (userAssignments?.length > 0) {
+          const entities = await this.prisma.entity.findMany({
+            where: { divisionId },
+          });
+          const entityIds = entities.map((e) => e.id);
+          await this.prisma.entityAssignment.updateMany({
+            where: {
+              type: 'Admin',
+              entityId: { in: entityIds },
+              removedAt: null,
+            },
+            data: { removedAt: new Date() },
+          });
+
+          //insert new users and notify them
+          for (const entityId of entityIds) {
+            for (const userAssignment of userAssignments) {
+              await this.prisma.entityAssignment.create({
+                data: {
+                  entityId,
+                  userId: userAssignment?.userId,
+                  type: userAssignment?.type,
+                },
+              });
+              if (user?.id !== userAssignment?.userId) {
+                await this.notificationService.createInBackground({
+                  userId: userAssignment?.userId,
+                  body: `User's division changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
+                });
+              }
+            }
+          }
         }
       }
     } catch (e) {
@@ -223,24 +314,106 @@ export class DivisionService {
     }
   }
 
-  async unassignUserFromDivision(id: number) {
+  async unassignUserFromDivision(user: User, id: number) {
     try {
-      await this.prisma.divisionUsers.update({
+      const division = await this.prisma.divisionUsers.update({
         where: { id },
         data: { removedAt: new Date() },
       });
+      //get all users from user assignments
+      const userAssignments = await this.prisma.userAssignment.findMany({
+        where: {
+          user: {
+            divisionUsers: { some: { divisionId: division?.divisionId } },
+          },
+          type: 'Admin',
+          active: true,
+        },
+        distinct: ['userId'],
+        orderBy: { id: 'desc' },
+      });
+
+      //remove previous type assignments of entity
+      if (userAssignments?.length > 0) {
+        const entities = await this.prisma.entity.findMany({
+          where: { divisionId: id },
+        });
+        const entityIds = entities.map((e) => e.id);
+        await this.prisma.entityAssignment.updateMany({
+          where: {
+            type: 'Admin',
+            entityId: { in: entityIds },
+            removedAt: null,
+          },
+          data: { removedAt: new Date() },
+        });
+
+        //insert new users and notify them
+        for (const entityId of entityIds) {
+          for (const userAssignment of userAssignments) {
+            await this.prisma.entityAssignment.create({
+              data: {
+                entityId,
+                userId: userAssignment?.userId,
+                type: userAssignment?.type,
+              },
+            });
+            if (user?.id !== userAssignment?.userId) {
+              await this.notificationService.createInBackground({
+                userId: userAssignment?.userId,
+                body: `User's division changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
+              });
+            }
+          }
+        }
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
-  async updateEntityDivision(entityId: number, divisionId: number) {
+  async updateEntityDivision(user: User, entityId: number, divisionId: number) {
     try {
       await this.prisma.entity.update({
         where: { id: entityId },
         data: { divisionId },
       });
+      //get all users from user assignments
+      const userAssignments = await this.prisma.userAssignment.findMany({
+        where: {
+          user: { divisionUsers: { some: { divisionId: divisionId } } },
+          type: 'Admin',
+          active: true,
+        },
+        distinct: ['userId'],
+        orderBy: { id: 'desc' },
+      });
+
+      //remove previous type assignments of entity
+      if (userAssignments?.length > 0) {
+        await this.prisma.entityAssignment.updateMany({
+          where: { type: 'Admin', entityId, removedAt: null },
+          data: { removedAt: new Date() },
+        });
+      }
+
+      //insert new users and notify them
+      for (const userAssignment of userAssignments) {
+        await this.prisma.entityAssignment.create({
+          data: {
+            entityId,
+            userId: userAssignment?.userId,
+            type: userAssignment?.type,
+          },
+        });
+        if (user?.id !== userAssignment?.userId) {
+          await this.notificationService.createInBackground({
+            userId: userAssignment?.userId,
+            body: `Entity (${entityId}) division changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
+          });
+        }
+      }
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

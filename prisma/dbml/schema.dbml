@@ -622,60 +622,6 @@ Table UserAssignment {
   createdBy User
 }
 
-Table ServiceRequest {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  name String [not null]
-  createdById Int
-  active Boolean [not null, default: true]
-}
-
-Table Warehouse {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  name String [not null]
-  createdById Int
-  active Boolean [not null, default: true]
-}
-
-Table JobCard {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  name String [not null]
-  createdById Int
-  active Boolean [not null, default: true]
-}
-
-Table Quotation {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  name String [not null]
-  createdById Int
-  active Boolean [not null, default: true]
-}
-
-Table WarehouseRequest {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  name String [not null]
-  createdById Int
-  active Boolean [not null, default: true]
-}
-
-Table Catalogue {
-  id Int [pk, increment]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  name String [not null]
-  createdById Int
-  active Boolean [not null, default: true]
-}
-
 Enum SparePRStatus {
   Done
   Pending

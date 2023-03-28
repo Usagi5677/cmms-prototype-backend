@@ -385,12 +385,14 @@ export class EntityService {
         });
 
         //remove previous type assignments of entity
-        await this.prisma.entityAssignment.updateMany({
-          where: { type: 'Admin', entityId: id, removedAt: null },
-          data: { removedAt: new Date() },
-        });
+        if (userAssignments?.length > 0) {
+          await this.prisma.entityAssignment.updateMany({
+            where: { type: 'Admin', entityId: id, removedAt: null },
+            data: { removedAt: new Date() },
+          });
+        }
 
-        //insert new admins and notify them
+        //insert new users and notify them
         for (const userAssignment of userAssignments) {
           await this.prisma.entityAssignment.create({
             data: {
@@ -438,16 +440,18 @@ export class EntityService {
         });
 
         //remove previous type assignments of entity
-        await this.prisma.entityAssignment.updateMany({
-          where: {
-            type: { in: ['Technician', 'User'] },
-            entityId: id,
-            removedAt: null,
-          },
-          data: { removedAt: new Date() },
-        });
+        if (userAssignments?.length > 0) {
+          await this.prisma.entityAssignment.updateMany({
+            where: {
+              type: { in: ['Technician', 'User'] },
+              entityId: id,
+              removedAt: null,
+            },
+            data: { removedAt: new Date() },
+          });
+        }
 
-        //insert new admins and notify them
+        //insert new users and notify them
         for (const userAssignment of userAssignments) {
           await this.prisma.entityAssignment.create({
             data: {

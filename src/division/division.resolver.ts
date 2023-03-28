@@ -54,8 +54,11 @@ export class DivisionResolver {
 
   @Permissions('MODIFY_DIVISIONS')
   @Mutation(() => String)
-  async unassignUserFromDivision(@Args('id', { type: () => Int }) id: number) {
-    await this.divisionService.unassignUserFromDivision(id);
+  async unassignUserFromDivision(
+    @UserEntity() user: User,
+    @Args('id', { type: () => Int }) id: number
+  ) {
+    await this.divisionService.unassignUserFromDivision(user, id);
     return 'Successfully removed user from division.';
   }
 
@@ -87,10 +90,11 @@ export class DivisionResolver {
 
   @Mutation(() => String)
   async updateEntityDivision(
+    @UserEntity() user: User,
     @Args('entityId') entityId: number,
     @Args('divisionId') divisionId: number
   ) {
-    await this.divisionService.updateEntityDivision(entityId, divisionId);
+    await this.divisionService.updateEntityDivision(user, entityId, divisionId);
     return `Successfully updated entity's division.`;
   }
 
