@@ -11,6 +11,7 @@ import { LocationModule } from 'src/location/location.module';
 import { AuthModule } from 'src/resolvers/auth/auth.module';
 import { EntityController } from './entity.controller';
 import { ChecklistModule } from 'src/checklist/checklist.module';
+import { UserAssignmentModule } from 'src/user-assignment/user-assignment.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ChecklistModule } from 'src/checklist/checklist.module';
     ChecklistModule,
     LocationModule,
     AuthModule,
+    UserAssignmentModule,
   ],
   providers: [EntityResolver, EntityService, EntityConsumer],
   exports: [EntityService],

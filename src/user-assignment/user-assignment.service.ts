@@ -1,24 +1,42 @@
+import { InjectQueue } from '@nestjs/bull';
 import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { Queue } from 'bull';
 import {
   getPagingParameters,
   connectionFromArraySlice,
 } from 'src/common/pagination/connection-args';
 import { User } from 'src/models/user.model';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationService } from 'src/services/notification.service';
 import { CreateUserAssignmentInput } from './dto/create-user-assignment.input';
 import { UpdateUserAssignmentInput } from './dto/update-user-assignment.input';
 import { UserAssignmentBulkCreateInput } from './dto/user-assignment-bulk-create.input';
 import { UserAssignmentConnectionArgs } from './dto/user-assignment-connection.args';
 import { PaginatedUserAssignment } from './dto/user-assignment-connection.model';
 
+export interface autoAssignUsersInterface {
+  userId: number;
+  divisionIds?: number[];
+  locationId?: number;
+  zoneId?: number;
+  types: string[];
+  entityIds: number[];
+  description: string;
+}
+
 @Injectable()
 export class UserAssignmentService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue('cmms-user-assignment-queue')
+    private userAssignmentQueue: Queue,
+    private notificationService: NotificationService
+  ) {}
   async create(
     user: User,
     { type, userId, locationId, zoneId }: CreateUserAssignmentInput
@@ -217,6 +235,83 @@ export class UserAssignmentService {
           'Unexpected error occured while bulk removing.'
         );
       }
+    }
+  }
+
+  //** auto assign users in background */
+  async autoAssignUsersInBackground(autoAssignUsers: autoAssignUsersInterface) {
+    try {
+      await this.userAssignmentQueue.add('autoAssignUsers', {
+        autoAssignUsers,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException(
+        'Unexpected error occured while auto assigning users in background.'
+      );
+    }
+  }
+
+  async autoAssignUsers({
+    userId,
+    divisionIds,
+    locationId,
+    zoneId,
+    types,
+    entityIds,
+    description,
+  }: autoAssignUsersInterface) {
+    try {
+      //get all users from user assignments
+      const userAssignments = await this.prisma.userAssignment.findMany({
+        where: {
+          user: {
+            divisionUsers: { some: { divisionId: { in: divisionIds } } },
+          },
+          type: { in: types },
+          active: true,
+          locationId,
+          zoneId,
+        },
+        distinct: ['userId'],
+        orderBy: { id: 'desc' },
+      });
+
+      //remove previous type assignments of entity
+      if (userAssignments?.length > 0) {
+        await this.prisma.entityAssignment.updateMany({
+          where: {
+            type: { in: types },
+            entityId: { in: entityIds },
+            removedAt: null,
+          },
+          data: { removedAt: new Date() },
+        });
+
+        //insert new users and notify them
+        for (const entityId of entityIds) {
+          for (const userAssignment of userAssignments) {
+            await this.prisma.entityAssignment.create({
+              data: {
+                entityId,
+                userId: userAssignment?.userId,
+                type: userAssignment?.type,
+              },
+            });
+            if (userId !== userAssignment?.userId) {
+              await this.notificationService.createInBackground({
+                userId: userAssignment?.userId,
+                body: `${description} and you have been assigned as the ${userAssignment?.type} for Entity (${entityId})`,
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException(
+        'Unexpected error occured while auto assigning users.'
+      );
     }
   }
 }

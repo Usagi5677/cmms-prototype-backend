@@ -651,3 +651,57 @@ enum PeriodicMaintenanceStatus {
   Pending
   Missed
 }
+
+model ServiceRequest {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean  @default(true)
+}
+
+model Warehouse {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean  @default(true)
+}
+
+model JobCard {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean  @default(true)
+}
+
+model Quotation {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean  @default(true)
+}
+
+model WarehouseRequest {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean  @default(true)
+}
+
+model Catalogue {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  createdById Int?
+  active      Boolean  @default(true)
+}

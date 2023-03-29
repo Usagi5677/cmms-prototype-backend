@@ -99,8 +99,11 @@ export class DivisionResolver {
   }
 
   @Mutation(() => String)
-  async assignEntityToDivision(@Args('input') input: DivisionAssignInput) {
-    await this.divisionService.assignEntityToDivision(input);
+  async assignEntityToDivision(
+    @UserEntity() user: User,
+    @Args('input') input: DivisionAssignInput
+  ) {
+    await this.divisionService.assignEntityToDivision(user, input);
     return 'Successfully assigned entity to division.';
   }
 }

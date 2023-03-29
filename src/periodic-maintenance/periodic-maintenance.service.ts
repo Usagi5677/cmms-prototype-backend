@@ -11,7 +11,6 @@ import { PeriodicMaintenance as PeriodicMaintenanceModel } from './dto/models/pe
 import { EntityService } from 'src/entity/entity.service';
 import { PeriodicMaintenanceInput } from './dto/inputs/periodic-maintenance.input';
 import { User } from 'src/models/user.model';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { PeriodicMaintenance } from '@prisma/client';
 import { PeriodicMaintenanceConnectionArgs } from './dto/periodic-maintenance.connection.args';
 import { PeriodicMaintenanceConnection } from './dto/periodic-maintenance-connection.model';

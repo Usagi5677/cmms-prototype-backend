@@ -42,6 +42,10 @@ import { ChecklistService } from 'src/checklist/checklist.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Entity as EntityModel } from './dto/models/entity.model';
 import { GraphQLFloat } from 'graphql';
+import {
+  autoAssignUsersInterface,
+  UserAssignmentService,
+} from 'src/user-assignment/user-assignment.service';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -68,7 +72,8 @@ export class EntityService {
     private readonly checklistTemplateService: ChecklistTemplateService,
     private readonly checklistService: ChecklistService,
     private readonly locationService: LocationService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private userAssignmentService: UserAssignmentService
   ) {}
 
   async findOne(id: number, include?: any) {
@@ -373,41 +378,17 @@ export class EntityService {
           completedById: user.id,
         });
 
-        //get all users from user assignments
-        const userAssignments = await this.prisma.userAssignment.findMany({
-          where: {
-            user: { divisionUsers: { some: { divisionId: divisionId } } },
-            type: 'Admin',
-            active: true,
-          },
-          distinct: ['userId'],
-          orderBy: { id: 'desc' },
-        });
-
-        //remove previous type assignments of entity
-        if (userAssignments?.length > 0) {
-          await this.prisma.entityAssignment.updateMany({
-            where: { type: 'Admin', entityId: id, removedAt: null },
-            data: { removedAt: new Date() },
-          });
-        }
-
-        //insert new users and notify them
-        for (const userAssignment of userAssignments) {
-          await this.prisma.entityAssignment.create({
-            data: {
-              entityId: id,
-              userId: userAssignment?.userId,
-              type: userAssignment?.type,
-            },
-          });
-          if (user?.id !== userAssignment?.userId) {
-            await this.notificationService.createInBackground({
-              userId: userAssignment?.userId,
-              body: `Entity (${id}) division changed. You've been assigned to Entity (${id}) as ${userAssignment?.type}`,
-            });
-          }
-        }
+        //auto user assign queue
+        const autoAssign: autoAssignUsersInterface = {
+          userId: user?.id,
+          divisionIds: [divisionId],
+          types: ['Admin'],
+          entityIds: [id],
+          description: `Entity (${id}) Division changed`,
+        };
+        await this.userAssignmentService.autoAssignUsersInBackground(
+          autoAssign
+        );
       }
       if (locationId && entity?.locationId != locationId) {
         const newLocation = await this.prisma.location.findFirst({
@@ -428,45 +409,18 @@ export class EntityService {
           completedById: user.id,
         });
 
-        //get all users from user assignments
-        const userAssignments = await this.prisma.userAssignment.findMany({
-          where: {
-            type: { in: ['Technician', 'User'] },
-            locationId,
-            active: true,
-          },
-          distinct: ['userId'],
-          orderBy: { id: 'desc' },
-        });
-
-        //remove previous type assignments of entity
-        if (userAssignments?.length > 0) {
-          await this.prisma.entityAssignment.updateMany({
-            where: {
-              type: { in: ['Technician', 'User'] },
-              entityId: id,
-              removedAt: null,
-            },
-            data: { removedAt: new Date() },
-          });
-        }
-
-        //insert new users and notify them
-        for (const userAssignment of userAssignments) {
-          await this.prisma.entityAssignment.create({
-            data: {
-              entityId: id,
-              userId: userAssignment?.userId,
-              type: userAssignment?.type,
-            },
-          });
-          if (user?.id !== userAssignment?.userId) {
-            await this.notificationService.createInBackground({
-              userId: userAssignment?.userId,
-              body: `Entity (${id}) location changed. You've been assigned to Entity (${id}) as ${userAssignment?.type}`,
-            });
-          }
-        }
+        //auto user assign queue
+        const autoAssign: autoAssignUsersInterface = {
+          userId: user?.id,
+          divisionIds: [divisionId],
+          locationId,
+          types: ['Technician', 'User'],
+          entityIds: [id],
+          description: `Entity (${id}) Location changed`,
+        };
+        await this.userAssignmentService.autoAssignUsersInBackground(
+          autoAssign
+        );
       }
 
       if (engine && entity?.engine != engine) {

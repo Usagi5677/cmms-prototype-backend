@@ -20,6 +20,10 @@ import { NotificationService } from 'src/services/notification.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EntityService } from 'src/entity/entity.service';
 import * as moment from 'moment';
+import {
+  autoAssignUsersInterface,
+  UserAssignmentService,
+} from 'src/user-assignment/user-assignment.service';
 
 @Injectable()
 export class LocationService {
@@ -27,7 +31,8 @@ export class LocationService {
     private prisma: PrismaService,
     private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => EntityService))
-    private entityService: EntityService
+    private entityService: EntityService,
+    private userAssignmentService: UserAssignmentService
   ) {}
 
   async create(user: User, { name, zoneId, skipFriday }: CreateLocationInput) {
@@ -146,47 +151,17 @@ export class LocationService {
       const divisionIds = entities.map((e) => e.divisionId);
       //get their entity ids
       const entityIds = entities.map((e) => e.id);
-      //get all users from user assignments
-      const userAssignments = await this.prisma.userAssignment.findMany({
-        where: {
-          user: {
-            divisionUsers: { some: { divisionId: { in: divisionIds } } },
-          },
-          type: 'Engineer',
-          zoneId,
-          active: true,
-        },
-        distinct: ['userId'],
-        orderBy: { id: 'desc' },
-      });
-      if (userAssignments.length > 0) {
-        //remove previous type assignments of entity
-        for (const entityId of entityIds) {
-          await this.prisma.entityAssignment.updateMany({
-            where: { type: 'Engineer', entityId, removedAt: null },
-            data: { removedAt: new Date() },
-          });
-        }
-      }
 
-      //insert new users and notify them
-      for (const entityId of entityIds) {
-        for (const userAssignment of userAssignments) {
-          await this.prisma.entityAssignment.create({
-            data: {
-              entityId,
-              userId: userAssignment?.userId,
-              type: userAssignment?.type,
-            },
-          });
-          if (user?.id !== userAssignment?.userId) {
-            await this.notificationService.createInBackground({
-              userId: userAssignment?.userId,
-              body: `Entity (${id}) zone changed. You've been assigned to Entity (${id}) as ${userAssignment?.type}`,
-            });
-          }
-        }
-      }
+      //auto user assign queue
+      const autoAssign: autoAssignUsersInterface = {
+        userId: user?.id,
+        divisionIds,
+        types: ['Engineer'],
+        zoneId,
+        entityIds,
+        description: `${name} Zone changed`,
+      };
+      await this.userAssignmentService.autoAssignUsersInBackground(autoAssign);
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -264,47 +239,17 @@ export class LocationService {
             });
           }
         }
-        //get all users from user assignments
-        const userAssignments = await this.prisma.userAssignment.findMany({
-          where: {
-            type: { in: ['Technician', 'User'] },
-            locationId,
-            active: true,
-          },
-          distinct: ['userId'],
-          orderBy: { id: 'desc' },
-        });
-
-        //remove previous type assignments of entity
-        if (userAssignments?.length > 0) {
-          await this.prisma.entityAssignment.updateMany({
-            where: {
-              type: { in: ['Technician', 'User'] },
-              entityId: { in: entityIds },
-              removedAt: null,
-            },
-            data: { removedAt: new Date() },
-          });
-        }
-
-        //insert new users and notify them
-        for (const entityId of entityIds) {
-          for (const userAssignment of userAssignments) {
-            await this.prisma.entityAssignment.create({
-              data: {
-                entityId,
-                userId: userAssignment?.userId,
-                type: userAssignment?.type,
-              },
-            });
-            if (user?.id !== userAssignment?.userId) {
-              await this.notificationService.createInBackground({
-                userId: userAssignment?.userId,
-                body: `Entity (${entityId}) location changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
-              });
-            }
-          }
-        }
+        //auto user assign queue
+        const autoAssign: autoAssignUsersInterface = {
+          userId: user?.id,
+          types: ['Technician', 'User'],
+          locationId,
+          entityIds,
+          description: `Entity Location changed`,
+        };
+        await this.userAssignmentService.autoAssignUsersInBackground(
+          autoAssign
+        );
       }
     } catch (e) {
       if (
@@ -320,6 +265,7 @@ export class LocationService {
     }
   }
 
+  //not using this anymore
   async assignUserToLocation(
     user: User,
     { locationIds, userIds, userType }: LocationAssignInput
@@ -370,6 +316,7 @@ export class LocationService {
     }
   }
 
+  //not using this anymore
   async bulkUnassignUserFromLocation(
     user: User,
     { locationIds, userIds, userType }: LocationAssignInput
@@ -437,51 +384,22 @@ export class LocationService {
         data: { locationId, transit: true },
       });
 
-      //get all users from user assignments
-      const userAssignments = await this.prisma.userAssignment.findMany({
-        where: {
-          type: { in: ['Technician', 'User'] },
-          locationId,
-          active: true,
-        },
-        distinct: ['userId'],
-        orderBy: { id: 'desc' },
-      });
-
-      //remove previous type assignments of entity
-      if (userAssignments?.length > 0) {
-        await this.prisma.entityAssignment.updateMany({
-          where: {
-            type: { in: ['Technician', 'User'] },
-            entityId,
-            removedAt: null,
-          },
-          data: { removedAt: new Date() },
-        });
-      }
-
-      //insert new users and notify them
-      for (const userAssignment of userAssignments) {
-        await this.prisma.entityAssignment.create({
-          data: {
-            entityId,
-            userId: userAssignment?.userId,
-            type: userAssignment?.type,
-          },
-        });
-        if (user?.id !== userAssignment?.userId) {
-          await this.notificationService.createInBackground({
-            userId: userAssignment?.userId,
-            body: `Entity (${entityId}) location changed. You've been assigned to Entity (${entityId}) as ${userAssignment?.type}`,
-          });
-        }
-      }
+      //auto user assign queue
+      const autoAssign: autoAssignUsersInterface = {
+        userId: user?.id,
+        types: ['Technician', 'User'],
+        locationId,
+        entityIds: [entityId],
+        description: `Entity Location changed`,
+      };
+      await this.userAssignmentService.autoAssignUsersInBackground(autoAssign);
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
 
+  //not using this anymore
   async updateLocationUser(id: number, locationId: number, userType: string) {
     try {
       await this.prisma.locationUsers.update({
