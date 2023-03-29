@@ -32,6 +32,7 @@ import { HullTypeModule } from './hull-type/hull-type.module';
 import { BrandModule } from './brand/brand.module';
 import { InterServiceColorModule } from './inter-service-color/inter-service-color.module';
 import { UserAssignmentModule } from './user-assignment/user-assignment.module';
+import { EngineModule } from './engine/engine.module';
 
 @Module({
   imports: [
@@ -101,6 +102,7 @@ import { UserAssignmentModule } from './user-assignment/user-assignment.module';
     BrandModule,
     InterServiceColorModule,
     UserAssignmentModule,
+    EngineModule,
   ],
   providers: [DateScalar, InitService],
 })

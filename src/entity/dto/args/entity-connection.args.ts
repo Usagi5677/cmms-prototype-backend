@@ -15,7 +15,7 @@ export class EntityConnectionArgs extends ConnectionArgs {
   typeIds?: number[];
   zoneIds?: number[];
   brandIds?: number[];
-  engine?: string[];
+  engineIds?: number[];
   measurement?: string[];
   lteInterService?: string;
   gteInterService?: string;

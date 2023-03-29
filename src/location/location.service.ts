@@ -52,7 +52,7 @@ export class LocationService {
         throw new InternalServerErrorException(e?.response?.message);
       }
       throw new InternalServerErrorException(
-        'Unexpected while creating user assignment.'
+        'Unexpected while creating location.'
       );
     }
   }

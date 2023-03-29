@@ -17,7 +17,7 @@ export class TypeResolver {
 
   @Permissions('MODIFY_TYPES')
   @Mutation(() => String)
-  async createType(@Args('createTypeInput') input: CreateTypeInput) {
+  async createType(@Args('input') input: CreateTypeInput) {
     await this.typeService.create(input);
     return 'Successfully created type.';
   }
@@ -34,7 +34,7 @@ export class TypeResolver {
 
   @Permissions('MODIFY_TYPES')
   @Mutation(() => String)
-  async updateType(@Args('updateTypeInput') input: UpdateTypeInput) {
+  async updateType(@Args('input') input: UpdateTypeInput) {
     await this.typeService.update(input);
     return 'Successfully updated type.';
   }

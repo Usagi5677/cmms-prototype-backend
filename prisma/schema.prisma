@@ -57,6 +57,7 @@ model User {
   zonesCreated                      Zone[]
   userAssignmentCreated             UserAssignment[]             @relation("userAssignmentCreated")
   userAssignment                    UserAssignment[]
+  engineCreated                     Engine[]                     @relation("engineCreated")
 }
 
 model Notification {
@@ -221,7 +222,6 @@ model Entity {
   typeId                    Int?
   currentRunning            Int?
   lastService               Int?
-  engine                    String?
   statusChangedAt           DateTime?
   measurement               String?               @default("km")
   deletedAt                 DateTime?
@@ -238,12 +238,15 @@ model Entity {
   registryNumber            String?
   transit                   Boolean?              @default(false)
   brandId                   Int?
+  engineId                  Int?
+  identificationNumber      String?
+  capacity                  String?
+  faCode                    String?
   lastServiceUpdateAt       DateTime?
   currentRunningUpdateAt    DateTime?
-  lastLocationId            Int?
-  lastZoneId                Int?
   breakdowns                Breakdown[]
   checklists                Checklist[]
+  engine                    Engine?               @relation(fields: [engineId], references: [id])
   brand                     Brand?                @relation(fields: [brandId], references: [id])
   createdBy                 User                  @relation(fields: [createdById], references: [id])
   dailyChecklistTemplate    ChecklistTemplate?    @relation("entityDaily", fields: [dailyChecklistTemplateId], references: [id])
@@ -608,6 +611,19 @@ model InterServiceColor {
   brand       Brand     @relation(fields: [brandId], references: [id])
   createdBy   User?     @relation("interServiceColorCreated", fields: [createdById], references: [id])
   type        Type      @relation(fields: [typeId], references: [id])
+}
+
+model Engine {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  model       String?
+  serial      String?
+  createdById Int?
+  active      Boolean  @default(true)
+  entity      Entity[]
+  createdBy   User?    @relation("engineCreated", fields: [createdById], references: [id])
 }
 
 model UserAssignment {

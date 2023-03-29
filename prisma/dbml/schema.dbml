@@ -48,6 +48,7 @@ Table User {
   zonesCreated Zone [not null]
   userAssignmentCreated UserAssignment [not null]
   userAssignment UserAssignment [not null]
+  engineCreated Engine [not null]
 }
 
 Table Notification {
@@ -216,7 +217,6 @@ Table Entity {
   typeId Int
   currentRunning Int
   lastService Int
-  engine String
   statusChangedAt DateTime
   measurement String [default: 'km']
   deletedAt DateTime
@@ -233,12 +233,15 @@ Table Entity {
   registryNumber String
   transit Boolean [default: false]
   brandId Int
+  engineId Int
+  identificationNumber String
+  capacity String
+  faCode String
   lastServiceUpdateAt DateTime
   currentRunningUpdateAt DateTime
-  lastLocationId Int
-  lastZoneId Int
   breakdowns Breakdown [not null]
   checklists Checklist [not null]
+  engine Engine
   brand Brand
   createdBy User [not null]
   dailyChecklistTemplate ChecklistTemplate
@@ -606,6 +609,19 @@ Table InterServiceColor {
   type Type [not null]
 }
 
+Table Engine {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  model String
+  serial String
+  createdById Int
+  active Boolean [not null, default: true]
+  entity Entity [not null]
+  createdBy User
+}
+
 Table UserAssignment {
   id Int [pk, increment]
   createdAt DateTime [default: `now()`, not null]
@@ -620,6 +636,60 @@ Table UserAssignment {
   location Location
   zone Zone
   createdBy User
+}
+
+Table ServiceRequest {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table Warehouse {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table JobCard {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table Quotation {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table WarehouseRequest {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
+}
+
+Table Catalogue {
+  id Int [pk, increment]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  createdById Int
+  active Boolean [not null, default: true]
 }
 
 Enum SparePRStatus {
@@ -675,6 +745,8 @@ Ref: ChecklistComment.checklistId > Checklist.id
 Ref: ChecklistComment.itemId > ChecklistItem.id
 
 Ref: ChecklistComment.userId > User.id
+
+Ref: Entity.engineId > Engine.id
 
 Ref: Entity.brandId > Brand.id
 
@@ -805,6 +877,8 @@ Ref: InterServiceColor.brandId > Brand.id
 Ref: InterServiceColor.createdById > User.id
 
 Ref: InterServiceColor.typeId > Type.id
+
+Ref: Engine.createdById > User.id
 
 Ref: UserAssignment.userId > User.id
 

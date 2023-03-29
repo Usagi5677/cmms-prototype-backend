@@ -344,6 +344,33 @@ input CreateDivisionInput {
   name: String!
 }
 
+input CreateEngineInput {
+  model: String
+  name: String!
+  serial: String
+}
+
+input CreateEntityInput {
+  brandId: Int
+  capacity: String
+  currentRunning: Int
+  dimension: Float
+  divisionId: Int
+  engineId: Int
+  faCode: String
+  hullTypeId: Int
+  identificationNumber: String
+  lastService: Int
+  locationId: Int
+  machineNumber: String
+  measurement: String
+  model: String
+  parentEntityId: Int
+  registeredDate: Date
+  registryNumber: String
+  typeId: Int
+}
+
 input CreateHullTypeInput {
   name: String!
 }
@@ -482,10 +509,36 @@ input EditApiKeyInput {
   permissions: [String!]
 }
 
+type Engine {
+  """Identifies the date and time when the object was created."""
+  createdAt: Date!
+  id: Int!
+  model: String
+  name: String!
+  serial: String
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: Date!
+}
+
+type EngineEdge {
+  cursor: String
+  node: Engine
+}
+
+type EnginePageInfo {
+  count: Int!
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type Entity {
   assignees: [EntityAssignment!]
   brand: Brand
   breakdowns: [Breakdown!]
+  capacity: String
   checklistItems: [ChecklistItem!]
 
   """Identifies the date and time when the object was created."""
@@ -496,10 +549,12 @@ type Entity {
   deletedAt: Date
   dimension: Float
   division: Division
-  engine: String
+  engine: Engine
+  faCode: String
   histories: [EntityHistory!]
   hullType: HullType
   id: Int!
+  identificationNumber: String
   interService: Int
   lastService: Int
   lastServiceUpdateAt: Date
@@ -938,15 +993,16 @@ type Mutation {
   createBreakdown(createBreakdownInput: CreateBreakdownInput!): String!
   createChecklistTemplate(createChecklistTemplateInput: CreateChecklistTemplateInput!): String!
   createDivision(input: CreateDivisionInput!): String!
-  createEntity(brandId: Int, currentRunning: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, lastService: Int, locationId: Int, machineNumber: String, measurement: String, model: String, parentEntityId: Int, registeredDate: Date, registryNumber: String, typeId: Int): String!
-  createHullType(createHullTypeInput: CreateHullTypeInput!): String!
+  createEngine(input: CreateEngineInput!): String!
+  createEntity(input: CreateEntityInput!): String!
+  createHullType(input: CreateHullTypeInput!): String!
   createInterServiceColor(input: CreateInterServiceColorInput!): String!
   createLocation(input: CreateLocationInput!): String!
   createPeriodicMaintenance(currentMeterReading: Int, measurement: String!, name: String!, recur: Boolean, value: Int): String!
   createPeriodicMaintenanceTask(name: String!, parentTaskId: Int, periodicMaintenanceId: Int!): String!
   createRepair(createRepairInput: CreateRepairInput!): String!
   createSparePR(createSparePrInput: CreateSparePrInput!): String!
-  createType(createTypeInput: CreateTypeInput!): String!
+  createType(input: CreateTypeInput!): String!
   createUserAssignment(input: CreateUserAssignmentInput!): String!
   createZone(input: CreateZoneInput!): String!
   deactivateApiKey(id: Int!): String!
@@ -954,7 +1010,7 @@ type Mutation {
   deleteOriginPeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenance(id: Int!): String!
   deletePeriodicMaintenanceTask(id: Int!): String!
-  editEntity(brandId: Int, dimension: Float, divisionId: Int, engine: String, hullTypeId: Int, id: Int!, locationId: Int, machineNumber: String, measurement: String, model: String, registeredDate: Date, registryNumber: String, typeId: Int): String!
+  editEntity(input: UpdateEntityInput!): String!
   editEntityAttachment(description: String!, id: Int!): String!
   editEntityRepairRequest(additionalInfo: String, attendInfo: String, id: Int!, internal: Boolean, location: String, operatorId: Int, projectManagerId: Int, projectName: String, reason: String, supervisorId: Int): String!
   editKey(input: EditApiKeyInput!): String!
@@ -972,6 +1028,7 @@ type Mutation {
   removeChecklistTemplate(id: Int!): String!
   removeChecklistTemplateItem(entityId: Int, id: Int!, templateId: Int): String!
   removeDivision(id: Int!): String!
+  removeEngine(id: Int!): String!
   removeEntity(id: Int!): String!
   removeEntityAttachment(id: Int!): String!
   removeHullType(id: Int!): String!
@@ -1011,11 +1068,12 @@ type Mutation {
   updateChecklistTemplate(updateChecklistTemplateInput: UpdateChecklistTemplateInput!): String!
   updateDailyUsage(hours: Int!, id: Int!): String!
   updateDivision(input: UpdateDivisionInput!): String!
+  updateEngine(input: UpdateEngineInput!): String!
   updateEntityBrand(brandId: Int!, entityId: Int!): String!
   updateEntityDivision(divisionId: Int!, entityId: Int!): String!
   updateEntityLocation(entityId: Int!, locationId: Int!): String!
   updateEntityNote(id: Int!, note: String): String!
-  updateHullType(updateHullTypeInput: UpdateHullTypeInput!): String!
+  updateHullType(input: UpdateHullTypeInput!): String!
   updateInterServiceColor(input: UpdateInterServiceColorInput!): String!
   updateLocation(input: UpdateLocationInput!): String!
   updateLocationUser(id: Int!, locationId: Int!, userType: String!): String!
@@ -1023,7 +1081,7 @@ type Mutation {
   updateReading(id: Int!, reading: Int!): String!
   updateRepair(updateRepairInput: UpdateRepairInput!): String!
   updateSparePR(updateSparePrInput: UpdateSparePrInput!): String!
-  updateType(updateTypeInput: UpdateTypeInput!): String!
+  updateType(input: UpdateTypeInput!): String!
   updateUserAssignment(input: UpdateUserAssignmentInput!): String!
   updateWorkingHours(id: Int!, newHrs: Int!): String!
   updateZone(input: UpdateZoneInput!): String!
@@ -1077,6 +1135,11 @@ type PaginatedDivision {
 type PaginatedDivisionAssignment {
   edges: [DivisionAssignEdge!]
   pageInfo: DivisionAssignPageInfo
+}
+
+type PaginatedEngine {
+  edges: [EngineEdge!]
+  pageInfo: EnginePageInfo
 }
 
 type PaginatedEntity {
@@ -1368,7 +1431,7 @@ type Query {
     createdByUserId: String
     divisionExist: Boolean
     divisionIds: [Int!]
-    engine: [String!]
+    engineIds: [Int!]
     entityIds: [Int!]
     entityType: [String!]
 
@@ -1470,7 +1533,7 @@ type Query {
     createdByUserId: String
     divisionExist: Boolean
     divisionIds: [Int!]
-    engine: [String!]
+    engineIds: [Int!]
     entityIds: [Int!]
     entityType: [String!]
 
@@ -1594,6 +1657,21 @@ type Query {
     last: Int
     name: String
   ): PaginatedDivision!
+  engine(id: Int!): Engine!
+  engines(
+    """Paginate after opaque cursor"""
+    after: String
+
+    """Paginate before opaque cursor"""
+    before: String
+
+    """Paginate first"""
+    first: Int
+
+    """Paginate last"""
+    last: Int
+    name: String
+  ): PaginatedEngine!
   entityAttachment(id: Int!): EntityAttachment!
   entityAttachments(
     """Paginate after opaque cursor"""
@@ -1626,7 +1704,7 @@ type Query {
     createdByUserId: String
     divisionExist: Boolean
     divisionIds: [Int!]
-    engine: [String!]
+    engineIds: [Int!]
     entityIds: [Int!]
     entityType: [String!]
 
@@ -1660,7 +1738,7 @@ type Query {
     createdByUserId: String
     divisionExist: Boolean
     divisionIds: [Int!]
-    engine: [String!]
+    engineIds: [Int!]
     entityIds: [Int!]
     entityType: [String!]
 
@@ -1735,7 +1813,7 @@ type Query {
     createdByUserId: String
     divisionExist: Boolean
     divisionIds: [Int!]
-    engine: [String!]
+    engineIds: [Int!]
     entityIds: [Int!]
     entityType: [String!]
 
@@ -1769,7 +1847,7 @@ type Query {
     createdByUserId: String
     divisionExist: Boolean
     divisionIds: [Int!]
-    engine: [String!]
+    engineIds: [Int!]
     entityIds: [Int!]
     entityType: [String!]
 
@@ -2292,6 +2370,35 @@ input UpdateChecklistTemplateInput {
 input UpdateDivisionInput {
   id: Int!
   name: String
+}
+
+input UpdateEngineInput {
+  id: Int!
+  model: String
+  name: String
+  serial: String
+}
+
+input UpdateEntityInput {
+  brandId: Int
+  capacity: String
+  currentRunning: Int
+  dimension: Float
+  divisionId: Int
+  engineId: Int
+  faCode: String
+  hullTypeId: Int
+  id: Int!
+  identificationNumber: String
+  lastService: Int
+  locationId: Int
+  machineNumber: String
+  measurement: String
+  model: String
+  parentEntityId: Int
+  registeredDate: Date
+  registryNumber: String
+  typeId: Int
 }
 
 input UpdateHullTypeInput {

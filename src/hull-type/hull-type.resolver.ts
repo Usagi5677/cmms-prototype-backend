@@ -21,9 +21,9 @@ export class HullTypeResolver {
   @Mutation(() => String)
   async createHullType(
     @UserEntity() user: User,
-    @Args('createHullTypeInput') createHullTypeInput: CreateHullTypeInput
+    @Args('input') input: CreateHullTypeInput
   ) {
-    await this.hullTypeService.create(user, createHullTypeInput);
+    await this.hullTypeService.create(user, input);
     return 'Successfully created hull type.';
   }
 
@@ -39,9 +39,7 @@ export class HullTypeResolver {
 
   @Permissions('MODIFY_HULL_TYPES')
   @Mutation(() => String)
-  async updateHullType(
-    @Args('updateHullTypeInput') input: UpdateHullTypeInput
-  ) {
+  async updateHullType(@Args('input') input: UpdateHullTypeInput) {
     await this.hullTypeService.update(input);
     return 'Successfully updated hull type.';
   }

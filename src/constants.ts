@@ -121,6 +121,11 @@ export const PERMISSION_DESCRIPTIONS: PermissionWithDescription[] = [
     description: 'Create, edit and delete brands.',
   },
   {
+    name: 'MODIFY_ENGINES',
+    type: 'Config',
+    description: 'Create, edit and delete engines.',
+  },
+  {
     name: 'MODIFY_INTER_SERVICE_COLOR',
     type: 'Config',
     description: 'Create, edit and delete inter service color.',

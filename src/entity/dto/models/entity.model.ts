@@ -15,6 +15,7 @@ import { Division } from 'src/division/entities/division.entity';
 import { HullType } from 'src/hull-type/entities/hull-type.entity';
 import { GraphQLFloat } from 'graphql';
 import { Brand } from 'src/brand/entities/brand.entity';
+import { Engine } from 'src/engine/entities/engine.entity';
 
 @ObjectType()
 export class Entity extends BaseModel {
@@ -26,7 +27,7 @@ export class Entity extends BaseModel {
   zone?: string;
   location?: Location;
   division?: Division;
-  engine?: string;
+  engine?: Engine;
   currentRunning?: number;
   lastService?: number;
   interService?: number;
@@ -39,6 +40,9 @@ export class Entity extends BaseModel {
   dimension?: typeof GraphQLFloat;
   registryNumber?: string;
   transit?: boolean;
+  capacity?: string;
+  identificationNumber?: string;
+  faCode?: string;
   lastServiceUpdateAt?: Date;
   currentRunningUpdateAt?: Date;
   hullType?: HullType;

@@ -46,6 +46,8 @@ import {
   autoAssignUsersInterface,
   UserAssignmentService,
 } from 'src/user-assignment/user-assignment.service';
+import { CreateEntityInput } from './dto/create-entity.input';
+import { UpdateEntityInput } from './dto/update-entity.input';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -134,21 +136,26 @@ export class EntityService {
   //** Create entity. */
   async createEntity(
     user: User,
-    typeId: number,
-    machineNumber: string,
-    model: string,
-    locationId: number,
-    divisionId: number,
-    engine: string,
-    measurement: string,
-    currentRunning: number,
-    lastService: number,
-    brandId: number,
-    registeredDate: Date,
-    parentEntityId: number,
-    hullTypeId: number,
-    dimension: typeof GraphQLFloat,
-    registryNumber: string
+    {
+      typeId,
+      machineNumber,
+      model,
+      locationId,
+      divisionId,
+      engineId,
+      measurement,
+      currentRunning,
+      lastService,
+      brandId,
+      registeredDate,
+      parentEntityId,
+      hullTypeId,
+      dimension,
+      registryNumber,
+      capacity,
+      identificationNumber,
+      faCode,
+    }: CreateEntityInput
   ) {
     try {
       const convertedDimension = dimension as unknown as number;
@@ -177,7 +184,7 @@ export class EntityService {
             model,
             locationId,
             divisionId,
-            engine,
+            engineId,
             measurement,
             currentRunning,
             lastService,
@@ -189,6 +196,9 @@ export class EntityService {
             hullTypeId,
             dimension: convertedDimension,
             registryNumber,
+            capacity,
+            identificationNumber,
+            faCode,
           },
         });
         for (const e of parent.assignees) {
@@ -209,7 +219,7 @@ export class EntityService {
             model,
             locationId,
             divisionId,
-            engine,
+            engineId,
             measurement,
             currentRunning,
             lastService,
@@ -220,23 +230,26 @@ export class EntityService {
             hullTypeId,
             dimension: convertedDimension,
             registryNumber,
+            capacity,
+            identificationNumber,
+            faCode,
           },
         });
         await this.checklistTemplateService.updateEntityChecklists(
-          entity.id,
+          entity?.id,
           'Daily',
           newDailyTemplate
         );
         await this.checklistTemplateService.updateEntityChecklists(
-          entity.id,
+          entity?.id,
           'Weekly',
           newWeeklyTemplate
         );
         await this.createEntityHistoryInBackground({
           type: 'Entity Add',
           description: `Entity created`,
-          entityId: entity.id,
-          completedById: user.id,
+          entityId: entity?.id,
+          completedById: user?.id,
         });
       }
     } catch (e) {
@@ -276,19 +289,27 @@ export class EntityService {
   //** Edit Entity */
   async editEntity(
     user: User,
-    id: number,
-    typeId: number,
-    machineNumber: string,
-    model: string,
-    locationId: number,
-    divisionId: number,
-    engine: string,
-    measurement: string,
-    brandId: number,
-    registeredDate: Date,
-    hullTypeId: number,
-    dimension: typeof GraphQLFloat,
-    registryNumber: string
+    {
+      id,
+      typeId,
+      machineNumber,
+      model,
+      locationId,
+      divisionId,
+      engineId,
+      measurement,
+      currentRunning,
+      lastService,
+      brandId,
+      registeredDate,
+      parentEntityId,
+      hullTypeId,
+      dimension,
+      registryNumber,
+      capacity,
+      identificationNumber,
+      faCode,
+    }: UpdateEntityInput
   ) {
     const convertedDimension = dimension as unknown as number;
     const entity = await this.prisma.entity.findFirst({
@@ -300,6 +321,7 @@ export class EntityService {
         division: true,
         hullType: true,
         brand: true,
+        engine: true,
       },
     });
     // Check if admin of entity or has permission
@@ -311,12 +333,39 @@ export class EntityService {
       ['EDIT_ENTITY']
     );
     try {
+      if (capacity && entity?.capacity != capacity) {
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Edit',
+          description: `Capacity changed from ${entity?.capacity} to ${capacity}.`,
+          entityId: id,
+          completedById: user?.id,
+        });
+      }
+      if (
+        identificationNumber &&
+        entity?.identificationNumber != identificationNumber
+      ) {
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Edit',
+          description: `VIN/SN changed from ${entity?.identificationNumber} to ${identificationNumber}.`,
+          entityId: id,
+          completedById: user?.id,
+        });
+      }
+      if (faCode && entity?.faCode != faCode) {
+        await this.createEntityHistoryInBackground({
+          type: 'Entity Edit',
+          description: `FA Code changed from ${entity?.faCode} to ${faCode}.`,
+          entityId: id,
+          completedById: user?.id,
+        });
+      }
       if (machineNumber && entity?.machineNumber != machineNumber) {
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
           description: `Machine number changed from ${entity?.machineNumber} to ${machineNumber}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (registryNumber && entity?.registryNumber != registryNumber) {
@@ -324,7 +373,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Registry number changed from ${entity?.registryNumber} to ${registryNumber}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (model && entity?.model != model) {
@@ -332,7 +381,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Model changed from ${entity?.model} to ${model}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (typeId && entity?.typeId != typeId) {
@@ -343,7 +392,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Type changed from ${entity?.type?.name} to ${newType?.name}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (hullTypeId && entity?.hullTypeId != hullTypeId) {
@@ -354,7 +403,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Hull Type changed from ${entity?.hullType?.name} to ${newHullType?.name}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (dimension && entity?.dimension != convertedDimension) {
@@ -362,7 +411,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Dimension changed from ${entity?.dimension} to ${dimension}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (divisionId && entity?.divisionId != divisionId) {
@@ -375,7 +424,7 @@ export class EntityService {
             entity?.divisionId ? ` from ${entity?.division?.name}` : ``
           } to ${newDivision?.name}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
 
         //auto user assign queue
@@ -406,7 +455,7 @@ export class EntityService {
             entity?.location?.name
           }`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
 
         //auto user assign queue
@@ -423,12 +472,15 @@ export class EntityService {
         );
       }
 
-      if (engine && entity?.engine != engine) {
+      if (engineId && entity?.engine?.id != engineId) {
+        const newEngine = await this.prisma.engine.findFirst({
+          where: { id: engineId },
+        });
         await this.createEntityHistoryInBackground({
           type: 'Entity Edit',
-          description: `Engine changed from ${entity?.engine} to ${engine}.`,
+          description: `Engine changed from ${entity?.engine?.name} to ${newEngine?.name}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (measurement && entity?.measurement != measurement) {
@@ -436,7 +488,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Measurement changed from ${entity?.measurement} to ${measurement}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (brandId && entity?.brandId != brandId) {
@@ -447,7 +499,7 @@ export class EntityService {
           type: 'Entity Edit',
           description: `Brand changed from ${entity?.brand?.name} to ${newBrand?.name}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (
@@ -463,7 +515,7 @@ export class EntityService {
             'DD MMMM YYYY'
           )}.`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
 
@@ -483,7 +535,7 @@ export class EntityService {
           model,
           locationId: locationId ?? undefined,
           divisionId,
-          engine: engine ? engine : null,
+          engineId,
           measurement,
           brandId,
           registeredDate,
@@ -496,6 +548,9 @@ export class EntityService {
           hullTypeId,
           dimension: convertedDimension,
           registryNumber,
+          capacity,
+          identificationNumber,
+          faCode,
         },
         where: { id },
       });
@@ -595,7 +650,7 @@ export class EntityService {
         type: 'Status Change',
         description: `Status changed to ${status}`,
         entityId: entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
       const users = await this.getEntityAssignmentIds(entityId, user.id);
       for (let index = 0; index < users.length; index++) {
@@ -707,6 +762,7 @@ export class EntityService {
                 take: 10,
               },
               hullType: true,
+              engine: true,
               brand: true,
               parentEntity: true,
             },
@@ -714,6 +770,7 @@ export class EntityService {
           },
           division: true,
           hullType: true,
+          engine: true,
         },
       });
       if (entity?.type?.entityType === 'Machine') {
@@ -785,7 +842,7 @@ export class EntityService {
         typeIds,
         zoneIds,
         brandIds,
-        engine,
+        engineIds,
         measurement,
         lteInterService,
         gteInterService,
@@ -1030,9 +1087,9 @@ export class EntityService {
         });
       }
 
-      if (engine?.length > 0) {
+      if (engineIds?.length > 0) {
         where.AND.push({
-          engine: { in: engine },
+          engineId: { in: engineIds },
         });
       }
 
@@ -1160,6 +1217,7 @@ export class EntityService {
             },
           },
           hullType: true,
+          engine: true,
           location: { include: { zone: true } },
           repairs: {
             orderBy: { id: 'desc' },
@@ -1208,6 +1266,7 @@ export class EntityService {
                 take: 10,
               },
               hullType: true,
+              engine: true,
               parentEntity: true,
               brand: true,
             },
@@ -1285,7 +1344,7 @@ export class EntityService {
         type: 'Repair Request',
         description: `Repair request (${repair.id})`,
         entityId: entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
       const users = await this.getEntityAssignmentIds(entityId, user.id);
       for (let index = 0; index < users.length; index++) {
@@ -1338,7 +1397,7 @@ export class EntityService {
             repair.internal ? 'Internal' : 'External'
           } to ${internal ? 'Internal' : 'External'}.`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.projectName != projectName) {
@@ -1346,7 +1405,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Project name changed from ${repair.projectName} to ${projectName}.`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.reason != reason) {
@@ -1354,7 +1413,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Reason changed from ${repair.reason} to ${reason}.`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.additionalInfo != additionalInfo) {
@@ -1362,7 +1421,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Additional Info changed from ${repair.additionalInfo} to ${additionalInfo}.`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.additionalInfo != additionalInfo) {
@@ -1370,7 +1429,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Attend Info changed from ${repair.additionalInfo} to ${attendInfo}.`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.operatorId != operatorId) {
@@ -1385,7 +1444,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Operator changed from ${repair.operator?.fullName} (${repair.operator?.rcno}) to ${user2?.fullName} (${user2?.rcno}).`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.supervisorId != supervisorId) {
@@ -1400,7 +1459,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Supervisor changed from ${repair.supervisor?.fullName} (${repair.supervisor?.rcno}) to ${user2?.fullName} (${user2?.rcno}).`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (repair.projectManagerId != projectManagerId) {
@@ -1415,7 +1474,7 @@ export class EntityService {
           type: 'Repair Request Edit',
           description: `(${id}) Project Manager changed from ${repair.projectManager?.fullName} (${repair.projectManager?.rcno}) to ${user2?.fullName} (${user2?.rcno}).`,
           entityId: repair.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       const users = await this.getEntityAssignmentIds(repair.entityId, user.id);
@@ -1468,7 +1527,7 @@ export class EntityService {
         type: 'Repair Delete',
         description: `(${id}) Repair Request (Project Name: ${repair.projectName}) deleted.`,
         entityId: repair.entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
       const users = await this.getEntityAssignmentIds(repair.entityId, user.id);
       for (let index = 0; index < users.length; index++) {
@@ -1714,7 +1773,7 @@ export class EntityService {
           type: 'User Assign',
           description: `${newAssignmentsFormatted} assigned as ${type}.`,
           entityId: entityId,
-          completedById: user.id,
+          completedById: user?.id,
         })
       );
 
@@ -1827,7 +1886,7 @@ export class EntityService {
           type: 'User Unassigned',
           description: `${newAssignmentsFormatted} removed as ${type}.`,
           entityId: entityId,
-          completedById: user.id,
+          completedById: user?.id,
         })
       );
 
@@ -1944,7 +2003,7 @@ export class EntityService {
         type: 'User Assign',
         description: `${newAssignmentsFormatted} assigned as ${type}.`,
         entityId: entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
 
       // Notification to entity assigned users except new assignments
@@ -2018,7 +2077,7 @@ export class EntityService {
         type: 'User Unassigned',
         description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
         entityId: entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -2058,7 +2117,7 @@ export class EntityService {
         type: 'User Unassigned',
         description: `${unassign.fullName} (${unassign.rcno}) removed as ${type}.`,
         entityId: entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
     } catch (e) {
       console.log(e);
@@ -2159,7 +2218,7 @@ export class EntityService {
         type: 'Attachment Delete',
         description: `(${id}) Attachment (${attachment.description}) deleted.`,
         entityId: attachment.entityId,
-        completedById: user.id,
+        completedById: user?.id,
       });
       const users = await this.getEntityAssignmentIds(
         attachment.entityId,
@@ -2197,7 +2256,7 @@ export class EntityService {
           type: 'Attachment Edit',
           description: `(${id}) Description changed from ${attachment.description} to ${description}.`,
           entityId: attachment.entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       const users = await this.getEntityAssignmentIds(
@@ -3022,7 +3081,7 @@ export class EntityService {
             entity.locationId ? ` from ${entity.location.name}` : ``
           } to ${newLocation.name}.`,
           entityId,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
       if (users) {
@@ -3031,7 +3090,7 @@ export class EntityService {
             type: 'User Unassigned',
             description: `${assignment.user.fullName} (${assignment.user.rcno}) removed as ${assignment.type}.`,
             entityId: entityId,
-            completedById: user.id,
+            completedById: user?.id,
           });
         }
         for (const assignment of newAssignments) {
@@ -3039,7 +3098,7 @@ export class EntityService {
             type: 'User Assign',
             description: `${assignment.user.fullName} (${assignment.user.rcno}) assigned as ${assignment.type}.`,
             entityId: entityId,
-            completedById: user.id,
+            completedById: user?.id,
           });
         }
       }
@@ -3074,7 +3133,7 @@ export class EntityService {
         typeIds,
         zoneIds,
         brandIds,
-        engine,
+        engineIds,
         measurement,
         lteInterService,
         gteInterService,
@@ -3317,9 +3376,9 @@ export class EntityService {
         });
       }
 
-      if (engine?.length > 0) {
+      if (engineIds?.length > 0) {
         where.AND.push({
-          engine: { in: engine },
+          engineId: { in: engineIds },
         });
       }
 
@@ -3404,7 +3463,7 @@ export class EntityService {
         });
       }
       //use cache later
-      const key = `allEntityStatusCount_${user.id}_${createdById}_${search}_${assignedToId}_${entityType}_${status}_${locationIds}_${divisionIds}_${isAssigned}_${typeIds}_${zoneIds}_${brandIds}_${engine}_${measurement}_${lteInterService}_${gteInterService}_${isIncompleteChecklistTask}_${entityIds}`;
+      const key = `allEntityStatusCount_${user.id}_${createdById}_${search}_${assignedToId}_${entityType}_${status}_${locationIds}_${divisionIds}_${isAssigned}_${typeIds}_${zoneIds}_${brandIds}_${engineIds}_${measurement}_${lteInterService}_${gteInterService}_${isIncompleteChecklistTask}_${entityIds}`;
       let statusCount = await this.redisCacheService.get(key);
 
       if (!statusCount) {
@@ -5342,7 +5401,7 @@ export class EntityService {
             'YYYY-MM-DD HH:mm:ss'
           )}`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       } else {
         await this.createEntityHistoryInBackground({
@@ -5351,7 +5410,7 @@ export class EntityService {
             'YYYY-MM-DD HH:mm:ss'
           )}`,
           entityId: id,
-          completedById: user.id,
+          completedById: user?.id,
         });
       }
     } catch (e) {

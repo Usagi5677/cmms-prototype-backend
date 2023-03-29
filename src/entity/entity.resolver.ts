@@ -34,6 +34,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { GroupedLocationIncompleteTasks } from './dto/models/grouped-location-incomplete-tasks.model';
 import { GroupedTypeRepairStats } from './dto/models/grouped-type-repair-stats.model';
 import { GraphQLFloat } from 'graphql';
+import { CreateEntityInput } from './dto/create-entity.input';
+import { UpdateEntityInput } from './dto/update-entity.input';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -58,41 +60,9 @@ export class EntityResolver {
   @Mutation(() => String)
   async createEntity(
     @UserEntity() user: User,
-    @Args('typeId', { nullable: true }) typeId: number,
-    @Args('machineNumber', { nullable: true }) machineNumber: string,
-    @Args('model', { nullable: true }) model: string,
-    @Args('locationId', { nullable: true }) locationId: number,
-    @Args('divisionId', { nullable: true }) divisionId: number,
-    @Args('engine', { nullable: true }) engine: string,
-    @Args('measurement', { nullable: true }) measurement: string,
-    @Args('currentRunning', { nullable: true }) currentRunning: number,
-    @Args('lastService', { nullable: true }) lastService: number,
-    @Args('brandId', { nullable: true }) brandId: number,
-    @Args('registeredDate', { nullable: true }) registeredDate: Date,
-    @Args('parentEntityId', { nullable: true }) parentEntityId: number,
-    @Args('hullTypeId', { nullable: true }) hullTypeId: number,
-    @Args('dimension', { type: () => GraphQLFloat, nullable: true })
-    dimension: typeof GraphQLFloat,
-    @Args('registryNumber', { nullable: true }) registryNumber: string
+    @Args('input') input: CreateEntityInput
   ): Promise<String> {
-    await this.entityService.createEntity(
-      user,
-      typeId,
-      machineNumber,
-      model,
-      locationId,
-      divisionId,
-      engine,
-      measurement,
-      currentRunning,
-      lastService,
-      brandId,
-      registeredDate,
-      parentEntityId,
-      hullTypeId,
-      dimension,
-      registryNumber
-    );
+    await this.entityService.createEntity(user, input);
     return `Successfully created entity.`;
   }
 
@@ -104,7 +74,7 @@ export class EntityResolver {
   ): Promise<String> {
     try {
       await this.entityService.deleteEntity(id, user);
-      return `Entity removed.`;
+      return `Successfully removed entity.`;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');
@@ -115,38 +85,10 @@ export class EntityResolver {
   @Mutation(() => String)
   async editEntity(
     @UserEntity() user: User,
-    @Args('id') id: number,
-    @Args('typeId', { nullable: true }) typeId: number,
-    @Args('machineNumber', { nullable: true }) machineNumber: string,
-    @Args('model', { nullable: true }) model: string,
-    @Args('locationId', { nullable: true }) locationId: number,
-    @Args('divisionId', { nullable: true }) divisionId: number,
-    @Args('engine', { nullable: true }) engine: string,
-    @Args('measurement', { nullable: true }) measurement: string,
-    @Args('brandId', { nullable: true }) brandId: number,
-    @Args('registeredDate', { nullable: true }) registeredDate: Date,
-    @Args('hullTypeId', { nullable: true }) hullTypeId: number,
-    @Args('dimension', { type: () => GraphQLFloat, nullable: true })
-    dimension: typeof GraphQLFloat,
-    @Args('registryNumber', { nullable: true }) registryNumber: string
+    @Args('input') input: UpdateEntityInput
   ): Promise<String> {
-    await this.entityService.editEntity(
-      user,
-      id,
-      typeId,
-      machineNumber,
-      model,
-      locationId,
-      divisionId,
-      engine,
-      measurement,
-      brandId,
-      registeredDate,
-      hullTypeId,
-      dimension,
-      registryNumber
-    );
-    return `Entity updated.`;
+    await this.entityService.editEntity(user, input);
+    return `Successfully updated entity.`;
   }
 
   // Permission checked in service
