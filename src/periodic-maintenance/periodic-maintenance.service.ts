@@ -2483,6 +2483,7 @@ export class PeriodicMaintenanceService {
                 },
               },
               brand: true,
+              engine: true,
             },
           },
         },

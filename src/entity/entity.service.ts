@@ -4171,17 +4171,17 @@ export class EntityService {
           });
         }
       }
-      const allEntities = await this.prisma.entity.findMany({
-        where,
-        orderBy: { machineNumber: 'asc' },
-      });
 
       const fromDate = moment(from).startOf('day');
       const toDate = moment(to).endOf('day');
 
-      const key = `usage_${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      const key = `all_usage_${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
       let usage = await this.redisCacheService.get(key);
       if (!usage) {
+        const allEntities = await this.prisma.entity.findMany({
+          where,
+          orderBy: { machineNumber: 'asc' },
+        });
         usage = [];
         //working hours don't have max, while breakdown, idle, and na have 60 hr max
         for (const entity of allEntities) {
@@ -4501,19 +4501,20 @@ export class EntityService {
         });
       }
 
-      const allEntities = await this.prisma.entity.findMany({
-        where,
-        include: { type: true },
-        orderBy: { machineNumber: 'asc' },
-      });
-
       const fromDate = moment(from).startOf('day');
       const toDate = moment(to).endOf('day');
 
-      const key = `usage2_EntityType${entityTypes}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      const key = `group_usage_${
+        user?.id
+      }_${entityTypes}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_${locationIds}_${zoneIds}_${typeIds}_${measurement}`;
       let usage = await this.redisCacheService.get(key);
       if (!usage) {
         usage = [];
+        const allEntities = await this.prisma.entity.findMany({
+          where,
+          include: { type: true },
+          orderBy: { machineNumber: 'asc' },
+        });
         //working hours don't have max, while breakdown, idle, and na have 60 hr max
         for (const entity of allEntities) {
           const days = toDate.diff(fromDate, 'days') + 1;
@@ -4679,8 +4680,6 @@ export class EntityService {
       const result = Object.values(
         tempUsage.reduce((acc, obj) => ({ ...acc, [obj.typeId]: obj }), {})
       );
-      //console.log(result);
-      //console.log(result.length);
       return result;
     } catch (e) {
       console.log(e);
@@ -5269,15 +5268,11 @@ export class EntityService {
         });
       }
 
-      const allEntities = await this.prisma.entity.findMany({
-        where,
-        include: { type: true },
-        orderBy: { machineNumber: 'asc' },
-      });
-
       const fromDate = moment(from).startOf('day');
       const toDate = moment(to).endOf('day');
-      const key = `grouped_type_repair_stats_EntityType${entityType}${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_Location${locationIds}_Zone${zoneIds}_Type${typeIds}_Measurement${measurement}`;
+      const key = `grouped_type_repair_stats_${
+        user?.id
+      }_${entityType}_${fromDate.toISOString()}_${toDate.toISOString()}${search}_${!hasViewAll}_${locationIds}_${zoneIds}_${typeIds}_${measurement}`;
       let stats = await this.redisCacheService.get(key);
       if (!stats) {
         stats = [];
@@ -5290,7 +5285,11 @@ export class EntityService {
           },
           include: { breakdown: true },
         });
-
+        const allEntities = await this.prisma.entity.findMany({
+          where,
+          include: { type: true },
+          orderBy: { machineNumber: 'asc' },
+        });
         for (const entity of allEntities) {
           let averageTimeOfRepair = 0;
           let total = 0;
