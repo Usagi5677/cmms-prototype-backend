@@ -668,6 +668,8 @@ enum PeriodicMaintenanceStatus {
   Missed
 }
 
+//service module template tables, add new fields when necessary
+//service request has entity info. Also, issues would probably require separate table. e.g. ServiceRequestIssues
 model ServiceRequest {
   id          Int      @id @default(autoincrement())
   createdAt   DateTime @default(now())
