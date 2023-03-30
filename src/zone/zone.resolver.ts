@@ -50,4 +50,12 @@ export class ZoneResolver {
     await this.zoneService.remove(id);
     return 'Successfully removed zone.';
   }
+
+  @Query(() => [Zone], { name: 'searchZone' })
+  search(
+    @Args('query', { nullable: true }) query: string,
+    @Args('limit', { nullable: true }) limit: number
+  ) {
+    return this.zoneService.search(query, limit);
+  }
 }

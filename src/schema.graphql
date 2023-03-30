@@ -2120,6 +2120,7 @@ type Query {
   searchDivision(limit: Int, query: String): [Division!]!
   searchEntity(entityIds: [Int!], entityType: String, limit: Int, query: String): [Entity!]!
   searchLocation(limit: Int, query: String): [Location!]!
+  searchZone(limit: Int, query: String): [Zone!]!
   singleEntityUsageHistory(entityId: Int!, from: Date!, to: Date!): [EntityUsageHistory!]!
   sparePR(id: Int!): SparePr!
   sparePRs(
@@ -2192,7 +2193,11 @@ type Query {
 
     """Paginate last"""
     last: Int
-    type: String
+    locationIds: [Int!]
+    search: String
+    types: [String!]
+    userIds: [Int!]
+    zoneIds: [Int!]
   ): PaginatedUserAssignment!
   zone(id: Int!): Zone!
   zones(

@@ -3,5 +3,9 @@ import ConnectionArgs from '../../common/pagination/connection-args';
 
 @ArgsType()
 export class UserAssignmentConnectionArgs extends ConnectionArgs {
-  type?: string;
+  search?: string;
+  types?: string[];
+  locationIds?: number[];
+  zoneIds?: number[];
+  userIds?: number[];
 }

@@ -105,4 +105,32 @@ export class ZoneService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
+
+  async search(query?: string, limit?: number) {
+    try {
+      if (!limit) limit = 10;
+      // eslint-disable-next-line prefer-const
+      let where: any = { AND: [] };
+
+      where.AND.push({
+        active: true,
+      });
+      if (query) {
+        where.AND.push({
+          name: { contains: query, mode: 'insensitive' },
+        });
+      }
+
+      const zones = await this.prisma.zone.findMany({
+        where,
+        take: limit,
+      });
+      return zones;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException(
+        'Unexpected error occured while searching zones.'
+      );
+    }
+  }
 }

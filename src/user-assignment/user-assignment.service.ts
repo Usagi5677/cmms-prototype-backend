@@ -62,10 +62,31 @@ export class UserAssignmentService {
     try {
       const { limit, offset } = getPagingParameters(args);
       const limitPlusOne = limit + 1;
-      const { type } = args;
+      const { types, zoneIds, locationIds, userIds, search } = args;
       const where: any = { AND: [{ active: true }] };
-      if (type) {
-        where.AND.push({ name: { contains: type, mode: 'insensitive' } });
+      if (search) {
+        const or: any = [
+          { user: { fullName: { contains: search, mode: 'insensitive' } } },
+        ];
+        // If search contains all numbers, search the rcno as well
+        if (/^(0|[1-9]\d*)$/.test(search)) {
+          or.push({ user: { rcno: parseInt(search) } });
+        }
+        where.AND.push({
+          OR: or,
+        });
+      }
+      if (types?.length > 0) {
+        where.AND.push({ type: { in: types } });
+      }
+      if (locationIds?.length > 0) {
+        where.AND.push({ locationId: { in: locationIds } });
+      }
+      if (zoneIds?.length > 0) {
+        where.AND.push({ zoneId: { in: zoneIds } });
+      }
+      if (userIds?.length > 0) {
+        where.AND.push({ userId: { in: userIds } });
       }
       const userAssignments = await this.prisma.userAssignment.findMany({
         skip: offset,
@@ -115,11 +136,17 @@ export class UserAssignmentService {
       throw new InternalServerErrorException('Unexpected error occurred.');
     }
   }
-  async update({ id, type, userId, locationId }: UpdateUserAssignmentInput) {
+  async update({
+    id,
+    type,
+    userId,
+    locationId,
+    zoneId,
+  }: UpdateUserAssignmentInput) {
     try {
       await this.prisma.userAssignment.update({
         where: { id },
-        data: { type, userId, locationId },
+        data: { type, userId, locationId, zoneId },
       });
     } catch (e) {
       console.log(e);
