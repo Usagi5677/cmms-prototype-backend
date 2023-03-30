@@ -48,6 +48,8 @@ import {
 } from 'src/user-assignment/user-assignment.service';
 import { CreateEntityInput } from './dto/create-entity.input';
 import { UpdateEntityInput } from './dto/update-entity.input';
+import { entityTypeCount } from './dto/models/entityTypeCount.model';
+import { configCount } from './dto/models/configCount.model';
 
 export interface EntityHistoryInterface {
   entityId: number;
@@ -5412,6 +5414,89 @@ export class EntityService {
           completedById: user?.id,
         });
       }
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async getEntityTypeCount(): Promise<entityTypeCount> {
+    try {
+      const key = `entityTypeCount`;
+      let entityTypeCount = await this.redisCacheService.get(key);
+      if (!entityTypeCount) {
+        const entities = await this.prisma.entity.findMany({
+          where: { deletedAt: null },
+          select: { type: true },
+        });
+        let machine = 0;
+        let vehicle = 0;
+        let vessel = 0;
+        let subEntity = 0;
+        entities.map((e) => {
+          if (e?.type?.entityType === 'Machine') {
+            machine += 1;
+          } else if (e?.type?.entityType === 'Vehicle') {
+            vehicle += 1;
+          } else if (e?.type?.entityType === 'Vessel') {
+            vessel += 1;
+          } else if (e?.type?.entityType === 'Sub Entity') {
+            subEntity += 1;
+          }
+        });
+        const total = entities.length;
+        entityTypeCount = {
+          machine,
+          vehicle,
+          vessel,
+          subEntity,
+          total,
+        };
+        await this.redisCacheService.setForHour(key, entityTypeCount);
+        return entityTypeCount;
+      }
+      return entityTypeCount;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('Unexpected error occured.');
+    }
+  }
+
+  async getConfigCount(): Promise<configCount> {
+    try {
+      const key = `configCount`;
+      let configCount = await this.redisCacheService.get(key);
+      if (!configCount) {
+        const location = await this.prisma.location.findMany({
+          where: { active: true },
+        });
+        const zone = await this.prisma.zone.findMany({
+          where: { active: true },
+        });
+        const division = await this.prisma.division.findMany({
+          where: { active: true },
+        });
+        const hullType = await this.prisma.hullType.findMany({
+          where: { active: true },
+        });
+        const brand = await this.prisma.brand.findMany({
+          where: { active: true },
+        });
+        const engine = await this.prisma.engine.findMany({
+          where: { active: true },
+        });
+        configCount = {
+          location: location?.length,
+          zone: zone?.length,
+          division: division?.length,
+          hullType: hullType?.length,
+          brand: brand?.length,
+          engine: engine?.length,
+        };
+        await this.redisCacheService.setForHour(key, configCount);
+        return configCount;
+      }
+      return configCount;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Unexpected error occured.');

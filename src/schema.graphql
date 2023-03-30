@@ -1966,6 +1966,8 @@ type Query {
     search: String
     type: String
   ): PaginatedUsers!
+  getConfigCount: configCount!
+  getEntityTypeCount: entityTypeCount!
   getLatestFavouriteAttachment(entityId: Int!): EntityAttachment!
   getRoleWithPermission(roleId: Int!): Roles!
   getRoles: [Roles!]!
@@ -2571,6 +2573,15 @@ type ZonePageInfo {
   startCursor: String
 }
 
+type configCount {
+  brand: Int
+  division: Int
+  engine: Int
+  hullType: Int
+  location: Int
+  zone: Int
+}
+
 type entityBreakdownCount {
   machine: Int
   vehicle: Int
@@ -2600,6 +2611,14 @@ type entityStatusCount {
   vesselDispose: Int
   vesselWorking: Int
   working: Int
+}
+
+type entityTypeCount {
+  machine: Int
+  subEntity: Int
+  total: Int
+  vehicle: Int
+  vessel: Int
 }
 
 type pmStatusCount {

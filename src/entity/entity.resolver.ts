@@ -36,6 +36,8 @@ import { GroupedTypeRepairStats } from './dto/models/grouped-type-repair-stats.m
 import { GraphQLFloat } from 'graphql';
 import { CreateEntityInput } from './dto/create-entity.input';
 import { UpdateEntityInput } from './dto/update-entity.input';
+import { entityTypeCount } from './dto/models/entityTypeCount.model';
+import { configCount } from './dto/models/configCount.model';
 
 @UseGuards(GqlAuthGuard, PermissionsGuard)
 @Resolver(() => Entity)
@@ -564,5 +566,15 @@ export class EntityResolver {
   ): Promise<string> {
     await this.entityService.toggleEntityTransit(user, id, complete);
     return `Location Transition updated.`;
+  }
+
+  @Query(() => entityTypeCount)
+  async getEntityTypeCount(): Promise<entityTypeCount> {
+    return this.entityService.getEntityTypeCount();
+  }
+
+  @Query(() => configCount)
+  async getConfigCount(): Promise<configCount> {
+    return this.entityService.getConfigCount();
   }
 }
