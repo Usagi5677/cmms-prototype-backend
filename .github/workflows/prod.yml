@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      # Generate Prisma client without the verbose flag
+      # Generate Prisma client without the verbose flags
       - name: Generate Prisma client
         run: npx prisma generate --schema=./prisma/schema.prisma
 
