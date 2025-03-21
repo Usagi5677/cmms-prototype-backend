@@ -63,6 +63,11 @@ type ApiKeyPermission {
   permission: String!
 }
 
+type AuthResponse {
+  token: String!
+  user: UserData!
+}
+
 type Brand {
   """Identifies the date and time when the object was created."""
   createdAt: Date!
@@ -1018,8 +1023,10 @@ type Mutation {
   editRole(id: Int!, name: String!): String!
   flushRedis: String!
   generateSingleChecklist(entityId: Int!): String!
+  login(email: String!, password: String!): AuthResponse!
   readAllNotifications: Boolean!
   readNotification(notificationId: Int!): String!
+  refreshToken: AuthResponse!
   removeBrand(id: Int!): String!
   removeBreakdown(id: Int!): String!
   removeBreakdownComment(id: Int!): String!
@@ -2472,6 +2479,7 @@ type User {
   fullName: String!
   id: Int!
   locationId: Int
+  password: String!
   permissions: [String!]
   rcno: Int!
   roles: [UserRoles!]
@@ -2512,6 +2520,12 @@ type UserAssignmentPageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+type UserData {
+  email: String!
+  id: String!
+  name: String!
 }
 
 type UserEdge {

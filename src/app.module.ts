@@ -72,11 +72,41 @@ import { EngineModule } from './engine/engine.module';
     PrismaModule.forRoot({
       isGlobal: true,
     }),
-    BullModule.forRoot({
-      redis: {
-        host: 'localhost',
-        port: 6379,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        // Get Redis connection details from environment variables
+        const redisUrl = process.env.REDIS_URL;
+        console.log(`Redis URL for Bull: ${redisUrl}`);
+
+        // Default values
+        let host = 'localhost';
+        let port = 6379;
+
+        // Parse Redis URL if it's available and not localhost
+        if (redisUrl && redisUrl !== 'redis://localhost:6379') {
+          try {
+            const match = redisUrl.match(/redis:\/\/([^:]+):(\d+)/);
+            if (match) {
+              host = match[1];
+              port = parseInt(match[2], 10);
+            }
+          } catch (err) {
+            console.error(`Failed to parse Redis URL for Bull: ${err.message}`);
+          }
+        }
+
+        console.log(`Connecting Bull to Redis at host: ${host}, port: ${port}`);
+
+        // Return explicit host and port configuration
+        return {
+          redis: {
+            host,
+            port,
+          },
+        };
       },
+      inject: [ConfigService],
     }),
     PubsubModule,
     AuthModule,

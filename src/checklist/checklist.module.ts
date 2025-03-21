@@ -6,10 +6,12 @@ import { EntityModule } from 'src/entity/entity.module';
 import { ChecklistController } from './checklist.controller';
 import { AuthModule } from 'src/resolvers/auth/auth.module';
 import { AttachmentModule } from 'src/resolvers/attachment/attachment.module';
+import { UserModule } from 'src/resolvers/user/user.module';
 
 @Module({
   providers: [ChecklistResolver, ChecklistService],
   imports: [
+    UserModule,
     ChecklistTemplateModule,
     forwardRef(() => EntityModule),
     forwardRef(() => AttachmentModule),

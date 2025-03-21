@@ -36,6 +36,7 @@ export class UserResolver {
             role: {
               include: {
                 permissionRoles: true,
+                createdBy: true,
               },
             },
           },

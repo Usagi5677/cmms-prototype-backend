@@ -5,6 +5,7 @@ import { NotificationModule } from 'src/resolvers/notification/notification.modu
 import { PeriodicMaintenanceConsumer } from './periodic-maintenance.consumer';
 import { PeriodicMaintenanceResolver } from './periodic-maintenance.resolver';
 import { PeriodicMaintenanceService } from './periodic-maintenance.service';
+import { UserModule } from 'src/resolvers/user/user.module';
 
 @Module({
   providers: [
@@ -13,6 +14,7 @@ import { PeriodicMaintenanceService } from './periodic-maintenance.service';
     PeriodicMaintenanceConsumer,
   ],
   imports: [
+    UserModule,
     forwardRef(() => EntityModule),
     NotificationModule,
     BullModule.registerQueue({

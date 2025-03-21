@@ -9,6 +9,7 @@ export class User extends BaseModel {
   fullName: string;
   userId: string;
   email: string;
+  password: string | null;
   @Field({ nullable: true })
   locationId?: number;
   roles?: UserRoles[];

@@ -1,28 +1,28 @@
+import { PrismaService } from 'nestjs-prisma';
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
-
+import { User } from '@prisma/client';
 import { RedisCacheService } from 'src/redisCache.service';
-//import { UserGroupConnectionArgs } from 'src/models/args/user-group-connection.args';
 import {
   connectionFromArraySlice,
   getPagingParameters,
 } from 'src/common/pagination/connection-args';
-import { APSService } from './aps.service';
-import { UsersConnectionArgs } from 'src/models/args/user-connection.args';
+
 import { PaginatedUsers } from 'src/models/pagination/user-connection.model';
-import { User } from 'src/models/user.model';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersConnectionArgs } from 'src/models/args/user-connection.args';
 import { userTypeCount } from 'src/entity/dto/models/userTypeCount.model';
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
-    private readonly redisCacheService: RedisCacheService,
-    private readonly apsService: APSService
+    private readonly redisCacheService: RedisCacheService
   ) {}
 
   //** Create user. Only to be called by the system, not a user. */
@@ -123,18 +123,18 @@ export class UserService {
 
       // If user doesn't exist on the system, fetch from APS, then create user with roles.
       if (!user) {
-        const profile = await this.apsService.getProfile(userId);
-        if (!profile) {
-          throw new BadRequestException('Invalid user.');
-        }
-        const newUser = await this.createUser(
-          profile.rcno,
-          profile.userId,
-          profile.fullName,
-          profile.email
-        );
+        //const profile = await this.apsService.getProfile(userId);
+        //if (!profile) {
+        //  throw new BadRequestException('Invalid user.');
+        //}
+        //const newUser = await this.createUser(
+        //  profile.rcno,
+        //  profile.userId,
+        // profile.fullName,
+        //  profile.email
+        //);
         await this.prisma.userRole.createMany({
-          data: roles.map((roleId) => ({ userId: newUser.id, roleId })),
+          data: roles.map((roleId) => ({ userId: user.id, roleId })),
         });
 
         return;

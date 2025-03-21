@@ -10,6 +10,7 @@ Table User {
   rcno Int [not null]
   fullName String [not null]
   email String [not null]
+  password String
   keysCreated ApiKey [not null]
   brandCreated Brand [not null]
   breakdownCreated Breakdown [not null]

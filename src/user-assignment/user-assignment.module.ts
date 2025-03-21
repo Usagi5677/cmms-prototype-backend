@@ -4,6 +4,7 @@ import { UserAssignmentResolver } from './user-assignment.resolver';
 import { NotificationModule } from 'src/resolvers/notification/notification.module';
 import { BullModule } from '@nestjs/bull';
 import { UserAssignmentConsumer } from './user-assignment.consumer';
+import { UserModule } from 'src/resolvers/user/user.module';
 
 @Module({
   providers: [
@@ -12,6 +13,7 @@ import { UserAssignmentConsumer } from './user-assignment.consumer';
     UserAssignmentConsumer,
   ],
   imports: [
+    UserModule,
     NotificationModule,
     BullModule.registerQueue({
       name: 'cmms-user-assignment-queue',

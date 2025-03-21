@@ -1,14 +1,15 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 generator dbml {
   provider = "prisma-dbml-generator"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -19,6 +20,7 @@ model User {
   rcno                              Int
   fullName                          String
   email                             String
+  password                          String? // Added for local authentication.
   keysCreated                       ApiKey[]
   brandCreated                      Brand[]                      @relation("brandCreated")
   breakdownCreated                  Breakdown[]

@@ -6,7 +6,10 @@ import { UserService } from './services/user.service';
 import { APSModule } from './resolvers/profile/profile.module';
 
 @Module({
-  imports: [forwardRef(() => UserModule), forwardRef(() => APSModule)],
+  imports: [
+    forwardRef(() => UserModule),
+    //forwardRef(() => APSModule),
+  ],
   providers: [RedisCacheService, RedisCacheResolver, UserService],
   exports: [RedisCacheService],
 })

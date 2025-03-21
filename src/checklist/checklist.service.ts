@@ -646,7 +646,7 @@ export class ChecklistService {
       throw new InternalServerErrorException('Unexpected error occured.');
     }
   }
-
+  /*
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async generateChecklistsCron() {
     this.logger.verbose('Checklist generation cron job started');
@@ -654,7 +654,7 @@ export class ChecklistService {
     // Should be run in the background by a queue instead
     await this.generateChecklists();
   }
-
+*/
   async generateChecklists() {
     try {
       const checkStatus = ['Working', 'Critical'];
